@@ -58,6 +58,7 @@
     <table>
         <thead>
             <tr>
+                <th>Order Type</th>
                 <th>Stage</th>
                 <th>Unit Person Name</th>
                 <th>Lot No</th>
@@ -83,6 +84,7 @@
                     $unitPersonName = $item->getToUnitMaster->name ?? $item->stage_master_unit->name ?? '-';
                 @endphp
                 <tr>
+                    <td>{{ $item->order_type ?? '-' }}</td>
                     <td>{{ $stageName }}</td>
                     <td>{{ $unitPersonName }}</td>
                     <td>{{ $lotNo }}</td>
@@ -94,7 +96,7 @@
         </tbody>
         <tfoot>
             <tr class="footer-total">
-                <td colspan="5" style="text-align: right;">Grand Total:</td>
+                <td colspan="6" style="text-align: right;">Grand Total:</td>
                 <td>{{ number_format($totalPending) }} Pcs</td>
             </tr>
         </tfoot>

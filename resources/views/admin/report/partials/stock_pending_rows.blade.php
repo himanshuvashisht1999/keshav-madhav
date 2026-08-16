@@ -10,6 +10,7 @@
         $unitPersonName = $item->getToUnitMaster->name ?? $item->stage_master_unit->name ?? '-';
     @endphp
     <tr>
+        <td>{{ $item->order_type ?? '-' }}</td>
         <td>{{ $stageName }}</td>
         <td>{{ $unitPersonName }}</td>
         <td>

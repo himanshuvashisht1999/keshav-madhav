@@ -124,6 +124,7 @@
                                 <table class="table table-bordered table-report">
                                     <thead>
                                         <tr>
+                                            <th>Order Type</th>
                                             <th>Stage</th>
                                             <th>Unit Person Name</th>
                                             <th>Lot No</th>

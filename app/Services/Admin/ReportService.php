@@ -1871,6 +1871,7 @@ class ReportService
                 $item->design_number = $item->orderProductSet->design_number ?? '-';
                 $item->size_set_name = $item->orderProductSet->size_set_name ?? '-';
                 $item->stage_master_unit = $item->orderProductSet->order_cutting_stage->cutting_master ?? null;
+                $item->order_type = ucfirst($item->orderMain->order_type ?? '-');
 
                 $rolls = \App\Models\FabricRollAssigning::where('order_lot_id', $item->id)->with('fabricRollAssigningsDetail')->get();
                 $totalPieces = 0;
@@ -1989,6 +1990,7 @@ class ReportService
                 $eta = $item->end_date;
                 $assignedQty = $item->quantity;
                 $pendingQty = min((int) $item->remaining_quantity, (int) $item->quantity);
+                $item->order_type = ucfirst($item->orderMain->order_type ?? '-');
                 
                 $isClosed = ($item->is_closed_for_unit == 1);
 
@@ -2189,6 +2191,7 @@ class ReportService
                 $item->design_number = $orderLot?->orderProductSet?->design_number ?? '-';
                 $item->size_set_name = $orderLot?->orderProductSet?->size_set_name ?? '-';
                 $item->sku = $orderLot?->orderProductSet?->orderMain?->sku ?? '-';
+                $item->order_type = ucfirst($orderLot?->orderProductSet?->orderMain?->order_type ?? '-');
 
                 // Fetch Unified Timing
                 $lotTimings = $timings[$item->lot_no] ?? collect();
