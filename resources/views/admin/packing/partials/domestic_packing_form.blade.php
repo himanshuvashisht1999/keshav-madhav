@@ -2,11 +2,11 @@
 
 <div class="card bg-light border-0 shadow-sm mb-4">
     <div class="card-body p-3">
-        <h6 class="font-weight-bold mb-3 small text-uppercase text-primary">Quick Add</h6>
+        <!-- <h6 class="font-weight-bold mb-3 small text-uppercase text-primary">Quick Add</h6> -->
         <div class="row align-items-end">
              <div class="col-md-2 mb-2">
                 <label class="small font-weight-bold">Design</label>
-                <select id="domesticDesign" class="form-control form-control-sm">
+                <select id="domesticDesign" class="form-control form-control-sm select2">
                     <option value="">Select Design</option>
                     @foreach($designs_with_ids as $d)
                     <option value="{{ $d->design_number }}" data-product-id="{{ $d->id }}">{{ $d->design_number }}</option>
@@ -15,19 +15,16 @@
             </div>
             <div class="col-md-2 mb-2">
                 <label class="small font-weight-bold">Size Set</label>
-                <select id="domesticSizeSet" class="form-control form-control-sm">
+                <select id="domesticSizeSet" class="form-control form-control-sm select2">
                     <option value="">Select Size Set</option>
                     @foreach($filtered_size_sets as $set)
-                        @php
-                            $sizesJson = json_encode(array_map('trim', explode(',', $set->size_group)));
-                        @endphp
-                        <option value="{{ $set->id }}" data-sizes="{{ htmlentities($sizesJson) }}">{{ $set->name }} ({{ $set->no_of_pcs }} pcs)</option>
+                        <option value="{{ $set->id }}" data-sizes="{{ $set->size_group }}">{{ $set->name }} ({{ $set->no_of_pcs }} pcs)</option>
                     @endforeach
                 </select>
             </div>
             <div class="col-md-2 mb-2">
                 <label class="small font-weight-bold">Color</label>
-                <select id="domesticColor" class="form-control form-control-sm">
+                <select id="domesticColor" class="form-control form-control-sm select2">
                     <option value="">Select Color</option>
                     @foreach($all_master_colors as $color)
                         <option value="{{ $color->id }}">{{ $color->name }}</option>
@@ -53,38 +50,12 @@
                 </select>
             </div>
             <div class="col-md-2 mb-2">
-                <button type="button" id="btnAddDomestic" class="btn btn-sm btn-info w-100 font-weight-bold text-uppercase">
-                    <i class="fas fa-plus"></i> Add
+                <button type="button" id="btnSaveDomesticDirect" class="btn btn-sm btn-primary w-100 font-weight-bold text-uppercase">
+                    <i class="fas fa-save"></i> Save
                 </button>
             </div>
         </div>
     </div>
-</div>
-
-<div class="table-responsive bg-white rounded shadow-sm border mb-3">
-    <table class="table table-hover table-sm text-center align-middle mb-0" id="domesticTable">
-        <thead class="bg-light">
-            <tr>
-                <th>Design</th>
-                <th>Size Set</th>
-                <th>Color</th>
-                <th>Rack</th>
-                <th>Qty</th>
-                <th style="width: 80px;">Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr id="domesticEmptyRow">
-                <td colspan="6" class="text-muted py-4">No items added to diversion queue yet.</td>
-            </tr>
-        </tbody>
-    </table>
-</div>
-
-<div class="d-flex justify-content-end mb-4">
-    <button type="button" id="btnSaveDomesticBulk" class="btn btn-primary font-weight-bold">
-        <i class="fas fa-save mr-1"></i> {{ $domesticSubmitBtn }}
-    </button>
 </div>
 
 <hr class="my-4">

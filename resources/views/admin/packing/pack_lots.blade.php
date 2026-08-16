@@ -536,44 +536,15 @@
                                         <input type="text" id="plannerBarcode" class="form-control form-control-sm" placeholder="Optional">
                                     </div>
                                     <div class="col-md-12 d-flex justify-content-end mt-2">
-                                        <button class="btn btn-primary btn-sm px-4" id="btnAddRange">
-                                            <i class="fas fa-plus mr-1"></i> Add Range
+                                        <button class="btn btn-primary btn-sm px-4" id="btnSavePlanDirect">
+                                            <i class="fas fa-save mr-1"></i> Save Plan
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="font-weight-bold mb-0">Carton Plan <span class="badge badge-success" id="plannerTotalPcs">Total Pcs: 0</span></h6>
-                            <div>
-                                <button class="btn btn-outline-danger btn-sm" id="btnClearPlan"><i class="fas fa-trash mr-1"></i> Clear Table</button>
-                                <button class="btn btn-success btn-sm ml-2" id="btnSavePlan"><i class="fas fa-save mr-1"></i> Save Plan to Database</button>
-                            </div>
-                        </div>
 
-                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                            <table class="table erp-table table-sm table-bordered" id="plannerTable">
-                                <thead class="thead-light sticky-top">
-                                    <tr>
-                                        <th>Carton NO</th>
-                                        <th>Design</th>
-                                        <th>Size Set</th>
-                                        <th>Color</th>
-                                        <th>Qty</th>
-                                        <th>MRP</th>
-                                        <th>Price</th>
-                                        <th>Warehouse / Rack</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr id="emptyPlanRow">
-                                        <td colspan="9" class="text-center text-muted py-4">No cartons planned yet. Use the form above to add a range.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
 
                         <hr class="my-4">
 
@@ -603,14 +574,14 @@
                                 <thead class="thead-light sticky-top">
                                     <tr>
                                         <th width="3%" class="text-center"><input type="checkbox" class="select-all-cartons"></th>
-                                        <th>ID</th>
-                                        <th>Total Sets</th>
+                                        <!-- <th>ID</th> -->
                                         <th>Carton NO</th>
+                                        <th>Total Sets</th>
                                         <th>Total Pcs</th>
                                         <th>Design</th>
                                         <th>Size Set</th>
                                         <th>Color</th>
-                                        <th>Barcode</th>
+                                        <!-- <th>Barcode</th> -->
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -652,14 +623,14 @@
                                     @endphp
                                     <tr>
                                         <td class="text-center"><input type="checkbox" class="carton-chk" value="{{ $sc->id }}"></td>
-                                        <td>{{ $sc->id }}</td>
-                                        <td class="font-weight-bold text-info">{{ round($total_sets, 2) }}</td>
+                                        <!-- <td>{{ $sc->id }}</td> -->
                                         <td class="font-weight-bold">{{ $sc->carton_no }}</td>
+                                        <td class="font-weight-bold text-info">{{ round($total_sets, 2) }}</td>
                                         <td>{{ $total_qty }}</td>
                                         <td>{{ $design }}</td>
                                         <td>{{ $size_set }}</td>
                                         <td>{{ $color }}</td>
-                                        <td>{{ $sc->barcode ?? 'N/A' }}</td>
+                                        <!-- <td>{{ $sc->barcode ?? 'N/A' }}</td> -->
                                         <td>
                                             <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-delete-carton" data-id="{{ $sc->id }}">
                                                 <i class="fas fa-trash"></i> Delete
@@ -989,38 +960,12 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2 mb-2">
-                                        <button type="button" id="btnAddSampling" class="btn btn-sm btn-info w-100 font-weight-bold text-uppercase">
-                                            <i class="fas fa-plus"></i> Add
+                                        <button type="button" id="btnSaveSamplingDirect" class="btn btn-sm btn-primary w-100 font-weight-bold text-uppercase">
+                                            <i class="fas fa-save"></i> Save
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="table-responsive bg-white rounded shadow-sm border mb-3">
-                            <table class="table table-hover table-sm text-center align-middle mb-0" id="samplingTable">
-                                <thead class="bg-light">
-                                    <tr>
-                                        <th>Design</th>
-                                        <th>Size Set</th>
-                                        <th>Color</th>
-                                        <th>Rack</th>
-                                        <th>Qty</th>
-                                        <th style="width: 80px;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr id="samplingEmptyRow">
-                                        <td colspan="6" class="text-muted py-4">No items added to sampling queue yet.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="d-flex justify-content-end mb-4">
-                            <button type="button" id="btnSaveSamplingBulk" class="btn btn-primary font-weight-bold">
-                                <i class="fas fa-save mr-1"></i> Submit Sampling
-                            </button>
                         </div>
 
                         <hr class="my-4">
@@ -1284,7 +1229,7 @@
     const OUTFLOW_BY_LOT_SIZE = {!! json_encode($outflow_by_lot_size) !!};
     const SLIP_ID = "{{ $slip_id }}";
 
-    let plannedCartons = [];
+    // Planner Variables
     let expandedLots = [];
 
     function initAvailableSizes() {
@@ -1876,7 +1821,7 @@
             });
         });
         // 3. Add Range logic
-        $('#btnAddRange').click(function() {
+        $('#btnSavePlanDirect').click(function() {
             let start = parseInt($('#plannerStart').val());
             let end = parseInt($('#plannerEnd').val());
             let design = $('#plannerDesign').val();
@@ -1944,6 +1889,8 @@
             
             let tempLots = JSON.parse(JSON.stringify(expandedLots));
             let rangeSucceeded = true;
+            
+            let planToSubmit = [];
 
             for (let i = start; i <= end; i++) {
                 // Determine sizes needed for THIS carton
@@ -1991,7 +1938,7 @@
                     break;
                 }
 
-                plannedCartons.push({
+                planToSubmit.push({
                     carton_no: i,
                     design: design,
                     size_set_id: sizeSetId,
@@ -2010,93 +1957,36 @@
             }
 
             if (rangeSucceeded) {
-                expandedLots = tempLots;
-            }
-
-            renderPlannerTable();
-        });
-
-        $('#btnClearPlan').click(function() {
-            plannedCartons = [];
-            initAvailableSizes(); // Reset memory calculation
-            renderPlannerTable();
-        });
-
-        function renderPlannerTable() {
-            let $tbody = $('#plannerTable tbody');
-            $tbody.empty();
-
-            if (plannedCartons.length === 0) {
-                $tbody.append('<tr id="emptyPlanRow"><td colspan="9" class="text-center text-muted py-4">No cartons planned yet. Use the form above to add a range.</td></tr>');
-                $('#plannerTotalPcs').text('Total Pcs: 0');
-                return;
-            }
-
-            let totalPcs = 0;
-            plannedCartons.forEach((carton, index) => {
-                totalPcs += carton.qty;
-                $tbody.append(`
-                    <tr>
-                        <td class="font-weight-bold">${carton.carton_no}</td>
-                        <td>${carton.design}</td>
-                        <td>${carton.size_set_name}</td>
-                        <td>${carton.color_name}</td>
-                        <td>${carton.qty}</td>
-                        <td>${carton.mrp}</td>
-                        <td>${carton.price}</td>
-                        <td>${carton.warehouse_name}</td>
-                        <td>
-                            <button class="btn btn-sm btn-danger py-0 px-2 btn-remove-carton" data-index="${index}"><i class="fas fa-times"></i></button>
-                        </td>
-                    </tr>
-                `);
-            });
-            $('#plannerTotalPcs').text(`Total Sets: ${totalPcs}`);
-            updateLiveRemainingUI();
-        }
-
-        $(document).on('click', '.btn-remove-carton', function() {
-            let index = $(this).data('index');
-            // Re-add sizes back to available memory
-            let carton = plannedCartons[index];
-            carton.items.forEach(item => {
-                let lot = expandedLots.find(l => l.transaction_id == item.transaction_id && l.size === item.size_name);
-                if(lot) lot.remaining_quantity += item.quantity;
-            });
-            plannedCartons.splice(index, 1);
-            renderPlannerTable();
-        });
-
-        $('#btnSavePlan').click(function() {
-            if (plannedCartons.length === 0) {
-                alert('No cartons to save.');
-                return;
-            }
-
-            let $btn = $(this);
-            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
-
-            $.ajax({
-                url: "{{ route('admin.packing.apiSaveCartonPlan', $slip_id) }}",
-                type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    cartons: plannedCartons
-                },
-                success: function(response) {
-                    if (response.status === 'success') {
-                        alert(response.message);
-                        window.location.reload();
-                    } else {
-                        alert('Error: ' + response.message);
-                        $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save Plan to Database');
-                    }
-                },
-                error: function(err) {
-                    alert('An error occurred while saving.');
-                    $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save Plan to Database');
+                if (planToSubmit.length === 0) {
+                    alert('No cartons planned.');
+                    return;
                 }
-            });
+
+                let $btn = $(this);
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
+
+                $.ajax({
+                    url: "{{ route('admin.packing.apiSaveCartonPlan', $slip_id) }}",
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        cartons: planToSubmit
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            alert(response.message);
+                            window.location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                            $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save Plan');
+                        }
+                    },
+                    error: function(err) {
+                        alert('An error occurred while saving.');
+                        $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save Plan');
+                    }
+                });
+            }
         });
 
         $(document).on('click', '.btn-delete-carton', function() {
@@ -2126,35 +2016,6 @@
         });
 
         // ---------------- DOMESTIC DIVERSION LOGIC ---------------- //
-        let domesticQueue = [];
-        
-        function renderDomesticTable() {
-            let $tbody = $('#domesticTable tbody');
-            $tbody.empty();
-
-            if (domesticQueue.length === 0) {
-                $tbody.append('<tr id="domesticEmptyRow"><td colspan="6" class="text-muted py-4">No items added to diversion queue yet.</td></tr>');
-                return;
-            }
-
-            domesticQueue.forEach((item, index) => {
-                let tr = `
-                    <tr>
-                        <td>${item.design_number}</td>
-                        <td>${item.size_set_name}</td>
-                        <td>${item.color_name}</td>
-                        <td>${item.rack_name || 'N/A'}</td>
-                        <td>${item.quantity}</td>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-domestic" data-index="${index}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                $tbody.append(tr);
-            });
-        }
 
         // 1. Design change -> set product id
         $('#domesticDesign').change(function() {
@@ -2170,10 +2031,7 @@
             let $qty = $('#domesticQty');
             let $qtyInfo = $('#domesticQtyInfo');
 
-            // Find current sets of this item already in the queue so we deduct them from what's available
-            let queuedQty = domesticQueue
-                .filter(item => item.design_number === design && item.size_set_id === sizeSetId && item.color_id == colorId)
-                .reduce((sum, item) => sum + item.quantity, 0);
+            let queuedQty = 0;
 
             $qty.val('').prop('disabled', true).removeAttr('max').removeClass('is-invalid is-valid');
             $qtyInfo.text('Select Design, Size Set, and Color first').removeClass('text-success text-danger text-warning').addClass('text-muted');
@@ -2185,12 +2043,11 @@
                 $qtyInfo.text('No size configuration found').addClass('text-danger');
                 return;
             }
-            let requiredSizesArray = JSON.parse(requiredSizesStr);
+            let requiredSizesArray = requiredSizesStr.split(',').map(s => s.trim().toUpperCase());
 
             // Count occurrences of each size in the set
             let sizeCounts = {};
             requiredSizesArray.forEach(size => {
-                size = size.toString().trim().toUpperCase();
                 sizeCounts[size] = (sizeCounts[size] || 0) + 1;
             });
 
@@ -2259,8 +2116,8 @@
             }
         });
 
-        // Add to Queue
-        $('#btnAddDomestic').click(function() {
+        // Save Directly
+        $('#btnSaveDomesticDirect').click(function() {
             let design = $('#domesticDesign').val();
             let sizeSetId = $('#domesticSizeSet').val();
             let sizeSetName = $('#domesticSizeSet option:selected').text();
@@ -2334,15 +2191,7 @@
                 return;
             }
 
-            // Apply deductions to actual expandedLots
-            deductedItems.forEach(d => {
-                let lot = expandedLots.find(l => l.transaction_id == d.transaction_id && l.size === d.size_name);
-                if (lot) {
-                    lot.remaining_quantity -= d.quantity;
-                }
-            });
-
-            domesticQueue.push({
+            let singleItemQueue = [{
                 design_number: design,
                 size_set_id: sizeSetId,
                 size_set_name: sizeSetName,
@@ -2353,50 +2202,10 @@
                 rack_name: rackId ? rackName : '',
                 product_id: productId,
                 items: deductedItems
-            });
-
-            // Reset quantity and dropdowns
-            $('#domesticQty').val('');
-            
-            renderDomesticTable();
-            updateLiveRemainingUI();
-
-            // Refresh available quantity label
-            let maxSets = parseInt($('#domesticDesign').data('max-sets')) || 0;
-            let currentInQueue = domesticQueue.filter(item => item.design_number === design && item.size_set_id === sizeSetId).reduce((sum, item) => sum + item.quantity, 0);
-            let remainingSets = Math.max(0, maxSets - currentInQueue);
-            $('#domesticQty').attr('max', remainingSets);
-            $('#domesticQtyInfo').text(`${remainingSets} sets remaining`);
-        });
-
-        // Remove from Queue
-        $(document).on('click', '.btn-remove-domestic', function() {
-            let index = $(this).data('index');
-            let item = domesticQueue[index];
-            
-            // Restore sizes back to available memory
-            item.items.forEach(d => {
-                let lot = expandedLots.find(l => l.transaction_id == d.transaction_id && l.size === d.size_name);
-                if (lot) lot.remaining_quantity += d.quantity;
-            });
-
-            domesticQueue.splice(index, 1);
-            renderDomesticTable();
-            updateLiveRemainingUI();
-
-            // Reset dropdown & qty
-            $('#domesticDesign').trigger('change');
-        });
-
-        // Save Bulk
-        $('#btnSaveDomesticBulk').click(function() {
-            if (domesticQueue.length === 0) {
-                alert('No items in the diversion queue.');
-                return;
-            }
+            }];
 
             let $btn = $(this);
-            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Submitting...');
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
 
             $.ajax({
                 url: "{{ route('admin.packing.saveDomesticBulk') }}",
@@ -2405,7 +2214,7 @@
                     _token: '{{ csrf_token() }}',
                     order_id: '{{ $order->id }}',
                     slip_id: SLIP_ID,
-                    boxes: domesticQueue
+                    boxes: singleItemQueue
                 },
                 success: function(response) {
                     if (response.status === 'success') {
@@ -2413,12 +2222,12 @@
                         window.location.reload();
                     } else {
                         alert('Error: ' + response.message);
-                        $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Submit Diversion');
+                        $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save');
                     }
                 },
                 error: function(err) {
                     alert('An error occurred while submitting.');
-                    $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Submit Diversion');
+                    $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save');
                 }
             });
         });
@@ -2454,33 +2263,6 @@
         });
 
         // ---------------- SAMPLING DIVERSION LOGIC ---------------- //
-        let samplingQueue = [];
-
-        function renderSamplingTable() {
-            let $tbody = $('#samplingTable tbody');
-            $tbody.empty();
-            if (samplingQueue.length === 0) {
-                $tbody.append('<tr id="samplingEmptyRow"><td colspan="6" class="text-muted py-4">No items added to sampling queue yet.</td></tr>');
-                return;
-            }
-
-            samplingQueue.forEach((item, index) => {
-                $tbody.append(`
-                    <tr>
-                        <td>${item.design_number}</td>
-                        <td>${item.size_set_name}</td>
-                        <td>${item.color_name}</td>
-                        <td>${item.rack_name || 'N/A'}</td>
-                        <td>${item.quantity} sets</td>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-sampling" data-index="${index}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `);
-            });
-        }
 
         $('#samplingDesign').change(function() {
             let design = $(this).val();
@@ -2568,11 +2350,7 @@
             if (!design || !sizeSetId || !colorId) return;
 
             let maxSets = parseInt($('#samplingDesign').data('max-sets')) || 0;
-            let queuedQty = samplingQueue
-                .filter(item => item.design_number === design && item.size_set_id === sizeSetId && item.color_id == colorId)
-                .reduce((sum, item) => sum + item.quantity, 0);
-
-            let remainingSets = Math.max(0, maxSets - queuedQty);
+            let remainingSets = Math.max(0, maxSets);
 
             $qty.attr('max', remainingSets).prop('disabled', remainingSets <= 0);
             if (remainingSets > 0) {
@@ -2582,7 +2360,7 @@
             }
         }
 
-        $('#btnAddSampling').click(function() {
+        $('#btnSaveSamplingDirect').click(function() {
             let design = $('#samplingDesign').val();
             let sizeSetId = $('#samplingSizeSet').val();
             let sizeSetName = $('#samplingSizeSet option:selected').text();
@@ -2604,7 +2382,7 @@
                 return;
             }
 
-            samplingQueue.push({
+            let singleSamplingItem = [{
                 product_id: productId,
                 design_number: design,
                 size_set_id: sizeSetId,
@@ -2614,25 +2392,7 @@
                 quantity: qty,
                 rack_id: rackId,
                 rack_name: rackName
-            });
-
-            $('#samplingQty').val('');
-            renderSamplingTable();
-            updateSamplingMaxQty();
-        });
-
-        $(document).on('click', '.btn-remove-sampling', function() {
-            let index = $(this).data('index');
-            samplingQueue.splice(index, 1);
-            renderSamplingTable();
-            updateSamplingMaxQty();
-        });
-
-        $('#btnSaveSamplingBulk').click(function() {
-            if (samplingQueue.length === 0) {
-                alert('Sampling queue is empty.');
-                return;
-            }
+            }];
 
             let $btn = $(this);
             $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
@@ -2644,7 +2404,7 @@
                     _token: "{{ csrf_token() }}",
                     order_id: "{{ $order->id ?? '' }}",
                     slip_id: "{{ $slip_id }}",
-                    boxes: samplingQueue
+                    boxes: singleSamplingItem
                 },
                 success: function(res) {
                     if (res.status === 'success') {
@@ -2655,12 +2415,12 @@
                         }, 1000);
                     } else {
                         alert(res.message || 'Failed to save sampling.');
-                        $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Submit Sampling');
+                        $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save');
                     }
                 },
                 error: function() {
                     alert('Error saving sampling.');
-                    $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Submit Sampling');
+                    $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save');
                 }
             });
         });
