@@ -771,7 +771,15 @@ class PackingController extends Controller
         $mrp = $variant ? $variant->mrp : 0;
         $price = $variant ? ($variant->price ?? 0) : 0;
         
-        $colors = \App\Models\MasterColor::where('status', 1)->orderBy('name')->get(['id', 'name']);
+        if ($request->strict_colors && $variant) {
+            $colors = \App\Models\ProductionGoodVariantItem::where('variant_id', $variant->id)
+                ->join('master_colors', 'production_goods_variant_colors.master_color_id', '=', 'master_colors.id')
+                ->where('master_colors.status', 1)
+                ->orderBy('master_colors.name')
+                ->get(['master_colors.id', 'master_colors.name']);
+        } else {
+            $colors = \App\Models\MasterColor::where('status', 1)->orderBy('name')->get(['id', 'name']);
+        }
         
         // Calculate size-wise available balances from the selected lots (regardless of design number)
         $packing = \App\Models\PackingMain::where('slip_id', $slip_id)->first();

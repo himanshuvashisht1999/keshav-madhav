@@ -2017,10 +2017,65 @@
 
         // ---------------- DOMESTIC DIVERSION LOGIC ---------------- //
 
-        // 1. Design change -> set product id
+        // 1. Design change -> set product id, fetch size sets
         $('#domesticDesign').change(function() {
             let productId = $(this).find('option:selected').data('product-id');
             $(this).data('product-id', productId);
+            
+            let design = $(this).val();
+            let $sizeSet = $('#domesticSizeSet');
+            let $color = $('#domesticColor');
+            
+            $sizeSet.html('<option value="">Select Size Set</option>').prop('disabled', true).trigger('change');
+            $color.html('<option value="">Select Color</option>').prop('disabled', true).trigger('change');
+            
+            if (design) {
+                $.ajax({
+                    url: "{{ route('admin.packing.apiGetSizeSets', $slip_id) }}",
+                    data: { design_number: design, for_sampling: 0, for_planner: 0 },
+                    success: function(res) {
+                        if (res.status === 'success' && res.size_sets) {
+                            res.size_sets.forEach(set => {
+                                let sizesJson = '';
+                                if(set.required_sizes && set.required_sizes.length) {
+                                    sizesJson = set.required_sizes.join(',');
+                                }
+                                $sizeSet.append(`<option value="${set.id}" data-sizes="${sizesJson}">${set.name} (${set.no_of_pcs} pcs)</option>`);
+                            });
+                            $sizeSet.prop('disabled', false).trigger('change');
+                        }
+                    }
+                });
+            }
+            updateDomesticMaxQty();
+        });
+
+        // 2. Size Set change -> fetch colors
+        $('#domesticSizeSet').change(function() {
+            let design = $('#domesticDesign').val();
+            let sizeSetId = $(this).val();
+            let $color = $('#domesticColor');
+            
+            $color.html('<option value="">Select Color</option>').prop('disabled', true).trigger('change');
+            
+            if (design && sizeSetId) {
+                $.ajax({
+                    url: "{{ route('admin.packing.apiGetMasterData', $slip_id) }}",
+                    data: { design_number: design, size_set_id: sizeSetId, strict_colors: 1 },
+                    success: function(res) {
+                        if (res.status === 'success' && res.colors) {
+                            res.colors.forEach(c => {
+                                $color.append(`<option value="${c.id}">${c.name}</option>`);
+                            });
+                            $color.prop('disabled', false).trigger('change');
+                        }
+                    }
+                });
+            }
+            updateDomesticMaxQty();
+        });
+
+        $('#domesticColor').change(function() {
             updateDomesticMaxQty();
         });
 

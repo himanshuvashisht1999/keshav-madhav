@@ -15,20 +15,14 @@
             </div>
             <div class="col-md-2 mb-2">
                 <label class="small font-weight-bold">Size Set</label>
-                <select id="domesticSizeSet" class="form-control form-control-sm select2">
+                <select id="domesticSizeSet" class="form-control form-control-sm select2" disabled>
                     <option value="">Select Size Set</option>
-                    @foreach($filtered_size_sets as $set)
-                        <option value="{{ $set->id }}" data-sizes="{{ $set->size_group }}">{{ $set->name }} ({{ $set->no_of_pcs }} pcs)</option>
-                    @endforeach
                 </select>
             </div>
             <div class="col-md-2 mb-2">
                 <label class="small font-weight-bold">Color</label>
-                <select id="domesticColor" class="form-control form-control-sm select2">
+                <select id="domesticColor" class="form-control form-control-sm select2" disabled>
                     <option value="">Select Color</option>
-                    @foreach($all_master_colors as $color)
-                        <option value="{{ $color->id }}">{{ $color->name }}</option>
-                    @endforeach
                 </select>
             </div>
             <div class="col-md-2 mb-2">
