@@ -1394,6 +1394,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/stock-pending/export', [AdminReportController::class, 'stockPendingExport'])->name('stock-pending.export');
             Route::get('/stock-pending/pdf', [AdminReportController::class, 'stockPendingPdf'])->name('stock-pending.pdf');
 
+            Route::get('/outflows', [AdminReportController::class, 'outflowsReport'])->name('outflows');
+            Route::get('/outflows/export', [AdminReportController::class, 'outflowsReportExport'])->name('outflows.export');
+            Route::get('/outflows/pdf', [AdminReportController::class, 'outflowsReportPdf'])->name('outflows.pdf');
+
             Route::get('/design-wip', [AdminReportController::class, 'designWip'])->name('design-wip');
             Route::get('/design-wip/api/customers', [AdminReportController::class, 'designWipApiCustomers'])->name('design-wip.api.customers');
             Route::get('/design-wip/api/orders', [AdminReportController::class, 'designWipApiOrders'])->name('design-wip.api.orders');

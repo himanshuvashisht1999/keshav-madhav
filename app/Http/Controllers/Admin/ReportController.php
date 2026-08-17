@@ -706,6 +706,39 @@ class ReportController extends Controller
         return $pdf->download('stock-pending-' . date('YmdHis') . '.pdf');
     }
 
+    public function outflowsReport(Request $request)
+    {
+        $request->merge(['is_pagination' => true]);
+        $response = $this->service->outflowsReport($request);
+        return view('admin.report.outflows', $response);
+    }
+
+    public function outflowsReportExport(Request $request)
+    {
+        $request->merge(['is_pagination' => false]);
+        $response = $this->service->outflowsReport($request);
+
+        return response()
+            ->view('admin.report.outflows_export', [
+                'outflows' => $response['outflows'],
+                'exportedAt' => now()
+            ])
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header(
+                'Content-Disposition',
+                'attachment; filename="outflows-report-' . now()->format('d-m-Y_H-i') . '.xls"'
+            );
+    }
+
+    public function outflowsReportPdf(Request $request)
+    {
+        $request->merge(['is_pagination' => false]);
+        $response = $this->service->outflowsReport($request);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.report.pdf.outflows', $response);
+        $pdf->setPaper('a4', 'landscape');
+        return $pdf->download('outflows-report-' . date('YmdHis') . '.pdf');
+    }
+
     public function unitAssignmentsPdf(Request $request)
     {
         $response = $this->service->unitAssignments($request);

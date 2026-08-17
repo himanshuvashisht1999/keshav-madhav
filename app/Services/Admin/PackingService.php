@@ -103,7 +103,11 @@ class PackingService
             'cartons.rack.storeroom',
             'outflows.product',
             'outflows.color',
-            'outflows.size'
+            'outflows.size',
+            'domesticInventories.product',
+            'domesticInventories.sizeSet',
+            'domesticInventories.color',
+            'domesticInventories.rack.storeroom'
         ])->findOrFail($id);
     }
     /**

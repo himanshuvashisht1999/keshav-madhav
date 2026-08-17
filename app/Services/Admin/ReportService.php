@@ -2847,4 +2847,66 @@ class ReportService
             'filters' => $request->all(),
         ];
     }
+
+    public function outflowsReport(\Illuminate\Http\Request $request)
+    {
+        $query = \App\Models\ProductionOutflowInventory::with([
+            'product', 'color', 'size', 'responsibleUnit', 'slip'
+        ])
+        ->where('type', '!=', 'packing_divert')
+        ->orderBy('created_at', 'desc');
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+        if ($request->filled('lot_no')) {
+            $query->where('lot_no', 'LIKE', '%' . $request->lot_no . '%');
+        }
+        if ($request->filled('slip_id')) {
+            $query->where('slip_id', $request->slip_id);
+        }
+        if ($request->filled('unit_id')) {
+            $query->where('responsible_unit_id', $request->unit_id);
+        }
+        if ($request->filled('design_no')) {
+            $query->whereHas('product', function($q) use ($request) {
+                $q->where('design_number', 'LIKE', '%' . $request->design_no . '%');
+            });
+        }
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        $totalQuantity = $query->sum('quantity');
+
+        if ($request->get('is_pagination', true)) {
+            $outflows = $query->paginate(25);
+            $outflows->appends($request->all());
+        } else {
+            $outflows = $query->get();
+        }
+
+        $units = \App\Models\StageMasterUnit::whereNotNull('name')
+            ->where('name', '!=', '')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+        
+        $designs = \App\Models\ProductionGoods::where('status', 1)
+            ->whereNotNull('design_number')
+            ->orderBy('design_number')
+            ->pluck('design_number')
+            ->unique()
+            ->values();
+
+        return [
+            'outflows' => $outflows,
+            'totalQuantity' => $totalQuantity,
+            'units' => $units,
+            'designs' => $designs,
+            'filters' => $request->all()
+        ];
+    }
 }
