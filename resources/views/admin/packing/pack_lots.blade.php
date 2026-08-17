@@ -581,6 +581,8 @@
                                         <th>Design</th>
                                         <th>Size Set</th>
                                         <th>Color</th>
+                                        <th>MRP</th>
+                                        <th>Price</th>
                                         <!-- <th>Barcode</th> -->
                                         <th>Action</th>
                                     </tr>
@@ -620,6 +622,9 @@
                                                 }
                                             }
                                         }
+
+                                        $mrp = $sc->items->first() ? $sc->items->first()->mrp : 0;
+                                        $price = $sc->items->first() ? $sc->items->first()->selling_price : 0;
                                     @endphp
                                     <tr>
                                         <td class="text-center"><input type="checkbox" class="carton-chk" value="{{ $sc->id }}"></td>
@@ -630,6 +635,8 @@
                                         <td>{{ $design }}</td>
                                         <td>{{ $size_set }}</td>
                                         <td>{{ $color }}</td>
+                                        <td>{{ number_format($mrp, 2) }}</td>
+                                        <td>{{ number_format($price, 2) }}</td>
                                         <!-- <td>{{ $sc->barcode ?? 'N/A' }}</td> -->
                                         <td>
                                             <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-delete-carton" data-id="{{ $sc->id }}">
@@ -639,7 +646,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="10" class="text-center text-muted py-4">No cartons saved yet.</td>
+                                        <td colspan="11" class="text-center text-muted py-4">No cartons saved yet.</td>
                                     </tr>
                                     @endforelse
                                 </tbody>
@@ -1743,8 +1750,17 @@
                 data: { design_number: design, size_set_id: sizeSetId },
                 success: function(response) {
                     if (response.status === 'success') {
-                        if (response.mrp) $('#plannerMrp').val(response.mrp);
-                        if (response.price) $('#plannerPrice').val(response.price);
+                        if (response.mrp && parseFloat(response.mrp) > 0) {
+                            $('#plannerMrp').val(response.mrp);
+                        } else {
+                            $('#plannerMrp').val('');
+                        }
+                        
+                        if (response.price && parseFloat(response.price) > 0) {
+                            $('#plannerPrice').val(response.price);
+                        } else {
+                            $('#plannerPrice').val('');
+                        }
                         
                         let $colorSelect = $('#plannerColor');
                         $colorSelect.html('<option value="">Select Color</option>').trigger('change');

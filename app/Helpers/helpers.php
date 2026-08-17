@@ -572,7 +572,7 @@ GAP 2 mm,0
 DIRECTION 1
 REFERENCE 0,0
 SPEED 2
-DENSITY 10
+DENSITY 15
 CLS
 ";
 
@@ -592,12 +592,13 @@ CLS
             $tspl .= "TEXT 20,320,\"2\",0,2,3,\"{$left->wsp}\"\n";
             // Barcode/QR more bottom
             if ($type === 'qrcode') {
-                $tspl .= "QRCODE 20,420,H,6,A,0,\"{$left->barcode}\"\n";
+                $tspl .= "QRCODE 20,380,H,8,A,0,\"{$left->barcode}\"\n";
+                $tspl .= "TEXT 20,570,\"2\",0,1,1,\"{$left->barcode}\"\n";
             } else {
                 $tspl .= "BARCODE 20,420,\"128\",120,0,0,3,6,\"{$left->barcode}\"\n";
+                // Barcode text under Barcode
+                $tspl .= "TEXT 20,560,\"2\",0,1,1,\"{$left->barcode}\"\n";
             }
-            // Barcode text under Barcode
-            $tspl .= "TEXT 20,560,\"2\",0,1,1,\"{$left->barcode}\"\n";
         }
 
         if ($right) {
@@ -609,12 +610,13 @@ CLS
             $tspl .= "TEXT 420,320,\"2\",0,2,3,\"{$right->wsp}\"\n";
             // Barcode/QR more bottom
             if ($type === 'qrcode') {
-                $tspl .= "QRCODE 420,420,H,6,A,0,\"{$right->barcode}\"\n";
+                $tspl .= "QRCODE 420,380,H,8,A,0,\"{$right->barcode}\"\n";
+                $tspl .= "TEXT 420,570,\"2\",0,1,1,\"{$right->barcode}\"\n";
             } else {
                 $tspl .= "BARCODE 420,420,\"128\",120,0,0,3,6,\"{$right->barcode}\"\n";
+                // Barcode text under Barcode
+                $tspl .= "TEXT 420,560,\"2\",0,1,1,\"{$right->barcode}\"\n";
             }
-            // Barcode text under Barcode
-            $tspl .= "TEXT 420,560,\"2\",0,1,1,\"{$right->barcode}\"\n";
         }
 
         $tspl .= "PRINT 1\n";
