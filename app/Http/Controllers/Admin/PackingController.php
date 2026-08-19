@@ -2655,15 +2655,19 @@ class PackingController extends Controller
         return (new \App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController())->generateBulkTspl($request);
     }
 
-    public function downloadPrn($id)
+    public function downloadPrn(\Illuminate\Http\Request $request, $id)
     {
-        $main = \App\Models\PackingMain::with('cartons.items')->findOrFail($id);
+        $main = \App\Models\PackingMain::with(['domesticInventories', 'order'])->findOrFail($id);
         $allBarcodes = [];
 
-        foreach ($main->cartons as $carton) {
-            // As per updated user request: "if 5 boxes then 5 barcode" - now cartons
-            if ($carton->barcode) {
-                $allBarcodes[] = $carton->barcode;
+        foreach ($main->domesticInventories as $box) {
+            $boxesCount = (int)$box->total_boxes;
+            if ($boxesCount < 1) $boxesCount = 1;
+            
+            if ($box->barcode) {
+                for ($i = 0; $i < $boxesCount; $i++) {
+                    $allBarcodes[] = $box->barcode;
+                }
             }
         }
 

@@ -1987,6 +1987,35 @@ class AgentOrderController extends Controller
         }
     }
 
+    public function generatePrn($id)
+    {
+        $items = DB::table('agent_order_items')
+            ->where('agent_order_id', $id)
+            ->get();
+            
+        $barcodeList = [];
+        foreach ($items as $item) {
+            $pendingBoxes = (int)$item->box_qty - (int)$item->scanned_box_qty;
+            if ($pendingBoxes > 0 && !empty($item->barcode)) {
+                for ($i = 0; $i < $pendingBoxes; $i++) {
+                    $barcodeList[] = $item->barcode;
+                }
+            }
+        }
+        
+        if (empty($barcodeList)) {
+            return back()->with('error', 'No pending barcodes found for this order.');
+        }
+        
+        $tspl = generateBulkTsplByBarcodes($barcodeList);
+        $fileName = 'order_' . $id . '_pending_barcodes_' . time() . '.prn';
+        
+        return response($tspl, 200, [
+            'Content-Type' => 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
+    }
+
     public function downloadPackingSlip(Request $request, $id)
     {
         $order = DB::table('agent_orders')

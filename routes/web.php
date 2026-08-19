@@ -582,6 +582,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/{id}/download-order', [AdminAgentOrderController::class, 'downloadOrder'])->name('download-order');
             Route::get('/{id}/send-whatsapp-order', [AdminAgentOrderController::class, 'sendWhatsappOrder'])->name('send-whatsapp-order');
             Route::get('/{id}/download-packing-slip', [AdminAgentOrderController::class, 'downloadPackingSlip'])->name('download-packing-slip');
+            Route::get('/{id}/generate-prn', [AdminAgentOrderController::class, 'generatePrn'])->name('generate-prn');
             Route::get('/{id}/dispatch-scan', [AdminAgentOrderController::class, 'dispatchScan'])->name('dispatch-scan');
             Route::post('/{id}/process-scan', [AdminAgentOrderController::class, 'processScan'])->name('process-scan');
             Route::post('/{id}/remove-scan', [AdminAgentOrderController::class, 'removeScan'])->name('remove-scan');

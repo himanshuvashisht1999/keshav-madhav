@@ -79,6 +79,10 @@
                         </div>
 
                         <div class="btn-group">
+                            <a href="{{ route('admin.agent-orders.generate-prn', $order->id) }}"
+                                class="btn btn-sm btn-primary rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
+                                <i class="fas fa-barcode mr-1"></i> PRN
+                            </a>
                             @php $dispatchRecord = $order->dispatches->last(); @endphp
 
                             @if($dispatchRecord)

@@ -120,10 +120,14 @@
                             <!-- Actions panel -->
                             <div class="col-lg-5 d-flex align-items-center justify-content-lg-end justify-content-start p-4 bg-white border-left text-nowrap">
                                 <div class="mr-3">
+                                    @php $isDomesticOrder = ($session->order && strtolower(trim($session->order->order_type)) === 'domestic'); @endphp
+                                    @if($session->domesticInventories->count() > 0)
                                     <a href="{{ route('admin.packing.downloadPrn', $session->id) }}" class="btn btn-dark btn-sm font-weight-bold px-3 py-2 shadow-sm" 
                                        title="Download PRN file for Barcode Printer">
-                                        <i class="fas fa-barcode mr-1"></i> PRINT BARCODES (PRN)
+                                        <i class="fas fa-barcode mr-1"></i> 
+                                        {{ $isDomesticOrder ? 'PRINT BARCODES (PRN)' : 'PRINT DIVERTED (PRN)' }}
                                     </a>
+                                    @endif
                                 </div>
                                 <div class="text-right mr-3">
                                     <span class="text-uppercase text-muted d-block mb-0" style="font-size: 0.65rem; letter-spacing: 1px; font-weight: 800;">Slip Reference</span>
