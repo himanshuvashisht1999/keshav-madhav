@@ -94,63 +94,107 @@
 
                     <!-- DISPATCH SUMMARY & CALCULATIONS -->
                     <div class="row mt-4 d-none" id="summaryContainer">
-                        <div class="col-md-6 offset-md-6">
+                        <div class="col-md-8 offset-md-4">
                             <div class="card shadow-sm border-success bg-light">
                                 <div class="card-header bg-success text-white py-2">
-                                    <strong><i class="fas fa-truck-loading mr-2"></i> Final Confirmation</strong>
+                                    <strong><i class="fas fa-truck-loading mr-2"></i> Final Confirmation & Billing</strong>
                                 </div>
                                 <div class="card-body p-3">
-                                    <div class="row mb-2">
-                                        <div class="col-7 text-right align-middle"><strong>Packed Value (₹)</strong></div>
-                                        <div class="col-5">
-                                            <input type="text" id="calc_subtotal"
-                                                class="form-control form-control-sm text-right font-weight-bold" readonly
-                                                >
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-2">
-                                        <div class="col-7 text-right align-middle">
-                                            <strong>Add Discount (%)</strong>
-                                        </div>
-                                        <div class="col-5">
-                                            <input type="number" name="discount_percentage" id="calc_discount_p"
-                                                class="form-control form-control-sm text-right" step="0.01" min="0"
-                                                max="100" value="0.00">
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-2">
-                                        <div class="col-7 text-right align-middle text-muted"><small>Discount Amt</small></div>
-                                        <div class="col-5">
-                                            <input type="text" id="calc_discount_v"
-                                                class="form-control form-control-sm text-right text-muted" readonly
-                                                >
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-2">
-                                        <div class="col-7 text-right align-middle">
-                                            <strong>GST (%)</strong>
-                                        </div>
-                                        <div class="col-5">
-                                            <input type="number" name="gst_percentage" id="calc_gst_p"
-                                                class="form-control form-control-sm text-right" step="0.01" min="0"
-                                                max="100" value="0.00">
-                                        </div>
-                                    </div>
-
-                                    <hr class="my-2">
-
                                     <div class="row">
-                                        <div class="col-7 text-right align-middle">
-                                            <h5 class="mb-0 font-weight-bold">Final Dispatch Amount (₹)</h5>
+                                        <!-- Dispatch Meta Info -->
+                                        <div class="col-md-6 border-right">
+                                            <div class="form-group mb-3">
+                                                <label class="font-weight-bold text-muted small text-uppercase mb-1">Dispatch Date</label>
+                                                <div class="input-group input-group-sm shadow-sm">
+                                                    <div class="input-group-prepend">
+                                                        <span class="input-group-text bg-white"><i class="fas fa-calendar-alt text-success"></i></span>
+                                                    </div>
+                                                    <input type="datetime-local" class="form-control" id="dispatch_date" name="dispatch_date" value="{{ date('Y-m-d\TH:i') }}" required>
+                                                </div>
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label class="font-weight-bold text-muted small text-uppercase mb-1">Company</label>
+                                                <div class="input-group input-group-sm shadow-sm">
+                                                    <div class="input-group-prepend">
+                                                        <span class="input-group-text bg-white"><i class="fas fa-building text-info"></i></span>
+                                                    </div>
+                                                    <select class="form-control" id="company_id" name="company_id" required>
+                                                        <option value="">Select Company</option>
+                                                        @foreach($companies as $company)
+                                                            <option value="{{ $company->id }}">{{ $company->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group mb-3">
+                                                <label class="font-weight-bold text-muted small text-uppercase mb-1">Remark</label>
+                                                <textarea name="remark" class="form-control form-control-sm" rows="3" placeholder="Enter dispatch remark (optional)"></textarea>
+                                            </div>
                                         </div>
-                                        <div class="col-5">
-                                            <input type="hidden" name="total_amount" id="final_total_amount_hidden">
-                                            <input type="text" id="calc_grand_total"
-                                                class="form-control text-right font-weight-bold text-success border-success"
-                                                readonly style="font-size: 1.25rem;" >
+
+                                        <!-- Billing Math -->
+                                        <div class="col-md-6">
+                                            <div class="row mb-2 align-items-center">
+                                                <div class="col-6 text-right"><strong>Subtotal (Packed Value) (₹)</strong></div>
+                                                <div class="col-6">
+                                                    <input type="text" id="calc_subtotal" name="subtotal_amount"
+                                                        class="form-control form-control-sm text-right font-weight-bold" readonly>
+                                                </div>
+                                            </div>
+
+                                            <div class="row mb-2 align-items-center">
+                                                <div class="col-6 text-right"><strong>Discount (%)</strong></div>
+                                                <div class="col-6">
+                                                    <input type="number" name="discount_percentage" id="calc_discount_p"
+                                                        class="form-control form-control-sm text-right" step="any" min="0" max="100" value="0.00">
+                                                </div>
+                                            </div>
+
+                                            <div class="row mb-2 align-items-center">
+                                                <div class="col-6 text-right"><strong>Discount Amt (₹)</strong></div>
+                                                <div class="col-6">
+                                                    <input type="number" name="discount_amount" id="calc_discount_v"
+                                                        class="form-control form-control-sm text-right" step="0.01" min="0" value="0.00">
+                                                </div>
+                                            </div>
+
+                                            <div class="row mb-2 align-items-center">
+                                                <div class="col-6 text-right"><strong>Other Charges (₹)</strong></div>
+                                                <div class="col-6">
+                                                    <input type="number" name="other_charges" id="calc_other_charges"
+                                                        class="form-control form-control-sm text-right" step="0.01" min="0" value="0.00">
+                                                </div>
+                                            </div>
+
+                                            <div class="row mb-2 align-items-center">
+                                                <div class="col-6 text-right"><strong>GST (%)</strong></div>
+                                                <div class="col-6">
+                                                    <input type="number" name="gst_percentage" id="calc_gst_p"
+                                                        class="form-control form-control-sm text-right" step="any" min="0" max="100" value="0.00">
+                                                </div>
+                                            </div>
+
+                                            <div class="row mb-2 align-items-center">
+                                                <div class="col-6 text-right"><strong>GST Amount (₹)</strong></div>
+                                                <div class="col-6">
+                                                    <input type="number" name="gst_amount" id="calc_gst_v"
+                                                        class="form-control form-control-sm text-right" step="any" min="0" value="0.00">
+                                                </div>
+                                            </div>
+
+                                            <hr class="my-2">
+
+                                            <div class="row align-items-center">
+                                                <div class="col-6 text-right">
+                                                    <h5 class="mb-0 font-weight-bold">Final Dispatch Amount (₹)</h5>
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="hidden" name="total_amount" id="final_total_amount_hidden">
+                                                    <input type="text" id="calc_grand_total"
+                                                        class="form-control text-right font-weight-bold text-success border-success"
+                                                        readonly style="font-size: 1.15rem;">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -449,16 +493,8 @@
 
         /* ================= CALCULATIONS ================= */
 
-        function calculateDispatchTotals() {
+        function calculateDispatchTotals(changedField = 'default') {
             let subtotal = 0;
-            let discountP = parseFloat($('#calc_discount_p').val()) || 0;
-            let gstP = parseFloat($('#calc_gst_p').val()) || 0;
-
-            // Get selected carton IDs
-            let selectedCartons = [];
-            $('.carton-checkbox:checked').each(function () {
-                selectedCartons.push($(this).val());
-            });
 
             // Map global prices
             let globalPrices = {};
@@ -476,21 +512,60 @@
                     let qty = parseFloat($(this).data('qty')) || 0;
                     let price = globalPrices[setId] || 0;
                     if(!price) {
-                         // Fallback to searching item level price if not in global mapper (safety)
                          price = parseFloat($(this).data('price')) || 0;
                     }
                     subtotal += (price * qty);
                 });
             });
 
-            let discountV = (subtotal * discountP) / 100;
-            let afterDiscount = subtotal - discountV;
-            let gstV = (afterDiscount * gstP) / 100;
-            let grandTotal = afterDiscount + gstV;
-
             $('#calc_subtotal').val(subtotal.toFixed(2));
-            $('#calc_discount_v').val(discountV.toFixed(2));
-            $('#calc_gst_v').val(gstV.toFixed(2));
+
+            // Discount linkage
+            let discountP = parseFloat($('#calc_discount_p').val()) || 0;
+            let discountV = parseFloat($('#calc_discount_v').val()) || 0;
+
+            if (changedField === 'discount_percentage') {
+                discountV = (subtotal * discountP) / 100;
+                $('#calc_discount_v').val(discountV.toFixed(2));
+            } else if (changedField === 'discount_amount') {
+                if (subtotal > 0) {
+                    discountP = (discountV / subtotal) * 100;
+                    $('#calc_discount_p').val(discountP.toFixed(6));
+                } else {
+                    discountP = 0;
+                    $('#calc_discount_p').val(0);
+                }
+            } else {
+                discountV = (subtotal * discountP) / 100;
+                $('#calc_discount_v').val(discountV.toFixed(2));
+            }
+
+            let afterDiscount = subtotal - discountV;
+            let otherCharges = parseFloat($('#calc_other_charges').val()) || 0;
+            let baseForGst = afterDiscount + otherCharges;
+
+            // GST linkage
+            let gstP = parseFloat($('#calc_gst_p').val()) || 0;
+            let gstV = parseFloat($('#calc_gst_v').val()) || 0;
+
+            if (changedField === 'gst_percentage') {
+                gstV = (baseForGst * gstP) / 100;
+                $('#calc_gst_v').val(gstV.toFixed(2));
+            } else if (changedField === 'gst_amount') {
+                if (baseForGst > 0) {
+                    gstP = (gstV / baseForGst) * 100;
+                    $('#calc_gst_p').val(gstP.toFixed(6));
+                } else {
+                    gstP = 0;
+                    $('#calc_gst_p').val(0);
+                }
+            } else {
+                gstV = (baseForGst * gstP) / 100;
+                $('#calc_gst_v').val(gstV.toFixed(2));
+            }
+
+            let grandTotal = baseForGst + gstV;
+
             $('#calc_grand_total').val(grandTotal.toFixed(2));
             $('#final_total_amount_hidden').val(grandTotal.toFixed(2));
         }
@@ -758,12 +833,28 @@
 
             /* ================= CALCULATION EVENTS ================= */
 
-            $(document).on('input', '.global-price-input, #calc_discount_p, #calc_gst_p', function () {
-                calculateDispatchTotals();
+            $(document).on('input', '.global-price-input, #calc_other_charges', function () {
+                calculateDispatchTotals('default');
+            });
+
+            $(document).on('input', '#calc_discount_p', function () {
+                calculateDispatchTotals('discount_percentage');
+            });
+
+            $(document).on('input', '#calc_discount_v', function () {
+                calculateDispatchTotals('discount_amount');
+            });
+
+            $(document).on('input', '#calc_gst_p', function () {
+                calculateDispatchTotals('gst_percentage');
+            });
+
+            $(document).on('input', '#calc_gst_v', function () {
+                calculateDispatchTotals('gst_amount');
             });
 
             $(document).on('change', '.carton-checkbox, .select-all-cartons', function () {
-                calculateDispatchTotals();
+                calculateDispatchTotals('default');
             });
 
             $('#customer_id').on('change', function () {

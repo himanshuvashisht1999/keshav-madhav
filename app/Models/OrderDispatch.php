@@ -23,8 +23,11 @@ class OrderDispatch extends Model
         'gst_percentage',
         'discount_percentage',
         'discount_amount',
+        'gst_amount',
         'total_amount',
+        'other_charges',
         'status',
+        'remark',
         'is_paid',
         'created_by',
         'created_at',
@@ -51,6 +54,11 @@ class OrderDispatch extends Model
     public function customer()
     {
         return $this->belongsTo(MasterCustomer::class, 'customer_id');
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     public function getPaidAmountAttribute()

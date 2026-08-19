@@ -55,11 +55,16 @@ class OrderDispatchService
             $data_save = new OrderDispatch();
             $data_save->customer_id = $request->final_customer_id ?? $request->master_customer_id;
             $data_save->main_order_id = $request->final_order_no ?? $request->order_no;
-            $data_save->dispatch_date = now();
+            $data_save->dispatch_date = $request->dispatch_date ?? now();
+            $data_save->company_id = $request->company_id;
             $data_save->total_quantity = count($request->cartons);
             $data_save->gst_percentage = $request->gst_percentage ?? 0.00;
+            $data_save->gst_amount = $request->gst_amount ?? 0.00;
             $data_save->discount_percentage = $request->discount_percentage ?? 0.00;
+            $data_save->discount_amount = $request->discount_amount ?? 0.00;
             $data_save->total_amount = $request->total_amount ?? 0.00;
+            $data_save->other_charges = $request->other_charges ?? 0.00;
+            $data_save->remark = $request->remark;
             $data_save->status = 1;
             $data_save->save();
 

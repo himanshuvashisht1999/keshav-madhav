@@ -24,7 +24,7 @@ class OrderDispatchController extends Controller
     {
         $response['customers'] = $this->productOrderService->customers();
         $response['orders'] = $this->service->getOrders();
-        // dd($response);
+        $response['companies'] = \App\Models\Company::where('status', 1)->get();
         return view('admin.order_dispatch.create', $response);
     }
     public function store(Request $request)
@@ -53,6 +53,7 @@ class OrderDispatchController extends Controller
         if (!$data) {
             return redirect()->back()->with('error', 'Dispatch not found');
         }
+        $data['companies'] = \App\Models\Company::where('status', 1)->get();
         return view('admin.order_dispatch.view', $data);
     }
 
@@ -123,15 +124,43 @@ class OrderDispatchController extends Controller
             $data = $this->service->view(new Request(['id' => $dispatch->id]));
             $subtotal = $data['order_dispatch_data']['total_dispatch_amount'];
 
-            $discountAmount = $request->discount_amount ?? 0;
-            $gstPercentage = $request->gst_percentage ?? 5;
+            $discountAmount = floatval($request->discount_amount) ?? 0;
+            $discountPercentage = floatval($request->discount_percentage) ?? 0;
 
-            $gstAmount = (($subtotal - $discountAmount) * $gstPercentage) / 100;
-            $newGrandTotal = ($subtotal - $discountAmount) + $gstAmount;
+            // Bi-directional calculation
+            if ($request->filled('discount_percentage') && !$request->filled('discount_amount')) {
+                $discountAmount = ($subtotal * $discountPercentage) / 100;
+            } else if ($request->filled('discount_amount')) {
+                $discountPercentage = $subtotal > 0 ? ($discountAmount / $subtotal) * 100 : 0;
+            }
+
+            $otherCharges = floatval($request->other_charges) ?? 0;
+            $baseForGst = ($subtotal - $discountAmount) + $otherCharges;
+
+            $gstPercentage = floatval($request->gst_percentage) ?? 0;
+            $gstAmount = floatval($request->gst_amount) ?? 0;
+
+            if ($request->filled('gst_percentage') && !$request->filled('gst_amount')) {
+                $gstAmount = ($baseForGst * $gstPercentage) / 100;
+            } else if ($request->filled('gst_amount')) {
+                $gstPercentage = $baseForGst > 0 ? ($gstAmount / $baseForGst) * 100 : 0;
+            } else {
+                $gstAmount = ($baseForGst * $gstPercentage) / 100;
+            }
+
+            $newGrandTotal = $baseForGst + $gstAmount;
 
             // Update dispatch
+            $dispatch->company_id = $request->company_id;
+            if ($request->filled('dispatch_date')) {
+                $dispatch->dispatch_date = $request->dispatch_date;
+            }
+            $dispatch->discount_percentage = $discountPercentage;
             $dispatch->discount_amount = $discountAmount;
             $dispatch->gst_percentage = $gstPercentage;
+            $dispatch->gst_amount = $gstAmount;
+            $dispatch->other_charges = $otherCharges;
+            $dispatch->remark = $request->remark;
             $dispatch->total_amount = $newGrandTotal;
             $dispatch->save();
 
@@ -139,8 +168,6 @@ class OrderDispatchController extends Controller
             $diff = $oldGrandTotal - $newGrandTotal;
             $customer = \App\Models\MasterCustomer::find($dispatch->customer_id);
             if ($customer) {
-                // If new total is higher, they owe more (balance decreases)
-                // If old was 1000, new is 1200, diff is -200. balance += -200 => balance - 200.
                 $customer->balance += $diff;
                 $customer->save();
             }
