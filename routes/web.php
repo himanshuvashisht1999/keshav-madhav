@@ -838,6 +838,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             });
 
             Route::post('/store', [AdminInventoryController::class, 'store'])->name('store');
+            Route::post('/auto-assign-stock', [\App\Http\Controllers\Admin\Inventory\AutoAssignStockController::class, 'autoAssign'])->name('auto-assign-stock');
             Route::get('/get-size-set-info/{id}', [AdminInventoryController::class, 'getSizeSetInfo'])->name('get_size_set_info');
             Route::get('/get-product-full-details', [AdminInventoryController::class, 'getProductFullDetails'])->name('get_product_full_details');
             Route::get('/master-data', [AdminInventoryController::class, 'getMasterData'])->name('master_data');

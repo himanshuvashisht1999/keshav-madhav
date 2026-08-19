@@ -78,6 +78,7 @@
                                 <a href="#" id="export_pdf" class="btn btn-sm btn-danger shadow-sm ml-1" title="Export PDF">
                                     <i class="fas fa-file-pdf"></i>
                                 </a>
+
                             </div>
                         </div>
 
@@ -979,6 +980,7 @@
             $('.modal-thumbnail').css('border-color', '#ddd');
             event.currentTarget.querySelector('img').style.borderColor = '#007bff';
         }
+
     </script>
     <style>
         .btn-icon {

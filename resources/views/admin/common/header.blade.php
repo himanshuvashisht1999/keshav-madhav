@@ -45,10 +45,17 @@
             <i class="fas fa-expand-arrows-alt"></i>
           </a>
         </li>
+        <!-- 
         <li class="nav-item">
           <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#" role="button">
             <i class="fas fa-th-large"></i>
           </a>
+        </li>
+        -->
+        <li class="nav-item">
+            <a class="nav-link text-info" href="#" id="global_auto_assign_stock" title="Auto Assign Stock for ADVANCE SAMPLE">
+                <i class="fas fa-magic"></i>
+            </a>
         </li>
       </ul>
     </nav>
