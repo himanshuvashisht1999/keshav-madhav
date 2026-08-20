@@ -1048,11 +1048,13 @@
                     }
                 });
 
-                const otherCharges = parseFloat($('#other_charges').val()) || 0;
-                const discountAmount = parseFloat($('#discountAmountInput').val()) || 0;
-                const taxableAmount = subTotal - discountAmount;
+                subTotal = Math.ceil(subTotal);
 
-                let gstAmount = parseFloat($('#gstAmountInput').val()) || 0;
+                const otherCharges = Math.ceil(parseFloat($('#other_charges').val()) || 0);
+                const discountAmount = Math.ceil(parseFloat($('#discountAmountInput').val()) || 0);
+                const taxableAmount = Math.ceil(subTotal - discountAmount);
+
+                let gstAmount = Math.ceil(parseFloat($('#gstAmountInput').val()) || 0);
 
                 const grandTotal = Math.ceil(taxableAmount + gstAmount + otherCharges);
 

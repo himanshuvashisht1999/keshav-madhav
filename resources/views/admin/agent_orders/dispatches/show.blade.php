@@ -815,8 +815,8 @@
                 let row = $(this).closest('.item-edit-row');
                 let mrp = parseFloat(row.find('.item-mrp').data('mrp')) || 0;
                 let discount = parseFloat($(this).val()) || 0;
-                let salePrice = mrp - (mrp * (discount / 100));
-                row.find('.item-sale-price').val(salePrice.toFixed(2));
+                let salePrice = Math.ceil(mrp - (mrp * (discount / 100)));
+                row.find('.item-sale-price').val(salePrice);
             });
 
             // Handle Item Sale Price calculation back to Discount
@@ -842,8 +842,8 @@
                     let mrp = parseFloat($(this).find('.item-mrp').data('mrp')) || 0;
                     if(mrp > 0) {
                         $(this).find('.item-discount').val(globalDiscount);
-                        let salePrice = mrp - (mrp * (globalDiscount / 100));
-                        $(this).find('.item-sale-price').val(salePrice.toFixed(2));
+                        let salePrice = Math.ceil(mrp - (mrp * (globalDiscount / 100)));
+                        $(this).find('.item-sale-price').val(salePrice);
                     }
                 });
             });

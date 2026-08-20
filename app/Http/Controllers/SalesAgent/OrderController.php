@@ -1562,7 +1562,7 @@ class OrderController extends Controller
                     }
                     
                     $mrp = $variant->mrp ?? 0;
-                    $unit_price = $mrp - ($mrp * $discount_percentage / 100);
+                    $unit_price = ceil($mrp - ($mrp * $discount_percentage / 100));
                     
                     $main_image = $main_image_base;
                     if (!$main_image && $variant && $variant->image) {

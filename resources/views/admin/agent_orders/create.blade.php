@@ -657,40 +657,42 @@
                     }
                 });
 
-                const otherCharges = parseFloat($('#other_charges').val()) || 0;
+                subTotal = Math.ceil(subTotal);
+
+                const otherCharges = Math.ceil(parseFloat($('#other_charges').val()) || 0);
                 let discountAmount = 0;
                 let discountPercent = parseFloat($('#discountPercentage').val()) || 0;
 
                 if (discount_mode === 'amount') {
-                    discountAmount = parseFloat($('#discountAmountInput').val()) || 0;
+                    discountAmount = Math.ceil(parseFloat($('#discountAmountInput').val()) || 0);
                     // update percentage silently if not focused
                     if (!$('#discountPercentage').is(':focus') && subTotal > 0) {
                         $('#discountPercentage').val((discountAmount / subTotal * 100).toFixed(6));
                     }
                 } else {
-                    discountAmount = subTotal * (discountPercent / 100);
+                    discountAmount = Math.ceil(subTotal * (discountPercent / 100));
                     if (!$('#discountAmountInput').is(':focus')) {
-                        $('#discountAmountInput').val(discountAmount.toFixed(2));
+                        $('#discountAmountInput').val(discountAmount);
                     }
                 }
 
-                const taxableAmount = subTotal - discountAmount;
+                const taxableAmount = Math.ceil(subTotal - discountAmount);
                 let gstAmount = 0;
                 let gstPercent = parseFloat($('#gstPercentage').val()) || 0;
 
                 if (gst_mode === 'amount') {
-                    gstAmount = parseFloat($('#gstAmountInput').val()) || 0;
+                    gstAmount = Math.ceil(parseFloat($('#gstAmountInput').val()) || 0);
                     if (!$('#gstPercentage').is(':focus') && taxableAmount > 0) {
                         $('#gstPercentage').val((gstAmount / taxableAmount * 100).toFixed(6));
                     }
                 } else {
-                    gstAmount = taxableAmount * (gstPercent / 100);
+                    gstAmount = Math.ceil(taxableAmount * (gstPercent / 100));
                     if (!$('#gstAmountInput').is(':focus')) {
-                        $('#gstAmountInput').val(gstAmount.toFixed(2));
+                        $('#gstAmountInput').val(gstAmount);
                     }
                 }
 
-                const grandTotal = taxableAmount + gstAmount + otherCharges;
+                const grandTotal = Math.ceil(taxableAmount + gstAmount + otherCharges);
 
                 $('#selectedCount').text(totalBoxes);
                 $('#subTotalAmount').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));

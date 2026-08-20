@@ -2098,9 +2098,24 @@ class AgentOrderController extends Controller
 
             $box_nos = $itemsToDispatch->pluck('box_no');
 
-            // 1. Calculate Dispatch Amount (including GST)
+            // 1. Calculate Dispatch Amount & Apply Latest Brand Discount (including GST)
             $dispatchSubtotal = 0;
             foreach ($itemsToDispatch as $item) {
+                $product = DB::table('production_goods')->where('id', $item->product_id)->first();
+                if ($product) {
+                    $discount_percentage = DB::table('sales_agent_brand_discounts')
+                        ->where('sales_agent_id', $order->sales_agent_id)
+                        ->where('brand_id', $product->brand_id)
+                        ->value('discount_percentage') ?? 0;
+
+                    $new_selling_price = ceil($item->mrp - ($item->mrp * $discount_percentage / 100));
+
+                    if ($new_selling_price != $item->selling_price) {
+                        DB::table('agent_order_items')->where('id', $item->id)->update(['selling_price' => $new_selling_price]);
+                        $item->selling_price = $new_selling_price; // update object for calculation below
+                    }
+                }
+
                 $dispatchSubtotal += ($item->quantity * $item->selling_price);
             }
             $dispatchSubtotal = ceil($dispatchSubtotal);
@@ -2812,6 +2827,21 @@ class AgentOrderController extends Controller
                 // 1. Calculate Dispatch Amount & Handle Split Lines
                 $subtotal = 0;
                 foreach ($itemsToDispatch as $item) {
+                    $product = DB::table('production_goods')->where('id', $item->product_id)->first();
+                    if ($product) {
+                        $discount_percentage = DB::table('sales_agent_brand_discounts')
+                            ->where('sales_agent_id', $order->sales_agent_id)
+                            ->where('brand_id', $product->brand_id)
+                            ->value('discount_percentage') ?? 0;
+
+                        $new_selling_price = ceil($item->mrp - ($item->mrp * $discount_percentage / 100));
+
+                        if ($new_selling_price != $item->selling_price) {
+                            DB::table('agent_order_items')->where('id', $item->id)->update(['selling_price' => $new_selling_price]);
+                            $item->selling_price = $new_selling_price; // update object for calculation below
+                        }
+                    }
+
                     $scannedPcs = $item->scanned_quantity;
                     $subtotal += ($scannedPcs * $item->selling_price);
 
