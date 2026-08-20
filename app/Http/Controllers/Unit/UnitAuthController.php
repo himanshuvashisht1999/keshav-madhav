@@ -1635,10 +1635,10 @@ class UnitAuthController extends Controller
         $endDate = $request->get('end_date');
         $isDelayed = $request->get('is_delayed');
 
-        $ass1Query = \App\Models\OrderStageTransaction::where('sub_stage_id_to', $unitId);
-        $ass2Query = \App\Models\OrderPrintingStageTransaction::where('sub_stage_id_to', $unitId);
-        $ass3Query = \App\Models\OrderPrintingToStichingTransaction::where('sub_stage_id_to', $unitId);
-        $ass4Query = \App\Models\OrderGodamStageTransaction::where('sub_stage_id_to', $unitId);
+        $ass1Query = \App\Models\OrderStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage']);
+        $ass2Query = \App\Models\OrderPrintingStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage']);
+        $ass3Query = \App\Models\OrderPrintingToStichingTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage']);
+        $ass4Query = \App\Models\OrderGodamStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage']);
 
         if ($lotNo) {
             $ass1Query->where('lot_no', $lotNo);
@@ -1685,8 +1685,33 @@ class UnitAuthController extends Controller
                 $itemsToSum = $items;
             }
             
+            $sentBy = '-';
+            if ($firstItem->source == 'printing' || $firstItem->source == 'printing_to_stitching' || $firstItem->source == 'godam') {
+                $sentBy = $firstItem->from_stage->name ?? '-';
+            } elseif ($firstItem->source == 'cutting') {
+                $sentBy = $firstItem->from_stage->name ?? 'Cutting';
+            }
+
+            // Fetch extra info via OrderLot
+            $orderLot = \App\Models\OrderLot::with(['orderProductSet.orderCuttingStages', 'orderProductSet.size_measurement'])->where('lot_no', $lot_no)->first();
+            $designNo = $orderLot?->orderProductSet?->design_number ?? '-';
+            $sizeSet = $orderLot?->orderProductSet?->size_measurement?->name ?? '-';
+            
+            // Total cutting pieces
+            $totalCuttingPieces = 0;
+            $rolls = \App\Models\FabricRollAssigning::with('fabricRollAssigningsDetail')->where('lot_no', $lot_no)->get();
+            if ($rolls->isNotEmpty()) {
+                $totalCuttingPieces = $rolls->flatMap(function($roll) {
+                    return $roll->fabricRollAssigningsDetail;
+                })->sum('quantity');
+            }
+
             return [
                 'lot_no' => $lot_no,
+                'design_no' => $designNo,
+                'size_set' => $sizeSet,
+                'total_cutting_pieces' => $totalCuttingPieces,
+                'sent_by' => $sentBy,
                 'total_assigned' => $itemsToSum->sum('quantity'),
                 'total_pending' => $itemsToSum->sum('remaining_quantity'),
                 'assigned_date' => $assignedDate,
