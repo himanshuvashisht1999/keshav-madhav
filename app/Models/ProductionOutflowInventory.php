@@ -28,8 +28,14 @@ class ProductionOutflowInventory extends Model
         'responsible_stage_id',
         'responsible_unit_id',
         'barcode',
-        'remarks'
+        'remarks',
+        'status'
     ];
+
+    public function disposeHistory()
+    {
+        return $this->hasOne(ProductionOutflowDispose::class, 'production_outflow_inventory_id');
+    }
 
     public function orderMain()
     {

@@ -739,6 +739,69 @@ class ReportController extends Controller
         return $pdf->download('outflows-report-' . date('YmdHis') . '.pdf');
     }
 
+    public function disposeOutflows(Request $request)
+    {
+        $request->validate([
+            'outflow_ids' => 'required|array',
+            'outflow_ids.*' => 'exists:production_outflow_inventories,id',
+            'reason' => 'nullable|string',
+            'is_debit' => 'nullable|boolean',
+            'adjustment_master_id' => 'required_if:is_debit,1',
+            'ref_id' => 'required_if:is_debit,1',
+            'amount' => 'required_if:is_debit,1|numeric'
+        ]);
+
+        $outflows = \App\Models\ProductionOutflowInventory::whereIn('id', $request->outflow_ids)->get();
+        $isDebit = $request->input('is_debit', false) || $request->input('is_debit') == '1';
+
+        if ($isDebit) {
+            foreach ($outflows as $outflow) {
+                if ($outflow->type !== 'debit') {
+                    return response()->json(['success' => false, 'message' => 'Cannot mix debit and non-debit outflows.']);
+                }
+            }
+
+            $batchId = 'ADJ-' . time();
+            \App\Models\PaymentAdjustment::create([
+                'batch_id' => $batchId,
+                'adjustment_master_id' => $request->adjustment_master_id,
+                'ref_id' => $request->ref_id,
+                'type' => 'credit',
+                'payment_mode' => 'adjustment',
+                'payment_account_id' => 0,
+                'amount' => $request->amount,
+                'date' => now()->format('Y-m-d'),
+                'remarks' => $request->reason,
+            ]);
+        } else {
+            foreach ($outflows as $outflow) {
+                if ($outflow->type === 'debit') {
+                    return response()->json(['success' => false, 'message' => 'Missing debit ledger information.']);
+                }
+            }
+        }
+
+        foreach ($outflows as $outflow) {
+            $outflow->status = 'disposed';
+            $outflow->save();
+
+            \App\Models\ProductionOutflowDispose::create([
+                'production_outflow_inventory_id' => $outflow->id,
+                'reason' => $request->reason,
+                'created_by' => auth()->id()
+            ]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Selected outflows disposed successfully.']);
+    }
+
+    public function outflowsDisposeHistoryReport(Request $request)
+    {
+        $request->merge(['is_pagination' => true]);
+        $response = $this->service->outflowsDisposeHistoryReport($request);
+        return view('admin.report.outflows_history', $response);
+    }
+
     public function unitAssignmentsPdf(Request $request)
     {
         $response = $this->service->unitAssignments($request);

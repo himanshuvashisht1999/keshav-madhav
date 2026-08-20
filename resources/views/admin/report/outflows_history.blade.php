@@ -63,7 +63,7 @@
                 {{-- FILTERS CARD (COMPACT ERP DESIGN) --}}
                 <div class="card border-0 shadow-sm mb-3" style="border-radius: 12px;">
                     <div class="card-body p-3">
-                        <form method="GET" action="{{ route('admin.reports.outflows') }}">
+                        <form method="GET" action="{{ route('admin.reports.outflows.history') }}">
                             <div class="row align-items-end">
                                 <!-- Type -->
                                 <div class="col-md-3 mb-2">
@@ -136,11 +136,9 @@
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <button type="button" class="btn btn-warning font-weight-bold" id="btnDisposeSelected">
-                        <i class="fas fa-trash-alt mr-1"></i> Dispose Selected
-                    </button>
-                    <a href="{{ route('admin.reports.outflows.history') }}" class="btn btn-dark font-weight-bold">
-                        <i class="fas fa-history mr-1"></i> View Dispose History
+                    <h4 class="mb-0 font-weight-bold">Dispose History</h4>
+                    <a href="{{ route('admin.reports.outflows') }}" class="btn btn-secondary font-weight-bold">
+                        <i class="fas fa-arrow-left mr-1"></i> Back to Outflows
                     </a>
                 </div>
 
@@ -155,9 +153,6 @@
                             <table class="table table-hover align-middle mb-0 text-center text-sm table-report">
                                 <thead class="bg-light text-muted small text-uppercase">
                                     <tr>
-                                        <th class="py-3" style="width: 40px;">
-                                            <input type="checkbox" id="selectAll">
-                                        </th>
                                         <th class="py-3" style="width: 60px;">Sr No</th>
                                         <th class="py-3">Log Date</th>
                                         <th class="py-3">Slip ID</th>
@@ -167,7 +162,8 @@
                                         <th class="py-3">Size & Color</th>
                                         <th class="py-3">Outflow Quantity</th>
                                         <th class="py-3">Responsible Unit</th>
-                                        <th class="py-3 text-left">Remarks</th>
+                                        <th class="py-3 text-left">Dispose Reason</th>
+                                        <th class="py-3 text-left">Disposed By</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -179,9 +175,6 @@
                                             if ($out->type === 'dead') $badgeClass = 'badge-soft-dark';
                                         @endphp
                                         <tr class="border-bottom">
-                                            <td class="py-3">
-                                                <input type="checkbox" class="row-checkbox" value="{{ $out->id }}" data-type="{{ $out->type }}" data-amount="{{ $out->total_amount ?? 0 }}">
-                                            </td>
                                             <td class="py-3 text-muted font-weight-bold">
                                                 {{ $loop->iteration + ($outflows->currentPage() - 1) * $outflows->perPage() }}
                                             </td>
@@ -214,7 +207,12 @@
                                                 {{ $out->responsibleUnit->name ?? 'N/A' }}
                                             </td>
                                             <td class="py-3 text-left text-muted text-xs" style="max-width: 200px; white-space: normal; word-break: break-all;">
-                                                {{ $out->remarks ?? '-' }}
+                                                {{ $out->disposeHistory->reason ?? '-' }}
+                                            </td>
+                                            <td class="py-3 text-left text-muted text-xs">
+                                                {{ $out->disposeHistory->creator->first_name ?? 'Admin' }} {{ $out->disposeHistory->creator->last_name ?? '' }}
+                                                <br>
+                                                <small>{{ $out->disposeHistory->created_at ? $out->disposeHistory->created_at->format('d-m-Y H:i') : '' }}</small>
                                             </td>
                                         </tr>
                                     @empty
@@ -240,190 +238,4 @@
             </div>
         </section>
     </div>
-
-    <div class="modal fade" id="disposeModal" tabindex="-1" role="dialog" aria-labelledby="disposeModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <form id="disposeForm">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="disposeModalLabel">Dispose Outflows</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="alert alert-warning" id="disposeWarning" style="display: none;"></div>
-                        
-                        <div id="debitFields" style="display: none;">
-                            <div class="form-group">
-                                <label for="masterType">Master Type</label>
-                                <select class="form-control" id="masterType" name="master_type">
-                                    <option value="">-- Select Master Type --</option>
-                                    @foreach($masters as $master)
-                                        <option value="{{ $master->id }}">{{ $master->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="subItem">Select Item</label>
-                                <select class="form-control" id="subItem" name="sub_item">
-                                    <option value="">-- Select Item --</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="debitAmount">Amount</label>
-                                <input type="number" class="form-control" id="debitAmount" name="amount" step="0.01">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="disposeReason">Reason / Remarks</label>
-                            <textarea class="form-control" id="disposeReason" name="reason" rows="3" required placeholder="Enter reason here..."></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="btnSubmitDispose">Confirm Dispose</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        $(document).ready(function() {
-            function updateCheckboxState() {
-                let hasDebitChecked = $('.row-checkbox:checked[data-type="debit"]').length > 0;
-                let hasNonDebitChecked = $('.row-checkbox:checked[data-type!="debit"]').length > 0;
-
-                if (hasDebitChecked) {
-                    $('.row-checkbox[data-type!="debit"]').prop('disabled', true);
-                    $('#selectAll').prop('disabled', true); // Disable select all to prevent mixing
-                } else if (hasNonDebitChecked) {
-                    $('.row-checkbox[data-type="debit"]').prop('disabled', true);
-                    $('#selectAll').prop('disabled', true);
-                } else {
-                    $('.row-checkbox').prop('disabled', false);
-                    $('#selectAll').prop('disabled', false);
-                }
-            }
-
-            $('#selectAll').change(function() {
-                if (!$(this).prop('disabled')) {
-                    $('.row-checkbox:not([disabled])').prop('checked', $(this).prop('checked'));
-                    updateCheckboxState();
-                }
-            });
-
-            $('.row-checkbox').change(function() {
-                if ($('.row-checkbox:checked').length === $('.row-checkbox:not([disabled])').length && $('.row-checkbox:checked').length > 0) {
-                    $('#selectAll').prop('checked', true);
-                } else {
-                    $('#selectAll').prop('checked', false);
-                }
-                updateCheckboxState();
-            });
-
-            $('#masterType').change(function() {
-                let masterId = $(this).val();
-                $('#subItem').html('<option value="">-- Loading... --</option>');
-                if (masterId) {
-                    $.ajax({
-                        url: "{{ route('admin.payment.adjustment.getSubMastersAll') }}",
-                        type: "GET",
-                        success: function(res) {
-                            let options = '<option value="">-- Select Item --</option>';
-                            let filtered = res.filter(item => item.master_id == masterId);
-                            filtered.forEach(function(item) {
-                                options += `<option value="${item.id}">${item.name}</option>`;
-                            });
-                            $('#subItem').html(options);
-                        }
-                    });
-                } else {
-                    $('#subItem').html('<option value="">-- Select Item --</option>');
-                }
-            });
-
-            $('#btnDisposeSelected').click(function() {
-                let selectedIds = [];
-                let hasDebit = false;
-                let totalAmount = 0;
-                
-                $('.row-checkbox:checked').each(function() {
-                    selectedIds.push($(this).val());
-                    if ($(this).data('type') === 'debit') {
-                        hasDebit = true;
-                        totalAmount += parseFloat($(this).data('amount')) || 0;
-                    }
-                });
-
-                if (selectedIds.length === 0) {
-                    Swal.fire('Warning', 'Please select at least one record to dispose.', 'warning');
-                    return;
-                }
-
-                if (hasDebit) {
-                    $('#debitFields').show();
-                    $('#masterType').prop('required', true);
-                    $('#subItem').prop('required', true);
-                    $('#debitAmount').prop('required', true).val(totalAmount.toFixed(2));
-                } else {
-                    $('#debitFields').hide();
-                    $('#masterType').prop('required', false);
-                    $('#subItem').prop('required', false);
-                    $('#debitAmount').prop('required', false);
-                }
-
-                $('#disposeReason').val('');
-                $('#disposeModal').modal('show');
-            });
-
-            $('#disposeForm').submit(function(e) {
-                e.preventDefault();
-                let selectedIds = [];
-                let hasDebit = false;
-                $('.row-checkbox:checked').each(function() {
-                    selectedIds.push($(this).val());
-                    if ($(this).data('type') === 'debit') {
-                        hasDebit = true;
-                    }
-                });
-
-                let data = {
-                    _token: "{{ csrf_token() }}",
-                    outflow_ids: selectedIds,
-                    reason: $('#disposeReason').val(),
-                    is_debit: hasDebit ? 1 : 0
-                };
-
-                if (hasDebit) {
-                    data.adjustment_master_id = $('#masterType').val();
-                    data.ref_id = $('#subItem').val();
-                    data.amount = $('#debitAmount').val();
-                }
-
-                $.ajax({
-                    url: "{{ route('admin.reports.outflows.dispose') }}",
-                    type: "POST",
-                    data: data,
-                    success: function(res) {
-                        if (res.success) {
-                            $('#disposeModal').modal('hide');
-                            Swal.fire('Success', res.message, 'success').then(() => {
-                                location.reload();
-                            });
-                        } else {
-                            Swal.fire('Error', res.message, 'error');
-                        }
-                    },
-                    error: function(err) {
-                        Swal.fire('Error', 'An error occurred while disposing.', 'error');
-                    }
-                });
-            });
-        });
-    </script>
 @endsection

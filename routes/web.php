@@ -1399,6 +1399,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/outflows', [AdminReportController::class, 'outflowsReport'])->name('outflows');
             Route::get('/outflows/export', [AdminReportController::class, 'outflowsReportExport'])->name('outflows.export');
             Route::get('/outflows/pdf', [AdminReportController::class, 'outflowsReportPdf'])->name('outflows.pdf');
+            Route::post('/outflows/dispose', [AdminReportController::class, 'disposeOutflows'])->name('outflows.dispose');
+            Route::get('/outflows/history', [AdminReportController::class, 'outflowsDisposeHistoryReport'])->name('outflows.history');
 
             Route::get('/design-wip', [AdminReportController::class, 'designWip'])->name('design-wip');
             Route::get('/design-wip/api/customers', [AdminReportController::class, 'designWipApiCustomers'])->name('design-wip.api.customers');
