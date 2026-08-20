@@ -224,13 +224,14 @@
                 <thead>
                     <tr>
                         <th>Lot No</th>
-                        <th>Total Cutting Pieces</th>
-                        <th>Design No</th>
+                        <th>Cutting Pieces</th>
                         <th>Size Set</th>
+                        <th>Assign Qty</th>
+                        <th>Delivery QTY</th>
+                        <th>Balance</th>
                         <th>Sent By</th>
-                        <th>Assigned Qty</th>
-                        <th>Pending Qty</th>
-                        <th>Assigned Date</th>
+                        <th>Design Number</th>
+                        <th>Assign Date</th>
                         <th>Estimated Date</th>
                     </tr>
                 </thead>
@@ -239,17 +240,15 @@
                         <tr>
                             <td data-label="Lot No">
                                 <strong>{{ $task['lot_no'] }}</strong>
-                                @if($task['is_delayed'])
-                                    <span class="badge-delayed">Delayed</span>
-                                @endif
                             </td>
-                            <td data-label="Total Cutting Pieces">{{ number_format($task['total_cutting_pieces']) }}</td>
-                            <td data-label="Design No">{{ $task['design_no'] }}</td>
+                            <td data-label="Cutting Pieces">{{ number_format($task['total_cutting_pieces']) }}</td>
                             <td data-label="Size Set">{{ $task['size_set'] }}</td>
+                            <td data-label="Assign Qty">{{ number_format($task['total_assigned']) }}</td>
+                            <td data-label="Delivery QTY">{{ number_format($task['total_assigned'] - $task['total_pending']) }}</td>
+                            <td data-label="Balance" style="font-weight: 700; color: #d97706;">{{ number_format($task['total_pending']) }}</td>
                             <td data-label="Sent By">{{ $task['sent_by'] }}</td>
-                            <td data-label="Assigned Qty">{{ number_format($task['total_assigned']) }}</td>
-                            <td data-label="Pending Qty" style="font-weight: 700; color: #d97706;">{{ number_format($task['total_pending']) }}</td>
-                            <td data-label="Assigned Date">{{ $task['assigned_date'] ? \Carbon\Carbon::parse($task['assigned_date'])->format('d M Y') : '-' }}</td>
+                            <td data-label="Design Number">{{ $task['design_no'] }}</td>
+                            <td data-label="Assign Date">{{ $task['assigned_date'] ? \Carbon\Carbon::parse($task['assigned_date'])->format('d M Y') : '-' }}</td>
                             <td data-label="Estimated Date">{{ $task['estimated_date'] ? \Carbon\Carbon::parse($task['estimated_date'])->format('d M Y') : '-' }}</td>
                         </tr>
                     @empty

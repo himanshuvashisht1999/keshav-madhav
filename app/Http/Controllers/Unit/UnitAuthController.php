@@ -1635,10 +1635,10 @@ class UnitAuthController extends Controller
         $endDate = $request->get('end_date');
         $isDelayed = $request->get('is_delayed');
 
-        $ass1Query = \App\Models\OrderStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage']);
-        $ass2Query = \App\Models\OrderPrintingStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage']);
-        $ass3Query = \App\Models\OrderPrintingToStichingTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage']);
-        $ass4Query = \App\Models\OrderGodamStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage']);
+        $ass1Query = \App\Models\OrderStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster']);
+        $ass2Query = \App\Models\OrderPrintingStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster']);
+        $ass3Query = \App\Models\OrderPrintingToStichingTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster']);
+        $ass4Query = \App\Models\OrderGodamStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster']);
 
         if ($lotNo) {
             $ass1Query->where('lot_no', $lotNo);
@@ -1686,10 +1686,15 @@ class UnitAuthController extends Controller
             }
             
             $sentBy = '-';
-            if ($firstItem->source == 'printing' || $firstItem->source == 'printing_to_stitching' || $firstItem->source == 'godam') {
-                $sentBy = $firstItem->from_stage->name ?? '-';
-            } elseif ($firstItem->source == 'cutting') {
-                $sentBy = $firstItem->from_stage->name ?? 'Cutting';
+            $stageName = $firstItem->from_stage->name ?? ($firstItem->source == 'cutting' ? 'Cutting' : '-');
+            $unitName = $firstItem->getFromUnitMaster->name ?? null;
+            
+            if ($stageName !== '-' && $unitName) {
+                $sentBy = $stageName . ' (' . $unitName . ')';
+            } elseif ($unitName) {
+                $sentBy = $unitName;
+            } elseif ($stageName !== '-') {
+                $sentBy = $stageName;
             }
 
             // Fetch extra info via OrderLot
