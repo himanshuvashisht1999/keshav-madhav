@@ -677,12 +677,12 @@
 
             // Invoice Modal Calculations
             function calculateInvoice(source) {
-                const totalAmount = parseFloat($('#total_amount').val()) || 0;
-                let discountAmount = parseFloat($('#discount_amount').val()) || 0;
+                const totalAmount = Math.ceil(parseFloat($('#total_amount').val()) || 0);
+                let discountAmount = Math.ceil(parseFloat($('#discount_amount').val()) || 0);
                 let discountPercentage = parseFloat($('#discount_percentage').val()) || 0;
 
                 if (source === 'discount_percentage') {
-                    discountAmount = totalAmount * (discountPercentage / 100);
+                    discountAmount = Math.ceil(totalAmount * (discountPercentage / 100));
                     $('#discount_amount').val(discountAmount.toFixed(2));
                 } else if (source === 'discount_amount' || source === 'total_amount') {
                     if (totalAmount > 0) {
@@ -694,16 +694,16 @@
                 }
                 
                 // Refresh discountAmount in case it was modified
-                discountAmount = parseFloat($('#discount_amount').val()) || 0;
+                discountAmount = Math.ceil(parseFloat($('#discount_amount').val()) || 0);
 
-                const otherCharges = parseFloat($('#other_charges').val()) || 0;
+                const otherCharges = Math.ceil(parseFloat($('#other_charges').val()) || 0);
                 const taxableAmount = totalAmount - discountAmount;
 
                 let gstPercentage = parseFloat($('#gst_percentage').val()) || 0;
-                let gstAmount = parseFloat($('#gst_amount_input').val()) || 0;
+                let gstAmount = Math.ceil(parseFloat($('#gst_amount_input').val()) || 0);
 
                 if (source === 'gst_percentage') {
-                    gstAmount = taxableAmount * (gstPercentage / 100);
+                    gstAmount = Math.ceil(taxableAmount * (gstPercentage / 100));
                     $('#gst_amount_input').val(gstAmount.toFixed(2));
                 } else if (source === 'gst_amount') {
                     if (taxableAmount > 0) {
@@ -714,7 +714,7 @@
                     }
                 } else {
                     // Default/Other fields changed - update amount from percentage
-                    gstAmount = taxableAmount * (gstPercentage / 100);
+                    gstAmount = Math.ceil(taxableAmount * (gstPercentage / 100));
                     $('#gst_amount_input').val(gstAmount.toFixed(2));
                 }
 

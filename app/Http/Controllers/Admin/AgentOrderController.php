@@ -461,24 +461,25 @@ class AgentOrderController extends Controller
             }
         }
 
-        $other_charges = $request->other_charges ?? 0;
+        $total_amount = ceil($total_amount);
+        $other_charges = ceil($request->other_charges ?? 0);
 
         if ($request->filled('discount_amount')) {
-            $discount_amount = (float) $request->discount_amount;
+            $discount_amount = ceil((float) $request->discount_amount);
             $discount_percentage = ($total_amount > 0) ? ($discount_amount / $total_amount * 100) : 0;
         } else {
             $discount_percentage = $request->discount_percentage ?? 0;
-            $discount_amount = ($total_amount * $discount_percentage / 100);
+            $discount_amount = ceil($total_amount * $discount_percentage / 100);
         }
 
         $taxable_amount = $total_amount - $discount_amount;
 
         if ($request->filled('gst_amount')) {
-            $gst_amount = (float) $request->gst_amount;
+            $gst_amount = ceil((float) $request->gst_amount);
             $gst_percentage = ($taxable_amount > 0) ? ($gst_amount / $taxable_amount * 100) : 0;
         } else {
             $gst_percentage = $request->gst_percentage ?? 5.00;
-            $gst_amount = $taxable_amount * ($gst_percentage / 100);
+            $gst_amount = ceil($taxable_amount * ($gst_percentage / 100));
         }
 
         $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
@@ -1549,24 +1550,25 @@ class AgentOrderController extends Controller
         }
 
 
-        $other_charges = $request->other_charges ?? 0;
+        $total_amount = ceil($total_amount);
+        $other_charges = ceil($request->other_charges ?? 0);
 
         if ($request->filled('discount_amount')) {
-            $discount_amount = (float) $request->discount_amount;
+            $discount_amount = ceil((float) $request->discount_amount);
             $discount_percentage = ($total_amount > 0) ? ($discount_amount / $total_amount * 100) : 0;
         } else {
             $discount_percentage = $request->discount_percentage ?? 0;
-            $discount_amount = ($total_amount * $discount_percentage / 100);
+            $discount_amount = ceil($total_amount * $discount_percentage / 100);
         }
 
         $taxable_amount = $total_amount - $discount_amount;
 
         if ($request->filled('gst_amount')) {
-            $gst_amount = (float) $request->gst_amount;
+            $gst_amount = ceil((float) $request->gst_amount);
             $gst_percentage = ($taxable_amount > 0) ? ($gst_amount / $taxable_amount * 100) : 0;
         } else {
             $gst_percentage = $request->has('gst_percentage') ? $request->gst_percentage : ($order->gst_percentage ?: 5.00);
-            $gst_amount = $taxable_amount * ($gst_percentage / 100);
+            $gst_amount = ceil($taxable_amount * ($gst_percentage / 100));
         }
 
         $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
@@ -2101,9 +2103,10 @@ class AgentOrderController extends Controller
             foreach ($itemsToDispatch as $item) {
                 $dispatchSubtotal += ($item->quantity * $item->selling_price);
             }
+            $dispatchSubtotal = ceil($dispatchSubtotal);
             $gstPercentage = $order->gst_percentage ?? 0;
-            $dispatchGst = $dispatchSubtotal * ($gstPercentage / 100);
-            $dispatchTotal = $dispatchSubtotal + $dispatchGst;
+            $dispatchGst = ceil($dispatchSubtotal * ($gstPercentage / 100));
+            $dispatchTotal = ceil($dispatchSubtotal + $dispatchGst);
 
             // 2. Update Party Balance (Decrease because they now owe this amount)
             if ($order->party_type === 'vendor') {
@@ -2509,7 +2512,8 @@ class AgentOrderController extends Controller
                 ]);
             }
 
-            $gst = $subtotal * (($order->gst_percentage ?? 5) / 100);
+            $subtotal = ceil($subtotal);
+            $gst = ceil($subtotal * (($order->gst_percentage ?? 5) / 100));
 
             $dispatch->total_amount = $subtotal;
             $dispatch->gst_amount = $gst;
@@ -2869,13 +2873,13 @@ class AgentOrderController extends Controller
             }
 
             // Update Dispatch Totals from manual overrides or calculation
-            $finalSubtotal = (float) ($request->total_amount ?? $calculatedSubtotal);
-            $discount_amount = (float) ($request->discount_amount ?? 0);
+            $finalSubtotal = ceil((float) ($request->total_amount ?? $calculatedSubtotal));
+            $discount_amount = ceil((float) ($request->discount_amount ?? 0));
             $gst_percentage = (float) ($request->gst_percentage ?? 5);
-            $other_charges = (float) ($request->other_charges ?? 0);
+            $other_charges = ceil((float) ($request->other_charges ?? 0));
 
             $taxable_amount = $finalSubtotal - $discount_amount;
-            $gst_amount = $taxable_amount * ($gst_percentage / 100);
+            $gst_amount = ceil($taxable_amount * ($gst_percentage / 100));
             $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
 
             $dispatch->update([
@@ -3217,25 +3221,25 @@ class AgentOrderController extends Controller
                         ->where('product_id', $itemData['product_id'])
                         ->where('color_id', $itemData['color_id'])
                         ->where('size_set_id', $itemData['size_set_id'])
-                        ->update(['selling_price' => $itemData['selling_price']]);
+                        ->update(['selling_price' => ceil($itemData['selling_price'])]);
                 }
             }
 
             // Recalculate Subtotal
             $dispatchItems = DB::table('agent_order_items')->where('agent_order_dispatch_id', $id)->get();
-            $newTotalAmount = $dispatchItems->sum(function ($item) {
+            $newTotalAmount = ceil($dispatchItems->sum(function ($item) {
                 return $item->quantity * $item->selling_price;
-            });
+            }));
             
             // Recalculate Fabric Subtotal if any
             $fabricItems = DB::table('agent_order_fabric_items')->where('agent_order_dispatch_id', $id)->get();
-            $newTotalAmount += $fabricItems->sum(function ($item) {
+            $newTotalAmount += ceil($fabricItems->sum(function ($item) {
                 return $item->meter * $item->selling_price;
-            });
+            }));
 
             $taxable_amount = $newTotalAmount - ($dispatch->discount_amount ?? 0);
-            $gst_amount = $taxable_amount * (($dispatch->gst_percentage ?? 0) / 100);
-            $grandTotal = $taxable_amount + $gst_amount + ($dispatch->other_charges ?? 0);
+            $gst_amount = ceil($taxable_amount * (($dispatch->gst_percentage ?? 0) / 100));
+            $grandTotal = ceil($taxable_amount + $gst_amount + ($dispatch->other_charges ?? 0));
 
             $dispatch->update([
                 'total_amount' => $newTotalAmount,
@@ -3289,14 +3293,14 @@ class AgentOrderController extends Controller
 
         $oldGrandTotal = $dispatch->grand_total;
 
-        $total_amount = $request->total_amount;
-        $discount_amount = $request->discount_amount ?? 0;
+        $total_amount = ceil($request->total_amount);
+        $discount_amount = ceil($request->discount_amount ?? 0);
         $gst_percentage = $request->gst_percentage ?? 5;
-        $other_charges = $request->other_charges ?? 0;
+        $other_charges = ceil($request->other_charges ?? 0);
 
         $taxable_amount = $total_amount - $discount_amount;
-        $gst_amount = $taxable_amount * ($gst_percentage / 100);
-        $grandTotal = $taxable_amount + $gst_amount + $other_charges;
+        $gst_amount = ceil($taxable_amount * ($gst_percentage / 100));
+        $grandTotal = ceil($taxable_amount + $gst_amount + $other_charges);
 
         DB::beginTransaction();
         try {
@@ -3767,11 +3771,12 @@ class AgentOrderController extends Controller
             // Calculations based on manual inputs
             $gst_percentage = (float) ($request->gst_percentage ?? ($dispatch->gst_percentage ?? 5.00));
             $discount_percentage = (float) ($request->discount_percentage ?? 0);
-            $other_charges = (float) ($request->other_charges ?? 0);
+            $other_charges = ceil((float) ($request->other_charges ?? 0));
 
-            $discount_amount = ($total_amount * $discount_percentage / 100);
+            $total_amount = ceil($total_amount);
+            $discount_amount = ceil($total_amount * $discount_percentage / 100);
             $taxable_amount = $total_amount - $discount_amount;
-            $gst_amount = $taxable_amount * ($gst_percentage / 100);
+            $gst_amount = ceil($taxable_amount * ($gst_percentage / 100));
             $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
 
             $return = AgentOrderReturn::create([
@@ -4069,11 +4074,12 @@ class AgentOrderController extends Controller
             // 4. Update return header
             $gst_percentage = (float) ($request->gst_percentage ?? 5.00);
             $discount_percentage = (float) ($request->discount_percentage ?? 0);
-            $other_charges = (float) ($request->other_charges ?? 0);
+            $other_charges = ceil((float) ($request->other_charges ?? 0));
 
-            $discount_amount = ($total_amount * $discount_percentage / 100);
+            $total_amount = ceil($total_amount);
+            $discount_amount = ceil($total_amount * $discount_percentage / 100);
             $taxable_amount = $total_amount - $discount_amount;
-            $gst_amount = $taxable_amount * ($gst_percentage / 100);
+            $gst_amount = ceil($taxable_amount * ($gst_percentage / 100));
             $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
 
             $return->update([

@@ -422,24 +422,25 @@ class OrderController extends Controller
             $total_amount += ($total_pcs * $selling_price);
         }
 
-        $other_charges = $request->other_charges ?? 0;
+        $total_amount = ceil($total_amount);
+        $other_charges = ceil($request->other_charges ?? 0);
 
         if ($request->filled('discount_amount')) {
-            $discount_amount = (float) $request->discount_amount;
+            $discount_amount = ceil((float) $request->discount_amount);
             $discount_percentage = ($total_amount > 0) ? ($discount_amount / $total_amount * 100) : 0;
         } else {
             $discount_percentage = $request->discount_percentage ?? 0;
-            $discount_amount = ($total_amount * $discount_percentage / 100);
+            $discount_amount = ceil($total_amount * $discount_percentage / 100);
         }
 
         $taxable_amount = $total_amount - $discount_amount;
 
         if ($request->filled('gst_amount')) {
-            $gst_amount = (float) $request->gst_amount;
+            $gst_amount = ceil((float) $request->gst_amount);
             $gst_percentage = ($taxable_amount > 0) ? ($gst_amount / $taxable_amount * 100) : 0;
         } else {
             $gst_percentage = $request->gst_percentage ?? 5.00;
-            $gst_amount = $taxable_amount * ($gst_percentage / 100);
+            $gst_amount = ceil($taxable_amount * ($gst_percentage / 100));
         }
 
         $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
@@ -1033,24 +1034,25 @@ class OrderController extends Controller
             $total_amount += ($total_pcs * $selling_price);
         }
 
-        $other_charges = $request->other_charges ?? 0;
+        $total_amount = ceil($total_amount);
+        $other_charges = ceil($request->other_charges ?? 0);
 
         if ($request->filled('discount_amount')) {
-            $discount_amount = (float) $request->discount_amount;
+            $discount_amount = ceil((float) $request->discount_amount);
             $discount_percentage = ($total_amount > 0) ? ($discount_amount / $total_amount * 100) : 0;
         } else {
             $discount_percentage = $request->discount_percentage ?? 0;
-            $discount_amount = ($total_amount * $discount_percentage / 100);
+            $discount_amount = ceil($total_amount * $discount_percentage / 100);
         }
 
         $taxable_amount = $total_amount - $discount_amount;
 
         if ($request->filled('gst_amount')) {
-            $gst_amount = (float) $request->gst_amount;
+            $gst_amount = ceil((float) $request->gst_amount);
             $gst_percentage = ($taxable_amount > 0) ? ($gst_amount / $taxable_amount * 100) : 0;
         } else {
             $gst_percentage = $request->gst_percentage ?? 5.00;
-            $gst_amount = $taxable_amount * ($gst_percentage / 100);
+            $gst_amount = ceil($taxable_amount * ($gst_percentage / 100));
         }
 
         $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
