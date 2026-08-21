@@ -659,6 +659,8 @@ class ReportController extends Controller
         return response()
             ->view('admin.report.unit_assignments_export', [
                 'assignments' => $response['assignments'],
+                'type' => $response['type'],
+                'productionStatus' => $response['productionStatus'],
                 'exportedAt' => now()
             ])
             ->header('Content-Type', 'application/vnd.ms-excel')

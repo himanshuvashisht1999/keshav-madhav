@@ -41,6 +41,9 @@ class OrderDispatchDataTable  {
                 // dd($queue->orderMain->sku);
 				return $queue->sku ?? '';
             })
+            ->editColumn('bill_number', function ($queue) {
+				return $queue->bill_number ?? '';
+            })
             ->editColumn('main_order_id', function ($queue) {
                 // dd($queue->orderMain->sku);
 				return $queue->orderMain->sku ?? '';

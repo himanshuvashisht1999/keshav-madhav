@@ -113,6 +113,15 @@
                                                 </div>
                                             </div>
                                             <div class="form-group mb-3">
+                                                <label class="font-weight-bold text-muted small text-uppercase mb-1">Bill Number</label>
+                                                <div class="input-group input-group-sm shadow-sm">
+                                                    <div class="input-group-prepend">
+                                                        <span class="input-group-text bg-white"><i class="fas fa-file-invoice text-warning"></i></span>
+                                                    </div>
+                                                    <input type="text" name="bill_number" class="form-control" placeholder="Enter Bill Number">
+                                                </div>
+                                            </div>
+                                            <div class="form-group mb-3">
                                                 <label class="font-weight-bold text-muted small text-uppercase mb-1">Company</label>
                                                 <div class="input-group input-group-sm shadow-sm">
                                                     <div class="input-group-prepend">

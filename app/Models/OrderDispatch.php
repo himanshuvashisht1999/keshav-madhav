@@ -15,6 +15,7 @@ class OrderDispatch extends Model
         'sub_company_id',
         'project_id',
         'sku',
+        'bill_number',
         'dispatch_date',
         'customer_id',
         'main_order_id',

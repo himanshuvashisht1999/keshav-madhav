@@ -56,6 +56,7 @@ class OrderDispatchService
             $data_save->customer_id = $request->final_customer_id ?? $request->master_customer_id;
             $data_save->main_order_id = $request->final_order_no ?? $request->order_no;
             $data_save->dispatch_date = $request->dispatch_date ?? now();
+            $data_save->bill_number = $request->bill_number;
             $data_save->company_id = $request->company_id;
             $data_save->total_quantity = count($request->cartons);
             $data_save->gst_percentage = $request->gst_percentage ?? 0.00;
@@ -149,6 +150,7 @@ class OrderDispatchService
         $order_dispatch_data = [
             'id' => $order_dispatch['id'],
             'order_dispatch_no' => $order_dispatch['sku'],
+            'bill_number' => $order_dispatch['bill_number'] ?? '',
             'order_no' => $order_dispatch['order_main']['sku'] ?? '',
             'customer' => $order_dispatch['order_main']['customer']['name'] ?? '',
             'address' => $order_dispatch['order_main']['customer']['address'] ?? '',

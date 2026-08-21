@@ -65,6 +65,7 @@
                                 <tr>
                                     <th width="5%" class="text-center">#</th>
                                     <th>Dispatch No</th>
+                                    <th>Bill No</th>
                                     <th>Order No</th>
                                     <th>Customer</th>
                                     <th class="text-center">Cartons</th>
@@ -118,6 +119,7 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'id', className: 'text-center text-muted'},
                 {data: 'order_dispatch_no', name: 'order_dispatch_no', className: 'font-weight-bold'},
+                {data: 'bill_number', name: 'bill_number'},
                 {data: 'main_order_id', name: 'main_order_id'},                
                 {data: 'customer_id', name: 'customer_id'}, 
                 {data: 'total_quantity', name: 'total_quantity', className: 'text-center'}, // Actually Total Cartons

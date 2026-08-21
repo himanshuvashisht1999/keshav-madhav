@@ -229,6 +229,10 @@
                                             <td class="font-weight-bold text-dark py-3 px-4">{{ $dispatch->company->name ?? 'N/A' }}</td>
                                         </tr>
                                         <tr class="border-bottom">
+                                            <td class="text-muted py-3 px-4">Bill Number</td>
+                                            <td class="font-weight-bold text-dark py-3 px-4">{{ $order_dispatch_data['bill_number'] ?? 'N/A' }}</td>
+                                        </tr>
+                                        <tr class="border-bottom">
                                             <td class="text-muted py-3 px-4">Dispatch Address</td>
                                             <td class="text-dark py-3 px-4">{{ $order_dispatch_data['address'] ?? 'N/A' }}</td>
                                         </tr>
