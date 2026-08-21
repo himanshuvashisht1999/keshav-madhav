@@ -47,7 +47,11 @@
                     <td>{{ $row->design_number ?? 'N/A' }}</td>
                     <td>{{ $row->product_name ?? 'N/A' }}</td>
                     <td>{{ $row->series_name ?? 'N/A' }}</td>
-                    <td>{{ $row->size_set_name ?? 'N/A' }}</td>
+                    @if(isset($row->color_name))
+                        <td>{{ $row->size_set_name ?? 'N/A' }} - {{ $row->color_name }}</td>
+                    @else
+                        <td>{{ $row->size_set_name ?? 'N/A' }}</td>
+                    @endif
                     <td>{{ $row->fitting_name ?? 'N/A' }}</td>
                     <td>{{ $row->pattern_name ?? 'N/A' }}</td>
                     <td>{{ $row->mrp ?? '0' }}</td>

@@ -65,6 +65,13 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="col-md mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">Report Type</label>
+                                <select id="report_type" class="form-control select2 form-control-sm">
+                                    <option value="size_set">Size Set Wise</option>
+                                    <option value="color">Color Wise</option>
+                                </select>
+                            </div>
                             <div class="col-md-auto mb-2 text-right">
                                 <button class="btn btn-sm btn-outline-primary shadow-sm mr-1" type="button" data-toggle="collapse" data-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
                                     <i class="fas fa-sliders-h"></i> Advanced
@@ -176,7 +183,7 @@
                                         <th width="5%" class="text-center py-3">#</th>
                                         <th class="py-3">Product Name</th>
                                         <th class="py-3">Design No.</th>
-                                        <th class="py-3">Size Set</th>
+                                        <th class="py-3" id="attribute_header">Size Set</th>
                                         <th class="py-3">Fitting</th>
                                         <th class="py-3">Pattern</th>
                                         <th class="py-3">MRP</th>
@@ -507,6 +514,7 @@
                     data: {
                         load_more: 1,
                         page: nextPage,
+                        report_type: $('#report_type').val(),
                         size_set_id: $('#size_set_filter').val(),
                         product_id: $('#product_filter').val(),
                         color_id: $('#color_filter').val(),
@@ -572,14 +580,21 @@
             });
 
             // Filter events
-            $('#design_number, #size_set_filter, #product_filter, #color_filter, #mrp_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter, #min_boxes_filter, #min_order_filter, #stock_status_filter').on('keyup change', function () {
+            $('#design_number, #size_set_filter, #product_filter, #color_filter, #report_type, #mrp_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter, #min_boxes_filter, #min_order_filter, #stock_status_filter').on('keyup change', function () {
+                if ($(this).attr('id') === 'report_type') {
+                    if ($(this).val() === 'color') {
+                        $('#attribute_header').text('Size Set / Color');
+                    } else {
+                        $('#attribute_header').text('Size Set');
+                    }
+                }
                 loadMore(true);
             });
 
             // Reset filter
             $('#reset_filters').on('click', function () {
                 $('#design_number, #mrp_filter, #min_boxes_filter, #min_order_filter').val('');
-                $('#size_set_filter, #product_filter, #color_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter, #stock_status_filter').val('').trigger('change');
+                $('#size_set_filter, #product_filter, #color_filter, #report_type, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter, #stock_status_filter').val('').trigger('change');
             });
 
             // Export Excel & PDF
@@ -588,6 +603,7 @@
                 let type = $(this).attr('id') === 'export_excel' ? 'excel' : 'pdf';
                 let params = {
                     type: type,
+                    report_type: $('#report_type').val(),
                     design_number: $('#design_number').val(),
                     product_id: $('#product_filter').val(),
                     color_id: $('#color_filter').val(),

@@ -63,6 +63,7 @@ class InventoryController extends Controller
 
     public function indexList(Request $request)
     {
+        $reportType = $request->get('report_type', 'size_set');
         // Group by Product Name, Design Number, Size Set, MRP, Selling Price
         // Build order totals dynamically to inject color filter if present
         $colorFilter = '';
@@ -71,7 +72,7 @@ class InventoryController extends Controller
             $colorFilter = " AND aoi.color_id = {$color_id}";
         }
 
-        $query = DomesticInventory::select(
+        $selectFields = [
             'domestic_inventories.size_set_id',
             'domestic_inventories.product_id',
             'products.design_number',
@@ -85,17 +86,34 @@ class InventoryController extends Controller
             'variants.id as variant_id',
             DB::raw('SUM(domestic_inventories.total_boxes) as total_boxes'),
             DB::raw('COALESCE(MAX(order_totals.total_qty), 0) as total_order')
-        )
+        ];
+
+        if ($reportType == 'color') {
+            $selectFields[] = 'domestic_inventories.color_id';
+            $selectFields[] = 'colors.name as color_name';
+        }
+
+        $query = DomesticInventory::select($selectFields)
             ->leftJoin('production_goods as products', 'domestic_inventories.product_id', '=', 'products.id')
             ->leftJoin('master_series as series', 'products.master_series_id', '=', 'series.id')
             ->leftJoin('master_size_measurements as sizes', 'domestic_inventories.size_set_id', '=', 'sizes.id')
+            ->leftJoin('master_colors as colors', 'domestic_inventories.color_id', '=', 'colors.id')
             ->leftJoin('master_product_fittings as fittings', 'products.master_product_fitting_id', '=', 'fittings.id')
             ->leftJoin('master_design_patterns as patterns', 'products.master_pattern_id', '=', 'patterns.id')
             ->leftJoin('production_goods_variants as variants', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
             })
-            ->leftJoin(DB::raw("(
+            ->leftJoin(DB::raw($reportType == 'color' ? "(
+                SELECT aoi.product_id, 
+                       aoi.size_set_id, 
+                       aoi.color_id,
+                       SUM(aoi.box_qty) as total_qty
+                FROM agent_order_items aoi
+                JOIN agent_orders ao ON aoi.agent_order_id = ao.id
+                WHERE ao.status != 'dispatched' $colorFilter
+                GROUP BY aoi.product_id, aoi.size_set_id, aoi.color_id
+            ) as order_totals" : "(
                 SELECT aoi.product_id, 
                        aoi.size_set_id, 
                        SUM(aoi.box_qty) as total_qty
@@ -103,9 +121,12 @@ class InventoryController extends Controller
                 JOIN agent_orders ao ON aoi.agent_order_id = ao.id
                 WHERE ao.status != 'dispatched' $colorFilter
                 GROUP BY aoi.product_id, aoi.size_set_id
-            ) as order_totals"), function ($join) {
+            ) as order_totals"), function ($join) use ($reportType) {
                 $join->on('domestic_inventories.product_id', '=', 'order_totals.product_id')
                      ->on('domestic_inventories.size_set_id', '=', 'order_totals.size_set_id');
+                if ($reportType == 'color') {
+                    $join->on('domestic_inventories.color_id', '=', 'order_totals.color_id');
+                }
             });
 
         if ($request->has('min_total_boxes') && $request->min_total_boxes !== null) {
@@ -179,7 +200,7 @@ class InventoryController extends Controller
             $query->where('products.fabric_type_id', $request->fabric_type_id);
         }
 
-        $query->groupBy(
+        $groupByFields = [
             'domestic_inventories.size_set_id',
             'domestic_inventories.product_id',
             'products.design_number',
@@ -191,7 +212,14 @@ class InventoryController extends Controller
             'variants.mrp',
             'variants.image',
             'variants.id'
-        )->orderBy('products.design_number', 'asc');
+        ];
+
+        if ($reportType == 'color') {
+            $groupByFields[] = 'domestic_inventories.color_id';
+            $groupByFields[] = 'colors.name';
+        }
+
+        $query->groupBy($groupByFields)->orderBy('products.design_number', 'asc');
 
         if ($request->has('load_more')) {
             $perPage = 20;
@@ -220,7 +248,8 @@ class InventoryController extends Controller
             foreach ($results as $index => $row) {
                 $html .= view('admin.inventory.partials.row', [
                     'row' => $row,
-                    'index' => $start + $index
+                    'index' => $start + $index,
+                    'report_type' => $reportType
                 ])->render();
             }
 
@@ -272,8 +301,9 @@ class InventoryController extends Controller
 
     public function export(Request $request)
     {
+        $reportType = $request->get('report_type', 'size_set');
         // Group by Product Name, Design Number, Size Set, MRP, Selling Price
-        $query = DomesticInventory::select(
+        $selectFields = [
             'domestic_inventories.size_set_id',
             'domestic_inventories.product_id',
             'products.design_number',
@@ -285,17 +315,34 @@ class InventoryController extends Controller
             'variants.mrp as mrp',
             DB::raw('SUM(domestic_inventories.total_boxes) as total_boxes'),
             DB::raw('COALESCE(MAX(order_totals.total_qty), 0) as total_order')
-        )
+        ];
+
+        if ($reportType == 'color') {
+            $selectFields[] = 'domestic_inventories.color_id';
+            $selectFields[] = 'colors.name as color_name';
+        }
+
+        $query = DomesticInventory::select($selectFields)
             ->leftJoin('production_goods as products', 'domestic_inventories.product_id', '=', 'products.id')
             ->leftJoin('master_series as series', 'products.master_series_id', '=', 'series.id')
             ->leftJoin('master_size_measurements as sizes', 'domestic_inventories.size_set_id', '=', 'sizes.id')
+            ->leftJoin('master_colors as colors', 'domestic_inventories.color_id', '=', 'colors.id')
             ->leftJoin('master_product_fittings as fittings', 'products.master_product_fitting_id', '=', 'fittings.id')
             ->leftJoin('master_design_patterns as patterns', 'products.master_pattern_id', '=', 'patterns.id')
             ->leftJoin('production_goods_variants as variants', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
             })
-            ->leftJoin(DB::raw('(
+            ->leftJoin(DB::raw($reportType == 'color' ? '(
+                SELECT aoi.design_number COLLATE utf8mb4_unicode_ci as design_number, 
+                       aoi.size_set_id, 
+                       aoi.color_id,
+                       SUM(aoi.box_qty) as total_qty
+                FROM agent_order_items aoi
+                JOIN agent_orders ao ON aoi.agent_order_id = ao.id
+                WHERE ao.status != "dispatched"
+                GROUP BY aoi.design_number, aoi.size_set_id, aoi.color_id
+            ) as order_totals' : '(
                 SELECT aoi.design_number COLLATE utf8mb4_unicode_ci as design_number, 
                        aoi.size_set_id, 
                        SUM(aoi.box_qty) as total_qty
@@ -303,9 +350,12 @@ class InventoryController extends Controller
                 JOIN agent_orders ao ON aoi.agent_order_id = ao.id
                 WHERE ao.status != "dispatched"
                 GROUP BY aoi.design_number, aoi.size_set_id
-            ) as order_totals'), function ($join) {
+            ) as order_totals'), function ($join) use ($reportType) {
                 $join->on('products.design_number', '=', 'order_totals.design_number')
                      ->on('domestic_inventories.size_set_id', '=', 'order_totals.size_set_id');
+                if ($reportType == 'color') {
+                    $join->on('domestic_inventories.color_id', '=', 'order_totals.color_id');
+                }
             });
 
         if ($request->has('min_total_boxes') && $request->min_total_boxes !== null) {
@@ -379,7 +429,7 @@ class InventoryController extends Controller
             $query->where('products.fabric_type_id', $request->fabric_type_id);
         }
 
-        $query->groupBy(
+        $groupByFields = [
             'domestic_inventories.size_set_id',
             'domestic_inventories.product_id',
             'products.design_number',
@@ -389,7 +439,14 @@ class InventoryController extends Controller
             'fittings.name',
             'patterns.name',
             'variants.mrp'
-        )->orderBy('products.design_number', 'asc');
+        ];
+
+        if ($reportType == 'color') {
+            $groupByFields[] = 'domestic_inventories.color_id';
+            $groupByFields[] = 'colors.name';
+        }
+
+        $query->groupBy($groupByFields)->orderBy('products.design_number', 'asc');
 
         $data = $query->get();
 

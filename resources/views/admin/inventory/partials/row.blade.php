@@ -12,7 +12,11 @@
         </div>
     </td>
     <td>{{ $row->design_number }}</td>
-    <td>{{ $row->size_set_name }}</td>
+    @if(isset($report_type) && $report_type == 'color')
+        <td>{{ $row->size_set_name }} - {{ $row->color_name }}</td>
+    @else
+        <td>{{ $row->size_set_name }}</td>
+    @endif
     <td>{{ $row->fitting_name }}</td>
     <td>{{ $row->pattern_name }}</td>
     <td>₹{{ number_format($row->mrp ?? 0, 2) }}</td>
