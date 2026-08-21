@@ -2108,10 +2108,19 @@ class AgentOrderController extends Controller
                         ->where('brand_id', $product->brand_id)
                         ->value('discount_percentage') ?? 0;
 
-                    $new_selling_price = ceil($item->mrp - ($item->mrp * $discount_percentage / 100));
+                    $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $item->product_id)
+                        ->where('master_size_measurement_id', $item->size_set_id)
+                        ->first();
 
-                    if ($new_selling_price != $item->selling_price) {
-                        DB::table('agent_order_items')->where('id', $item->id)->update(['selling_price' => $new_selling_price]);
+                    $mrp = $variant->mrp ?? $item->mrp;
+                    $new_selling_price = ceil($mrp - ($mrp * $discount_percentage / 100));
+
+                    if ($new_selling_price != $item->selling_price || $mrp != $item->mrp) {
+                        DB::table('agent_order_items')->where('id', $item->id)->update([
+                            'mrp' => $mrp,
+                            'selling_price' => $new_selling_price
+                        ]);
+                        $item->mrp = $mrp;
                         $item->selling_price = $new_selling_price; // update object for calculation below
                     }
                 }
@@ -2235,11 +2244,38 @@ class AgentOrderController extends Controller
             ->whereNull('dispatched_at')
             ->select(
                 'agent_order_items.*',
+                'production_goods.brand_id',
                 'agent_order_items.rack_id as item_rack_id',
                 'master_design_patterns.name as db_pattern_name',
                 'master_product_fittings.name as db_fitting_name'
             )
             ->get();
+
+        foreach ($items as $item) {
+            $brand_discount = DB::table('sales_agent_brand_discounts')
+                ->where('sales_agent_id', $order->sales_agent_id)
+                ->where('brand_id', $item->brand_id)
+                ->value('discount_percentage') ?? 0;
+
+            $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $item->product_id)
+                ->where('master_size_measurement_id', $item->size_set_id)
+                ->first();
+
+            $mrp = $variant->mrp ?? 0;
+            $new_selling_price = ceil($mrp - ($mrp * $brand_discount / 100));
+
+            if ($new_selling_price != $item->selling_price && $mrp > 0) {
+                DB::table('agent_order_items')
+                    ->where('id', $item->id)
+                    ->update([
+                        'mrp' => $mrp,
+                        'selling_price' => $new_selling_price
+                    ]);
+                
+                $item->mrp = $mrp;
+                $item->selling_price = $new_selling_price;
+            }
+        }
 
         $groupedItems = [];
         foreach ($items as $item) {
@@ -2834,10 +2870,19 @@ class AgentOrderController extends Controller
                             ->where('brand_id', $product->brand_id)
                             ->value('discount_percentage') ?? 0;
 
-                        $new_selling_price = ceil($item->mrp - ($item->mrp * $discount_percentage / 100));
+                        $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $item->product_id)
+                            ->where('master_size_measurement_id', $item->size_set_id)
+                            ->first();
 
-                        if ($new_selling_price != $item->selling_price) {
-                            DB::table('agent_order_items')->where('id', $item->id)->update(['selling_price' => $new_selling_price]);
+                        $mrp = $variant->mrp ?? $item->mrp;
+                        $new_selling_price = ceil($mrp - ($mrp * $discount_percentage / 100));
+
+                        if ($new_selling_price != $item->selling_price || $mrp != $item->mrp) {
+                            DB::table('agent_order_items')->where('id', $item->id)->update([
+                                'mrp' => $mrp,
+                                'selling_price' => $new_selling_price
+                            ]);
+                            $item->mrp = $mrp;
                             $item->selling_price = $new_selling_price; // update object for calculation below
                         }
                     }

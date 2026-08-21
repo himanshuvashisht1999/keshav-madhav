@@ -56,6 +56,7 @@
                                     <option value="">Any Status</option>
                                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>PENDING</option>
                                     <option value="delayed" {{ request('status') == 'delayed' ? 'selected' : '' }}>DELAYED</option>
+                                    <option value="partially_dispatched" {{ request('status') == 'partially_dispatched' ? 'selected' : '' }}>PARTIALLY DISPATCHED</option>
                                     <option value="dispatched" {{ request('status') == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
                                 </select>
                             </div>
@@ -236,9 +237,8 @@
                                             @php
                                                 $isDelayed = ($order->status == 'delayed') || ($order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'));
                                             @endphp
-                                            <span
-                                                class="badge {{ $isDelayed ? 'badge-danger' : ($order->status == 'pending' ? 'badge-warning' : 'badge-success') }}">
-                                                {{ $isDelayed ? 'DELAYED' : strtoupper($order->status) }}
+                                            <span class="badge {{ $isDelayed ? 'badge-danger' : ($order->status == 'pending' ? 'badge-warning' : 'badge-success') }}">
+                                                {{ $isDelayed ? 'DELAYED' : strtoupper(str_replace('_', ' ', $order->status)) }}
                                             </span>
                                         </td>
                                         <!-- <td>
