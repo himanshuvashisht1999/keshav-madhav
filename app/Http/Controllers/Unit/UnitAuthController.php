@@ -1665,6 +1665,9 @@ class UnitAuthController extends Controller
         $masterStageId = $unit->master_stage_id ?? 0;
         $timings = \App\Models\OrderLotStageTiming::whereIn('lot_no', $lotNos)->where('master_stage_id', $masterStageId)->get();
 
+        $minBalance = $request->get('min_balance');
+        $maxBalance = $request->get('max_balance');
+
         $grouped = $all->groupBy('lot_no')->map(function ($items, $lot_no) use ($timings) {
             $firstItem = $items->first();
             $timing = $timings->where('lot_no', $lot_no)->first();
@@ -1723,7 +1726,7 @@ class UnitAuthController extends Controller
                 'estimated_date' => $estimatedDate,
                 'is_delayed' => $isTaskDelayed
             ];
-        })->filter(function($item) use ($isDelayed, $endDate) {
+        })->filter(function($item) use ($isDelayed, $endDate, $minBalance, $maxBalance) {
             if ($item['total_pending'] <= 0) return false;
             if ($isDelayed && !$item['is_delayed']) return false;
             if ($endDate && $item['estimated_date']) {
@@ -1731,6 +1734,8 @@ class UnitAuthController extends Controller
                     return false;
                 }
             }
+            if ($minBalance !== null && $minBalance !== '' && $item['total_pending'] < $minBalance) return false;
+            if ($maxBalance !== null && $maxBalance !== '' && $item['total_pending'] > $maxBalance) return false;
             return true;
         })->values();
 

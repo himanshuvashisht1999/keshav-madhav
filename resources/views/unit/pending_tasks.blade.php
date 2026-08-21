@@ -66,6 +66,7 @@
         border-radius: 8px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         border: 1px solid #e5e7eb;
+        overflow-x: auto; /* Allow horizontal scroll */
     }
     .excel-table {
         width: 100%;
@@ -87,7 +88,7 @@
     .excel-table td {
         padding: 12px;
         border-bottom: 1px solid #f3f4f6;
-        color: #1f2937;
+        color: #000000;
         vertical-align: middle;
     }
     .excel-table tr:hover {
@@ -104,80 +105,8 @@
     }
     .text-center { text-align: center; }
 
-    /* Mobile Responsive Card Design */
+    /* Mobile Responsive Design */
     @media (max-width: 768px) {
-        .table-container {
-            border: none;
-            box-shadow: none;
-            background: transparent;
-        }
-        .excel-table thead {
-            display: none;
-        }
-        .excel-table, .excel-table tbody {
-            display: block;
-            width: 100%;
-        }
-        .excel-table tr {
-            display: flex;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            background: #fff;
-            padding: 12px 14px;
-        }
-        .excel-table td {
-            display: flex;
-            flex-direction: column;
-            border: none;
-            padding: 0;
-            text-align: left;
-            min-height: auto;
-        }
-        .excel-table td::before {
-            content: attr(data-label);
-            position: relative;
-            left: 0;
-            width: auto;
-            font-size: 10px;
-            color: #9ca3af;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 2px;
-        }
-        
-        /* Make Lot No full width and styled as header */
-        .excel-table td[data-label="Lot No"] {
-            width: 100%;
-            flex-direction: row;
-            align-items: center;
-            justify-content: flex-start;
-            border-bottom: 1px dashed #e5e7eb;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        .excel-table td[data-label="Lot No"]::before {
-            display: none;
-        }
-        
-        /* Other fields take 50% width to form a 2-column grid */
-        .excel-table td:not([data-label="Lot No"]) {
-            width: 50%;
-            margin-bottom: 10px;
-            font-size: 13px;
-            color: #374151;
-            font-weight: 600;
-        }
-        
-        /* Specific adjustments for emphasis */
-        .excel-table td[data-label="Pending Qty"] {
-            font-size: 14px;
-        }
-        
         .filter-grid {
             grid-template-columns: 1fr;
         }
@@ -196,21 +125,14 @@
                         value="{{ request('lot_no') }}">
                 </div>
                 <div class="filter-group">
-                    <label for="start_date">Assigned From</label>
-                    <input type="date" id="start_date" name="start_date" class="filter-input"
-                        value="{{ request('start_date') }}">
+                    <label for="min_balance">Min Balance</label>
+                    <input type="number" id="min_balance" name="min_balance" class="filter-input" placeholder="e.g. 50"
+                        value="{{ request('min_balance') }}" min="0">
                 </div>
                 <div class="filter-group">
-                    <label for="end_date">Estimated By</label>
-                    <input type="date" id="end_date" name="end_date" class="filter-input"
-                        value="{{ request('end_date') }}">
-                </div>
-                <div class="filter-group">
-                    <label for="is_delayed">Status</label>
-                    <select id="is_delayed" name="is_delayed" class="filter-input">
-                        <option value="">All Pending</option>
-                        <option value="1" {{ request('is_delayed') == '1' ? 'selected' : '' }}>Only Delayed</option>
-                    </select>
+                    <label for="max_balance">Max Balance</label>
+                    <input type="number" id="max_balance" name="max_balance" class="filter-input" placeholder="e.g. 1000"
+                        value="{{ request('max_balance') }}" min="0">
                 </div>
             </div>
             <div class="filter-actions">
@@ -223,6 +145,7 @@
             <table class="excel-table">
                 <thead>
                     <tr>
+                        <th>S.No</th>
                         <th>Lot No</th>
                         <th>Cutting Pieces</th>
                         <th>Size Set</th>
@@ -238,6 +161,7 @@
                 <tbody>
                     @forelse($grouped as $task)
                         <tr>
+                            <td data-label="S.No">{{ $loop->iteration }}</td>
                             <td data-label="Lot No">
                                 <strong>{{ $task['lot_no'] }}</strong>
                             </td>
@@ -253,7 +177,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center" style="padding: 40px 20px; color: #6b7280; border: none;">
+                            <td colspan="11" class="text-center" style="padding: 40px 20px; color: #6b7280; border: none;">
                                 <i class="fas fa-inbox mb-2" style="font-size: 32px; color: #d1d5db;"></i><br><br>
                                 <span style="font-weight: 600; font-size: 16px;">No pending tasks found</span>
                             </td>
