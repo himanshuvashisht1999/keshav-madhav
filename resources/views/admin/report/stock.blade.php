@@ -64,17 +64,21 @@
                                 <input type="hidden" name="type" value="{{ request('type') }}">
                             @endif
                             @if($level !== 'fabrics' && request('warehouse_id'))
-                                <input type="hidden" name="warehouse_id" value="{{ request('warehouse_id') }}">
+                                @foreach((array) request('warehouse_id') as $whId)
+                                    <input type="hidden" name="warehouse_id[]" value="{{ $whId }}">
+                                @endforeach
                             @endif
 
                             <div class="row align-items-end g-2">
                                 @if($level === 'fabrics')
                                     <div class="col-md-3">
                                         <label class="small fw-bold mb-1">Warehouse</label>
-                                        <select name="warehouse_id" class="form-control form-control-sm select2">
-                                            <option value="">All Warehouses</option>
+                                        @php
+                                            $selectedWarehouses = (array) request('warehouse_id', []);
+                                        @endphp
+                                        <select name="warehouse_id[]" class="form-control form-control-sm select2" multiple data-placeholder="All Warehouses">
                                             @foreach($warehouses as $wh)
-                                                <option value="{{ $wh->id }}" {{ request('warehouse_id') == $wh->id ? 'selected' : '' }}>
+                                                <option value="{{ $wh->id }}" {{ in_array($wh->id, $selectedWarehouses) ? 'selected' : '' }}>
                                                     {{ $wh->cutting_master_name }}
                                                 </option>
                                             @endforeach

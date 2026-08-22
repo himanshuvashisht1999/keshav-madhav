@@ -69,7 +69,7 @@ class ReportController extends Controller
         }
 
         if ($request->filled('warehouse_id')) {
-            $query->where('master_fabric_warehouse_id', $request->warehouse_id);
+            $query->whereIn('master_fabric_warehouse_id', (array) $request->warehouse_id);
         }
 
         if ($request->filled('roll_no')) {
@@ -270,7 +270,7 @@ class ReportController extends Controller
         $query = \App\Models\FabricReceiptDetail::with(['fabric'])
             ->where('remaining_quantity', '>', 0)
             ->when($request->filled('warehouse_id'), function ($q) use ($request) {
-                $q->where('master_fabric_warehouse_id', $request->warehouse_id);
+                $q->whereIn('master_fabric_warehouse_id', (array) $request->warehouse_id);
             })
             ->when($request->filled('fabric_id'), function ($q) use ($request) {
                 $q->where('fabric_id', $request->fabric_id);

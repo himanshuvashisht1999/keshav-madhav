@@ -380,23 +380,24 @@ class ReportService
                 ->leftJoin('vendors', 'fabrics.vendor_id', '=', 'vendors.id');
 
             if ($request->filled('warehouse_id')) {
-                $whId = $request->warehouse_id;
+                $whIds = array_map('intval', (array) $request->warehouse_id);
+                $whIdsString = implode(',', $whIds);
                 $query->selectRaw("
                     (
-                        COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = fabrics.id AND fr.master_fabric_warehouse_id = ?), 0)
+                        COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = fabrics.id AND fr.master_fabric_warehouse_id IN ({$whIdsString})), 0)
                         +
-                        COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = fabrics.id AND ft.to_warehouse_id = ?), 0)
-                    ) as total_received", [$whId, $whId])
-                ->selectRaw("COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = fabrics.id AND frd.master_fabric_warehouse_id = ?), 0) as total_remaining", [$whId])
+                        COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = fabrics.id AND ft.to_warehouse_id IN ({$whIdsString})), 0)
+                    ) as total_received")
+                ->selectRaw("COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = fabrics.id AND frd.master_fabric_warehouse_id IN ({$whIdsString})), 0) as total_remaining")
                 ->selectRaw("(
                     (
-                        COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = fabrics.id AND fr.master_fabric_warehouse_id = ?), 0)
+                        COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = fabrics.id AND fr.master_fabric_warehouse_id IN ({$whIdsString})), 0)
                         +
-                        COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = fabrics.id AND ft.to_warehouse_id = ?), 0)
+                        COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = fabrics.id AND ft.to_warehouse_id IN ({$whIdsString})), 0)
                     ) 
                     - 
-                    COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = fabrics.id AND frd.master_fabric_warehouse_id = ?), 0)
-                ) as total_issued", [$whId, $whId, $whId])
+                    COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = fabrics.id AND frd.master_fabric_warehouse_id IN ({$whIdsString})), 0)
+                ) as total_issued")
                 ->groupBy('fabrics.id', 'fabrics.name', 'vendors.name');
             } else {
                 $query->selectRaw('COALESCE(SUM(fabric_receipt_details.meter), 0) as total_received')
@@ -494,7 +495,7 @@ class ReportService
             $query = FabricReceiptDetail::with(['fabric_receipt.vendor', 'purchase_order', 'master_fabric_warehouse', 'returns'])
                 ->where('fabric_id', $fabricId)
                 ->when($warehouseId, function ($q) use ($warehouseId) {
-                    $q->where('master_fabric_warehouse_id', $warehouseId);
+                    $q->whereIn('master_fabric_warehouse_id', (array) $warehouseId);
                 })
                 ->when($request->filled('qty_from'), function ($q) use ($request) {
                     $q->where('remaining_quantity', '>=', $request->qty_from);
@@ -534,7 +535,7 @@ class ReportService
             // Find all roll numbers matching this fabric & warehouse
             $rollQuery = FabricReceiptDetail::where('fabric_id', $fabricId);
             if ($warehouseId) {
-                $rollQuery->where('master_fabric_warehouse_id', $warehouseId);
+                $rollQuery->whereIn('master_fabric_warehouse_id', (array) $warehouseId);
             }
             $rollIds = $rollQuery->pluck('id')->filter()->unique();
 
@@ -548,7 +549,7 @@ class ReportService
 
             if ($warehouseId) {
                 $agentUsagesQuery->whereHas('roll', function ($q) use ($warehouseId) {
-                    $q->where('master_fabric_warehouse_id', $warehouseId);
+                    $q->whereIn('master_fabric_warehouse_id', (array) $warehouseId);
                 });
             }
 
@@ -725,7 +726,7 @@ class ReportService
         ])->where('fabric_id', $fabricId);
 
         if (!empty($warehouseId)) {
-            $query->where('master_fabric_warehouse_id', $warehouseId);
+            $query->whereIn('master_fabric_warehouse_id', (array) $warehouseId);
         }
 
         $receipts = $query->get();
@@ -787,7 +788,7 @@ class ReportService
 
         if (!empty($warehouseId)) {
             $agentUsagesQuery->whereHas('roll', function ($q) use ($warehouseId) {
-                $q->where('master_fabric_warehouse_id', $warehouseId);
+                $q->whereIn('master_fabric_warehouse_id', (array) $warehouseId);
             });
         }
 
@@ -834,7 +835,7 @@ class ReportService
             ->where('remaining_quantity', '>', 0);
 
         if ($request->filled('warehouse_id')) {
-            $query->where('master_fabric_warehouse_id', $request->warehouse_id);
+            $query->whereIn('master_fabric_warehouse_id', (array) $request->warehouse_id);
         }
 
         if ($request->filled('fabric_id')) {
