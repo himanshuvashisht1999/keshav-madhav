@@ -118,6 +118,12 @@
                                     </thead>
                                     <tbody>
                                         @foreach($items as $item)
+                                            @php
+                                                $total_qty = $item->quantity * $item->total_boxes;
+                                            @endphp
+                                            @if($item->total_boxes == 0 && $item->color_total_order == 0 && $total_qty == 0)
+                                                @continue
+                                            @endif
                                             <tr class="item-row" data-color="{{ $item->color_name ?? 'N/A' }}">
                                                 <td class="pl-4 py-3">
                                                     @if($item->rack && $item->rack->storeroom)
@@ -138,7 +144,7 @@
                                                 <td class="py-3 text-center">{{ $item->quantity }}</td>
                                                 <td class="text-center py-3 font-weight-bold text-success">{{ $item->total_boxes }}</td>
                                                 <td class="text-center py-3 font-weight-bold text-danger">{{ $item->color_total_order }}</td>
-                                                <td class="text-center py-3 font-weight-bold text-success" style="font-size: 1.1rem;">{{ $item->quantity * $item->total_boxes }}</td>
+                                                <td class="text-center py-3 font-weight-bold text-success" style="font-size: 1.1rem;">{{ $total_qty }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>

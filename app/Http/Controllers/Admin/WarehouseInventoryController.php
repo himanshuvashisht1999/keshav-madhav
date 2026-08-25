@@ -19,7 +19,12 @@ class WarehouseInventoryController extends Controller
 {
     public function index()
     {
-        $storerooms = Storeroom::where('status', '1')->get();
+        $storerooms = Storeroom::where('status', '1')
+            ->orderByRaw('CAST(IFNULL(NULLIF(order_priority, ""), "9999") AS UNSIGNED) ASC')
+            ->orderBy('name', 'asc')
+            ->get();
+        $defaultStoreroomId = $storerooms->first() ? $storerooms->first()->id : '';
+
         // Use all master records for filters to ensure they are visible
         $size_sets = \App\Models\MasterSizeMeasurement::all();
         $products = \App\Models\ProductionGoods::with('series')->get();
@@ -32,7 +37,7 @@ class WarehouseInventoryController extends Controller
         $natures = \App\Models\ProductNature::all();
         $fabric_types = \App\Models\FabricType::all();
 
-        return view('admin.inventory.warehouse_stock.index', compact('storerooms', 'size_sets', 'products', 'colors', 'designs', 'fittings', 'patterns', 'series', 'brands', 'natures', 'fabric_types'));
+        return view('admin.inventory.warehouse_stock.index', compact('storerooms', 'defaultStoreroomId', 'size_sets', 'products', 'colors', 'designs', 'fittings', 'patterns', 'series', 'brands', 'natures', 'fabric_types'));
     }
 
     private function buildIndexQuery(Request $request)

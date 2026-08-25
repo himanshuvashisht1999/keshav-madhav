@@ -70,7 +70,7 @@
                                 <select id="storeroom_filter" class="form-control select2">
                                     <option value="">All Warehouses</option>
                                     @foreach($storerooms as $storeroom)
-                                        <option value="{{ $storeroom->id }}">{{ $storeroom->name }}</option>
+                                        <option value="{{ $storeroom->id }}" {{ isset($defaultStoreroomId) && $defaultStoreroomId == $storeroom->id ? 'selected' : '' }}>{{ $storeroom->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -378,6 +378,18 @@
                         container.css('opacity', '1');
                         toastr.error('Failed to load inventory.');
                     }
+                });
+            }
+
+            // Fetch racks if a default warehouse is selected
+            if ($('#storeroom_filter').val()) {
+                let wh_id = $('#storeroom_filter').val();
+                let rack_filter = $('#rack_filter');
+                rack_filter.html('<option value="">All Racks</option>');
+                $.get('{{ url("admin/inventory/warehouse-stock/racks") }}/' + wh_id, function(data) {
+                    $.each(data, function(i, rack) {
+                        rack_filter.append('<option value="'+rack.id+'">'+rack.name+'</option>');
+                    });
                 });
             }
 
