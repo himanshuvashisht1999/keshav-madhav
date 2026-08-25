@@ -225,9 +225,10 @@ class ProductionGoodsLedgerController extends Controller
         $filteredWarehouseIds = array_filter($warehouseIds, fn($id) => $id !== 'unassigned');
 
         // Fetch all related history records (excluding transfer and stock_consume)
-        $histories = DomesticInventoryHistory::select('domestic_inventory_histories.*')
+        $histories = DomesticInventoryHistory::select('domestic_inventory_histories.*', 'domestic_inventory_purchases.purchase_date')
             ->leftJoin('racks as new_rack', 'domestic_inventory_histories.new_rack_id', '=', 'new_rack.id')
             ->leftJoin('racks as old_rack', 'domestic_inventory_histories.old_rack_id', '=', 'old_rack.id')
+            ->leftJoin('domestic_inventory_purchases', 'domestic_inventory_histories.purchase_id', '=', 'domestic_inventory_purchases.id')
             ->where(function($q) use ($id, $size_set_id, $warehouseIds, $filteredWarehouseIds, $hasUnassigned) {
                 $q->where(function($q1) use ($id, $size_set_id, $warehouseIds, $filteredWarehouseIds, $hasUnassigned) {
                     $q1->where('domestic_inventory_histories.old_product_id', $id)
@@ -289,7 +290,7 @@ class ProductionGoodsLedgerController extends Controller
                 if ($history->type === 'Edit (Restored)') $particulars = 'Stock Restored';
 
                 $transactions->push((object)[
-                    'date' => $history->created_at,
+                    'date' => $history->purchase_date ? \Carbon\Carbon::parse($history->purchase_date) : $history->created_at,
                     'type' => 'Inward',
                     'particulars' => $particulars,
                     'inward' => (int)$history->box_quantity,
