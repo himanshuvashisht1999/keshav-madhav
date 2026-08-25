@@ -67,6 +67,15 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2">
+                                        <label class="small font-weight-bold text-muted mb-1">Product</label>
+                                        <select id="product_filter" class="form-control select2">
+                                            <option value="">All Products</option>
+                                            @foreach($products as $product)
+                                                <option value="{{ $product->id }}">{{ $product->series ? $product->series->name . ' ' : '' }}{{ $product->name_of_garment }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
                                         <label class="small font-weight-bold text-muted mb-1">Color</label>
                                         <select id="color_filter" class="form-control select2">
                                             <option value="">All Colors</option>
@@ -84,7 +93,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-2 mt-3">
                                         <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block">
                                             <i class="fas fa-undo mr-1"></i> Reset
                                         </button>
@@ -353,6 +362,7 @@
                     rack_id: $('#rack_filter').val(),
                     size_set_id: $('#size_set_filter').val(),
                     design_filter: $('#design_filter').val(),
+                    product_id: $('#product_filter').val(),
                     color_id: $('#color_filter').val()
                 },
                 success: function(res) {
@@ -377,8 +387,8 @@
             if ($(this).scrollTop() + $(this).innerHeight() >= $(this)[0].scrollHeight - 300) { loadMore(); }
         });
 
-        $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #color_filter').on('change', function() { loadMore(true); });
-        $('#reset_filters').on('click', function() { $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #color_filter').val('').trigger('change'); });
+        $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #color_filter').on('change', function() { loadMore(true); });
+        $('#reset_filters').on('click', function() { $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #color_filter').val('').trigger('change'); });
 
         $('#storeroom_filter').on('change', function() {
             let wh = $(this).val(), rack_filter = $('#rack_filter');
