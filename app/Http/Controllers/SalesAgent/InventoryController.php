@@ -55,7 +55,13 @@ class InventoryController extends Controller
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
             })
-            ->where('domestic_inventories.status', 1);
+            ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+            ->where('domestic_inventories.status', 1)
+            ->where(function ($q) {
+                $q->whereNull('storerooms.id')
+                  ->orWhere('storerooms.order_taken', '=', 'Yes');
+            });
 
         // Apply Filters
         if ($request->filled('design_number')) {

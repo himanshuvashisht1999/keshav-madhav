@@ -163,8 +163,9 @@ class FairProductController extends Controller
         $salesAgents = \App\Models\SalesAgent::where('status', 1)->get();
         $productNatures = \App\Models\ProductNature::where('status', 1)->get();
         $fabricTypes = \App\Models\FabricType::where('status', 1)->get();
+        $storerooms = \App\Models\Storeroom::where('status', 1)->get();
         
-        return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'salesAgents', 'productNatures', 'fabricTypes'));
+        return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'salesAgents', 'productNatures', 'fabricTypes', 'storerooms'));
     }
 
     public function edit($id)
@@ -179,6 +180,7 @@ class FairProductController extends Controller
         $salesAgents = \App\Models\SalesAgent::where('status', 1)->get();
         $productNatures = \App\Models\ProductNature::where('status', 1)->get();
         $fabricTypes = \App\Models\FabricType::where('status', 1)->get();
+        $storerooms = \App\Models\Storeroom::where('status', 1)->get();
 
         // Prepare existing items for JS
         $existingItems = $batch->products->map(function($p) {
@@ -212,7 +214,7 @@ class FairProductController extends Controller
             ];
         });
 
-        return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'batch', 'existingItems', 'salesAgents', 'productNatures', 'fabricTypes'));
+        return view('admin.inventory.fair_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'batch', 'existingItems', 'salesAgents', 'productNatures', 'fabricTypes', 'storerooms'));
     }
 
     public function show($id)
@@ -307,6 +309,12 @@ class FairProductController extends Controller
             });
         }
 
+        if ($request->storeroom_id) {
+            $query->whereHas('inventory.rack', function($q) use ($request) {
+                $q->where('storeroom_id', $request->storeroom_id);
+            });
+        }
+
         $products = $query->get();
 
         $productIds = $products->pluck('id')->toArray();
@@ -373,6 +381,11 @@ class FairProductController extends Controller
             if ($request->size_set_id) {
                 $stockQuery->where('size_set_id', $request->size_set_id);
             }
+            if ($request->storeroom_id) {
+                $stockQuery->whereHas('rack', function($q) use ($request) {
+                    $q->where('storeroom_id', $request->storeroom_id);
+                });
+            }
 
             $product->color_stock = $stockQuery->select('color_id', \DB::raw('SUM(total_boxes) as total_boxes'))
                 ->with('color')
@@ -384,6 +397,11 @@ class FairProductController extends Controller
             $sizeQuery = DomesticInventory::where('product_id', $product->id)->where('quantity', '>', 0);
             if ($request->size_set_id) {
                 $sizeQuery->where('size_set_id', $request->size_set_id);
+            }
+            if ($request->storeroom_id) {
+                $sizeQuery->whereHas('rack', function($q) use ($request) {
+                    $q->where('storeroom_id', $request->storeroom_id);
+                });
             }
 
             $product->available_sizes = $sizeQuery->with(['sizeSet', 'color'])

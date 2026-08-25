@@ -123,6 +123,10 @@ class AgentOrderController extends Controller
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
             ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
             ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+            ->where(function ($q) {
+                $q->whereNull('storerooms.id')
+                  ->orWhere('storerooms.order_taken', '=', 'Yes');
+            })
 
             ->leftJoinSub($prices, 'ip', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
@@ -564,8 +568,17 @@ class AgentOrderController extends Controller
 
                     if ($order_type === 'direct') {
                         // Find inventory to deduct
-                        $inventories = DomesticInventory::where('barcode', $item['barcode'])
-                            ->where('total_boxes', '>', 0)
+                        $inventories = DomesticInventory::select('domestic_inventories.*')
+                            ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                            ->where('domestic_inventories.barcode', $item['barcode'])
+                            ->where('domestic_inventories.total_boxes', '>', 0)
+                            ->where(function ($q) {
+                                $q->whereNull('storerooms.id')
+                                  ->orWhere('storerooms.order_taken', '=', 'Yes');
+                            })
+                            ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
+                            ->orderBy('domestic_inventories.total_boxes', 'desc')
                             ->get();
 
                         $remainingToDeduct = $item['box_qty'];
@@ -4337,14 +4350,18 @@ class AgentOrderController extends Controller
         
         $allocated_qty = $allocated_query->sum('agent_order_items.box_qty') ?? 0;
 
-        $inventories = \App\Models\DomesticInventory::select('domestic_inventories.*', 'storerooms.name as storeroom_name')
+        $inventories = \App\Models\DomesticInventory::select('domestic_inventories.*', 'storerooms.name as storeroom_name', 'storerooms.order_priority')
             ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
             ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
             ->where('domestic_inventories.product_id', $product_id)
             ->where('domestic_inventories.color_id', $color_id)
             ->where('domestic_inventories.size_set_id', $size_set_id)
             ->where('domestic_inventories.total_boxes', '>', 0)
-            ->orderByRaw("CASE WHEN LOWER(storerooms.name) = 'advance sample' THEN 1 ELSE 0 END")
+            ->where(function ($q) {
+                $q->whereNull('storerooms.id')
+                  ->orWhere('storerooms.order_taken', '=', 'Yes');
+            })
+            ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
             ->orderBy('domestic_inventories.total_boxes', 'desc')
             ->get();
 
@@ -4354,36 +4371,47 @@ class AgentOrderController extends Controller
         $rack_id = null;
         
         if ($available_global > 0) {
-            $regular_rack = $inventories->first(function($inv) {
-                return strtolower($inv->storeroom_name) !== 'advance sample';
-            });
-            if ($regular_rack) {
-                $rack_id = $regular_rack->rack_id;
-            }
+            $rack_id = $inventories->first()?->rack_id;
         }
 
         if (!$rack_id) {
-            $advance_rack = $inventories->first(function($inv) {
-                return strtolower($inv->storeroom_name) === 'advance sample';
-            });
-            if ($advance_rack) {
-                $rack_id = $advance_rack->rack_id;
-            }
-        }
-
-        if (!$rack_id) {
-            $max_stock_rack = \App\Models\DomesticInventory::where('barcode', $barcode)
-                ->where('total_boxes', '>', 0)
-                ->orderBy('total_boxes', 'desc')
+            $max_stock_rack = \App\Models\DomesticInventory::select('domestic_inventories.*')
+                ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                ->where('domestic_inventories.barcode', $barcode)
+                ->where('domestic_inventories.total_boxes', '>', 0)
+                ->where(function ($q) {
+                    $q->whereNull('storerooms.id')
+                      ->orWhere('storerooms.order_taken', '=', 'Yes');
+                })
+                ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
+                ->orderBy('domestic_inventories.total_boxes', 'desc')
                 ->first();
+                
             if (!$max_stock_rack) {
-                $max_stock_rack = \App\Models\DomesticInventory::where('barcode', $barcode)
-                    ->orderBy('total_boxes', 'desc')
+                $max_stock_rack = \App\Models\DomesticInventory::select('domestic_inventories.*')
+                    ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                    ->where('domestic_inventories.barcode', $barcode)
+                    ->where(function ($q) {
+                        $q->whereNull('storerooms.id')
+                          ->orWhere('storerooms.order_taken', '=', 'Yes');
+                    })
+                    ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
+                    ->orderBy('domestic_inventories.total_boxes', 'desc')
                     ->first();
             }
             if (!$max_stock_rack) {
-                $max_stock_rack = \App\Models\DomesticInventory::where('product_id', $product_id)
-                    ->orderBy('total_boxes', 'desc')
+                $max_stock_rack = \App\Models\DomesticInventory::select('domestic_inventories.*')
+                    ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                    ->where('domestic_inventories.product_id', $product_id)
+                    ->where(function ($q) {
+                        $q->whereNull('storerooms.id')
+                          ->orWhere('storerooms.order_taken', '=', 'Yes');
+                    })
+                    ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
+                    ->orderBy('domestic_inventories.total_boxes', 'desc')
                     ->first();
             }
             $rack_id = $max_stock_rack ? $max_stock_rack->rack_id : null;

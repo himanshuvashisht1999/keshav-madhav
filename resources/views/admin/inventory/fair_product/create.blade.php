@@ -237,6 +237,15 @@
                         </div>
                         <div class="row">
                             <div class="col-md-2 mb-2">
+                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Storeroom</label>
+                                <select id="storeroom_id" class="form-control select2">
+                                    <option value="">Storeroom</option>
+                                    @foreach($storerooms as $storeroom)
+                                        <option value="{{ $storeroom->id }}">{{ $storeroom->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-2">
                                 <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Product Nature</label>
                                 <select id="product_nature_id" class="form-control select2">
                                     <option value="">Nature</option>
@@ -458,8 +467,9 @@
                 let fabric_type_id = $('#fabric_type_id').val();
                 let mrp_from = $('#mrp_from').val();
                 let mrp_to = $('#mrp_to').val();
+                let storeroom_id = $('#storeroom_id').val();
 
-                if (!brand_id && !fitting_id && !pattern_id && !series_id && !design_number && !size_set_id && !product_nature_id && !fabric_type_id && !mrp_from && !mrp_to) {
+                if (!brand_id && !fitting_id && !pattern_id && !series_id && !design_number && !size_set_id && !product_nature_id && !fabric_type_id && !mrp_from && !mrp_to && !storeroom_id) {
                     toastr.error('Please select at least one filter');
                     return;
                 }
@@ -479,7 +489,8 @@
                         product_nature_id: product_nature_id,
                         fabric_type_id: fabric_type_id,
                         mrp_from: mrp_from,
-                        mrp_to: mrp_to
+                        mrp_to: mrp_to,
+                        storeroom_id: storeroom_id
                     },
                     success: function (response) {
                         if (response.length === 0) {

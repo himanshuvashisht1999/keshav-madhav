@@ -61,15 +61,22 @@ class AutoAssignStockController extends Controller
                     // Calculate (Total Boxes - Already Allocated in Pending Orders)
                     
                     $availableInventory = DomesticInventory::select(
-                            'rack_id', 
-                            DB::raw('SUM(total_boxes) as actual_total_boxes')
+                            'domestic_inventories.rack_id', 
+                            'storerooms.order_priority',
+                            DB::raw('SUM(domestic_inventories.total_boxes) as actual_total_boxes')
                         )
-                        ->where('product_id', $item->product_id)
-                        ->where('size_set_id', $item->size_set_id)
-                        ->where('color_id', $item->color_id)
-                        ->whereNotIn('rack_id', $sampleRackIds)
-                        ->where('quantity', '>', 0)
-                        ->groupBy('rack_id')
+                        ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                        ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                        ->where('domestic_inventories.product_id', $item->product_id)
+                        ->where('domestic_inventories.size_set_id', $item->size_set_id)
+                        ->where('domestic_inventories.color_id', $item->color_id)
+                        ->whereNotIn('domestic_inventories.rack_id', $sampleRackIds)
+                        ->where('domestic_inventories.quantity', '>', 0)
+                        ->where(function ($q) {
+                            $q->whereNull('storerooms.id')
+                              ->orWhere('storerooms.order_taken', '=', 'Yes');
+                        })
+                        ->groupBy('domestic_inventories.rack_id', 'storerooms.order_priority')
                         ->get();
 
                     $stockRecords = [];
@@ -88,11 +95,18 @@ class AutoAssignStockController extends Controller
                         if ($available > 0) {
                             $stockRecords[] = [
                                 'rack_id' => $inv->rack_id,
-                                'available' => $available
+                                'available' => $available,
+                                'order_priority' => is_numeric($inv->order_priority) ? (int)$inv->order_priority : 9999
                             ];
                         }
                     }
-                    $stockCache[$cacheKey] = collect($stockRecords)->sortByDesc('available')->values();
+                    
+                    $stockCache[$cacheKey] = collect($stockRecords)->sort(function ($a, $b) {
+                        if ($a['order_priority'] === $b['order_priority']) {
+                            return $b['available'] <=> $a['available'];
+                        }
+                        return $a['order_priority'] <=> $b['order_priority'];
+                    })->values();
                 }
 
                 $availableStocks = &$stockCache[$cacheKey];
