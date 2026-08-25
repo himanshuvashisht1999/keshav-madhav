@@ -64,6 +64,14 @@
                                 </select>
                             </div>
                             <div class="col-md-2 mb-1">
+                                <label class="small text-muted mb-0">Source</label>
+                                <select name="source_type" class="form-control form-control-sm">
+                                    <option value="">All Sources</option>
+                                    <option value="agent" {{ request('source_type') === 'agent' ? 'selected' : '' }}>Agent Orders</option>
+                                    <option value="corporate" {{ request('source_type') === 'corporate' ? 'selected' : '' }}>Corporate</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-1">
                                 <label class="small text-muted mb-0">Dispatch Type</label>
                                 <select name="dispatch_type" class="form-control form-control-sm">
                                     <option value="">All Types</option>
@@ -120,6 +128,7 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th class="font-weight-normal">Dispatch ID</th>
+                                    <th class="font-weight-normal">Source</th>
                                     <th class="font-weight-normal">Party Name</th>
                                     <th class="font-weight-normal">Agent</th>
                                     <th class="font-weight-normal">Grand Total</th>
@@ -134,30 +143,92 @@
                                     <tr>
                                         <td><small>#DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}</small></td>
                                         <td>
-                                            @if($dispatch->party_type === 'vendor')
-                                                {{ $dispatch->vendor->name ?? 'N/A' }} <span class="badge badge-warning ml-1">Vendor</span>
+                                            @if($dispatch->source_type === 'corporate')
+                                                <span class="badge badge-secondary">Corporate</span>
                                             @else
-                                                {{ $dispatch->shop->name ?? 'N/A' }}
+                                                <span class="badge badge-primary">Agent</span>
                                             @endif
                                         </td>
-                                        <td><span class="badge badge-info">{{ $dispatch->agent->name ?? 'Direct' }}</span></td>
+                                        <td>
+                                            @if($dispatch->party_type === 'vendor')
+                                                {{ $dispatch->vendor_name ?? 'N/A' }} <span class="badge badge-warning ml-1">Vendor</span>
+                                            @else
+                                                {{ $dispatch->customer_name ?? 'N/A' }}
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($dispatch->source_type === 'corporate')
+                                                <span class="text-muted"><small>Direct</small></span>
+                                            @else
+                                                <span class="badge badge-info">{{ $dispatch->agent_name ?? 'Direct' }}</span>
+                                            @endif
+                                        </td>
                                         <td><span class="text-primary">₹{{ number_format($dispatch->grand_total, 2) }}</span></td>
                                         <td>{{ $dispatch->bill_no ?? '-' }}</td>
                                         <td>{{ $dispatch->dispatch_date ? date('d M Y', strtotime($dispatch->dispatch_date)) : 'N/A' }}</td>
                                         <td><small class="text-muted">{{ Str::limit($dispatch->remark, 30) }}</small></td>
                                         <td class="text-right text-nowrap">
-                                            <a href="{{ route('admin.agent-orders.dispatches.show', $dispatch->id) }}"
-                                                class="btn btn-primary btn-sm px-2 shadow-sm" style="border-radius: 6px;" title="View Dispatch">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{{ route('admin.agent-orders.dispatches.download-invoice', $dispatch->id) }}"
-                                                class="btn btn-secondary btn-sm px-2 shadow-sm ml-1" style="border-radius: 6px;" title="Download Invoice">
-                                                <i class="fas fa-file-invoice"></i>
-                                            </a>
-                                            <a href="{{ route('admin.agent-orders.dispatches.download-retail-invoice-excel', $dispatch->id) }}"
-                                                class="btn btn-success btn-sm px-2 shadow-sm ml-1" style="border-radius: 6px;" title="Download Busy Invoice (Excel)">
-                                                <i class="fas fa-file-excel"></i>
-                                            </a>
+                                            @if($dispatch->source_type === 'corporate')
+                                                <a href="{{ route('admin.order-dispatch.view', ['id' => $dispatch->id]) }}"
+                                                    class="btn btn-primary btn-sm px-2 shadow-sm" style="border-radius: 6px;" title="View Dispatch">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ route('admin.order-dispatch.download-invoice', ['id' => $dispatch->id]) }}"
+                                                    class="btn btn-info btn-sm px-2 shadow-sm" style="border-radius: 6px;" title="Download Invoice" target="_blank">
+                                                    <i class="fas fa-file-invoice"></i>
+                                                </a>
+                                                <a href="{{ route('admin.order-dispatch.download-pdf', ['id' => $dispatch->id]) }}"
+                                                    class="btn btn-danger btn-sm px-2 shadow-sm" style="border-radius: 6px;" title="Download PDF" target="_blank">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </a>
+                                                <a href="{{ route('admin.order-dispatch.download-packing-slip', ['id' => $dispatch->id]) }}"
+                                                    class="btn btn-warning btn-sm px-2 shadow-sm text-dark" style="border-radius: 6px;" title="Packing Slip" target="_blank">
+                                                    <i class="fas fa-box-open"></i>
+                                                </a>
+                                            @else
+                                                <a href="{{ route('admin.agent-orders.dispatches.show', $dispatch->id) }}"
+                                                    class="btn btn-primary btn-sm px-2 shadow-sm" style="border-radius: 6px;" title="View Dispatch">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <div class="dropdown d-inline-block">
+                                                    <button class="btn btn-info btn-sm px-2 shadow-sm dropdown-toggle" type="button" id="invoiceDropdown{{ $dispatch->id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-radius: 6px;" title="Invoices">
+                                                        <i class="fas fa-file-invoice"></i>
+                                                    </button>
+                                                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="invoiceDropdown{{ $dispatch->id }}">
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.dispatches.download-invoice', $dispatch->id) }}" target="_blank">
+                                                            <i class="fas fa-file-pdf text-danger mr-2"></i> Standard Invoice
+                                                        </a>
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.dispatches.download-retail-invoice', $dispatch->id) }}" target="_blank">
+                                                            <i class="fas fa-file-pdf text-danger mr-2"></i> Retail Invoice (PDF)
+                                                        </a>
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.dispatches.download-retail-invoice-excel', $dispatch->id) }}" target="_blank">
+                                                            <i class="fas fa-file-excel text-success mr-2"></i> Retail Invoice (Excel)
+                                                        </a>
+                                                        <div class="dropdown-divider"></div>
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.dispatches.send-whatsapp-invoice', $dispatch->id) }}">
+                                                            <i class="fab fa-whatsapp text-success mr-2"></i> Send Standard Invoice via WhatsApp
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <div class="dropdown d-inline-block">
+                                                    <button class="btn btn-warning btn-sm px-2 shadow-sm text-dark dropdown-toggle" type="button" id="packingSlipDropdown{{ $dispatch->id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-radius: 6px;" title="Packing Slips">
+                                                        <i class="fas fa-box-open"></i>
+                                                    </button>
+                                                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="packingSlipDropdown{{ $dispatch->id }}">
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.dispatches.download-packing-slip', $dispatch->id) }}" target="_blank">
+                                                            <i class="fas fa-file-pdf text-danger mr-2"></i> Download Packing Slip
+                                                        </a>
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.dispatches.send-whatsapp-packing-slip', $dispatch->id) }}">
+                                                            <i class="fab fa-whatsapp text-success mr-2"></i> Send Packing Slip via WhatsApp
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <a href="{{ route('admin.agent-orders.dispatches.destroy', $dispatch->id) }}"
+                                                    class="btn btn-danger btn-sm px-2 shadow-sm" style="border-radius: 6px;" title="Delete"
+                                                    onclick="return confirm('Are you sure you want to delete this dispatch? This will revert all dispatched items and quantities back to their respective orders. This action cannot be undone.')">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </a>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty

@@ -2624,44 +2624,128 @@ class AgentOrderController extends Controller
 
     private function buildDispatchesQuery(Request $request)
     {
-        $query = \App\Models\AgentOrderDispatch::with(['shop', 'vendor', 'agent'])
-            ->latest();
+        // 1. Agent Dispatches Query
+        $q1 = DB::table('agent_order_dispatches as d')
+            ->select(
+                'd.id',
+                DB::raw("CAST('agent' AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as source_type"),
+                DB::raw("CAST(d.party_type AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as party_type"),
+                'd.master_customer_id as customer_id',
+                'd.master_vendor_id as vendor_id',
+                'd.sales_agent_id as agent_id',
+                'd.dispatch_date',
+                DB::raw("CAST(d.bill_no AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as bill_no"),
+                'd.grand_total',
+                DB::raw("CAST(d.remark AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as remark"),
+                DB::raw("CAST(c.name AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as customer_name"),
+                DB::raw("CAST(v.name AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as vendor_name"),
+                DB::raw("CAST(a.name AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as agent_name"),
+                'd.created_at'
+            )
+            ->leftJoin('master_customers as c', 'd.master_customer_id', '=', 'c.id')
+            ->leftJoin('vendors as v', 'd.master_vendor_id', '=', 'v.id')
+            ->leftJoin('sales_agents as a', 'd.sales_agent_id', '=', 'a.id');
 
         if ($request->filled('shop_id')) {
-            $query->where('master_customer_id', $request->shop_id);
+            $q1->where('d.master_customer_id', $request->shop_id);
         }
 
         if ($request->filled('vendor_id')) {
-            $query->where('master_vendor_id', $request->vendor_id);
+            $q1->where('d.master_vendor_id', $request->vendor_id);
         }
 
         if ($request->filled('from_date')) {
-            $query->whereDate('dispatch_date', '>=', $request->from_date);
+            $q1->whereDate('d.dispatch_date', '>=', $request->from_date);
         }
 
         if ($request->filled('to_date')) {
-            $query->whereDate('dispatch_date', '<=', $request->to_date);
+            $q1->whereDate('d.dispatch_date', '<=', $request->to_date);
         }
 
         if ($request->filled('bill_no')) {
-            $query->where('bill_no', 'like', '%' . $request->bill_no . '%');
+            $q1->where('d.bill_no', 'like', '%' . $request->bill_no . '%');
+        }
+
+        if ($request->filled('agent_id')) {
+            $q1->where('d.sales_agent_id', $request->agent_id);
         }
 
         if ($request->filled('dispatch_type')) {
             $dispatchType = $request->dispatch_type;
-            $query->whereHas('orders', function ($q) use ($dispatchType) {
-                $q->where(function ($sub) use ($dispatchType) {
-                    $sub->where('sale_type', $dispatchType)
-                        ->orWhere('order_type', $dispatchType);
-                });
+            $q1->whereExists(function($query) use ($dispatchType) {
+                $query->select(DB::raw(1))
+                      ->from('agent_orders')
+                      ->whereColumn('agent_orders.agent_order_dispatch_id', 'd.id')
+                      ->where(function($sub) use ($dispatchType) {
+                          $sub->where('sale_type', $dispatchType)
+                              ->orWhere('order_type', $dispatchType);
+                      });
             });
         }
 
+        // 2. Corporate Dispatches Query
+        $q2 = DB::table('order_dispatch as d')
+            ->select(
+                'd.id',
+                DB::raw("CAST('corporate' AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as source_type"),
+                DB::raw("CAST('customer' AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as party_type"),
+                'd.customer_id as customer_id',
+                DB::raw('NULL as vendor_id'),
+                DB::raw('NULL as agent_id'),
+                'd.dispatch_date',
+                DB::raw("CAST(d.bill_number AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as bill_no"),
+                'd.total_amount as grand_total',
+                DB::raw("CAST(d.remark AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as remark"),
+                DB::raw("CAST(c.name AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as customer_name"),
+                DB::raw("CAST(NULL AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as vendor_name"),
+                DB::raw("CAST(NULL AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as agent_name"),
+                'd.created_at'
+            )
+            ->leftJoin('master_customers as c', 'd.customer_id', '=', 'c.id');
+
+        if ($request->filled('shop_id')) {
+            $q2->where('d.customer_id', $request->shop_id);
+        }
+        if ($request->filled('vendor_id')) {
+            $q2->whereRaw('1 = 0');
+        }
         if ($request->filled('agent_id')) {
-            $query->where('sales_agent_id', $request->agent_id);
+            $q2->whereRaw('1 = 0');
+        }
+        if ($request->filled('dispatch_type')) {
+            if ($request->dispatch_type === 'fabric') {
+                $q2->whereRaw('1 = 0');
+            }
+        }
+        if ($request->filled('from_date')) {
+            $q2->whereDate('d.dispatch_date', '>=', $request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $q2->whereDate('d.dispatch_date', '<=', $request->to_date);
+        }
+        if ($request->filled('bill_no')) {
+            $q2->where('d.bill_number', 'like', '%' . $request->bill_no . '%');
         }
 
-        return $query;
+        // 3. Union and build final query
+        if ($request->filled('source_type')) {
+            if ($request->source_type === 'agent') {
+                $unionQuery = $q1;
+            } elseif ($request->source_type === 'corporate') {
+                $unionQuery = $q2;
+            } else {
+                $unionQuery = $q1->unionAll($q2);
+            }
+        } else {
+            $unionQuery = $q1->unionAll($q2);
+        }
+
+        $finalQuery = DB::table(DB::raw("({$unionQuery->toSql()}) as combined"))
+            ->mergeBindings($unionQuery)
+            ->orderBy('dispatch_date', 'desc')
+            ->orderBy('created_at', 'desc');
+
+        return $finalQuery;
     }
 
     public function exportDispatchesPdf(Request $request)
