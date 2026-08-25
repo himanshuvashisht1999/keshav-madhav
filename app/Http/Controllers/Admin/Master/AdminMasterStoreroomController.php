@@ -47,6 +47,8 @@ class AdminMasterStoreroomController extends Controller
         Storeroom::create([
             'name' => $request->name,
             'description' => $request->description,
+            'order_taken' => $request->order_taken,
+            'order_priority' => $request->order_priority,
             'status' => 1
         ]);
 
@@ -77,7 +79,9 @@ class AdminMasterStoreroomController extends Controller
         $store->update([
             'name' => $request->name,
             'description' => $request->description,
-            'status' => $request->status ?? 1
+            'status' => $request->status ?? 1,
+            'order_taken' => $request->order_taken,
+            'order_priority' => $request->order_priority
         ]);
 
         return redirect()->route('admin.master.storeroom.index')->with('success', 'The storeroom has been successfully updated.');

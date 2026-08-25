@@ -36,6 +36,17 @@
                                     <option value="0" {{ $storeroom->status == 0 ? 'selected' : '' }}>Inactive</option>
                                 </select>
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Order Taken</label>
+                                <select name="order_taken" id="order_taken_edit" class="form-control">
+                                    <option value="No" {{ $storeroom->order_taken == 'No' ? 'selected' : '' }}>No</option>
+                                    <option value="Yes" {{ $storeroom->order_taken == 'Yes' ? 'selected' : '' }}>Yes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3" id="order_priority_div_edit" style="display: {{ $storeroom->order_taken == 'Yes' ? 'block' : 'none' }};">
+                                <label>Order Priority</label>
+                                <input type="number" name="order_priority" class="form-control" value="{{ $storeroom->order_priority }}" placeholder="Enter Priority Number (e.g., 1, 2, 3)" min="1">
+                            </div>
                             <div class="col-md-12 mb-3">
                                 <label>Description</label>
                                 <textarea name="description" class="form-control">{{ $storeroom->description }}</textarea>
@@ -51,5 +62,14 @@
 @push('scripts')
 <script>
     // Rack management logic has been moved to its own page.
+    $(document).ready(function() {
+        $('#order_taken_edit').change(function() {
+            if ($(this).val() == 'Yes') {
+                $('#order_priority_div_edit').show();
+            } else {
+                $('#order_priority_div_edit').hide();
+            }
+        });
+    });
 </script>
 @endpush

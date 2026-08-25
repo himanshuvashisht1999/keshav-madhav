@@ -56,6 +56,17 @@
                         <input type="text" name="name" class="form-control" required>
                     </div>
                     <div class="mb-3">
+                        <label>Order Taken</label>
+                        <select name="order_taken" id="order_taken" class="form-control">
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="order_priority_div" style="display: none;">
+                        <label>Order Priority</label>
+                        <input type="number" name="order_priority" class="form-control" placeholder="Enter Priority Number (e.g., 1, 2, 3)" min="1">
+                    </div>
+                    <div class="mb-3">
                         <label>Description</label>
                         <textarea name="description" class="form-control"></textarea>
                     </div>
@@ -87,6 +98,14 @@
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
         });
+    });
+
+    $('#order_taken').change(function() {
+        if ($(this).val() == 'Yes') {
+            $('#order_priority_div').show();
+        } else {
+            $('#order_priority_div').hide();
+        }
     });
 
     function deleteData(id) {
