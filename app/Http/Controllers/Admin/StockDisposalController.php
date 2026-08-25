@@ -298,9 +298,14 @@ class StockDisposalController extends Controller
 
                         DomesticInventoryHistory::create([
                             'user_id' => auth()->id(),
-                            'domestic_inventory_id' => $inventory->id,
-                            'old_total_boxes' => $inventory->total_boxes + $take,
-                            'new_total_boxes' => $inventory->total_boxes,
+                            'old_product_id' => $inventory->product_id,
+                            'old_size_set_id' => $inventory->size_set_id,
+                            'old_color_id' => $inventory->color_id,
+                            'old_rack_id' => $inventory->rack_id,
+                            'old_warehouse_id' => $inventory->rack ? $inventory->rack->storeroom_id : null,
+                            'box_quantity' => $take,
+                            'mrp' => $inventory->mrp,
+                            'pieces_per_box' => $inventory->pieces_per_box,
                             'type' => 'Disposal',
                             'remarks' => "Disposed (No: {$disposal_no}). Reason: {$request->reason}. " . $request->remarks
                         ]);
