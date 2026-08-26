@@ -171,11 +171,22 @@ class OrderDispatchService
         }
 
         // Fetch Cartons with Items and Details
-        $cartons_data = PackingCarton::with([
+        $cartons_data_models = PackingCarton::with([
             'items.detail.orderProductSet.colors',
             'items.detail.orderProductSet.size_measurement',
             'rack.storeroom'
-        ])->whereIn('id', $dispatch_carton_ids)->get()->toArray();
+        ])->whereIn('id', $dispatch_carton_ids)->get();
+
+        // Disable expensive appends that cause N+1 query storms during serialization
+        foreach ($cartons_data_models as $carton) {
+            foreach ($carton->items as $item) {
+                if ($item->detail && $item->detail->orderProductSet) {
+                    $item->detail->orderProductSet->setAppends([]);
+                }
+            }
+        }
+
+        $cartons_data = $cartons_data_models->toArray();
 
         $total_items_dispatch = 0;
         $total_dispatch_amount = 0;
