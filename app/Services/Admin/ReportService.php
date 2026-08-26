@@ -2167,6 +2167,16 @@ class ReportService
                 ->selectRaw('lot_no, from_stage_id, sub_stage_id, SUM(quantity) as sum_qty')->groupBy('lot_no', 'from_stage_id', 'sub_stage_id')
                 ->get()->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->sub_stage_id => $i->sum_qty]; })->toArray();
 
+            // Fetch bulk sums for packing (stage 11 completed work) grouped by lot and unit
+            $packedSums = \App\Models\PackingItem::join('packing_mains', 'packing_items.packing_main_id', '=', 'packing_mains.id')
+                ->join('production_slip_digitization', 'packing_mains.slip_id', '=', 'production_slip_digitization.id')
+                ->whereIn('packing_items.lot_no', $lotNos)
+                ->selectRaw('packing_items.lot_no, production_slip_digitization.stage_master_unit_id, SUM(packing_items.quantity) as sum_qty')
+                ->groupBy('packing_items.lot_no', 'production_slip_digitization.stage_master_unit_id')
+                ->get()
+                ->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->stage_master_unit_id => $i->sum_qty]; })
+                ->toArray();
+
             $orderLots = \App\Models\OrderLot::with('orderProductSet.orderMain')
                 ->whereIn('lot_no', $lotNos)->get()->keyBy('lot_no');
                 
@@ -2221,6 +2231,13 @@ class ReportService
                 $out4 = $out4Sums[$outKey] ?? 0;
                 
                 $outflowAll = $out1 + $out2 + $out3 + $out4;
+                
+                // Add packed items to outflow if stage is Packing (11)
+                if ($t_stage_id == 11) {
+                    $packedKey = $item->lot_no . '_' . $item->sub_stage_id_to;
+                    $packedQty = $packedSums[$packedKey] ?? 0;
+                    $outflowAll += $packedQty;
+                }
                 
                 $pendingQty = max(0, $incomingAll - $outflowAll);
 

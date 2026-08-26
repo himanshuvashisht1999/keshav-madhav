@@ -113,7 +113,17 @@
                                     <p class="text-muted mb-0 small">
                                         <span class="mr-3"><i class="fas fa-file-invoice text-slate mr-1"></i> Order SKU: <strong>#{{ $session->order->sku ?? 'N/A' }}</strong></span>
                                         <span class="mr-3"><i class="fas fa-user-tie text-slate mr-1"></i> Customer: <strong>{{ $session->order->customer->name ?? 'N/A' }}</strong></span>
-                                        <span><i class="fas fa-calendar-alt text-slate mr-1"></i> Date: <strong>{{ date('d M, Y', strtotime($session->packing_date)) }}</strong></span>
+                                        <span class="mr-3"><i class="fas fa-calendar-alt text-slate mr-1"></i> Date: <strong>{{ date('d M, Y', strtotime($session->packing_date)) }}</strong></span>
+                                        @php
+                                            $lotNumbers = $session->items->pluck('lot_no')->filter()->unique()->values()->toArray();
+                                        @endphp
+                                        @if(count($lotNumbers) > 0)
+                                            <span><i class="fas fa-layer-group text-slate mr-1"></i> Packed Lots: 
+                                                @foreach($lotNumbers as $lot)
+                                                    <span class="badge badge-secondary px-2 py-1 font-weight-bold" style="font-size: 11px;">#{{ $lot }}</span>
+                                                @endforeach
+                                            </span>
+                                        @endif
                                     </p>
                                 </div>
                             </div>
@@ -327,7 +337,20 @@
                                                     {{ $dom->box_no }} 
                                                     <span class="d-block text-xs text-muted font-weight-normal mt-1">(Carton #{{ $dom->carton_no }})</span>
                                                 </td>
-                                                <td class="py-3 font-weight-bold text-dark">{{ $dom->product->design_number ?? 'N/A' }}</td>
+                                                <td class="py-3 font-weight-bold text-dark">
+                                                    {{ $dom->product->design_number ?? 'N/A' }}
+                                                    @php
+                                                        $carton = $session->cartons->firstWhere('id', $dom->packing_carton_id);
+                                                        $cartonLots = $carton ? $carton->items->pluck('lot_no')->filter()->unique()->values()->toArray() : [];
+                                                    @endphp
+                                                    @if(count($cartonLots) > 0)
+                                                        <div class="mt-1">
+                                                            @foreach($cartonLots as $clot)
+                                                                <span class="badge badge-secondary" style="font-size: 10px; font-weight: normal;">Lot #{{ $clot }}</span>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+                                                </td>
                                                 <td class="py-3 font-weight-bold text-slate">{{ $dom->sizeSet->name ?? 'N/A' }}</td>
                                                 <td class="py-3"><span class="badge badge-light border">{{ $dom->color->name ?? 'N/A' }}</span></td>
                                                 <td class="py-3">{{ $dom->quantity }} pcs</td>
@@ -357,7 +380,8 @@
                                                     $set = $item->detail ? $item->detail->orderProductSet : null;
                                                     return [
                                                         'design' => $set->design_number ?? 'N/A',
-                                                        'size_set' => $set->size_measurement->name ?? 'N/A'
+                                                        'size_set' => $set->size_measurement->name ?? 'N/A',
+                                                        'lot_no' => $item->lot_no
                                                     ];
                                                 })->unique()->values();
                                             @endphp
@@ -368,6 +392,9 @@
                                                         <div class="mb-1">
                                                             <strong class="text-dark">{{ $sum['design'] }}</strong>
                                                             <span class="text-muted ml-2">[{{ $sum['size_set'] }}]</span>
+                                                            @if($sum['lot_no'])
+                                                                <span class="badge badge-secondary ml-1" style="font-size: 10px; font-weight: normal;">Lot #{{ $sum['lot_no'] }}</span>
+                                                            @endif
                                                         </div>
                                                     @endforeach
                                                 </td>

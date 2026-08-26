@@ -268,6 +268,12 @@ function getLotDetails($lot_id, $master_stage)
                         
         $outflowAll = $out1->sum('quantity') + $out2->sum('quantity');
         
+        // Add packed quantity to outflow if stage is Packing (11)
+        if ($master_stage == 11) {
+            $packedQty = \App\Models\PackingItem::where('lot_no', $lot_id)->sum('quantity');
+            $outflowAll += $packedQty;
+        }
+        
         $totalQuantity = max(0, $incomingType1 - $outflowType2);
         $remainingQuantity = max(0, $incomingAll - $outflowAll);
     }
