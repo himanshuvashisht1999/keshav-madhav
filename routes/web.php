@@ -1797,6 +1797,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
 Route::prefix('/admin')->name('admin.')->middleware(['web', 'checkAdminLogin'])->group(function () {
     Route::prefix('/uploaded-slips')->name('uploaded-slips.')->group(function () {
+        Route::get('/packing', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'index'])->name('packing');
         Route::get('/', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'index'])->name('index');
         Route::get('/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'show'])->name('show');
         Route::post('/{id}/finalize', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'finalize'])->name('finalize');

@@ -29,6 +29,11 @@ class UploadedSlipsController extends Controller
 {
     public function index(Request $request)
     {
+        $is_packing = $request->route() && $request->route()->named('admin.uploaded-slips.packing');
+        if ($is_packing) {
+            $request->merge(['from_stage_id' => 11]);
+        }
+
         $query = ProductionSlipDigitization::with([
             'fromStage',
             'toStage',
@@ -108,7 +113,7 @@ class UploadedSlipsController extends Controller
         $stages = MasterProductStage::where('status', 1)->get();
         $units = StageMasterUnit::where('status', 1)->get();
 
-        return view('admin.uploaded_slips.index', compact('slips', 'stages', 'units'));
+        return view('admin.uploaded_slips.index', compact('slips', 'stages', 'units', 'is_packing'));
     }
 
     public function show($slipId)

@@ -3,7 +3,7 @@
 <div class="content-wrapper">
     <!-- PAGE HEADER -->
     <section class="content-header">
-        <h1 class="m-0 font-weight-bold text-dark text-center">Uploaded Slips</h1>
+        <h1 class="m-0 font-weight-bold text-dark text-center">{{ !empty($is_packing) ? 'Uploaded Slips (Packing)' : 'Uploaded Slips' }}</h1>
 
     </section>
 
@@ -14,7 +14,7 @@
             <!-- FILTER CARD -->
             <div class="card shadow-sm border-0">
                 <div class="card-body bg-light rounded p-2">
-                    <form method="GET" action="{{ route('admin.uploaded-slips.index') }}">
+                    <form method="GET" action="{{ !empty($is_packing) ? route('admin.uploaded-slips.packing') : route('admin.uploaded-slips.index') }}">
                         <div class="row align-items-end">
                             <div class="col-md mb-2">
                                 <label class="small font-weight-bold text-muted mb-1">Lot Number</label>
@@ -24,6 +24,7 @@
                                 <label class="small font-weight-bold text-muted mb-1">Bill No</label>
                                 <input type="text" name="bill_number" class="form-control form-control-sm" placeholder="Search Bill..." value="{{ request('bill_number') }}">
                             </div>
+                            @if(empty($is_packing))
                             <div class="col-md mb-2">
                                 <label class="small font-weight-bold text-muted mb-1">From Stage</label>
                                 <select name="from_stage_id" class="form-control select2 form-control-sm">
@@ -35,6 +36,9 @@
                                     @endforeach
                                 </select>
                             </div>
+                            @else
+                                <input type="hidden" name="from_stage_id" value="11">
+                            @endif
                             <div class="col-md mb-2">
                                 <label class="small font-weight-bold text-muted mb-1">To Stage</label>
                                 <select name="to_stage_id" class="form-control select2 form-control-sm">
@@ -74,7 +78,7 @@
                                 <button type="submit" class="btn btn-sm btn-primary px-3 shadow-sm mr-1">
                                     <i class="fas fa-filter"></i>
                                 </button>
-                                <a href="{{ route('admin.uploaded-slips.index') }}" class="btn btn-sm btn-outline-secondary px-2 shadow-sm">
+                                <a href="{{ !empty($is_packing) ? route('admin.uploaded-slips.packing') : route('admin.uploaded-slips.index') }}" class="btn btn-sm btn-outline-secondary px-2 shadow-sm">
                                     <i class="fas fa-undo"></i>
                                 </a>
                             </div>

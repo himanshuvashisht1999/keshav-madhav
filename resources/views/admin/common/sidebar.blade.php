@@ -130,10 +130,18 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                     @can('manage-uploaded-slips')
                         <li class="nav-item">
                             <a href="{{ route('admin.uploaded-slips.index') }}"
-                                class="{{ str_contains($page_url, 'admin/uploaded-slips') || str_contains($page_url, 'admin/packing/process') || str_contains($page_url, 'admin/order_digitalization/create-slips-production') || str_contains($page_url, 'admin/order_digitalization/cutting-master') ? 'nav-link active' : 'nav-link' }} border_class"
+                                class="{{ (str_contains($page_url, 'admin/uploaded-slips') && !str_contains($page_url, 'admin/uploaded-slips/packing')) || str_contains($page_url, 'admin/packing/process') || str_contains($page_url, 'admin/order_digitalization/create-slips-production') || str_contains($page_url, 'admin/order_digitalization/cutting-master') ? 'nav-link active' : 'nav-link' }} border_class"
                                 style="position:static;">
                                 <i class="fas fa-file-upload"></i>
                                 <p>UPLOADED SLIPS</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.uploaded-slips.packing') }}"
+                                class="{{ str_contains($page_url, 'admin/uploaded-slips/packing') ? 'nav-link active' : 'nav-link' }} border_class"
+                                style="position:static;">
+                                <i class="fas fa-box-open"></i>
+                                <p>UPLOADED SLIP PACKING</p>
                             </a>
                         </li>
                     @endcan
