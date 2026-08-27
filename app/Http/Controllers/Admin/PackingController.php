@@ -1007,11 +1007,10 @@ class PackingController extends Controller
 
                 if (isset($carton['items']) && is_array($carton['items'])) {
                     foreach ($carton['items'] as $item) {
-                        $transaction_id = $item['transaction_id'] ?? null;
                         $lot_no = $item['lot_no'] ?? null;
 
-                        if (!$transaction_id || !$lot_no) {
-                            throw new \Exception("Missing lot information for size {$item['size_name']}");
+                        if (!$lot_no) {
+                            throw new \Exception("Missing lot information for size " . ($item['size_name'] ?? ''));
                         }
 
                         \App\Models\PackingItem::create([
@@ -1025,27 +1024,38 @@ class PackingController extends Controller
                             'selling_price' => $carton['price'] ?? 0
                         ]);
 
-                        if (!isset($stageTransactionsToUpdate[$transaction_id])) {
-                            $stageTransactionsToUpdate[$transaction_id] = 0;
+                        if (!isset($stageTransactionsToUpdate[$lot_no])) {
+                            $stageTransactionsToUpdate[$lot_no] = 0;
                         }
-                        $stageTransactionsToUpdate[$transaction_id] += $item['quantity'];
+                        $stageTransactionsToUpdate[$lot_no] += $item['quantity'];
                     }
                 }
             }
             
-            // Validate and Deduct remaining quantities efficiently
-            $transactionIds = array_keys($stageTransactionsToUpdate);
-            $transactions = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-                ->whereIn('id', $transactionIds)
-                ->pluck('remaining_quantity', 'id');
+            // Validate and Deduct remaining quantities across all available stage transactions for each lot
+            foreach($stageTransactionsToUpdate as $lot_no => $deductQty) {
+                $lotTxs = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                    ->where('lot_no', $lot_no)
+                    ->where('to_stage_id', 11)
+                    ->where('remaining_quantity', '>', 0)
+                    ->orderBy('id', 'asc')
+                    ->lockForUpdate()
+                    ->get();
 
-            foreach($stageTransactionsToUpdate as $tId => $deductQty) {
-                if (!isset($transactions[$tId]) || $transactions[$tId] < $deductQty) {
-                    throw new \Exception("Insufficient overall quantity in lot.");
+                $totalAvailable = $lotTxs->sum('remaining_quantity');
+                if ($totalAvailable < $deductQty) {
+                    throw new \Exception("Insufficient overall quantity in lot {$lot_no}. Available: {$totalAvailable}, Required: {$deductQty}");
                 }
-                \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-                    ->where('id', $tId)
-                    ->decrement('remaining_quantity', $deductQty);
+
+                $remainingToDeduct = $deductQty;
+                foreach ($lotTxs as $tx) {
+                    if ($remainingToDeduct <= 0) break;
+                    $take = min($tx->remaining_quantity, $remainingToDeduct);
+                    \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                        ->where('id', $tx->id)
+                        ->decrement('remaining_quantity', $take);
+                    $remainingToDeduct -= $take;
+                }
             }
             
             \DB::commit();
@@ -1066,17 +1076,29 @@ class PackingController extends Controller
         \DB::beginTransaction();
         try {
             foreach ($carton->items as $item) {
-                // Refund order_stage_transactions.remaining_quantity based on lot_no
-                $transaction = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                // Refund order_stage_transactions.remaining_quantity across transactions for lot_no
+                $refundQty = $item->quantity;
+                $txs = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                     ->where('lot_no', $item->lot_no)
                     ->where('to_stage_id', 11)
                     ->orderBy('id', 'desc')
-                    ->first();
-                    
-                if ($transaction) {
-                    \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-                        ->where('id', $transaction->id)
-                        ->increment('remaining_quantity', $item->quantity);
+                    ->get();
+
+                if ($txs->isNotEmpty()) {
+                    foreach ($txs as $tx) {
+                        if ($refundQty <= 0) break;
+                        $maxAdd = max(0, $tx->quantity - $tx->remaining_quantity);
+                        $add = min($refundQty, $maxAdd > 0 ? $maxAdd : $refundQty);
+                        \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                            ->where('id', $tx->id)
+                            ->increment('remaining_quantity', $add);
+                        $refundQty -= $add;
+                    }
+                    if ($refundQty > 0) {
+                        \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                            ->where('id', $txs->first()->id)
+                            ->increment('remaining_quantity', $refundQty);
+                    }
                 }
             }
             
@@ -1104,17 +1126,29 @@ class PackingController extends Controller
             
             foreach ($cartons as $carton) {
                 foreach ($carton->items as $item) {
-                    // Refund order_stage_transactions.remaining_quantity based on lot_no
-                    $transaction = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                    // Refund order_stage_transactions.remaining_quantity across transactions for lot_no
+                    $refundQty = $item->quantity;
+                    $txs = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                         ->where('lot_no', $item->lot_no)
                         ->where('to_stage_id', 11)
                         ->orderBy('id', 'desc')
-                        ->first();
-                        
-                    if ($transaction) {
-                        \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-                            ->where('id', $transaction->id)
-                            ->increment('remaining_quantity', $item->quantity);
+                        ->get();
+
+                    if ($txs->isNotEmpty()) {
+                        foreach ($txs as $tx) {
+                            if ($refundQty <= 0) break;
+                            $maxAdd = max(0, $tx->quantity - $tx->remaining_quantity);
+                            $add = min($refundQty, $maxAdd > 0 ? $maxAdd : $refundQty);
+                            \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                                ->where('id', $tx->id)
+                                ->increment('remaining_quantity', $add);
+                            $refundQty -= $add;
+                        }
+                        if ($refundQty > 0) {
+                            \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                                ->where('id', $txs->first()->id)
+                                ->increment('remaining_quantity', $refundQty);
+                        }
                     }
                 }
                 
