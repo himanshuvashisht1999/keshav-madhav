@@ -260,14 +260,15 @@ class PartyLedgerController extends Controller
 
             // 5. Finished Goods Purchases (Inventory Purchase) - CREDIT
             $inventoryPurchases = \App\Models\DomesticInventoryPurchase::whereIn('customer_id', $customerIds)
-                ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
+                ->when($startDate, fn($q) => $q->whereDate(\DB::raw('COALESCE(purchase_date, created_at)'), '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate(\DB::raw('COALESCE(purchase_date, created_at)'), '<=', $endDate))
                 ->get();
 
             foreach ($inventoryPurchases as $ip) {
+                $pDate = $ip->purchase_date ? \Carbon\Carbon::parse($ip->purchase_date)->format('Y-m-d') : \Carbon\Carbon::parse($ip->created_at)->format('Y-m-d');
                 $transactions->push((object) [
                     'customer_id' => $ip->customer_id,
-                    'date' => $ip->created_at,
+                    'date' => $pDate,
                     'created_at' => $ip->created_at,
                     'type' => 'Inventory Purchase',
                     'ref' => 'InvPur #' . $ip->id,
@@ -547,13 +548,14 @@ class PartyLedgerController extends Controller
 
         // 5. Finished Goods Purchases (Inventory Purchase) - CREDIT
             $inventoryPurchases = \App\Models\DomesticInventoryPurchase::where($directIdField, $id)
-                ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
+                ->when($startDate, fn($q) => $q->whereDate(\DB::raw('COALESCE(purchase_date, created_at)'), '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate(\DB::raw('COALESCE(purchase_date, created_at)'), '<=', $endDate))
                 ->get();
 
             foreach ($inventoryPurchases as $ip) {
+                $pDate = $ip->purchase_date ? \Carbon\Carbon::parse($ip->purchase_date)->format('Y-m-d') : \Carbon\Carbon::parse($ip->created_at)->format('Y-m-d');
                 $transactions->push((object) [
-                    'date' => $ip->created_at,
+                    'date' => $pDate,
                     'created_at' => $ip->created_at,
                     'type' => 'Inventory Purchase',
                     'ref' => 'InvPur #' . $ip->id,
@@ -567,13 +569,14 @@ class PartyLedgerController extends Controller
             // 6. Vendor Specific: Fabric Purchases (Inwards) - CREDIT
             if ($type === 'vendor') {
                 $receipts = FabricReceipt::where('vendor_id', $id)
-                    ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
-                    ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
+                    ->when($startDate, fn($q) => $q->whereDate(\DB::raw('COALESCE(time, created_at)'), '>=', $startDate))
+                    ->when($endDate, fn($q) => $q->whereDate(\DB::raw('COALESCE(time, created_at)'), '<=', $endDate))
                     ->get();
 
                 foreach ($receipts as $r) {
+                    $rDate = $r->time ? \Carbon\Carbon::parse($r->time)->format('Y-m-d') : \Carbon\Carbon::parse($r->created_at)->format('Y-m-d');
                     $transactions->push((object) [
-                        'date' => $r->created_at,
+                        'date' => $rDate,
                         'created_at' => $r->created_at,
                         'type' => 'Fabric Purchase',
                         'ref' => 'Receipt #' . $r->sku,

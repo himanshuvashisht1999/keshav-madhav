@@ -195,7 +195,7 @@ class CustomerService
         $purchases = \App\Models\DomesticInventoryPurchase::whereIn('customer_id', $customerIds)
             ->get();
         foreach ($purchases as $ip) {
-            $date = $ip->created_at;
+            $date = $ip->purchase_date ?: $ip->created_at;
             $amount = (float) $ip->total_amount;
             $id = $ip->customer_id;
             
