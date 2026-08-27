@@ -24,6 +24,7 @@ class ReportController extends Controller
         $response = $reportData;
         $response['warehouses'] = $this->service->warehouses();
         $response['fabrics'] = $this->service->fabrics();
+        $response['vendors'] = $this->service->vendors();
         $response['filters'] = $request->all();
 
         if ($request->ajax()) {

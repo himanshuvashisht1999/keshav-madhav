@@ -407,6 +407,13 @@ class ReportService
                     ->groupBy('fabrics.id', 'fabrics.name', 'vendors.name');
             }
 
+            if ($request->filled('vendor_id')) {
+                $vendorIds = array_filter((array) $request->vendor_id);
+                if (!empty($vendorIds)) {
+                    $query->whereIn('fabrics.vendor_id', $vendorIds);
+                }
+            }
+
             $query->having('total_received', '>', 0)
                 ->when($request->filled('qty_from'), function ($q) use ($request) {
                     $q->having('total_remaining', '>=', $request->qty_from);

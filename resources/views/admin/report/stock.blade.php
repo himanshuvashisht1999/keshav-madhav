@@ -68,6 +68,11 @@
                                     <input type="hidden" name="warehouse_id[]" value="{{ $whId }}">
                                 @endforeach
                             @endif
+                            @if($level !== 'fabrics' && request('vendor_id'))
+                                @foreach((array) request('vendor_id') as $vId)
+                                    <input type="hidden" name="vendor_id[]" value="{{ $vId }}">
+                                @endforeach
+                            @endif
 
                             <div class="row align-items-end g-2">
                                 @if($level === 'fabrics')
@@ -85,14 +90,27 @@
                                         </select>
                                     </div>
                                     <div class="col-md-3">
+                                        <label class="small fw-bold mb-1">Supplier / Vendor</label>
+                                        @php
+                                            $selectedVendors = (array) request('vendor_id', []);
+                                        @endphp
+                                        <select name="vendor_id[]" class="form-control form-control-sm select2" multiple data-placeholder="All Suppliers">
+                                            @foreach($vendors as $vendor)
+                                                <option value="{{ $vendor->id }}" {{ in_array($vendor->id, $selectedVendors) ? 'selected' : '' }}>
+                                                    {{ $vendor->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
                                         <label class="small fw-bold mb-1">Search Fabric</label>
                                         <input type="text" name="search" class="form-control form-control-sm"
                                             placeholder="Name or Sku..." value="{{ request('search') }}">
                                     </div>
                                 @endif
 
-                                <div class="col-md-4">
-                                    <label class="small fw-bold mb-1">Remaining Qty (Range)</label>
+                                <div class="{{ $level === 'fabrics' ? 'col-md-2' : 'col-md-4' }}">
+                                    <label class="small fw-bold mb-1">Remaining Qty</label>
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text bg-light border-end-0">From</span>
                                         <input type="number" step="0.01" name="qty_from" class="form-control" placeholder="0.00" value="{{ request('qty_from') }}">
@@ -103,9 +121,9 @@
 
                                 <div class="col-md-2 d-flex gap-1">
                                     <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
-                                        <i class="fas fa-search"></i> Apply Filter
+                                        <i class="fas fa-search"></i> Apply
                                     </button>
-                                    <a href="{{ route('admin.report.stock', request()->only(['fabric_id', 'type', 'warehouse_id'])) }}" class="btn btn-sm btn-outline-secondary" title="Reset">
+                                    <a href="{{ route('admin.report.stock', request()->only(['fabric_id', 'type'])) }}" class="btn btn-sm btn-outline-secondary" title="Reset">
                                         <i class="fas fa-undo"></i>
                                     </a>
                                 </div>

@@ -54,6 +54,7 @@ class ReportController extends Controller
         $response = $reportData;
         $response['warehouses'] = $this->service->warehouses();
         $response['fabrics'] = $this->service->fabrics();
+        $response['vendors'] = $this->service->vendors();
         $response['filters'] = $request->all();
 
         return view('admin.report.stock', $response);
@@ -274,6 +275,14 @@ class ReportController extends Controller
             })
             ->when($request->filled('fabric_id'), function ($q) use ($request) {
                 $q->where('fabric_id', $request->fabric_id);
+            })
+            ->when($request->filled('vendor_id'), function ($q) use ($request) {
+                $vendorIds = array_filter((array) $request->vendor_id);
+                if (!empty($vendorIds)) {
+                    $q->whereHas('fabric', function($fq) use ($vendorIds) {
+                        $fq->whereIn('vendor_id', $vendorIds);
+                    });
+                }
             })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $q->whereHas('fabric', function($fq) use ($request) {
