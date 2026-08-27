@@ -64,8 +64,7 @@
 
                                 <div class="col-md-3">
                                     <label class="fw-bold">Stage</label>
-                                    <select name="stage_id" id="stage_id" class="form-control select2"
-                                        onchange="this.form.submit()">
+                                    <select name="stage_id" id="stage_id" class="form-control select2">
                                         <option value="">All Stages</option>
                                         @foreach($stages as $stage)
                                             @if(!in_array(strtolower(trim($stage->name)), ['cutting', 'printing & embroidery', 'printing', 'embroidery']))
@@ -73,6 +72,22 @@
                                                 {{ $stage->name }}
                                             </option>
                                             @endif
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="fw-bold">Unit Person</label>
+                                    <select name="unit_id" id="unit_id" class="form-control select2">
+                                        <option value="">All Unit Persons</option>
+                                        @foreach($allUnits as $unit)
+                                            <option value="{{ $unit->id }}" 
+                                                data-stage-id="{{ $unit->master_stage_id }}"
+                                                data-unit-name="{{ $unit->name }}"
+                                                data-stage-name="{{ $unit->masterStage->name ?? '' }}"
+                                                {{ (string)request('unit_id') === (string)$unit->id ? 'selected' : '' }}>
+                                                {{ $unit->name }}{{ $unit->masterStage ? ' (' . $unit->masterStage->name . ')' : '' }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -160,6 +175,61 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
+        // Cache all unit options for instant client-side filtering
+        let allUnitOptions = [];
+        $('#unit_id option').each(function() {
+            if ($(this).val()) {
+                let unitName = $(this).data('unit-name') || $(this).text();
+                let stageName = $(this).data('stage-name') || '';
+                allUnitOptions.push({
+                    id: $(this).val(),
+                    unitName: unitName,
+                    stageName: stageName,
+                    fullText: unitName + (stageName ? ' (' + stageName + ')' : ''),
+                    stageId: $(this).data('stage-id')
+                });
+            }
+        });
+
+        function filterUnits(stageId, preselectedUnitId) {
+            let $unitSelect = $('#unit_id');
+            let currentVal = preselectedUnitId !== undefined ? preselectedUnitId : $unitSelect.val();
+            
+            $unitSelect.empty();
+            $unitSelect.append(new Option('All Unit Persons', ''));
+
+            let hasSelected = false;
+            allUnitOptions.forEach(function(opt) {
+                if (!stageId || opt.stageId == stageId) {
+                    let isSelected = (currentVal && currentVal == opt.id);
+                    if (isSelected) hasSelected = true;
+                    // If a specific stage is active, display just the unit person's name
+                    let displayText = stageId ? opt.unitName : opt.fullText;
+                    let newOpt = new Option(displayText, opt.id, false, isSelected);
+                    $(newOpt).attr('data-stage-id', opt.stageId);
+                    $(newOpt).attr('data-unit-name', opt.unitName);
+                    $(newOpt).attr('data-stage-name', opt.stageName);
+                    $unitSelect.append(newOpt);
+                }
+            });
+
+            if (!hasSelected && currentVal) {
+                $unitSelect.val('');
+            }
+
+            $unitSelect.trigger('change.select2');
+        }
+
+        $('#stage_id').on('change', function() {
+            filterUnits($(this).val());
+        });
+
+        let initialStage = $('#stage_id').val();
+        let initialUnit = "{{ request('unit_id') }}";
+        if (initialStage) {
+            filterUnits(initialStage, initialUnit);
+        }
+
         let page = 1;
         let isLoading = false;
         let hasMore = {{ $assignments->hasMorePages() ? 'true' : 'false' }};

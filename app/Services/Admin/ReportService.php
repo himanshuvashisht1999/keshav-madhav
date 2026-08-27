@@ -2302,10 +2302,18 @@ class ReportService
         $stages = \App\Models\MasterProductStage::where('status', 1)->orderBy('sequence', 'asc')->get();
         // Return only unit persons for the selected stage, or all if none
         $unitsQuery = \App\Models\StageMasterUnit::where('status', 1);
-        if ($stageId) {
-            $unitsQuery->where('master_stage_id', $stageId);
-        }
-        $units = $unitsQuery->get();
+        $units = $unitsQuery->whereNotNull('name')
+            ->where('name', '!=', '')
+            ->where('name', '!=', 'NULL')
+            ->orderBy('name', 'asc')
+            ->get();
+        $allUnits = \App\Models\StageMasterUnit::with('masterStage')
+            ->where('status', 1)
+            ->whereNotNull('name')
+            ->where('name', '!=', '')
+            ->where('name', '!=', 'NULL')
+            ->orderBy('name', 'asc')
+            ->get();
         
         $totalPending = 0;
         foreach ($assignments as $item) {
@@ -2342,6 +2350,7 @@ class ReportService
             'canCloseTasks' => $canCloseTasks,
             'stages' => $stages,
             'units' => $units,
+            'allUnits' => $allUnits,
             'designs' => $designs,
             'selectedStage' => $stageId,
             'selectedUnit' => $unitIdsReq,
