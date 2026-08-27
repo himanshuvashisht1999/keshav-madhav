@@ -1121,4 +1121,43 @@ class ReportController extends Controller
 
         return view('admin.report.product_customer_count_detail', compact('items', 'design_number', 'products', 'sizeSets', 'colors', 'agents', 'totalQuantitySold'));
     }
+
+    /**
+     * Slip-wise Summary & Analytics Report
+     */
+    public function slipsReport(Request $request, \App\Services\Admin\Report\SlipReportService $service)
+    {
+        $data = $service->getSlipWiseReport($request);
+        return view('admin.report.slips.index', $data);
+    }
+
+    /**
+     * Deep Multi-entry Slip Detail Report
+     */
+    public function slipDetailReport($id, \App\Services\Admin\Report\SlipReportService $service)
+    {
+        $data = $service->getSlipDetailedReport($id);
+        return view('admin.report.slips.show', $data);
+    }
+
+    /**
+     * Export Slip-wise Report to Excel
+     */
+    public function slipWiseExport(Request $request, \App\Services\Admin\Report\SlipReportService $service)
+    {
+        return $service->exportSlipWiseExcel($request);
+    }
+
+    /**
+     * Download Slip Detail Report as PDF
+     */
+    public function slipDetailPdf($id, \App\Services\Admin\Report\SlipReportService $service)
+    {
+        $data = $service->getSlipDetailedReport($id);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.report.slips.pdf', $data)
+            ->setPaper('A4', 'portrait');
+
+        return $pdf->download('Slip_Report_' . $id . '.pdf');
+    }
 }
+

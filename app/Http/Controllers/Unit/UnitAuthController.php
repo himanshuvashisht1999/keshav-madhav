@@ -1663,12 +1663,22 @@ class UnitAuthController extends Controller
         
         $lotNos = $all->pluck('lot_no')->unique()->toArray();
         $masterStageId = $unit->master_stage_id ?? 0;
+        $isPacking = ($masterStageId == self::STAGE_PACKING);
         $timings = \App\Models\OrderLotStageTiming::whereIn('lot_no', $lotNos)->where('master_stage_id', $masterStageId)->get();
+
+        $packedQuantities = [];
+        if ($isPacking && !empty($lotNos)) {
+            $packedQuantities = \App\Models\PackingItem::whereIn('lot_no', $lotNos)
+                ->selectRaw('lot_no, SUM(quantity) as total_packed')
+                ->groupBy('lot_no')
+                ->pluck('total_packed', 'lot_no')
+                ->toArray();
+        }
 
         $minBalance = $request->get('min_balance');
         $maxBalance = $request->get('max_balance');
 
-        $grouped = $all->groupBy('lot_no')->map(function ($items, $lot_no) use ($timings) {
+        $grouped = $all->groupBy('lot_no')->map(function ($items, $lot_no) use ($timings, $isPacking, $packedQuantities) {
             $firstItem = $items->first();
             $timing = $timings->where('lot_no', $lot_no)->first();
             
@@ -1714,14 +1724,21 @@ class UnitAuthController extends Controller
                 })->sum('quantity');
             }
 
+            $totalAssigned = $itemsToSum->sum('quantity');
+            $totalPending = $itemsToSum->sum('remaining_quantity');
+            if ($isPacking) {
+                $packedQty = $packedQuantities[$lot_no] ?? 0;
+                $totalPending = max(0, $totalPending - $packedQty);
+            }
+
             return [
                 'lot_no' => $lot_no,
                 'design_no' => $designNo,
                 'size_set' => $sizeSet,
                 'total_cutting_pieces' => $totalCuttingPieces,
                 'sent_by' => $sentBy,
-                'total_assigned' => $itemsToSum->sum('quantity'),
-                'total_pending' => $itemsToSum->sum('remaining_quantity'),
+                'total_assigned' => $totalAssigned,
+                'total_pending' => $totalPending,
                 'assigned_date' => $assignedDate,
                 'estimated_date' => $estimatedDate,
                 'is_delayed' => $isTaskDelayed

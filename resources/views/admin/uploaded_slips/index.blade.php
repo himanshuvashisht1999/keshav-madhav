@@ -3,8 +3,12 @@
 <div class="content-wrapper">
     <!-- PAGE HEADER -->
     <section class="content-header">
-        <h1 class="m-0 font-weight-bold text-dark text-center">{{ !empty($is_packing) ? 'Uploaded Slips (Packing)' : 'Uploaded Slips' }}</h1>
-
+        <div class="d-flex justify-content-between align-items-center flex-wrap px-2">
+            <h1 class="m-0 font-weight-bold text-dark">{{ !empty($is_packing) ? 'Uploaded Slips (Packing)' : 'Uploaded Slips' }}</h1>
+            <a href="{{ route('admin.reports.slips') }}" class="btn btn-sm btn-primary shadow-sm font-weight-bold px-3">
+                <i class="fas fa-chart-bar mr-1"></i> View Slip-wise Report
+            </a>
+        </div>
     </section>
 
     <!-- CONTENT -->

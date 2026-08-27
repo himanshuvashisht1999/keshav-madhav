@@ -780,6 +780,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                 </li>
 
                                 <li class="nav-item">
+                                    <a href="{{ route('admin.reports.slips') }}"
+                                        class="{{ str_contains(strtolower($page_url), 'admin/reports/slips') ? 'nav-link active' : 'nav-link' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Slip-wise Report</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
                                     <a href="{{ route('admin.reports.unit-assignments') }}"
                                         class="{{ str_contains(strtolower($page_url), 'admin/reports/unit-assignments') ? 'nav-link active' : 'nav-link' }}">
                                         <i class="far fa-circle nav-icon"></i>

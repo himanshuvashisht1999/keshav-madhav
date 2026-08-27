@@ -398,7 +398,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/issue-slip', [AdminProductOrderController::class, 'issueSlip'])->name('issueSlip');
             Route::get('/status-hover-data', [AdminProductOrderController::class, 'productStatusHoverData'])->name('statusHoverData');
 
-            Route::get('/lot-details', [UnitAuthController::class, 'lotDetails'])->name('lot.details');
+            Route::get('/lot-details', [\App\Http\Controllers\Unit\UnitAuthController::class, 'lotDetails'])->name('lot.details');
             Route::post('/assign_to', [AdminProductOrderController::class, 'assign_to'])->name('assign_to');
             Route::post('/delete-assignment', [AdminProductOrderController::class, 'deleteAssignment'])->name('deleteAssignment');
             Route::post('/create-po', [AdminProductOrderController::class, 'createPO'])->name('createPO');
@@ -1411,6 +1411,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             
             Route::get('/sales-man-report', [AdminReportController::class, 'salesManReport'])->name('salesManReport');
             Route::get('/sales-man-report/{id}', [AdminReportController::class, 'salesManReportDetail'])->name('salesManReportDetail');
+
+            Route::get('/slips', [AdminReportController::class, 'slipsReport'])->name('slips');
+            Route::get('/slips/export', [AdminReportController::class, 'slipWiseExport'])->name('slips.export');
+            Route::get('/slips/{id}', [AdminReportController::class, 'slipDetailReport'])->name('slips.show');
+            Route::get('/slips/{id}/pdf', [AdminReportController::class, 'slipDetailPdf'])->name('slips.pdf');
         });
     });
 
