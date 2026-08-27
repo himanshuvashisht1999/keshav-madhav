@@ -1022,7 +1022,8 @@ class PackingService
                 'status' => 'success', 
                 'message' => 'Packing finalized successfully.',
                 'order_type' => $order ? strtolower(trim($order->order_type)) : '',
-                'packing_main_id' => $packing_main->id
+                'packing_main_id' => $packing_main->id,
+                'redirect_url' => route('admin.packing.view', $packing_main->id)
             ];
         } catch (\Exception $e) {
             DB::rollBack();

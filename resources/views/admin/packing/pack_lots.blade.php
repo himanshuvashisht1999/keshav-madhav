@@ -2549,7 +2549,10 @@
                 success: function(res) {
                     if (res.status === 'success') {
                         toastr.success(res.message || 'Packing session successfully finalized.');
-                        window.location.reload();
+                        let viewUrl = res.redirect_url || "{{ route('admin.packing.view', $packing->id) }}";
+                        setTimeout(function() {
+                            window.location.href = viewUrl;
+                        }, 400);
                     } else {
                         toastr.error(res.message || 'Failed to finalize packing.');
                         $btn.html(originalHtml).prop('disabled', false);

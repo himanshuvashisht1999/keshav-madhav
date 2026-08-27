@@ -220,14 +220,17 @@ class PackingController extends Controller
         return view('admin.packing.process', compact('slip', 'order', 'packing', 'storerooms', 'active_orders', 'packed_quantities', 'order_sets', 'unit_available', 'outflows', 'reworks', 'domestic_masters', 'unit_lots', 'unit_available_per_lot'));
     }
 
-        public function processNew(Request $request, $slip_id)
+    public function processNew(Request $request, $slip_id)
     {
         $slip = $this->service->getSlipDetails($slip_id);
-        if ($slip->status == 1) {
+        $packing = $this->service->getPackingMainWithStructure($slip_id);
+
+        if ($slip->status == 1 || ($packing && $packing->status == 1)) {
+            if ($packing) {
+                return redirect()->route('admin.packing.view', $packing->id)->with('info', 'This packing session is finalized.');
+            }
             return redirect()->back()->withError('Already digitized slip.');
         }
-
-        $packing = $this->service->getPackingMainWithStructure($slip_id);
 
         // Determine which order to load: prefer request(?order_id=) but fallback to linked packing session
         $orderId = $request->order_id ?: ($packing->order_main_id ?? null);
@@ -427,6 +430,10 @@ class PackingController extends Controller
         $packing = $this->service->getPackingMainWithStructure($slip_id);
         if (!$packing) {
             return redirect()->route('admin.packing.processNew', $slip_id)->withError('Packing session not found.');
+        }
+
+        if ($packing->status == 1) {
+            return redirect()->route('admin.packing.view', $packing->id)->with('info', 'This packing session is finalized.');
         }
 
         $order = $packing->order;
