@@ -86,7 +86,7 @@
         $totalItems = $isDomestic 
             ? $session->domesticInventories->sum(function($d) { return $d->quantity * $d->total_boxes; })
             : $session->items->sum('quantity');
-        $outflowItems = $session->outflows->where('type', '!=', 'packing_divert')->sum('quantity');
+        $outflowItems = ($session->outflows ? $session->outflows->where('type', '!=', 'packing_divert')->sum('quantity') : 0) + ($session->reworks ? $session->reworks->sum('quantity') : 0);
     @endphp
 
     <div class="content-wrapper bg-light pb-5">
@@ -425,16 +425,23 @@
 
         <!-- 5. OUTFLOWS & ADJUSTMENTS SECTION -->
         @php
-            $sessionOutflows = $session->outflows->where('type', '!=', 'packing_divert');
+            $sessionOutflows = $session->outflows ? $session->outflows->where('type', '!=', 'packing_divert') : collect();
+            $sessionReworks = $session->reworks ?? collect();
+            $hasAdjustments = ($sessionOutflows->count() > 0) || ($sessionReworks->count() > 0);
         @endphp
-        @if($sessionOutflows->count() > 0)
+        @if($hasAdjustments)
             <section class="content pb-5">
                 <div class="container-fluid">
                     <div class="card border-0 shadow-sm bg-white" style="border-radius: 16px;">
                         <div class="card-header bg-white py-3 border-0">
-                            <div class="d-flex align-items-center">
-                                <span class="header-indicator mr-2" style="width: 4px; height: 18px; background: #ef4444; display: inline-block; border-radius: 2px;"></span>
-                                <h5 class="font-weight-bold text-dark mb-0">Outflows & Stock Adjustments</h5>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <span class="header-indicator mr-2" style="width: 4px; height: 18px; background: #ef4444; display: inline-block; border-radius: 2px;"></span>
+                                    <h5 class="font-weight-bold text-dark mb-0">Outflows, Reworks & Stock Adjustments</h5>
+                                </div>
+                                <span class="badge badge-light border text-muted px-3 py-1 font-weight-bold">
+                                    Total: {{ $sessionOutflows->sum('quantity') + $sessionReworks->sum('quantity') }} pcs
+                                </span>
                             </div>
                         </div>
                         <div class="card-body p-0">
@@ -443,10 +450,11 @@
                                     <thead class="bg-light text-muted small text-uppercase">
                                         <tr>
                                             <th class="border-0 py-3">Adjustment Type</th>
+                                            <th class="border-0 py-3">Lot No</th>
                                             <th class="border-0 py-3">Design Number</th>
                                             <th class="border-0 py-3">Size & Color</th>
                                             <th class="border-0 py-3">Quantity</th>
-                                            <th class="border-0 py-3">Responsible Unit</th>
+                                            <th class="border-0 py-3">Responsible Stage / Unit</th>
                                             <th class="border-0 py-3 text-left">Remarks</th>
                                         </tr>
                                     </thead>
@@ -465,6 +473,13 @@
                                                     </span>
                                                 </td>
                                                 <td class="py-3">
+                                                    @if($out->lot_no)
+                                                        <span class="badge badge-secondary px-2 py-1 font-weight-bold" style="font-size: 11px;">#{{ $out->lot_no }}</span>
+                                                    @else
+                                                        <span class="text-muted text-xs">N/A</span>
+                                                    @endif
+                                                </td>
+                                                <td class="py-3">
                                                     <strong class="text-dark">{{ $out->product->design_number ?? 'N/A' }}</strong>
                                                     <span class="d-block text-muted text-xs">{{ $out->product->name ?? 'Garment' }}</span>
                                                 </td>
@@ -477,6 +492,41 @@
                                                 </td>
                                                 <td class="py-3 text-muted">{{ $out->responsibleUnit->name ?? 'N/A' }}</td>
                                                 <td class="py-3 text-left text-muted text-xs">{{ $out->remarks ?? 'N/A' }}</td>
+                                            </tr>
+                                        @endforeach
+
+                                        @foreach($sessionReworks as $rw)
+                                            @php
+                                                $product = $rw->lot_info->orderProductSet->product ?? null;
+                                                $color = $rw->lot_info->orderProductSet->colors ?? null;
+                                                $sizeSet = $rw->lot_info->orderProductSet->size_measurement ?? null;
+                                                $sizeDetails = $rw->details->map(function($d) { return $d->size . ' (' . $d->quantity . ')'; })->implode(', ');
+                                            @endphp
+                                            <tr class="border-bottom">
+                                                <td class="py-3">
+                                                    <span class="badge badge-soft-warning px-3 py-2 text-uppercase font-weight-bold text-xs" style="border-radius: 20px;">
+                                                        <i class="fas fa-tools mr-1"></i> Rework
+                                                    </span>
+                                                </td>
+                                                <td class="py-3">
+                                                    <span class="badge badge-secondary px-2 py-1 font-weight-bold" style="font-size: 11px;">#{{ $rw->lot_no }}</span>
+                                                </td>
+                                                <td class="py-3">
+                                                    <strong class="text-dark">{{ $product->design_number ?? ($rw->lot_info->orderProductSet->design_number ?? 'N/A') }}</strong>
+                                                    <span class="d-block text-muted text-xs">{{ $product->name ?? 'Garment' }}</span>
+                                                </td>
+                                                <td class="py-3">
+                                                    <div class="text-dark font-weight-bold">Sizes: {{ $sizeDetails ?: 'N/A' }}</div>
+                                                    <div class="text-muted text-xs">Color: {{ $color->name ?? 'N/A' }}</div>
+                                                </td>
+                                                <td class="py-3 font-weight-bold text-danger">
+                                                    {{ $rw->quantity }} <span class="text-xs text-muted font-normal">PCS</span>
+                                                </td>
+                                                <td class="py-3">
+                                                    <div class="text-dark font-weight-bold">{{ $rw->toStage->name ?? 'Stage #' . $rw->to_stage_id }}</div>
+                                                    <div class="text-muted text-xs">Unit: {{ $rw->toUnit->name ?? 'Unit #' . $rw->sub_stage_id_to }}</div>
+                                                </td>
+                                                <td class="py-3 text-left text-muted text-xs">{{ $rw->remarks ?: 'Defect return for rework' }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>

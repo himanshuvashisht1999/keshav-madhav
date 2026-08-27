@@ -93,9 +93,9 @@ class PackingService
         ])->findOrFail($order_id);
     }
 
-        public function getPackingSessionDetails($id)
+    public function getPackingSessionDetails($id)
     {
-        return PackingMain::with([
+        $session = PackingMain::with([
             'order.customer',
             'cartons.items.detail.orderProductSet.product',
             'cartons.items.detail.orderProductSet.colors',
@@ -104,11 +104,34 @@ class PackingService
             'outflows.product',
             'outflows.color',
             'outflows.size',
+            'outflows.responsibleUnit',
             'domesticInventories.product',
             'domesticInventories.sizeSet',
             'domesticInventories.color',
             'domesticInventories.rack.storeroom'
         ])->findOrFail($id);
+
+        $reworks = \App\Models\OrderStageTransaction::where('production_slip_digitization_id', $session->slip_id)
+            ->where('from_stage_id', 11)
+            ->where(function($q) {
+                $q->where('type', 'rework')->orWhere('type', 0);
+            })
+            ->with(['toStage', 'toUnit', 'details'])
+            ->get();
+
+        $lotNos = $reworks->pluck('lot_no')->unique()->toArray();
+        $lots = \App\Models\OrderLot::whereIn('lot_no', $lotNos)
+            ->with(['orderProductSet.product', 'orderProductSet.colors', 'orderProductSet.size_measurement'])
+            ->get()
+            ->keyBy('lot_no');
+
+        foreach ($reworks as $rw) {
+            $rw->lot_info = $lots->get($rw->lot_no);
+        }
+
+        $session->setRelation('reworks', $reworks);
+
+        return $session;
     }
     /**
      * Get pending packing slips (Stage 11)
@@ -1088,25 +1111,40 @@ class PackingService
                 if ($item->quantity <= 0) continue;
                 
                 if ($item->lot_no) {
-                    $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
-                        ->where(function($q) use ($slip_details) {
-                            $q->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
-                              ->orWhereNull('sub_stage_id_to');
-                        })
+                    $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
                         ->where('lot_no', $item->lot_no)
+                        ->when($slip_details && $slip_details->stage_master_unit_id, function($q) use ($slip_details) {
+                            $q->where(function($sq) use ($slip_details) {
+                                $sq->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
+                                  ->orWhereNull('sub_stage_id_to');
+                            });
+                        })
                         ->orderBy('id', 'desc')
                         ->get();
+
+                    if ($transactions->isEmpty()) {
+                        $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
+                            ->where('lot_no', $item->lot_no)
+                            ->orderBy('id', 'desc')
+                            ->get();
+                    }
 
                     $remaining_to_return = $item->quantity;
                     foreach ($transactions as $transaction) {
                         if ($remaining_to_return <= 0) break;
-                        $space_available = $transaction->quantity - $transaction->remaining_quantity;
+                        $space_available = max(0, $transaction->quantity - $transaction->remaining_quantity);
                         if ($space_available > 0) {
                             $to_add = min($remaining_to_return, $space_available);
                             $transaction->remaining_quantity += $to_add;
                             $transaction->save();
                             $remaining_to_return -= $to_add;
                         }
+                    }
+
+                    if ($remaining_to_return > 0 && $transactions->isNotEmpty()) {
+                        $first = $transactions->first();
+                        $first->remaining_quantity += $remaining_to_return;
+                        $first->save();
                     }
                 } else {
                     // Fallback to legacy behavior if lot_no is missing
@@ -1115,24 +1153,26 @@ class PackingService
                     if (empty($lotsToReturn)) {
                         $lotsToReturn = \App\Models\OrderLot::where('order_main_id', $order_id)->pluck('lot_no')->toArray();
                     }
-                    $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
-                        ->where(function($q) use ($slip_details) {
-                            $q->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
-                              ->orWhereNull('sub_stage_id_to');
-                        })
+                    $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
                         ->whereIn('lot_no', $lotsToReturn)
                         ->orderBy('id', 'desc')
                         ->get();
                     $remaining_to_return = $item->quantity;
                     foreach ($transactions as $transaction) {
                         if ($remaining_to_return <= 0) break;
-                        $space_available = $transaction->quantity - $transaction->remaining_quantity;
+                        $space_available = max(0, $transaction->quantity - $transaction->remaining_quantity);
                         if ($space_available > 0) {
                             $to_add = min($remaining_to_return, $space_available);
                             $transaction->remaining_quantity += $to_add;
                             $transaction->save();
                             $remaining_to_return -= $to_add;
                         }
+                    }
+
+                    if ($remaining_to_return > 0 && $transactions->isNotEmpty()) {
+                        $first = $transactions->first();
+                        $first->remaining_quantity += $remaining_to_return;
+                        $first->save();
                     }
                 }
             }
@@ -1410,28 +1450,44 @@ class PackingService
             }
 
             // 2. Revert Deduction from available transactions (for backend validation pool)
-            $packingUnitId = $slip->stage_master_unit_id;
+            $packingUnitId = $slip ? $slip->stage_master_unit_id : null;
             $receivedTxs = \App\Models\OrderStageTransaction::where('lot_no', $outflow->lot_no)
                 ->where('to_stage_id', 11) // In Packing
-                ->where(function($q) use ($packingUnitId) {
-                    $q->where('sub_stage_id_to', $packingUnitId)
-                      ->orWhereNull('sub_stage_id_to');
+                ->when($packingUnitId, function($q) use ($packingUnitId) {
+                    $q->where(function($sq) use ($packingUnitId) {
+                        $sq->where('sub_stage_id_to', $packingUnitId)
+                          ->orWhereNull('sub_stage_id_to');
+                    });
                 })
                 ->where('status', 1)
                 ->orderBy('id', 'desc')
                 ->get();
 
+            if ($receivedTxs->isEmpty()) {
+                $receivedTxs = \App\Models\OrderStageTransaction::where('lot_no', $outflow->lot_no)
+                    ->where('to_stage_id', 11)
+                    ->where('status', 1)
+                    ->orderBy('id', 'desc')
+                    ->get();
+            }
+
             $rem = $outflow->quantity;
             foreach ($receivedTxs as $tx) {
                 if ($rem <= 0) break;
                 
-                $space_available = $tx->quantity - $tx->remaining_quantity;
+                $space_available = max(0, $tx->quantity - $tx->remaining_quantity);
                 if ($space_available > 0) {
                     $to_add = min($rem, $space_available);
                     $tx->remaining_quantity += $to_add;
                     $tx->save();
                     $rem -= $to_add;
                 }
+            }
+
+            if ($rem > 0 && $receivedTxs->isNotEmpty()) {
+                $first = $receivedTxs->first();
+                $first->remaining_quantity += $rem;
+                $first->save();
             }
 
             $outflow->delete();
@@ -1455,20 +1511,38 @@ class PackingService
             // 1. Revert Deduction from Incoming Packing pool
             $sourceTxs = \App\Models\OrderStageTransaction::where('lot_no', $rework->lot_no)
                 ->where('to_stage_id', 11)
-                ->where(function($q) use ($rework) {
-                    $q->where('sub_stage_id_to', $rework->sub_stage_id)
-                      ->orWhereNull('sub_stage_id_to');
+                ->when($rework->sub_stage_id, function($q) use ($rework) {
+                    $q->where(function($sq) use ($rework) {
+                        $sq->where('sub_stage_id_to', $rework->sub_stage_id)
+                          ->orWhereNull('sub_stage_id_to');
+                    });
                 })
                 ->orderBy('id', 'desc')
                 ->get();
 
+            if ($sourceTxs->isEmpty()) {
+                $sourceTxs = \App\Models\OrderStageTransaction::where('lot_no', $rework->lot_no)
+                    ->where('to_stage_id', 11)
+                    ->orderBy('id', 'desc')
+                    ->get();
+            }
+
             $rem = $rework->quantity;
             foreach ($sourceTxs as $tx) {
-                if ($rem <= 0)
-                    break;
-                $tx->remaining_quantity += $rem;
-                $tx->save();
-                $rem = 0;
+                if ($rem <= 0) break;
+                $space_available = max(0, $tx->quantity - $tx->remaining_quantity);
+                if ($space_available > 0) {
+                    $to_add = min($rem, $space_available);
+                    $tx->remaining_quantity += $to_add;
+                    $tx->save();
+                    $rem -= $to_add;
+                }
+            }
+
+            if ($rem > 0 && $sourceTxs->isNotEmpty()) {
+                $first = $sourceTxs->first();
+                $first->remaining_quantity += $rem;
+                $first->save();
             }
 
             // 2. Delete the rework record (which is itself an 'outgoing' record in board display)
@@ -1542,8 +1616,9 @@ class PackingService
                     ->update(['complete_date' => null]);
             }
 
-            // 5. Delete Domestic Inventory and Main Record
+            // 5. Delete Domestic Inventory, Selected Lots, and Main Record
             \App\Models\DomesticInventory::where('packing_main_id', $main->id)->delete();
+            \App\Models\PackingSelectedLot::where('slip_id', $slipId)->delete();
             $main->delete();
 
             DB::commit();

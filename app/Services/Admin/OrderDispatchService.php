@@ -313,6 +313,7 @@ class OrderDispatchService
             'dispatchCartons.items.detail.orderProductSet.size_measurement', 
         ])
             ->where('sku', $search_order_no)
+            ->where('order_type', 'corporate')
             ->whereIn('status', [1, 2])
             ->orderBy('id', 'asc')
             ->get();
@@ -405,6 +406,7 @@ class OrderDispatchService
     {
         $customer_id = $request->customer_id ?? "";
         $data = OrderMain::where('master_customer_id', $customer_id)
+            ->where('order_type', 'corporate')
             ->whereIn('status', [1, 2])
             ->whereHas('dispatchCartons', function ($q) {
                 $q->where('packing_cartons.status', 1);
@@ -412,13 +414,13 @@ class OrderDispatchService
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);
 
-
         return $data;
     }
 
     public function getOrders()
     {
         $data = OrderMain::whereIn('status', [1, 2])
+            ->where('order_type', 'corporate')
             ->whereHas('dispatchCartons', function ($q) {
                 $q->where('packing_cartons.status', 1);
             })
