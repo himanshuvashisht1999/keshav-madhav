@@ -409,7 +409,8 @@ class PackingController extends Controller
 
         // Save new lots
         if (!empty($request->lots)) {
-            foreach ($request->lots as $lot_no) {
+            $unique_lots = array_unique($request->lots);
+            foreach ($unique_lots as $lot_no) {
                 \App\Models\PackingSelectedLot::create([
                     'packing_main_id' => $packing->id,
                     'slip_id' => $slip_id,
@@ -429,34 +430,53 @@ class PackingController extends Controller
         }
 
         $order = $packing->order;
-        $selected_lots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->pluck('lot_no')->toArray();
+        $selected_lots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->pluck('lot_no')->unique()->toArray();
 
         if (empty($selected_lots)) {
             return redirect()->route('admin.packing.processNew', $slip_id)->withError('No lots selected. Please select lots first.');
         }
 
         // Fetch detailed info for these lots including sizes
-        $lots_data = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-            ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
+        $lots_data = \Illuminate\Support\Facades\DB::table('order_lots')
             ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
             ->leftJoin('master_size_measurements', 'order_products_sets.set_size', '=', 'master_size_measurements.id')
             ->leftJoin('master_colors', 'order_products_sets.color_id', '=', 'master_colors.id')
-            ->where('order_stage_transactions.to_stage_id', 11)
-            ->whereIn('order_stage_transactions.lot_no', $selected_lots)
+            ->whereIn('order_lots.lot_no', $selected_lots)
             ->select(
-                'order_stage_transactions.id as transaction_id',
-                'order_stage_transactions.lot_no',
+                'order_lots.lot_no',
                 'order_products_sets.id as set_id',
                 'order_products_sets.design_number',
                 'master_size_measurements.name as size_set_name',
                 'order_products_sets.color_id',
                 'master_colors.name as color_name',
-                'order_stage_transactions.quantity',
-                'order_stage_transactions.remaining_quantity',
                 'order_products_sets.set_quantity as set_total_qty',
                 'order_products_sets.set_size as master_size_set_id'
             )
             ->get();
+
+        $stage_transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
+            ->whereIn('lot_no', $selected_lots)
+            ->with('details')
+            ->get()
+            ->groupBy('lot_no');
+
+        foreach ($lots_data as $lot) {
+            $lot_txs = $stage_transactions->get($lot->lot_no, collect());
+            $lot->remaining_quantity = (int) $lot_txs->sum('remaining_quantity');
+            $lot->quantity = (int) $lot_txs->sum('quantity');
+            $lot->transaction_id = $lot_txs->first() ? $lot_txs->first()->id : null;
+
+            $incoming_sizes = [];
+            foreach ($lot_txs as $tx) {
+                if ($tx->details->isNotEmpty()) {
+                    foreach ($tx->details as $d) {
+                        $sz = trim(strtoupper($d->size));
+                        $incoming_sizes[$sz] = ($incoming_sizes[$sz] ?? 0) + (int) $d->quantity;
+                    }
+                }
+            }
+            $lot->incoming_sizes = $incoming_sizes;
+        }
 
         $set_ids = $lots_data->pluck('set_id')->unique()->toArray();
         $set_details = \App\Models\OrderProductSetDetail::whereIn('order_products_set_id', $set_ids)->get()->groupBy('order_products_set_id');
@@ -783,7 +803,7 @@ class PackingController extends Controller
         
         // Calculate size-wise available balances from the selected lots (regardless of design number)
         $packing = \App\Models\PackingMain::where('slip_id', $slip_id)->first();
-        $selected_lots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->pluck('lot_no')->toArray();
+        $selected_lots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->pluck('lot_no')->unique()->toArray();
         
         $packed_by_lot_size = \App\Models\PackingItem::join('order_products_set_details', 'packing_items.size_id', '=', 'order_products_set_details.id')
             ->whereIn('packing_items.lot_no', $selected_lots)
@@ -819,20 +839,18 @@ class PackingController extends Controller
             })
             ->groupBy('lot_no');
 
-        $lots_data = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-            ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
+        $lots_data = \Illuminate\Support\Facades\DB::table('order_lots')
             ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
-            ->leftJoin('master_size_measurements', 'order_products_sets.set_size', '=', 'master_size_measurements.id')
-            ->where('order_stage_transactions.to_stage_id', 11)
-            ->whereIn('order_stage_transactions.lot_no', $selected_lots)
-            ->select(
-                'order_stage_transactions.id as transaction_id',
-                'order_stage_transactions.lot_no',
-                'order_products_sets.id as set_id',
-                'order_stage_transactions.remaining_quantity'
-            )
+            ->whereIn('order_lots.lot_no', $selected_lots)
+            ->select('order_lots.lot_no', 'order_products_sets.id as set_id')
             ->get();
             
+        $stage_transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
+            ->whereIn('lot_no', $selected_lots)
+            ->with('details')
+            ->get()
+            ->groupBy('lot_no');
+
         $set_ids = $lots_data->pluck('set_id')->unique()->toArray();
         $set_details = \App\Models\OrderProductSetDetail::whereIn('order_products_set_id', $set_ids)->get()->groupBy('order_products_set_id');
 
@@ -840,16 +858,29 @@ class PackingController extends Controller
         $available_balances = [];
         
         foreach ($lots_data as $lot) {
+            $transactions = $stage_transactions->get($lot->lot_no, collect());
+            $incoming_sizes = [];
+            foreach ($transactions as $tx) {
+                if ($tx->details->isNotEmpty()) {
+                    foreach ($tx->details as $d) {
+                        $sz = trim(strtoupper($d->size));
+                        $incoming_sizes[$sz] = ($incoming_sizes[$sz] ?? 0) + (int) $d->quantity;
+                    }
+                }
+            }
+
             if (isset($set_details[$lot->set_id])) {
                 $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
                 $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
                 $rework_for_lot = isset($rework_by_lot_size[$lot->lot_no]) ? $rework_by_lot_size[$lot->lot_no]->sum('total') : 0;
                 $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
-                $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
+                $starting_lot_qty = $transactions->sum('remaining_quantity') + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
                 
                 foreach ($set_details[$lot->set_id] as $detail) {
                     $sizeName = trim(strtoupper($detail->size));
-                    $original_size_qty = $total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0;
+                    $incoming_qty = isset($incoming_sizes[$sizeName]) 
+                        ? (int) $incoming_sizes[$sizeName] 
+                        : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
                     
                     $packed_qty = 0;
                     if (isset($packed_by_lot_size[$lot->lot_no])) {
@@ -867,7 +898,7 @@ class PackingController extends Controller
                         if ($item) $outflow_qty = $item->total;
                     }
                     
-                    $live = max(0, $original_size_qty - $packed_qty - $rework_qty - $outflow_qty);
+                    $live = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
                     $available_pieces += $live;
                     
                     if (!isset($available_balances[$sizeName])) {

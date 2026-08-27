@@ -179,10 +179,9 @@
                     foreach ($set_details[$lot->set_id] as $detail) {
                         $sizeName = trim(strtoupper($detail->size));
                         
-                        $original_size_qty = 0;
-                        if ($total_set_qty > 0) {
-                            $original_size_qty = floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty));
-                        }
+                        $incoming_qty = isset($lot->incoming_sizes[$sizeName]) 
+                            ? (int) $lot->incoming_sizes[$sizeName] 
+                            : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
                         
                         $packed_qty = 0;
                         if (isset($packed_by_lot_size[$lot->lot_no])) {
@@ -202,7 +201,7 @@
                             if ($item) $outflow_qty = $item->total;
                         }
 
-                        $live_remaining_for_size = max(0, $original_size_qty - $packed_qty - $rework_qty - $outflow_qty);
+                        $live_remaining_for_size = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
 
                         if (!isset($consolidated_sizes[$sizeName])) {
                             $consolidated_sizes[$sizeName] = [
@@ -311,10 +310,9 @@
                                         foreach($set_details[$lot->set_id] as $detail) {
                                             $sizeName = trim(strtoupper($detail->size));
                                             
-                                            $original_size_qty = 0;
-                                            if ($total_set_qty > 0) {
-                                                $original_size_qty = floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty));
-                                            }
+                                            $incoming_qty = isset($lot->incoming_sizes[$sizeName]) 
+                                                ? (int) $lot->incoming_sizes[$sizeName] 
+                                                : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
                                             
                                             $packed_qty = 0;
                                             if (isset($packed_by_lot_size[$lot->lot_no])) {
@@ -334,7 +332,7 @@
                                                 if ($item) $outflow_qty = $item->total;
                                             }
 
-                                            $live_remaining_for_size = max(0, $original_size_qty - $packed_qty - $rework_qty - $outflow_qty);
+                                            $live_remaining_for_size = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
                                             $total_live_remaining += $live_remaining_for_size;
                                             $total_breakdown_qty += $live_remaining_for_size;
                                             
@@ -1266,7 +1264,9 @@
                         let sizeName = detail.size.toString().trim().toUpperCase();
                         
                         // Calculate starting quantity for this size before current session deductions
-                        let originalSizeQty = Math.floor(startingLotQty * (parseInt(detail.total_quantity || 0) / totalSetQty));
+                        let incomingQty = (lot.incoming_sizes && lot.incoming_sizes[sizeName] !== undefined)
+                            ? parseInt(lot.incoming_sizes[sizeName])
+                            : Math.floor(startingLotQty * (parseInt(detail.total_quantity || 0) / totalSetQty));
 
                         // Find packed quantity
                         let packedQty = 0;
@@ -1289,7 +1289,7 @@
                             if (match) outflowQty = parseInt(match.total) || 0;
                         }
 
-                        let pendingForSize = Math.max(0, originalSizeQty - packedQty - reworkQty - outflowQty);
+                        let pendingForSize = Math.max(0, incomingQty - packedQty - reworkQty - outflowQty);
 
                         if (pendingForSize >= 0) {
                             expandedLots.push({
