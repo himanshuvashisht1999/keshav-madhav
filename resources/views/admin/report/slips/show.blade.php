@@ -268,23 +268,32 @@
                     <div class="card-body p-3">
                         @foreach($printings as $pt)
                             @php
-                                $set = $pt->orderProduct ? $pt->orderProduct->orderProductSet : null;
+                                $set = $pt->resolved_set ?? ($pt->orderProduct ? $pt->orderProduct->orderProductSet : null);
+                                $orderMain = $pt->resolved_order_main ?? ($set ? $set->orderMain : null);
+                                $customerName = $orderMain && $orderMain->customer ? $orderMain->customer->name : 'Customer N/A';
+                                $skuName = $orderMain ? ($orderMain->sku ?? 'SKU N/A') : 'SKU N/A';
                             @endphp
                             <div class="card border rounded-lg mb-3 shadow-xs">
                                 <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
                                     <div>
                                         <span class="badge badge-dark px-2 py-1 mr-2" style="font-size: 13px;">Lot #{{ $pt->lot_no }}</span>
                                         <strong class="text-dark">{{ $set->design_number ?? 'Design N/A' }}</strong>
-                                        <span class="text-muted ml-2">({{ $set->orderMain->sku ?? 'SKU N/A' }} &bull; {{ $set->orderMain->customer->name ?? 'Customer N/A' }})</span>
+                                        <span class="text-muted ml-2">({{ $skuName }} &bull; {{ $customerName }})</span>
                                     </div>
                                     <div>
                                         <span class="badge badge-info px-2 py-1 mr-2">To: {{ $pt->to_stage->name ?? 'Printing' }} ({{ $pt->getToUnitMaster->name ?? 'N/A' }})</span>
                                         <span class="badge badge-success px-3 py-1 font-weight-bold" style="font-size: 13px;">
-                                            Qty: {{ number_format($pt->quantity) }} pcs
+                                             Qty: {{ number_format($pt->quantity) }} pcs
                                         </span>
                                     </div>
                                 </div>
                                 <div class="card-body p-3">
+                                    <div class="row g-2 mb-2 small">
+                                        <div class="col-md-3"><strong>Fabric:</strong> <span class="text-muted">{{ $set->fabric_names ?? '-' }}</span></div>
+                                        <div class="col-md-3"><strong>Color:</strong> <span class="text-muted">{{ $set->colors->name ?? '-' }}</span></div>
+                                        <div class="col-md-3"><strong>Size Set:</strong> <span class="text-muted">{{ $set->size_measurement->name ?? '-' }}</span></div>
+                                        <div class="col-md-3"><strong>Remarks:</strong> <span class="text-muted">{{ $pt->remarks ?? '-' }}</span></div>
+                                    </div>
                                     @if($pt->details && $pt->details->isNotEmpty())
                                         <div class="table-responsive">
                                             <table class="table table-sm table-bordered mb-0">
@@ -330,14 +339,17 @@
                     <div class="card-body p-3">
                         @foreach($stage_transactions as $st)
                             @php
-                                $set = $st->orderProduct ? $st->orderProduct->orderProductSet : null;
+                                $set = $st->resolved_set ?? ($st->orderProduct ? $st->orderProduct->orderProductSet : null);
+                                $orderMain = $st->resolved_order_main ?? ($set ? $set->orderMain : null);
+                                $customerName = $orderMain && $orderMain->customer ? $orderMain->customer->name : 'Customer N/A';
+                                $skuName = $orderMain ? ($orderMain->sku ?? 'SKU N/A') : 'SKU N/A';
                             @endphp
                             <div class="card border rounded-lg mb-3 shadow-xs">
                                 <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center flex-wrap">
                                     <div class="my-1">
                                         <span class="badge badge-dark px-2 py-1 mr-2" style="font-size: 13px;">Lot #{{ $st->lot_no }}</span>
                                         <strong class="text-dark">{{ $set->design_number ?? 'Design N/A' }}</strong>
-                                        <span class="text-muted ml-2">({{ $set->orderMain->sku ?? 'SKU N/A' }} &bull; {{ $set->orderMain->customer->name ?? 'Customer N/A' }})</span>
+                                        <span class="text-muted ml-2">({{ $skuName }} &bull; {{ $customerName }})</span>
                                     </div>
                                     <div class="my-1">
                                         <span class="badge badge-light border text-dark px-2 py-1 mr-2">

@@ -128,6 +128,19 @@
                                 <input type="text" name="lot_no" class="form-control form-control-sm" placeholder="Search Lot..." value="{{ request('lot_no') }}">
                             </div>
                             <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">Design Number</label>
+                                <select name="design_no" class="form-control select2 form-control-sm">
+                                    <option value="">-- All Designs --</option>
+                                    @if(isset($designs))
+                                        @foreach($designs as $dsn)
+                                            <option value="{{ $dsn }}" {{ request('design_no') == $dsn ? 'selected' : '' }}>
+                                                {{ $dsn }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                            </div>
+                            <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
                                 <label class="small font-weight-bold text-muted mb-1">From Stage</label>
                                 <select name="from_stage_id" class="form-control select2 form-control-sm">
                                     <option value="">-- All Stages --</option>
@@ -201,7 +214,7 @@
                                     <th class="py-3">Date</th>
                                     <th class="py-3">From Stage & Unit</th>
                                     <th class="py-3">To Stage(s)</th>
-                                    <th class="py-3">Lots Involved</th>
+                                    <th class="py-3">Lots & Designs Involved</th>
                                     <th class="py-3 text-center">Entries</th>
                                     <th class="py-3 text-right">Total Pieces</th>
                                     <th class="py-3 text-center">Status</th>
@@ -267,10 +280,10 @@
                                             @endif
                                         </td>
 
-                                        <!-- Lots Involved -->
+                                        <!-- Lots & Designs Involved -->
                                         <td>
                                             @if(!empty($computed['lots_with_qty']))
-                                                <div class="d-flex flex-wrap gap-1" style="max-width: 250px;">
+                                                <div class="d-flex flex-wrap gap-1" style="max-width: 280px;">
                                                     @foreach($computed['lots_with_qty'] as $lot => $lqty)
                                                         <span class="badge badge-info shadow-xs mb-1 mr-1 px-2 py-1" style="font-size: 11px;">
                                                             #{{ $lot }} @if($lqty > 0) <span class="badge badge-light text-dark ml-1">{{ number_format($lqty) }}</span> @endif
@@ -279,6 +292,17 @@
                                                 </div>
                                             @else
                                                 <span class="text-muted">-</span>
+                                            @endif
+
+                                            @if(!empty($computed['designs']))
+                                                <div class="mt-1 d-flex flex-wrap align-items-center">
+                                                    <small class="text-muted font-weight-bold mr-1"><i class="fas fa-drafting-compass text-secondary"></i> Design:</small>
+                                                    @foreach($computed['designs'] as $dsn)
+                                                        <span class="badge badge-dark border mb-1 mr-1 px-2 py-1" style="font-size: 11px; background-color: #334155;">
+                                                            {{ $dsn }}
+                                                        </span>
+                                                    @endforeach
+                                                </div>
                                             @endif
                                         </td>
 

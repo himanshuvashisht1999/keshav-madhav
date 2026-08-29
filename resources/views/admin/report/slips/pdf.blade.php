@@ -5,24 +5,24 @@
     <title>Slip Report #{{ $slip->id }}</title>
     <style>
         @page { margin: 1cm 1.2cm; }
-        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 11px; color: #1e293b; line-height: 1.4; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 10px; color: #1e293b; line-height: 1.4; }
         .header { border-bottom: 2px solid #4f46e5; padding-bottom: 8px; margin-bottom: 15px; }
         .header table { width: 100%; border-collapse: collapse; }
-        .company-name { font-size: 18px; font-weight: bold; color: #4f46e5; text-transform: uppercase; }
-        .doc-title { text-align: right; font-size: 15px; font-weight: bold; color: #0f172a; text-transform: uppercase; }
-        .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; border: 1px solid #cbd5e1; }
-        .meta-table td { padding: 6px 10px; border: 1px solid #e2e8f0; font-size: 11px; }
+        .company-name { font-size: 16px; font-weight: bold; color: #4f46e5; text-transform: uppercase; }
+        .doc-title { text-align: right; font-size: 14px; font-weight: bold; color: #0f172a; text-transform: uppercase; }
+        .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; border: 1px solid #cbd5e1; }
+        .meta-table td { padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 10px; }
         .lbl { font-size: 8px; font-weight: bold; color: #64748b; text-transform: uppercase; display: block; }
-        .val { font-size: 11px; font-weight: bold; color: #0f172a; }
-        .section-title { font-size: 13px; font-weight: bold; color: #1e293b; margin-top: 15px; margin-bottom: 6px; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px; }
-        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 10px; }
-        .data-table th { background: #f1f5f9; color: #334155; padding: 6px 8px; text-align: left; border: 1px solid #cbd5e1; font-weight: bold; }
-        .data-table td { padding: 5px 8px; border: 1px solid #e2e8f0; }
+        .val { font-size: 10px; font-weight: bold; color: #0f172a; }
+        .section-title { font-size: 12px; font-weight: bold; color: #1e293b; margin-top: 12px; margin-bottom: 6px; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px; }
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 9px; }
+        .data-table th { background: #f1f5f9; color: #334155; padding: 5px 6px; text-align: left; border: 1px solid #cbd5e1; font-weight: bold; }
+        .data-table td { padding: 4px 6px; border: 1px solid #e2e8f0; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
-        .badge { display: inline-block; padding: 2px 5px; font-size: 9px; font-weight: bold; border-radius: 3px; background: #e2e8f0; }
+        .badge { display: inline-block; padding: 2px 5px; font-size: 8px; font-weight: bold; border-radius: 3px; background: #e2e8f0; }
         .badge-lot { background: #e0e7ff; color: #3730a3; }
-        .summary-box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 8px 12px; margin-bottom: 15px; border-radius: 4px; }
+        .summary-box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px 10px; margin-bottom: 12px; border-radius: 4px; font-size: 10px; }
     </style>
 </head>
 <body>
@@ -142,11 +142,14 @@
             </thead>
             <tbody>
                 @foreach($printings as $pt)
-                    @php $set = $pt->orderProduct ? $pt->orderProduct->orderProductSet : null; @endphp
+                    @php 
+                        $set = $pt->resolved_set ?? ($pt->orderProduct ? $pt->orderProduct->orderProductSet : null); 
+                        $orderMain = $pt->resolved_order_main ?? ($set ? $set->orderMain : null);
+                    @endphp
                     <tr>
                         <td><strong>#{{ $pt->lot_no }}</strong></td>
                         <td>{{ $pt->from_stage->name ?? '-' }} &rarr; {{ $pt->to_stage->name ?? 'Printing' }} ({{ $pt->getToUnitMaster->name ?? '-' }})</td>
-                        <td>{{ $set->design_number ?? '-' }} <small>({{ $set->orderMain->sku ?? '-' }})</small></td>
+                        <td>{{ $set->design_number ?? '-' }} <small>({{ $orderMain->sku ?? '-' }})</small></td>
                         <td>
                             @if($pt->details)
                                 @foreach($pt->details as $d)
@@ -160,11 +163,14 @@
                 @endforeach
 
                 @foreach($stage_transactions as $st)
-                    @php $set = $st->orderProduct ? $st->orderProduct->orderProductSet : null; @endphp
+                    @php 
+                        $set = $st->resolved_set ?? ($st->orderProduct ? $st->orderProduct->orderProductSet : null); 
+                        $orderMain = $st->resolved_order_main ?? ($set ? $set->orderMain : null);
+                    @endphp
                     <tr>
                         <td><strong>#{{ $st->lot_no }}</strong></td>
                         <td>{{ $st->from_stage->name ?? '-' }} &rarr; {{ $st->to_stage->name ?? '-' }} ({{ $st->getToUnitMaster->name ?? '-' }})</td>
-                        <td>{{ $set->design_number ?? '-' }} <small>({{ $set->orderMain->sku ?? '-' }})</small></td>
+                        <td>{{ $set->design_number ?? '-' }} <small>({{ $orderMain->sku ?? '-' }})</small></td>
                         <td>
                             @if($st->details)
                                 @foreach($st->details as $d)

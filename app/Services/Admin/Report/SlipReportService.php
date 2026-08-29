@@ -31,6 +31,7 @@ class SlipReportService
             'fromStage',
             'toStage',
             'getUnitMaster',
+            'orderProductSet',
             'orderLots.orderProductSet.orderMain.customer',
             'orderStageTransaction.to_stage',
             'orderStageTransaction.getToUnitMaster',
@@ -43,8 +44,11 @@ class SlipReportService
             'orderPrintingToStichingTransaction.orderProduct.orderProductSet.orderMain.customer',
             'orderGodamStageTransaction.to_stage',
             'orderGodamStageTransaction.getToUnitMaster',
-            'packingMain.cartons.items',
-            'fabricRollAssignings.fabricRollAssigningsDetail'
+            'orderGodamStageTransaction.orderProduct.orderProductSet.orderMain.customer',
+            'packingMain.cartons.items.detail.orderProductSet',
+            'fabricRollAssignings.fabricRollAssigningsDetail',
+            'fabricRollAssignings.orderProductSet',
+            'parts'
         ])
         ->where('status', '!=', 3)
         ->orderBy('id', 'desc');
@@ -105,7 +109,71 @@ class SlipReportService
                     })
                     ->orWhereHas('orderGodamStageTransaction', function ($gtq) use ($lot_no) {
                         $gtq->where('lot_no', 'like', '%' . $lot_no . '%');
+                    })
+                    ->orWhereHas('fabricRollAssignings', function ($frq) use ($lot_no) {
+                        $frq->where('lot_no', 'like', '%' . $lot_no . '%');
+                    })
+                    ->orWhereHas('parts', function ($prtq) use ($lot_no) {
+                        $prtq->where('lot_no', 'like', '%' . $lot_no . '%');
                     });
+            });
+        }
+
+        // Filter: Design Number
+        if ($request->filled('design_no')) {
+            $design_no = trim($request->design_no);
+            $query->where(function ($q) use ($design_no) {
+                $q->whereHas('orderProductSet', function ($opsq) use ($design_no) {
+                    $opsq->where('design_number', 'like', '%' . $design_no . '%');
+                })
+                ->orWhereHas('orderLots.orderProductSet', function ($lq) use ($design_no) {
+                    $lq->where('design_number', 'like', '%' . $design_no . '%');
+                })
+                ->orWhereHas('orderStageTransaction', function ($stq) use ($design_no) {
+                    $stq->whereHas('orderProduct.orderProductSet', function ($opsq) use ($design_no) {
+                        $opsq->where('design_number', 'like', '%' . $design_no . '%');
+                    })->orWhereIn('lot_no', function ($lsq) use ($design_no) {
+                        $lsq->select('lot_no')->from('order_lots')
+                            ->join('order_products_sets', 'order_products_sets.id', '=', 'order_lots.order_products_set_id')
+                            ->where('order_products_sets.design_number', 'like', '%' . $design_no . '%');
+                    });
+                })
+                ->orWhereHas('orderPrintingStageTransaction', function ($pq) use ($design_no) {
+                    $pq->whereHas('orderProduct.orderProductSet', function ($opsq) use ($design_no) {
+                        $opsq->where('design_number', 'like', '%' . $design_no . '%');
+                    })->orWhereIn('lot_no', function ($lsq) use ($design_no) {
+                        $lsq->select('lot_no')->from('order_lots')
+                            ->join('order_products_sets', 'order_products_sets.id', '=', 'order_lots.order_products_set_id')
+                            ->where('order_products_sets.design_number', 'like', '%' . $design_no . '%');
+                    });
+                })
+                ->orWhereHas('orderPrintingToStichingTransaction', function ($ptq) use ($design_no) {
+                    $ptq->whereHas('orderProduct.orderProductSet', function ($opsq) use ($design_no) {
+                        $opsq->where('design_number', 'like', '%' . $design_no . '%');
+                    })->orWhereIn('lot_no', function ($lsq) use ($design_no) {
+                        $lsq->select('lot_no')->from('order_lots')
+                            ->join('order_products_sets', 'order_products_sets.id', '=', 'order_lots.order_products_set_id')
+                            ->where('order_products_sets.design_number', 'like', '%' . $design_no . '%');
+                    });
+                })
+                ->orWhereHas('orderGodamStageTransaction', function ($gq) use ($design_no) {
+                    $gq->whereHas('orderProduct.orderProductSet', function ($opsq) use ($design_no) {
+                        $opsq->where('design_number', 'like', '%' . $design_no . '%');
+                    })->orWhereIn('lot_no', function ($lsq) use ($design_no) {
+                        $lsq->select('lot_no')->from('order_lots')
+                            ->join('order_products_sets', 'order_products_sets.id', '=', 'order_lots.order_products_set_id')
+                            ->where('order_products_sets.design_number', 'like', '%' . $design_no . '%');
+                    });
+                })
+                ->orWhereHas('fabricRollAssignings.orderProductSet', function ($fq) use ($design_no) {
+                    $fq->where('design_number', 'like', '%' . $design_no . '%');
+                })
+                ->orWhereHas('parts', function ($prtq) use ($design_no) {
+                    $prtq->where('design_number', 'like', '%' . $design_no . '%');
+                })
+                ->orWhereHas('packingMain.cartons.items.detail.orderProductSet', function ($pkq) use ($design_no) {
+                    $pkq->where('design_number', 'like', '%' . $design_no . '%');
+                });
             });
         }
 
@@ -169,7 +237,21 @@ class SlipReportService
         $stages = MasterProductStage::where('status', 1)->get();
         $units = StageMasterUnit::where('status', 1)->get();
 
-        return compact('slips', 'kpis', 'stages', 'units');
+        // Get distinct design numbers for dropdown filter
+        $designs = \App\Models\ProductionGoods::whereNotNull('design_number')
+            ->where('design_number', '!=', '')
+            ->pluck('design_number')
+            ->merge(
+                \App\Models\OrderProductSet::whereNotNull('design_number')
+                    ->where('design_number', '!=', '')
+                    ->pluck('design_number')
+            )
+            ->unique()
+            ->filter()
+            ->sort()
+            ->values();
+
+        return compact('slips', 'kpis', 'stages', 'units', 'designs');
     }
 
     /**
@@ -183,6 +265,15 @@ class SlipReportService
         $destinationStages = collect();
         $destinationUnits = collect();
         $customers = collect();
+        $designNumbers = collect();
+
+        // Direct Order Product Set on Slip
+        if ($slip->orderProductSet && $slip->orderProductSet->design_number) {
+            $designNumbers->push($slip->orderProductSet->design_number);
+        }
+        if ($slip->orderProductSet && $slip->orderProductSet->orderMain && $slip->orderProductSet->orderMain->customer) {
+            $customers->push($slip->orderProductSet->orderMain->customer->name);
+        }
 
         // 1. Lots from Cutting
         if ($slip->orderLots && $slip->orderLots->isNotEmpty()) {
@@ -191,8 +282,13 @@ class SlipReportService
                 $lotNo = $lot->lot_no;
                 if (!isset($lotsWithQty[$lotNo])) $lotsWithQty[$lotNo] = 0;
                 
-                if ($lot->orderProductSet && $lot->orderProductSet->orderMain && $lot->orderProductSet->orderMain->customer) {
-                    $customers->push($lot->orderProductSet->orderMain->customer->name);
+                if ($lot->orderProductSet) {
+                    if ($lot->orderProductSet->design_number) {
+                        $designNumbers->push($lot->orderProductSet->design_number);
+                    }
+                    if ($lot->orderProductSet->orderMain && $lot->orderProductSet->orderMain->customer) {
+                        $customers->push($lot->orderProductSet->orderMain->customer->name);
+                    }
                 }
             }
         }
@@ -205,6 +301,10 @@ class SlipReportService
                 if (!isset($lotsWithQty[$lotNo])) $lotsWithQty[$lotNo] = 0;
                 $lotsWithQty[$lotNo] += $rollQty;
                 $totalQty += $rollQty;
+
+                if ($roll->orderProductSet && $roll->orderProductSet->design_number) {
+                    $designNumbers->push($roll->orderProductSet->design_number);
+                }
             }
         }
 
@@ -219,8 +319,13 @@ class SlipReportService
 
                 if ($pt->to_stage) $destinationStages->push($pt->to_stage->name);
                 if ($pt->getToUnitMaster) $destinationUnits->push($pt->getToUnitMaster->name);
-                if ($pt->orderProduct && $pt->orderProduct->orderProductSet && $pt->orderProduct->orderProductSet->orderMain && $pt->orderProduct->orderProductSet->orderMain->customer) {
-                    $customers->push($pt->orderProduct->orderProductSet->orderMain->customer->name);
+                if ($pt->orderProduct && $pt->orderProduct->orderProductSet) {
+                    if ($pt->orderProduct->orderProductSet->design_number) {
+                        $designNumbers->push($pt->orderProduct->orderProductSet->design_number);
+                    }
+                    if ($pt->orderProduct->orderProductSet->orderMain && $pt->orderProduct->orderProductSet->orderMain->customer) {
+                        $customers->push($pt->orderProduct->orderProductSet->orderMain->customer->name);
+                    }
                 }
             }
         }
@@ -236,8 +341,13 @@ class SlipReportService
 
                 if ($st->to_stage) $destinationStages->push($st->to_stage->name);
                 if ($st->getToUnitMaster) $destinationUnits->push($st->getToUnitMaster->name);
-                if ($st->orderProduct && $st->orderProduct->orderProductSet && $st->orderProduct->orderProductSet->orderMain && $st->orderProduct->orderProductSet->orderMain->customer) {
-                    $customers->push($st->orderProduct->orderProductSet->orderMain->customer->name);
+                if ($st->orderProduct && $st->orderProduct->orderProductSet) {
+                    if ($st->orderProduct->orderProductSet->design_number) {
+                        $designNumbers->push($st->orderProduct->orderProductSet->design_number);
+                    }
+                    if ($st->orderProduct->orderProductSet->orderMain && $st->orderProduct->orderProductSet->orderMain->customer) {
+                        $customers->push($st->orderProduct->orderProductSet->orderMain->customer->name);
+                    }
                 }
             }
         }
@@ -253,8 +363,13 @@ class SlipReportService
 
                 if ($pst->to_stage) $destinationStages->push($pst->to_stage->name);
                 if ($pst->getToUnitMaster) $destinationUnits->push($pst->getToUnitMaster->name);
-                if ($pst->orderProduct && $pst->orderProduct->orderProductSet && $pst->orderProduct->orderProductSet->orderMain && $pst->orderProduct->orderProductSet->orderMain->customer) {
-                    $customers->push($pst->orderProduct->orderProductSet->orderMain->customer->name);
+                if ($pst->orderProduct && $pst->orderProduct->orderProductSet) {
+                    if ($pst->orderProduct->orderProductSet->design_number) {
+                        $designNumbers->push($pst->orderProduct->orderProductSet->design_number);
+                    }
+                    if ($pst->orderProduct->orderProductSet->orderMain && $pst->orderProduct->orderProductSet->orderMain->customer) {
+                        $customers->push($pst->orderProduct->orderProductSet->orderMain->customer->name);
+                    }
                 }
             }
         }
@@ -270,8 +385,13 @@ class SlipReportService
 
                 if ($gt->to_stage) $destinationStages->push($gt->to_stage->name);
                 if ($gt->getToUnitMaster) $destinationUnits->push($gt->getToUnitMaster->name);
-                if ($gt->orderProduct && $gt->orderProduct->orderProductSet && $gt->orderProduct->orderProductSet->orderMain && $gt->orderProduct->orderProductSet->orderMain->customer) {
-                    $customers->push($gt->orderProduct->orderProductSet->orderMain->customer->name);
+                if ($gt->orderProduct && $gt->orderProduct->orderProductSet) {
+                    if ($gt->orderProduct->orderProductSet->design_number) {
+                        $designNumbers->push($gt->orderProduct->orderProductSet->design_number);
+                    }
+                    if ($gt->orderProduct->orderProductSet->orderMain && $gt->orderProduct->orderProductSet->orderMain->customer) {
+                        $customers->push($gt->orderProduct->orderProductSet->orderMain->customer->name);
+                    }
                 }
             }
         }
@@ -288,7 +408,45 @@ class SlipReportService
                             if (!isset($lotsWithQty[$lotNo])) $lotsWithQty[$lotNo] = 0;
                             $lotsWithQty[$lotNo] += $it->quantity;
                             $totalQty += $it->quantity;
+
+                            if ($it->detail && $it->detail->orderProductSet && $it->detail->orderProductSet->design_number) {
+                                $designNumbers->push($it->detail->orderProductSet->design_number);
+                            }
                         }
+                    }
+                }
+            }
+        }
+
+        // 7. Parts
+        if ($slip->parts && $slip->parts->isNotEmpty()) {
+            foreach ($slip->parts as $part) {
+                if ($part->design_number) {
+                    $designNumbers->push($part->design_number);
+                }
+                if ($part->lot_no) {
+                    $lotNo = $part->lot_no;
+                    $qty = $part->set_quantity ?? $part->single_quantity ?? 0;
+                    if (!isset($lotsWithQty[$lotNo])) $lotsWithQty[$lotNo] = 0;
+                    $lotsWithQty[$lotNo] += $qty;
+                    $totalQty += $qty;
+                }
+            }
+        }
+
+        // Fallback: If any lots did not resolve designs/customers from direct transaction relations, resolve via OrderLot table
+        $missingLots = array_keys($lotsWithQty);
+        if (!empty($missingLots) && ($designNumbers->isEmpty() || $customers->isEmpty())) {
+            $orderLotsLookup = OrderLot::whereIn('lot_no', $missingLots)
+                ->with(['orderProductSet.orderMain.customer'])
+                ->get();
+            foreach ($orderLotsLookup as $ol) {
+                if ($ol->orderProductSet) {
+                    if ($ol->orderProductSet->design_number) {
+                        $designNumbers->push($ol->orderProductSet->design_number);
+                    }
+                    if ($ol->orderProductSet->orderMain && $ol->orderProductSet->orderMain->customer) {
+                        $customers->push($ol->orderProductSet->orderMain->customer->name);
                     }
                 }
             }
@@ -307,6 +465,7 @@ class SlipReportService
             'entries_count' => max(1, $entriesCount),
             'lots' => array_keys($lotsWithQty),
             'lots_with_qty' => $lotsWithQty,
+            'designs' => $designNumbers->unique()->filter()->values()->toArray(),
             'total_quantity' => $totalQty,
             'destinations' => $destinationStages->unique()->filter()->values()->toArray(),
             'destination_units' => $destinationUnits->unique()->filter()->values()->toArray(),
@@ -418,6 +577,42 @@ class SlipReportService
 
         $stage_transactions = $stage_tx->concat($printing_to_stitching_tx)->concat($godam_tx);
 
+        // Preload OrderLot metadata for all lots in transactions to resolve design, customer, fabric, colors, etc.
+        $allSlipLotNos = collect();
+        if ($lots->isNotEmpty()) $allSlipLotNos = $allSlipLotNos->merge($lots->pluck('lot_no'));
+        if ($rolls->isNotEmpty()) $allSlipLotNos = $allSlipLotNos->merge($rolls->pluck('lot_no'));
+        if ($printings->isNotEmpty()) $allSlipLotNos = $allSlipLotNos->merge($printings->pluck('lot_no'));
+        if ($stage_transactions->isNotEmpty()) $allSlipLotNos = $allSlipLotNos->merge($stage_transactions->pluck('lot_no'));
+
+        $lotsMap = OrderLot::whereIn('lot_no', $allSlipLotNos->filter()->unique()->values())
+            ->with([
+                'orderMain.customer',
+                'orderProductSet.fabric',
+                'orderProductSet.colors',
+                'orderProductSet.size_measurement',
+                'orderProductSet.master_design_pattern',
+                'orderProductSet.master_product_fitting',
+                'orderProductSet.orderMain.customer',
+            ])->get()->keyBy('lot_no');
+
+        // Attach resolved set to printings
+        foreach ($printings as $pt) {
+            $pt->resolved_set = $pt->orderProduct?->orderProductSet 
+                ?? ($pt->lot_no && isset($lotsMap[$pt->lot_no]) ? $lotsMap[$pt->lot_no]->orderProductSet : null)
+                ?? $slip->orderProductSet;
+            $pt->resolved_order_main = $pt->resolved_set?->orderMain 
+                ?? ($pt->lot_no && isset($lotsMap[$pt->lot_no]) ? $lotsMap[$pt->lot_no]->orderMain : null);
+        }
+
+        // Attach resolved set to stage transactions
+        foreach ($stage_transactions as $st) {
+            $st->resolved_set = $st->orderProduct?->orderProductSet 
+                ?? ($st->lot_no && isset($lotsMap[$st->lot_no]) ? $lotsMap[$st->lot_no]->orderProductSet : null)
+                ?? $slip->orderProductSet;
+            $st->resolved_order_main = $st->resolved_set?->orderMain 
+                ?? ($st->lot_no && isset($lotsMap[$st->lot_no]) ? $lotsMap[$st->lot_no]->orderMain : null);
+        }
+
         // Fetch Packing Sessions
         $packing_details = collect();
         if ($slip->from_stage_id == 11) {
@@ -508,9 +703,10 @@ class SlipReportService
             'D4' => 'From Stage & Unit',
             'E4' => 'To Stage & Destination Unit',
             'F4' => 'Lots Involved (Pieces)',
-            'G4' => 'Total Entries',
-            'H4' => 'Total Pieces',
-            'I4' => 'Status'
+            'G4' => 'Designs',
+            'H4' => 'Total Entries',
+            'I4' => 'Total Pieces',
+            'J4' => 'Status'
         ];
 
         foreach ($headers as $cell => $text) {
@@ -523,7 +719,7 @@ class SlipReportService
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
         ];
-        $sheet->getStyle('A4:I4')->applyFromArray($headerStyle);
+        $sheet->getStyle('A4:J4')->applyFromArray($headerStyle);
         $sheet->getRowDimension('4')->setRowHeight(28);
 
         $row = 5;
@@ -541,6 +737,7 @@ class SlipReportService
                 $lotsFormatted[] = '#' . $lot . ($qty > 0 ? " ({$qty})" : '');
             }
             $lotText = implode(', ', $lotsFormatted) ?: '-';
+            $designsText = !empty($computed['designs']) ? implode(', ', $computed['designs']) : '-';
 
             $statusText = match($slip->status) {
                 0 => 'Pending',
@@ -555,21 +752,23 @@ class SlipReportService
             $sheet->setCellValue('D' . $row, $fromStageText);
             $sheet->setCellValue('E' . $row, $toStageText);
             $sheet->setCellValue('F' . $row, $lotText);
-            $sheet->setCellValue('G' . $row, $computed['entries_count']);
-            $sheet->setCellValue('H' . $row, $computed['total_quantity']);
-            $sheet->setCellValue('I' . $row, $statusText);
+            $sheet->setCellValue('G' . $row, $designsText);
+            $sheet->setCellValue('H' . $row, $computed['entries_count']);
+            $sheet->setCellValue('I' . $row, $computed['total_quantity']);
+            $sheet->setCellValue('J' . $row, $statusText);
 
-            $sheet->getStyle('A' . $row . ':I' . $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+            $sheet->getStyle('A' . $row . ':J' . $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
             $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('C' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('G' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle('I' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('I' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle('J' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
             $row++;
         }
 
-        foreach (range('A', 'I') as $col) {
+        foreach (range('A', 'J') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 

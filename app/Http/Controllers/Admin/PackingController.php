@@ -146,6 +146,7 @@ class PackingController extends Controller
                 ->where('order_stage_transactions.to_stage_id', 11)
                 ->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
                 ->where('order_lots.order_main_id', $order->id)
+                ->where('order_stage_transactions.remaining_quantity', '>', 0)
                 ->select(
                     'order_stage_transactions.lot_no',
                     'order_products_sets.id as set_id',
@@ -314,6 +315,7 @@ class PackingController extends Controller
                 ->where('order_stage_transactions.to_stage_id', 11)
                 ->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
                 ->where('order_lots.order_main_id', $order->id)
+                ->where('order_stage_transactions.remaining_quantity', '>', 0)
                 ->select(
                     'order_stage_transactions.lot_no',
                     'order_products_sets.id as set_id',
@@ -1373,6 +1375,7 @@ class PackingController extends Controller
                 ->where('order_stage_transactions.to_stage_id', 11)
                 ->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
                 ->where('order_lots.order_main_id', $order->id)
+                ->where('order_stage_transactions.remaining_quantity', '>', 0)
                 ->select(
                     'order_stage_transactions.lot_no',
                     'order_products_sets.id as set_id',
@@ -2159,6 +2162,7 @@ class PackingController extends Controller
                 ->where('order_stage_transactions.to_stage_id', 11)
                 ->where('order_stage_transactions.sub_stage_id_to', $unit_id)
                 ->where('order_lots.order_main_id', $id)
+                ->where('order_stage_transactions.remaining_quantity', '>', 0)
                 ->select(
                     'order_stage_transactions.lot_no',
                     'order_products_sets.id as set_id',

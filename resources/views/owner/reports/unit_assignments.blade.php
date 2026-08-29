@@ -222,6 +222,15 @@
                         </select>
                     </div>
                 </div>
+
+                <div class="row" style="margin: 0 -5px;">
+                    <div class="col-6" style="padding: 0 5px;">
+                        <input type="number" step="any" name="min_pending_qty" value="{{ request()->has('min_pending_qty') ? request('min_pending_qty') : ($min_pending_qty ?? 1) }}" class="filter-input" placeholder="Min Pending Qty">
+                    </div>
+                    <div class="col-6" style="padding: 0 5px;">
+                        <input type="number" step="any" name="max_pending_qty" value="{{ request('max_pending_qty') }}" class="filter-input" placeholder="Max Pending Qty">
+                    </div>
+                </div>
                 
                 <div class="text-right mt-1">
                     <a href="{{ route('owner.reports.unit-assignments') }}" class="btn btn-sm btn-light" style="border-radius: 8px; font-weight: 700;">Clear</a>
@@ -313,9 +322,16 @@
                             <div class="qty-label">Total Qty</div>
                         </div>
                     @else
+                        @php
+                            $receivedOwner = max(0, ($item->assigned_qty ?? 0) - ($item->pending_qty ?? 0));
+                        @endphp
                         <div class="qty-item" style="border-right: 1px solid #e2e8f0;">
                             <div class="qty-val text-primary">{{ $item->assigned_qty ?? 0 }}</div>
                             <div class="qty-label">Assigned</div>
+                        </div>
+                        <div class="qty-item" style="border-right: 1px solid #e2e8f0;">
+                            <div class="qty-val text-success">{{ $receivedOwner }}</div>
+                            <div class="qty-label">Received</div>
                         </div>
                         <div class="qty-item">
                             <div class="qty-val text-danger">{{ $item->pending_qty ?? 0 }}</div>
@@ -333,15 +349,22 @@
         @endforelse
 
         @if($assignments->isNotEmpty() && !$productionStatus)
+            @php
+                $totalReceivedAll = max(0, $totalAssigned - $totalPending);
+            @endphp
             <div class="assignment-card bg-primary text-white text-center">
                 <div class="row">
-                    <div class="col-6 border-right border-light">
-                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8;">Total Assigned</div>
-                        <div style="font-size: 20px; font-weight: 900;">{{ number_format($totalAssigned) }}</div>
+                    <div class="col-4 border-right border-light">
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8;">Assigned</div>
+                        <div style="font-size: 18px; font-weight: 900;">{{ number_format($totalAssigned) }}</div>
                     </div>
-                    <div class="col-6">
-                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8;">Total Pending</div>
-                        <div style="font-size: 20px; font-weight: 900;">{{ number_format($totalPending) }}</div>
+                    <div class="col-4 border-right border-light">
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8;">Received</div>
+                        <div style="font-size: 18px; font-weight: 900;">{{ number_format($totalReceivedAll) }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8;">Pending</div>
+                        <div style="font-size: 18px; font-weight: 900;">{{ number_format($totalPending) }}</div>
                     </div>
                 </div>
             </div>

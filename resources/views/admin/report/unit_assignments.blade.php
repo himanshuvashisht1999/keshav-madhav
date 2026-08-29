@@ -149,6 +149,15 @@
                                     </select>
                                 </div>
 
+                                <div class="col-md-3">
+                                    <label class="fw-bold">Pending Qty Range</label>
+                                    <div class="input-group">
+                                        <input type="number" step="any" name="min_pending_qty" value="{{ request()->has('min_pending_qty') ? request('min_pending_qty') : ($min_pending_qty ?? 1) }}" class="form-control" placeholder="Min">
+                                        <span class="input-group-text bg-light border-x-0">-</span>
+                                        <input type="number" step="any" name="max_pending_qty" value="{{ request('max_pending_qty') }}" class="form-control" placeholder="Max">
+                                    </div>
+                                </div>
+
                                 <div class="col-md-12 mt-3 d-flex justify-content-between">
                                     <div class="d-flex gap-2" style="width: 300px;">
                                         <button type="submit" class="btn btn-primary w-100">
@@ -195,6 +204,7 @@
                                                 {{-- <th>Fabric</th>
                                                 <th>Color</th> --}}
                                                 <th>Assigned Qty</th>
+                                                <th>Receive Qty</th>
                                                 <th>Pending Qty</th>
                                                 <th>Start Date</th>
                                                 <th>Completed Date</th>
@@ -206,12 +216,17 @@
                                         <tbody>
                                             @php 
                                                 $totalAssigned = 0;
+                                                $totalReceived = 0;
                                                 $totalPending = 0;
                                             @endphp
                                             @foreach($assignments as $item)
                                                 @php 
-                                                    $totalAssigned += ($item->assigned_qty ?? 0);
-                                                    $totalPending += ($item->pending_qty ?? 0);
+                                                    $assignedVal = $item->assigned_qty ?? 0;
+                                                    $pendingVal = $item->pending_qty ?? 0;
+                                                    $receivedVal = max(0, $assignedVal - $pendingVal);
+                                                    $totalAssigned += $assignedVal;
+                                                    $totalReceived += $receivedVal;
+                                                    $totalPending += $pendingVal;
                                                 @endphp
                                                 <tr>
                                                     <!-- <td>{{ $item->created_at->format('d M Y') }}</td> -->
@@ -227,8 +242,9 @@
                                                     <td>{{ $item->design_number ?? '-' }}</td>
                                                     {{-- <td>{{ $item->fabric->name ?? '-' }}</td>
                                                     <td>{{ $item->colors->name ?? '-' }}</td> --}}
-                                                    <td>{{ $item->assigned_qty ?? 0 }} Pcs</td>
-                                                    <td>{{ $item->pending_qty ?? 0 }} Pcs</td>
+                                                    <td>{{ $assignedVal }} Pcs</td>
+                                                    <td>{{ $receivedVal }} Pcs</td>
+                                                    <td>{{ $pendingVal }} Pcs</td>
                                                     <td>{{ $item->start_time ? $item->start_time->format('d M Y') : '-' }}</td>
                                                     <td>{{ $item->end_time ? $item->end_time->format('d M Y') : '-' }}</td>
                                                     <td>{{ $item->estimated_time ? $item->estimated_time->format('d M Y') : '-' }}</td>
@@ -267,6 +283,7 @@
                                             <tr class="bg-light font-weight-bold">
                                                 <td colspan="3" class="text-right">Grand Total:</td>
                                                 <td>{{ number_format($totalAssigned) }} Pcs</td>
+                                                <td>{{ number_format($totalReceived) }} Pcs</td>
                                                 <td>{{ number_format($totalPending) }} Pcs</td>
                                                 <td colspan="4"></td>
                                             </tr>
@@ -291,6 +308,7 @@
                                                     <th>Total Quantity</th>
                                                 @else
                                                     <th>Assigned Qty</th>
+                                                    <th>Receive Qty</th>
                                                     <th>Pending Qty</th>
                                                 @endif
                                                 @if($productionStatus)
@@ -307,12 +325,17 @@
                                         <tbody>
                                             @php 
                                                 $totalAssignedOther = 0;
+                                                $totalReceivedOther = 0;
                                                 $totalPendingOther = 0;
                                             @endphp
                                             @foreach($assignments as $item)
                                                 @php 
-                                                    $totalAssignedOther += ($item->assigned_qty ?? 0);
-                                                    $totalPendingOther += ($item->pending_qty ?? 0);
+                                                    $assignedValOther = $item->assigned_qty ?? 0;
+                                                    $pendingValOther = $item->pending_qty ?? 0;
+                                                    $receivedValOther = max(0, $assignedValOther - $pendingValOther);
+                                                    $totalAssignedOther += $assignedValOther;
+                                                    $totalReceivedOther += $receivedValOther;
+                                                    $totalPendingOther += $pendingValOther;
                                                 @endphp
                                                 <tr>
                                                     <!-- <td>{{ $item->created_at->format('d M Y') }}</td> -->
@@ -335,10 +358,11 @@
                                                         <td>{{ $item->getFromUnitMaster->name ?? $item->getUnitMaster->name ?? '-' }}</td>
                                                     @endif
                                                     @if($productionStatus)
-                                                        <td>{{ $item->assigned_qty ?? 0 }} Pcs</td>
+                                                        <td>{{ $assignedValOther }} Pcs</td>
                                                     @else
-                                                        <td>{{ $item->assigned_qty ?? 0 }} Pcs</td>
-                                                        <td>{{ $item->pending_qty ?? 0 }} Pcs</td>
+                                                        <td>{{ $assignedValOther }} Pcs</td>
+                                                        <td>{{ $receivedValOther }} Pcs</td>
+                                                        <td>{{ $pendingValOther }} Pcs</td>
                                                     @endif
                                                     @if($productionStatus)
                                                         <td>{{ $item->production_date ?? '-' }}</td>
@@ -381,8 +405,13 @@
                                         <tfoot>
                                             <tr class="bg-light font-weight-bold">
                                                 <td colspan="{{ $productionStatus ? 3 : 6 }}" class="text-right">Grand Total:</td>
-                                                <td>{{ number_format($totalAssignedOther) }} Pcs</td>
-                                                <td>{{ number_format($totalPendingOther) }} Pcs</td>
+                                                @if($productionStatus)
+                                                    <td>{{ number_format($totalAssignedOther) }} Pcs</td>
+                                                @else
+                                                    <td>{{ number_format($totalAssignedOther) }} Pcs</td>
+                                                    <td>{{ number_format($totalReceivedOther) }} Pcs</td>
+                                                    <td>{{ number_format($totalPendingOther) }} Pcs</td>
+                                                @endif
                                                 <td colspan="4"></td>
                                             </tr>
                                         </tfoot>

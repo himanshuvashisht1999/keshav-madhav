@@ -295,7 +295,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($unit_lots as $lot)
+                            @forelse(collect($unit_lots)->where('remaining_quantity', '>', 0) as $lot)
                                 <tr>
                                     <td class="text-center">
                                         <input type="checkbox" name="lots[]" class="lot-checkbox" value="{{ $lot->lot_no }}" {{ in_array($lot->lot_no, $selected_lots ?? []) ? 'checked' : '' }}>

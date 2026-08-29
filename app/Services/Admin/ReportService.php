@@ -1889,6 +1889,8 @@ class ReportService
 
                 $item->assigned_qty = $totalPieces;
                 $item->pending_qty = $totalPieces;
+                $item->receive_qty = 0;
+                $item->received_qty = 0;
                 $item->to_stage = (object) ['name' => 'Cutting'];
                 $item->from_stage = (object) ['name' => 'Admin'];
                 $item->status_text = ($item->is_printing && $item->is_stitching) ? 'Done' : 'Pending';
@@ -1897,6 +1899,23 @@ class ReportService
                 $item->created_at = \Carbon\Carbon::parse($item->created_at);
 
                 $assignments[] = $item;
+            }
+
+            $minPendingQty = $request->has('min_pending_qty') ? $request->get('min_pending_qty') : 1;
+            if ($minPendingQty !== null && $minPendingQty !== '') {
+                $minPending = (float) $minPendingQty;
+                $assignments = array_values(array_filter($assignments, function ($item) use ($minPending) {
+                    $pQty = (float) ($item->pending_qty ?? $item->quantity ?? 0);
+                    return $pQty >= $minPending;
+                }));
+            }
+
+            if ($request->filled('max_pending_qty')) {
+                $maxPending = (float) $request->max_pending_qty;
+                $assignments = array_values(array_filter($assignments, function ($item) use ($maxPending) {
+                    $pQty = (float) ($item->pending_qty ?? $item->quantity ?? 0);
+                    return $pQty <= $maxPending;
+                }));
             }
 
             $designs = \App\Models\OrderProductSet::whereNotNull('design_number')
@@ -1918,7 +1937,9 @@ class ReportService
                 'selectedUnit' => $unitIdsReq,
                 'lotNo' => $request->get('lot_no'),
                 'orderNo' => $request->get('order_no'),
-                'productionStatus' => $productionStatus
+                'productionStatus' => $productionStatus,
+                'min_pending_qty' => $minPendingQty,
+                'max_pending_qty' => $request->get('max_pending_qty')
             ];
         }
 
@@ -2040,6 +2061,8 @@ class ReportService
                 $item->estimated_time = $eta ? \Carbon\Carbon::parse($eta) : null;
                 $item->assigned_qty = $assignedQty;
                 $item->pending_qty = $pendingQty;
+                $item->receive_qty = max(0, (float) $assignedQty - (float) $pendingQty);
+                $item->received_qty = $item->receive_qty;
 
                 $assignments[] = $item;
             }
@@ -2287,10 +2310,14 @@ class ReportService
                 if (!isset($groupedAssignments[$groupKey])) {
                     $item->assigned_qty = $assignedQty;
                     $item->pending_qty = $pendingQty;
+                    $item->receive_qty = max(0, (float) $assignedQty - (float) $pendingQty);
+                    $item->received_qty = $item->receive_qty;
                     $groupedAssignments[$groupKey] = $item;
                 } else {
                     $groupedAssignments[$groupKey]->assigned_qty += $assignedQty;
                     $groupedAssignments[$groupKey]->pending_qty = $pendingQty;
+                    $groupedAssignments[$groupKey]->receive_qty = max(0, (float) $groupedAssignments[$groupKey]->assigned_qty - (float) $groupedAssignments[$groupKey]->pending_qty);
+                    $groupedAssignments[$groupKey]->received_qty = $groupedAssignments[$groupKey]->receive_qty;
                 }
             }
             $assignmentsOther = collect(array_values($groupedAssignments))->sortBy('id')->values()->all();
@@ -2321,6 +2348,23 @@ class ReportService
             ->where('name', '!=', 'NULL')
             ->orderBy('name', 'asc')
             ->get();
+        
+        $minPendingQty = $request->has('min_pending_qty') ? $request->get('min_pending_qty') : 1;
+        if ($minPendingQty !== null && $minPendingQty !== '') {
+            $minPending = (float) $minPendingQty;
+            $assignments = array_values(array_filter($assignments, function ($item) use ($minPending) {
+                $pQty = (float) ($item->pending_qty ?? $item->quantity ?? 0);
+                return $pQty >= $minPending;
+            }));
+        }
+
+        if ($request->filled('max_pending_qty')) {
+            $maxPending = (float) $request->max_pending_qty;
+            $assignments = array_values(array_filter($assignments, function ($item) use ($maxPending) {
+                $pQty = (float) ($item->pending_qty ?? $item->quantity ?? 0);
+                return $pQty <= $maxPending;
+            }));
+        }
         
         $totalPending = 0;
         foreach ($assignments as $item) {
@@ -2363,7 +2407,9 @@ class ReportService
             'selectedUnit' => $unitIdsReq,
             'lotNo' => $lotNo,
             'orderNo' => $orderNo,
-            'productionStatus' => $productionStatus
+            'productionStatus' => $productionStatus,
+            'min_pending_qty' => $minPendingQty,
+            'max_pending_qty' => $request->get('max_pending_qty')
         ];
     }
 
