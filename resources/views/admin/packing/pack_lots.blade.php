@@ -393,6 +393,18 @@
             $isDomesticOrder = isset($order) && strtolower(trim($order->order_type)) === 'domestic';
             $domesticTitle = $isDomesticOrder ? 'Domestic Packing Operations' : 'Divert to Domestic';
             $domesticSubmitBtn = $isDomesticOrder ? 'Submit Packing' : 'Submit Diversion';
+
+            $saved_rework_total = 0;
+            if (isset($saved_reworks) && !empty($saved_reworks)) {
+                foreach ($saved_reworks as $srw) {
+                    if ($srw->details) {
+                        $saved_rework_total += (int) $srw->details->sum('quantity');
+                    }
+                }
+            }
+            $saved_dead_total = isset($saved_dead) && !empty($saved_dead) ? (int) $saved_dead->sum('quantity') : 0;
+            $saved_sampling_total = isset($saved_sampling) && !empty($saved_sampling) ? (int) $saved_sampling->sum('quantity') : 0;
+            $saved_debit_total = isset($saved_debit) && !empty($saved_debit) ? (int) $saved_debit->sum('quantity') : 0;
         @endphp
 
         <!-- Packing Action Tabs -->
@@ -417,23 +429,27 @@
                     </li>
                     @endif
                     <li class="nav-item">
-                        <a class="nav-link font-weight-bold" id="tab-rework-tab" data-toggle="tab" href="#tab-rework" role="tab">
-                            <i class="fas fa-exclamation-triangle text-danger"></i> Defect / Rework
+                        <a class="nav-link font-weight-bold d-flex align-items-center" id="tab-rework-tab" data-toggle="tab" href="#tab-rework" role="tab">
+                            <i class="fas fa-exclamation-triangle text-danger mr-1"></i> Defect / Rework
+                            <span id="reworkTabBadge" class="badge badge-danger ml-1 font-weight-bold" style="{{ $saved_rework_total > 0 ? '' : 'display:none;' }} font-size: 0.72rem; padding: 2px 6px;">{{ $saved_rework_total > 0 ? $saved_rework_total . ' Pcs' : '0 Pcs' }}</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link font-weight-bold" id="tab-damage-tab" data-toggle="tab" href="#tab-damage" role="tab">
-                            <i class="fas fa-skull-crossbones text-dark"></i> Dead / Damage
+                        <a class="nav-link font-weight-bold d-flex align-items-center" id="tab-damage-tab" data-toggle="tab" href="#tab-damage" role="tab">
+                            <i class="fas fa-skull-crossbones text-dark mr-1"></i> Dead / Damage
+                            <span id="damageTabBadge" class="badge badge-dark ml-1 font-weight-bold" style="{{ $saved_dead_total > 0 ? '' : 'display:none;' }} font-size: 0.72rem; padding: 2px 6px;">{{ $saved_dead_total > 0 ? $saved_dead_total . ' Pcs' : '0 Pcs' }}</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link font-weight-bold" id="tab-sampling-tab" data-toggle="tab" href="#tab-sampling" role="tab">
-                            <i class="fas fa-flask text-primary"></i> Sampling
+                        <a class="nav-link font-weight-bold d-flex align-items-center" id="tab-sampling-tab" data-toggle="tab" href="#tab-sampling" role="tab">
+                            <i class="fas fa-flask text-primary mr-1"></i> Sampling
+                            <span id="samplingTabBadge" class="badge badge-primary ml-1 font-weight-bold" style="{{ $saved_sampling_total > 0 ? '' : 'display:none;' }} font-size: 0.72rem; padding: 2px 6px;">{{ $saved_sampling_total > 0 ? $saved_sampling_total . ' Pcs' : '0 Pcs' }}</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link font-weight-bold" id="tab-debit-tab" data-toggle="tab" href="#tab-debit" role="tab">
-                            <i class="fas fa-minus-circle text-warning"></i> Debit
+                        <a class="nav-link font-weight-bold d-flex align-items-center" id="tab-debit-tab" data-toggle="tab" href="#tab-debit" role="tab">
+                            <i class="fas fa-minus-circle text-warning mr-1"></i> Debit
+                            <span id="debitTabBadge" class="badge badge-warning text-dark ml-1 font-weight-bold" style="{{ $saved_debit_total > 0 ? '' : 'display:none;' }} font-size: 0.72rem; padding: 2px 6px;">{{ $saved_debit_total > 0 ? $saved_debit_total . ' Pcs' : '0 Pcs' }}</span>
                         </a>
                     </li>
                 </ul>
@@ -664,7 +680,16 @@
 
                     </div>
                     <div class="tab-pane fade" id="tab-rework" role="tabpanel">
-                        <h5 class="text-danger border-bottom pb-2 mb-3"><i class="fas fa-exclamation-triangle"></i> Defect / Rework</h5>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <h5 class="text-danger mb-0"><i class="fas fa-exclamation-triangle"></i> Defect / Rework</h5>
+                            <div class="d-flex align-items-center" style="gap: 8px;">
+                                <span class="badge badge-light border text-danger px-2 py-1 font-weight-bold" style="{{ $saved_rework_total > 0 ? '' : 'display:none;' }} font-size: 0.85rem;">
+                                    Saved: <strong id="reworkSavedDisplay">{{ $saved_rework_total }} Pcs</strong>
+                                </span>
+                                <span class="text-muted font-weight-bold" style="font-size: 0.88rem;">Total Defect Quantity:</span>
+                                <span id="reworkTopTotalBadge" class="badge badge-danger px-3 py-1 font-weight-bold" style="font-size: 0.95rem; border-radius: 6px;">{{ $saved_rework_total }} Pcs</span>
+                            </div>
+                        </div>
                         
                         <form id="reworkForm">
                             <div class="row mb-3">
@@ -792,7 +817,16 @@
                         </div>
                     </div>
                     <div class="tab-pane fade" id="tab-damage" role="tabpanel">
-                        <h5 class="text-dark border-bottom pb-2 mb-3"><i class="fas fa-skull-crossbones"></i> Dead / Damage</h5>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <h5 class="text-dark mb-0"><i class="fas fa-skull-crossbones"></i> Dead / Damage</h5>
+                            <div class="d-flex align-items-center" style="gap: 8px;">
+                                <span class="badge badge-light border text-dark px-2 py-1 font-weight-bold" style="{{ $saved_dead_total > 0 ? '' : 'display:none;' }} font-size: 0.85rem;">
+                                    Saved: <strong id="damageSavedDisplay">{{ $saved_dead_total }} Pcs</strong>
+                                </span>
+                                <span class="text-muted font-weight-bold" style="font-size: 0.88rem;">Total Dead Stock:</span>
+                                <span id="damageTopTotalBadge" class="badge badge-dark px-3 py-1 font-weight-bold" style="font-size: 0.95rem; border-radius: 6px;">{{ $saved_dead_total }} Pcs</span>
+                            </div>
+                        </div>
                         
                         <form id="damageForm">
                             <div class="row mb-3">
@@ -919,7 +953,16 @@
                         </div>
                     </div>
                     <div class="tab-pane fade" id="tab-sampling" role="tabpanel">
-                        <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-flask"></i> Sampling</h5>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <h5 class="text-primary mb-0"><i class="fas fa-flask"></i> Sampling</h5>
+                            <div class="d-flex align-items-center" style="gap: 8px;">
+                                <span class="badge badge-light border text-primary px-2 py-1 font-weight-bold" style="{{ $saved_sampling_total > 0 ? '' : 'display:none;' }} font-size: 0.85rem;">
+                                    Saved: <strong id="samplingSavedDisplay">{{ $saved_sampling_total }} Pcs</strong>
+                                </span>
+                                <span class="text-muted font-weight-bold" style="font-size: 0.88rem;">Total Sampling:</span>
+                                <span id="samplingTopTotalBadge" class="badge badge-primary px-3 py-1 font-weight-bold" style="font-size: 0.95rem; border-radius: 6px;">{{ $saved_sampling_total }} Pcs</span>
+                            </div>
+                        </div>
                         
                         <div class="card bg-light border-0 shadow-sm mb-4">
                             <div class="card-body p-3">
@@ -1027,7 +1070,16 @@
                         </div>
                     </div>
                     <div class="tab-pane fade" id="tab-debit" role="tabpanel">
-                        <h5 class="text-warning border-bottom pb-2 mb-3"><i class="fas fa-minus-circle"></i> Debit</h5>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                            <h5 class="text-warning mb-0"><i class="fas fa-minus-circle"></i> Debit</h5>
+                            <div class="d-flex align-items-center" style="gap: 8px;">
+                                <span class="badge badge-light border text-warning px-2 py-1 font-weight-bold" style="{{ $saved_debit_total > 0 ? '' : 'display:none;' }} font-size: 0.85rem;">
+                                    Saved: <strong id="debitSavedDisplay">{{ $saved_debit_total }} Pcs</strong>
+                                </span>
+                                <span class="text-muted font-weight-bold" style="font-size: 0.88rem;">Total Debit Quantity:</span>
+                                <span id="debitTopTotalBadge" class="badge badge-warning text-dark px-3 py-1 font-weight-bold" style="font-size: 0.95rem; border-radius: 6px;">{{ $saved_debit_total }} Pcs</span>
+                            </div>
+                        </div>
                         
                         <form id="debitForm">
                             <div class="row mb-3">
@@ -1350,23 +1402,118 @@
             }
         });
 
-        // Dynamically cap inputs and update live remaining UI
-        $(document).on('input', '.rework-qty-input, .damage-qty-input, .sampling-qty-input, .debit-qty-input', function() {
+        // Initial Saved Totals from Server
+        const SAVED_REWORK_TOTAL = {{ $saved_rework_total ?? 0 }};
+        const SAVED_DEAD_TOTAL = {{ $saved_dead_total ?? 0 }};
+        const SAVED_SAMPLING_TOTAL = {{ $saved_sampling_total ?? 0 }};
+        const SAVED_DEBIT_TOTAL = {{ $saved_debit_total ?? 0 }};
+
+        // Live Outflow / Tab Totals Calculation (Defect/Rework, Dead/Damage, Sampling, Debit)
+        function updateOutflowTotals() {
+            // 1. Rework / Defect Total
+            let reworkAdding = 0;
+            $('.rework-qty-input').each(function() {
+                reworkAdding += parseInt($(this).val()) || 0;
+            });
+            let reworkTotal = SAVED_REWORK_TOTAL + reworkAdding;
+            if (reworkAdding > 0) {
+                $('#reworkTopTotalBadge').text(reworkTotal + ' Pcs (' + (SAVED_REWORK_TOTAL > 0 ? SAVED_REWORK_TOTAL + ' Saved + ' : '') + reworkAdding + ' Adding)');
+                $('#reworkTabBadge').text(SAVED_REWORK_TOTAL > 0 ? (SAVED_REWORK_TOTAL + ' (+' + reworkAdding + ') Pcs') : (reworkAdding + ' Pcs')).show();
+            } else {
+                $('#reworkTopTotalBadge').text(SAVED_REWORK_TOTAL + ' Pcs');
+                if (SAVED_REWORK_TOTAL > 0) {
+                    $('#reworkTabBadge').text(SAVED_REWORK_TOTAL + ' Pcs').show();
+                } else {
+                    $('#reworkTabBadge').hide();
+                }
+            }
+
+            // 2. Dead / Damage Total
+            let damageAdding = 0;
+            $('.damage-qty-input').each(function() {
+                damageAdding += parseInt($(this).val()) || 0;
+            });
+            let damageTotal = SAVED_DEAD_TOTAL + damageAdding;
+            if (damageAdding > 0) {
+                $('#damageTopTotalBadge').text(damageTotal + ' Pcs (' + (SAVED_DEAD_TOTAL > 0 ? SAVED_DEAD_TOTAL + ' Saved + ' : '') + damageAdding + ' Adding)');
+                $('#damageTabBadge').text(SAVED_DEAD_TOTAL > 0 ? (SAVED_DEAD_TOTAL + ' (+' + damageAdding + ') Pcs') : (damageAdding + ' Pcs')).show();
+            } else {
+                $('#damageTopTotalBadge').text(SAVED_DEAD_TOTAL + ' Pcs');
+                if (SAVED_DEAD_TOTAL > 0) {
+                    $('#damageTabBadge').text(SAVED_DEAD_TOTAL + ' Pcs').show();
+                } else {
+                    $('#damageTabBadge').hide();
+                }
+            }
+
+            // 3. Debit Total
+            let debitAdding = 0;
+            $('.debit-qty-input').each(function() {
+                debitAdding += parseInt($(this).val()) || 0;
+            });
+            let debitTotal = SAVED_DEBIT_TOTAL + debitAdding;
+            if (debitAdding > 0) {
+                $('#debitTopTotalBadge').text(debitTotal + ' Pcs (' + (SAVED_DEBIT_TOTAL > 0 ? SAVED_DEBIT_TOTAL + ' Saved + ' : '') + debitAdding + ' Adding)');
+                $('#debitTabBadge').text(SAVED_DEBIT_TOTAL > 0 ? (SAVED_DEBIT_TOTAL + ' (+' + debitAdding + ') Pcs') : (debitAdding + ' Pcs')).show();
+            } else {
+                $('#debitTopTotalBadge').text(SAVED_DEBIT_TOTAL + ' Pcs');
+                if (SAVED_DEBIT_TOTAL > 0) {
+                    $('#debitTabBadge').text(SAVED_DEBIT_TOTAL + ' Pcs').show();
+                } else {
+                    $('#debitTabBadge').hide();
+                }
+            }
+
+            // 4. Sampling Total
+            let samplingSets = parseInt($('#samplingQty').val()) || 0;
+            let piecesPerSet = 1;
+            let requiredSizesStr = $('#samplingSizeSet option:selected').attr('data-sizes');
+            if (requiredSizesStr) {
+                try {
+                    let parsed = JSON.parse(requiredSizesStr);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        piecesPerSet = parsed.length;
+                    }
+                } catch(e) {}
+            }
+            let samplingAdding = samplingSets * piecesPerSet;
+            let samplingTotal = SAVED_SAMPLING_TOTAL + samplingAdding;
+            if (samplingAdding > 0) {
+                $('#samplingTopTotalBadge').text(samplingTotal + ' Pcs (' + (SAVED_SAMPLING_TOTAL > 0 ? SAVED_SAMPLING_TOTAL + ' Saved + ' : '') + samplingAdding + ' Adding)');
+                $('#samplingTabBadge').text(SAVED_SAMPLING_TOTAL > 0 ? (SAVED_SAMPLING_TOTAL + ' (+' + samplingAdding + ') Pcs') : (samplingAdding + ' Pcs')).show();
+            } else {
+                $('#samplingTopTotalBadge').text(SAVED_SAMPLING_TOTAL + ' Pcs');
+                if (SAVED_SAMPLING_TOTAL > 0) {
+                    $('#samplingTabBadge').text(SAVED_SAMPLING_TOTAL + ' Pcs').show();
+                } else {
+                    $('#samplingTabBadge').hide();
+                }
+            }
+        }
+
+        // Dynamically cap inputs and update live remaining UI & Tab Totals
+        $(document).on('input keyup change', '.rework-qty-input, .damage-qty-input, .sampling-qty-input, .debit-qty-input, #samplingQty, #samplingSizeSet', function() {
             let val = parseInt($(this).val()) || 0;
             let transId = $(this).data('transaction-id');
             let sizeName = String($(this).data('size-name')).toUpperCase();
             
-            let lot = expandedLots.find(l => l.transaction_id == transId && l.size === sizeName);
-            if (lot) {
-                if (val > lot.remaining_quantity) {
-                    $(this).val(lot.remaining_quantity);
-                }
-                if (val < 0) {
-                    $(this).val(0);
+            if (transId && sizeName) {
+                let lot = expandedLots.find(l => l.transaction_id == transId && l.size === sizeName);
+                if (lot) {
+                    if (val > lot.remaining_quantity) {
+                        $(this).val(lot.remaining_quantity);
+                    }
+                    if (val < 0) {
+                        $(this).val(0);
+                    }
                 }
             }
             updateLiveRemainingUI();
+            updateOutflowTotals();
         });
+
+        // Initialize totals on load
+        updateOutflowTotals();
 
         // ---------------- REWORK TAB LOGIC ----------------
 

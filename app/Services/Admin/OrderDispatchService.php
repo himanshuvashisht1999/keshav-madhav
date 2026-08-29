@@ -80,8 +80,22 @@ class OrderDispatchService
             }
 
             // ================= UPDATE ITEM PRICES (GLOBAL SET-WISE) =================
-            // Pricing update during dispatch removed as per requirement.
-            // Items now carry prices assigned during the packing stage.
+            if (!empty($request->global_prices) || !empty($request->global_mrps)) {
+                foreach ($request->global_prices ?? [] as $setId => $newPrice) {
+                    $newMrp = $request->global_mrps[$setId] ?? null;
+                    $detailIds = \App\Models\OrderProductSetDetail::where('order_products_set_id', $setId)->pluck('id');
+                    
+                    $updateData = ['selling_price' => (float)$newPrice];
+                    if ($newMrp !== null && $newMrp !== '') {
+                        $updateData['mrp'] = (float)$newMrp;
+                    }
+                    
+                    \App\Models\PackingItem::whereIn('packing_carton_id', $request->cartons)
+                        ->whereIn('size_id', $detailIds)
+                        ->update($updateData);
+                }
+            }
+
             // ================= DETAILS =================
             $detailsData = [];
 
@@ -344,23 +358,27 @@ class OrderDispatchService
 
                         if ($setId && !isset($all_unique_sets[$setId])) {
                             $fallbackPrice = ($orderSet->total_quantity > 0) ? ($orderSet->basic_amount / $orderSet->total_quantity) : 0;
+                            $fallbackMrp = ($orderSet->total_quantity > 0) ? ($orderSet->total_amount / $orderSet->total_quantity) : 0;
                             $all_unique_sets[$setId] = [
                                 'set_id' => $setId,
                                 'design' => $orderSet->design_number ?? 'N/A',
                                 'color' => $orderSet->colors->name ?? 'N/A',
                                 'size_set' => $orderSet->size_measurement->name ?? 'N/A',
                                 'suggested_price' => $item->selling_price ?: $fallbackPrice,
+                                'mrp' => $item->mrp ?: $fallbackMrp,
                             ];
                         }
 
                         if ($setId && !isset($sets_list[$setId])) {
                             $fallbackPrice = ($orderSet->total_quantity > 0) ? ($orderSet->basic_amount / $orderSet->total_quantity) : 0;
+                            $fallbackMrp = ($orderSet->total_quantity > 0) ? ($orderSet->total_amount / $orderSet->total_quantity) : 0;
                             $sets_list[$setId] = [
                                 'set_id' => $setId,
                                 'design' => $orderSet->design_number ?? 'N/A',
                                 'color' => $orderSet->colors->name ?? 'N/A',
                                 'size_set' => $orderSet->size_measurement->name ?? 'N/A',
                                 'suggested_price' => $item->selling_price ?: $fallbackPrice,
+                                'mrp' => $item->mrp ?: $fallbackMrp,
                                 'total_qty' => 0,
                                 'sizes_text' => []
                             ];

@@ -86,8 +86,8 @@
                         </div>
                     </div>
 
-                    <!-- PRICE SETUP (GLOBAL summary only) -->
-                    <div id="priceSetupContainer" style="display:none;"></div>
+                    <!-- PRICE SETUP (GLOBAL MRP & SALES PRICE) -->
+                    <div id="priceSetupContainer"></div>
 
                     <!-- ORDER DATA -->
                     <div id="orderContainer"></div>
@@ -595,11 +595,13 @@
             if (data[0].unique_sets && data[0].unique_sets.length > 0) {
                 pricingHtml = `
                     <div class="card shadow-sm mb-3 border-left-success">
-                        <div class="card-header bg-white py-3">
-                            <h5 class="mb-0 font-weight-bold text-success">
-                                <i class="fas fa-tag mr-2"></i> Pricing Overview
-                            </h5>
-                            <small class="text-muted">Prices shown below are retrieved from the packing stage</small>
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-0 font-weight-bold text-success">
+                                    <i class="fas fa-tags mr-2"></i> Pricing Setup (MRP & Sales Price)
+                                </h5>
+                                <small class="text-muted">Edit MRP and Sales Price below. Changes will update dispatch calculations and carton items.</small>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -608,7 +610,8 @@
                                         <tr>
                                             <th>Design - Color</th>
                                             <th class="text-center">Size Set</th>
-                                            <th width="200">Selling Price (₹)</th>
+                                            <th width="200">MRP (₹)</th>
+                                            <th width="200">Sales Price (₹)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -618,10 +621,23 @@
                     pricingHtml += `
                         <tr>
                             <td class="align-middle">
-                                <strong>${set.design}</strong> | ${set.color}
+                                <strong>${set.design}</strong> | <span class="text-secondary">${set.color}</span>
                             </td>
                             <td class="text-center align-middle">
                                 <span class="badge badge-info">${set.size_set}</span>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text font-weight-bold">₹</span>
+                                    </div>
+                                    <input type="number" 
+                                       name="global_mrps[${set.set_id}]" 
+                                       class="form-control font-weight-bold global-mrp-input" 
+                                       step="0.01" 
+                                       min="0" 
+                                       value="${set.mrp || 0}">
+                                </div>
                             </td>
                             <td>
                                 <div class="input-group input-group-sm">
@@ -716,7 +732,10 @@
                                                 <tr>
                                                     <th>Design - Color</th>
                                                     <th>Size Set</th>
-                                                    <th class="text-center" width="60">Total Qty</th>
+                                                    <th class="text-center" width="70">Total Qty</th>
+                                                    <th class="text-right" width="90">MRP</th>
+                                                    <th class="text-right" width="100">Sales Price</th>
+                                                    <th class="text-right" width="110">Amount</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -724,7 +743,7 @@
 
                         carton.sets.forEach(set => {
                             itemsHtml += `
-                                <tr class="carton-set-row" data-set-id="${set.set_id}" data-qty="${set.total_qty}" data-price="${set.suggested_price}">
+                                <tr class="carton-set-row" data-set-id="${set.set_id}" data-qty="${set.total_qty}" data-price="${set.suggested_price}" data-mrp="${set.mrp}">
                                     <td>
                                         <strong>${set.design}</strong> 
                                         <span class="text-secondary">| ${set.color}</span>
@@ -733,6 +752,9 @@
                                         <span class="badge badge-info">${set.size_set}</span>
                                     </td>
                                     <td class="text-center font-weight-bold">${set.total_qty}</td>
+                                    <td class="text-right text-muted carton-mrp-display">₹${parseFloat(set.mrp || 0).toFixed(2)}</td>
+                                    <td class="text-right font-weight-bold text-dark carton-price-display">₹${parseFloat(set.suggested_price || 0).toFixed(2)}</td>
+                                    <td class="text-right font-weight-bold text-success carton-amount-display">₹${(parseFloat(set.suggested_price || 0) * set.total_qty).toFixed(2)}</td>
                                 </tr>
                             `;
                         });
@@ -842,7 +864,29 @@
 
             /* ================= CALCULATION EVENTS ================= */
 
-            $(document).on('input', '.global-price-input, #calc_other_charges', function () {
+            $(document).on('input', '.global-price-input, .global-mrp-input, #calc_other_charges', function () {
+                $('input[name^="global_prices"]').each(function () {
+                    let name = $(this).attr('name');
+                    let setId = name.match(/\[(.*?)\]/)[1];
+                    let price = parseFloat($(this).val()) || 0;
+                    $(`.carton-set-row[data-set-id="${setId}"]`).each(function() {
+                        $(this).data('price', price);
+                        $(this).find('.carton-price-display').text('₹' + price.toFixed(2));
+                        let qty = parseFloat($(this).data('qty')) || 0;
+                        $(this).find('.carton-amount-display').text('₹' + (price * qty).toFixed(2));
+                    });
+                });
+
+                $('input[name^="global_mrps"]').each(function () {
+                    let name = $(this).attr('name');
+                    let setId = name.match(/\[(.*?)\]/)[1];
+                    let mrp = parseFloat($(this).val()) || 0;
+                    $(`.carton-set-row[data-set-id="${setId}"]`).each(function() {
+                        $(this).data('mrp', mrp);
+                        $(this).find('.carton-mrp-display').text('₹' + mrp.toFixed(2));
+                    });
+                });
+
                 calculateDispatchTotals('default');
             });
 
@@ -873,6 +917,7 @@
                 // RESET
                 $('#search_order_no').val('');
                 $('#orderContainer').html('');
+                $('#priceSetupContainer').html('');
                 $('#final_order_no').val('');
                 $('#submitDispatchBtn').prop('disabled', true);
 
