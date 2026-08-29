@@ -624,6 +624,34 @@ class PackingController extends Controller
         return response()->json(['status' => 'error', 'message' => $result['message']]);
     }
 
+    public function deleteSession($id)
+    {
+        $packing = \App\Models\PackingMain::find($id);
+        if (!$packing) {
+            return response()->json(['status' => 'error', 'message' => 'Packing session not found.'], 404);
+        }
+
+        // Check if any cartons are dispatched
+        $cartonIds = \App\Models\PackingCarton::where('packing_main_id', $packing->id)->pluck('id')->toArray();
+        $hasDispatchedCartons = \App\Models\PackingCarton::where('packing_main_id', $packing->id)->where('status', 2)->exists()
+            || (!empty($cartonIds) && \App\Models\OrderDispatchDetails::whereIn('carton_packing_id', $cartonIds)->exists())
+            || ($packing->order && $packing->order->status == 3);
+
+        if ($hasDispatchedCartons) {
+            return response()->json(['status' => 'error', 'message' => 'Cannot delete packing session because some or all cartons have already been dispatched.'], 400);
+        }
+
+        $result = $this->service->deletePackingSession($packing->slip_id ?: $packing->id);
+        if ($result['status'] === 'success') {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Packing session deleted and stock restored successfully.',
+                'redirect_url' => route('admin.packing.index')
+            ]);
+        }
+        return response()->json(['status' => 'error', 'message' => $result['message'] ?? 'Failed to delete packing session.'], 400);
+    }
+
     // --- API Methods for Multi-Carton Planner ---
 
     public function apiGetSizeSets(Request $request, $slip_id)

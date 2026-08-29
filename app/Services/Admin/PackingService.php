@@ -1563,17 +1563,30 @@ class PackingService
         try {
             $main = PackingMain::where('slip_id', $slipId)->first();
             if (!$main) {
+                $main = PackingMain::find($slipId);
+            }
+            if (!$main) {
                 throw new \Exception("Packing session not found for this slip.");
+            }
+
+            // Safety check: Ensure no cartons are dispatched
+            $cartonIds = PackingCarton::where('packing_main_id', $main->id)->pluck('id')->toArray();
+            $hasDispatchedCartons = PackingCarton::where('packing_main_id', $main->id)->where('status', 2)->exists()
+                || (!empty($cartonIds) && \App\Models\OrderDispatchDetails::whereIn('carton_packing_id', $cartonIds)->exists())
+                || ($main->order && $main->order->status == 3);
+
+            if ($hasDispatchedCartons) {
+                throw new \Exception("Cannot delete packing session because some or all cartons have already been dispatched.");
             }
 
             $is_domestic = false;
             $order = \App\Models\OrderMain::find($main->order_main_id);
-            if ($order && $order->order_type === 'domestic') {
+            if ($order && strtolower(trim($order->order_type)) === 'domestic') {
                 $is_domestic = true;
             }
 
             // 1. Revert All Outflows (Dead/Sampling/Debit)
-            $outflows = \App\Models\ProductionOutflowInventory::where('slip_id', $slipId)->get();
+            $outflows = \App\Models\ProductionOutflowInventory::where('slip_id', $main->slip_id)->get();
             foreach ($outflows as $outflow) {
                 $this->deleteOutflow($outflow->id);
             }
@@ -1619,7 +1632,13 @@ class PackingService
 
             // 5. Delete Domestic Inventory, Selected Lots, and Main Record
             \App\Models\DomesticInventory::where('packing_main_id', $main->id)->delete();
-            \App\Models\PackingSelectedLot::where('slip_id', $slipId)->delete();
+            \App\Models\PackingSelectedLot::where('slip_id', $main->slip_id)->delete();
+
+            // 6. Reset Production Slip Digitization Status to 0 (Pending Packing) if slip exists
+            if ($main->slip_id) {
+                \App\Models\ProductionSlipDigitization::where('id', $main->slip_id)->update(['status' => 0]);
+            }
+
             $main->delete();
 
             DB::commit();
@@ -1630,3 +1649,4 @@ class PackingService
         }
     }
 }
+

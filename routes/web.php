@@ -785,6 +785,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/view/{order}', [AdminPackingController::class, 'view'])->name('view');
             Route::get('/print/{main}', [AdminPackingController::class, 'print'])->name('print');
             Route::post('/{slip_id}/reset-slip', [AdminPackingController::class, 'resetSlip'])->name('reset_slip');
+            Route::post('/delete-session/{id}', [AdminPackingController::class, 'deleteSession'])->name('deleteSession');
         });
 
         Route::prefix('/inventory')->name('inventory.')->group(function () {

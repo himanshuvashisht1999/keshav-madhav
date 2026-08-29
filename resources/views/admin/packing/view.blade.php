@@ -129,8 +129,13 @@
                             </div>
                             <!-- Actions panel -->
                             <div class="col-lg-5 d-flex align-items-center justify-content-lg-end justify-content-start p-4 bg-white border-left text-nowrap">
-                                <div class="mr-3">
-                                    @php $isDomesticOrder = ($session->order && strtolower(trim($session->order->order_type)) === 'domestic'); @endphp
+                                <div class="mr-3 d-flex align-items-center" style="gap: 8px;">
+                                    @php 
+                                        $isDomesticOrder = ($session->order && strtolower(trim($session->order->order_type)) === 'domestic');
+                                        $cartonIds = $session->cartons->pluck('id')->toArray();
+                                        $isDispatched = $session->cartons->where('status', 2)->count() > 0 
+                                            || (!empty($cartonIds) && \App\Models\OrderDispatchDetails::whereIn('carton_packing_id', $cartonIds)->exists());
+                                    @endphp
                                     @if($session->domesticInventories->count() > 0)
                                     <a href="{{ route('admin.packing.downloadPrn', $session->id) }}" class="btn btn-dark btn-sm font-weight-bold px-3 py-2 shadow-sm" 
                                        title="Download PRN file for Barcode Printer">
@@ -138,6 +143,12 @@
                                         {{ $isDomesticOrder ? 'PRINT BARCODES (PRN)' : 'PRINT DIVERTED (PRN)' }}
                                     </a>
                                     @endif
+                                    <button type="button" id="btnDeletePacking" 
+                                       class="btn btn-outline-danger btn-sm font-weight-bold px-3 py-2 shadow-sm {{ $isDispatched ? 'disabled' : '' }}" 
+                                       data-dispatched="{{ $isDispatched ? '1' : '0' }}"
+                                       title="{{ $isDispatched ? 'Cannot delete: Packing session items have already been dispatched' : 'Delete Packing Session and restore inventory' }}">
+                                        <i class="fas fa-trash-alt mr-1"></i> Packing Delete
+                                    </button>
                                 </div>
                                 <div class="text-right mr-3">
                                     <span class="text-uppercase text-muted d-block mb-0" style="font-size: 0.65rem; letter-spacing: 1px; font-weight: 800;">Slip Reference</span>
@@ -636,6 +647,72 @@
 
             if (searchInput) searchInput.addEventListener('input', filterTable);
             if (locationSelect) locationSelect.addEventListener('change', filterTable);
+
+            // Delete Packing Session
+            const deleteBtn = document.getElementById('btnDeletePacking');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (deleteBtn.getAttribute('data-dispatched') === '1') {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Cannot delete: This packing session has already been dispatched.');
+                        } else if (typeof Toast !== 'undefined') {
+                            Toast.fire({ icon: 'error', title: 'Cannot delete: This packing session has already been dispatched.' });
+                        } else {
+                            alert('Cannot delete: This packing session has already been dispatched.');
+                        }
+                        return;
+                    }
+
+                    if (!confirm('Are you absolutely sure you want to delete this packing session? This will delete all cartons, domestic boxes, outflows, reworks, and restore stock to the previous stage.')) {
+                        return;
+                    }
+
+                    const originalHtml = deleteBtn.innerHTML;
+                    deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Deleting...';
+                    deleteBtn.disabled = true;
+
+                    $.ajax({
+                        url: "{{ route('admin.packing.deleteSession', $session->id) }}",
+                        type: 'POST',
+                        data: {
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function(res) {
+                            if (res.status === 'success') {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.success(res.message);
+                                } else if (typeof Toast !== 'undefined') {
+                                    Toast.fire({ icon: 'success', title: res.message });
+                                } else {
+                                    alert(res.message);
+                                }
+                                setTimeout(function() {
+                                    window.location.href = res.redirect_url || "{{ route('admin.packing.index') }}";
+                                }, 1000);
+                            } else {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.error(res.message || 'Failed to delete packing session.');
+                                } else {
+                                    alert(res.message || 'Failed to delete packing session.');
+                                }
+                                deleteBtn.innerHTML = originalHtml;
+                                deleteBtn.disabled = false;
+                            }
+                        },
+                        error: function(xhr) {
+                            const errorMsg = xhr.responseJSON?.message || 'Failed to delete packing session.';
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(errorMsg);
+                            } else {
+                                alert(errorMsg);
+                            }
+                            deleteBtn.innerHTML = originalHtml;
+                            deleteBtn.disabled = false;
+                        }
+                    });
+                });
+            }
         });
     </script>
 @endsection
