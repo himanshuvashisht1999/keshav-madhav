@@ -1889,7 +1889,7 @@ class PackingController extends Controller
                             ->orderBy('id', 'desc')
                             ->first();
                         if ($stockTx) {
-                            $stockTx->remaining_quantity += $item->quantity;
+                            $stockTx->remaining_quantity = min($stockTx->quantity, $stockTx->remaining_quantity + $item->quantity);
                             $stockTx->save();
                         }
                     }
@@ -1974,7 +1974,7 @@ class PackingController extends Controller
                                 ->orderBy('id', 'desc')
                                 ->first();
                             if ($stockTx) {
-                                $stockTx->remaining_quantity += $item->quantity;
+                                $stockTx->remaining_quantity = min($stockTx->quantity, $stockTx->remaining_quantity + $item->quantity);
                                 $stockTx->save();
                             }
                         }

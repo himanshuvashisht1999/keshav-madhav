@@ -273,9 +273,15 @@
                 <div class="erp-card">
                     <div class="erp-card-header">
                         <h3 class="erp-card-title"><i class="fas fa-list-ol"></i> Lot Distribution Data</h3>
-                        <div class="card-tools m-0 d-flex align-items-center" style="gap: 15px;">
-                            <span class="text-muted" style="font-size: 0.85rem;">Showing available lots for current unit</span>
-                            <button type="submit" class="btn-erp btn-erp-primary text-white">
+                        <div class="card-tools m-0 d-flex align-items-center" style="gap: 12px;">
+                            <div class="badge badge-light border py-2 px-3 text-dark d-flex align-items-center shadow-sm" style="font-size: 0.85rem; gap: 8px; border-radius: 6px;">
+                                <span>Selected: <strong id="selectedLotsCount" class="text-primary">0</strong> Lots</span>
+                                <span class="text-muted">|</span>
+                                <span>Gross Qty: <strong id="selectedGrossQty" class="text-dark">0</strong></span>
+                                <span class="text-muted">|</span>
+                                <span>Total Pending to Pack: <strong id="selectedPendingQty" class="text-success" style="font-size: 0.95rem;">0</strong> pcs</span>
+                            </div>
+                            <button type="submit" class="btn-erp btn-erp-primary text-white shadow-sm">
                                 <i class="fas fa-save"></i> Save Selected Lots
                             </button>
                         </div>
@@ -298,7 +304,7 @@
                             @forelse(collect($unit_lots)->where('remaining_quantity', '>', 0) as $lot)
                                 <tr>
                                     <td class="text-center">
-                                        <input type="checkbox" name="lots[]" class="lot-checkbox" value="{{ $lot->lot_no }}" {{ in_array($lot->lot_no, $selected_lots ?? []) ? 'checked' : '' }}>
+                                        <input type="checkbox" name="lots[]" class="lot-checkbox" value="{{ $lot->lot_no }}" data-gross="{{ $lot->quantity }}" data-pending="{{ $lot->remaining_quantity }}" {{ in_array($lot->lot_no, $selected_lots ?? []) ? 'checked' : '' }}>
                                     </td>
                                     <td>
                                         <span class="erp-badge erp-badge-info">LOT-{{ str_pad($lot->lot_no, 4, '0', STR_PAD_LEFT) }}</span>
@@ -328,6 +334,17 @@
                                 </tr>
                             @endforelse
                         </tbody>
+                        @if(collect($unit_lots)->where('remaining_quantity', '>', 0)->count() > 0)
+                        <tfoot>
+                            <tr class="bg-light font-weight-bold" style="border-top: 2px solid #dee2e6;">
+                                <td colspan="4" class="text-right py-2">
+                                    Total Selected (<span id="footerSelectedCount">0</span> Lots):
+                                </td>
+                                <td class="text-center py-2 text-dark font-weight-bold" id="footerGrossTotal">0</td>
+                                <td class="text-right pr-4 py-2 font-weight-bold text-success" style="font-size: 1rem;" id="footerPendingTotal">0</td>
+                            </tr>
+                        </tfoot>
+                        @endif
                     </table>
                 </div>
             </div>
@@ -354,8 +371,29 @@
             width: '100%'
         });
 
+        function updateSelectedTotals() {
+            let totalGross = 0;
+            let totalPending = 0;
+            let selectedCount = 0;
+
+            $('.lot-checkbox:checked').each(function() {
+                selectedCount++;
+                totalGross += parseFloat($(this).data('gross')) || 0;
+                totalPending += parseFloat($(this).data('pending')) || 0;
+            });
+
+            $('#selectedLotsCount').text(selectedCount);
+            $('#selectedGrossQty').text(totalGross.toLocaleString());
+            $('#selectedPendingQty').text(totalPending.toLocaleString());
+
+            $('#footerSelectedCount').text(selectedCount);
+            $('#footerGrossTotal').text(totalGross.toLocaleString());
+            $('#footerPendingTotal').text(totalPending.toLocaleString());
+        }
+
         $('#selectAllLots').on('change', function() {
             $('.lot-checkbox').prop('checked', $(this).prop('checked'));
+            updateSelectedTotals();
         });
 
         // Update select all if individuals are unchecked
@@ -365,12 +403,14 @@
             } else {
                 $('#selectAllLots').prop('checked', false);
             }
+            updateSelectedTotals();
         });
         
         // Initial check on load
         if ($('.lot-checkbox:checked').length > 0 && $('.lot-checkbox:checked').length == $('.lot-checkbox').length) {
             $('#selectAllLots').prop('checked', true);
         }
+        updateSelectedTotals();
     });
 </script>
 @endsection

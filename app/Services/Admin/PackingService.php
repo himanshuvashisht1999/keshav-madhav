@@ -1144,7 +1144,7 @@ class PackingService
 
                     if ($remaining_to_return > 0 && $transactions->isNotEmpty()) {
                         $first = $transactions->first();
-                        $first->remaining_quantity += $remaining_to_return;
+                        $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $remaining_to_return);
                         $first->save();
                     }
                 } else {
@@ -1172,7 +1172,7 @@ class PackingService
 
                     if ($remaining_to_return > 0 && $transactions->isNotEmpty()) {
                         $first = $transactions->first();
-                        $first->remaining_quantity += $remaining_to_return;
+                        $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $remaining_to_return);
                         $first->save();
                     }
                 }
@@ -1487,7 +1487,7 @@ class PackingService
 
             if ($rem > 0 && $receivedTxs->isNotEmpty()) {
                 $first = $receivedTxs->first();
-                $first->remaining_quantity += $rem;
+                $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $rem);
                 $first->save();
             }
 
@@ -1542,7 +1542,7 @@ class PackingService
 
             if ($rem > 0 && $sourceTxs->isNotEmpty()) {
                 $first = $sourceTxs->first();
-                $first->remaining_quantity += $rem;
+                $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $rem);
                 $first->save();
             }
 
