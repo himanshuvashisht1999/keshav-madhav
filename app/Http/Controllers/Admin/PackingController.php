@@ -491,10 +491,11 @@ class PackingController extends Controller
 
             $incoming_sizes = [];
             foreach ($lot_txs as $tx) {
-                if ($tx->details->isNotEmpty()) {
+                if ($tx->remaining_quantity > 0 && $tx->details->isNotEmpty()) {
+                    $ratio = $tx->quantity > 0 ? ($tx->remaining_quantity / $tx->quantity) : 1;
                     foreach ($tx->details as $d) {
                         $sz = trim(strtoupper($d->size));
-                        $incoming_sizes[$sz] = ($incoming_sizes[$sz] ?? 0) + (int) $d->quantity;
+                        $incoming_sizes[$sz] = ($incoming_sizes[$sz] ?? 0) + (int) round($d->quantity * $ratio);
                     }
                 }
             }
@@ -916,10 +917,11 @@ class PackingController extends Controller
             $transactions = $stage_transactions->get($lot->lot_no, collect());
             $incoming_sizes = [];
             foreach ($transactions as $tx) {
-                if ($tx->details->isNotEmpty()) {
+                if ($tx->remaining_quantity > 0 && $tx->details->isNotEmpty()) {
+                    $ratio = $tx->quantity > 0 ? ($tx->remaining_quantity / $tx->quantity) : 1;
                     foreach ($tx->details as $d) {
                         $sz = trim(strtoupper($d->size));
-                        $incoming_sizes[$sz] = ($incoming_sizes[$sz] ?? 0) + (int) $d->quantity;
+                        $incoming_sizes[$sz] = ($incoming_sizes[$sz] ?? 0) + (int) round($d->quantity * $ratio);
                     }
                 }
             }
