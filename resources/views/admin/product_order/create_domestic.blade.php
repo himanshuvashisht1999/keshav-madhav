@@ -346,7 +346,7 @@
                 success: function (res) {
                     fabricSelect.empty().append('<option value="">Select Fabric</option>');
                     res.forEach(fabric => {
-                        let remaining = fabric.receipt_details_sum_remaining_quantity || 0;
+                        let remaining = fabric.receipt_details_sum_remaining_quantity ? parseFloat(fabric.receipt_details_sum_remaining_quantity).toFixed(2) : '0.00';
                         fabricSelect.append(
                             `<option value="${fabric.id}">${fabric.name} (${remaining} meter)</option>`
                         );

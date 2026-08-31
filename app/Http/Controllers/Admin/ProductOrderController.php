@@ -276,18 +276,17 @@ class ProductOrderController extends Controller
             // If no warehouse selected, return all fabrics with global remaining quantity
             $fabrics = \App\Models\Fabric::where('status', 1)
                 ->withSum('receiptDetails', 'remaining_quantity')
+                ->orderBy('name')
                 ->get(['id', 'name']);
             return response()->json($fabrics);
         }
 
-        $fabrics = \App\Models\Fabric::whereHas('receiptDetails', function($q) use ($warehouse_id) {
-            $q->where('master_fabric_warehouse_id', $warehouse_id)
-              ->where('remaining_quantity', '>', 0);
-        })
-        ->withSum(['receiptDetails' => function($q) use ($warehouse_id) {
-            $q->where('master_fabric_warehouse_id', $warehouse_id);
-        }], 'remaining_quantity')
-        ->get(['id', 'name']);
+        $fabrics = \App\Models\Fabric::where('status', 1)
+            ->withSum(['receiptDetails' => function($q) use ($warehouse_id) {
+                $q->where('master_fabric_warehouse_id', $warehouse_id);
+            }], 'remaining_quantity')
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return response()->json($fabrics);
     }
