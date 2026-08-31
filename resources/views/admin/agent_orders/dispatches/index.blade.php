@@ -223,11 +223,6 @@
                                                         </a>
                                                     </div>
                                                 </div>
-                                                <a href="{{ route('admin.agent-orders.dispatches.destroy', $dispatch->id) }}"
-                                                    class="btn btn-danger btn-sm px-2 shadow-sm" style="border-radius: 6px;" title="Delete"
-                                                    onclick="return confirm('Are you sure you want to delete this dispatch? This will revert all dispatched items and quantities back to their respective orders. This action cannot be undone.')">
-                                                    <i class="fas fa-trash-alt"></i>
-                                                </a>
                                             @endif
                                         </td>
                                     </tr>
