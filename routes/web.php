@@ -423,24 +423,14 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         });
 
         Route::prefix('/packing')->name('packing.')->group(function () {
-
-            Route::get('/index', [AdminPackingController::class, 'index'])->name('index');
-            Route::get('/process/{id}', [AdminPackingController::class, 'process'])->name('process');
-            Route::get('/process-domestic/{id}', [AdminPackingController::class, 'processDomestic'])->name('processDomestic');
-            Route::post('/clear-order/{slip_id}', [AdminPackingController::class, 'clearOrder'])->name('clearOrder');
-            Route::post('/finalize', [AdminPackingController::class, 'finalize'])->name('finalize');
             Route::get('/download-slip-barcode/{id}', [AdminPackingController::class, 'downloadSlipBarcodeTxt'])->name('downloadSlipBarcode');
-            Route::post('/box/save', [AdminPackingController::class, 'saveBox'])->name('saveBox');
-            Route::post('/carton/save', [AdminPackingController::class, 'saveCarton'])->name('saveCarton');
             Route::get('/order-details/{id}', [AdminPackingController::class, 'getOrderDetailsJson'])->name('orderDeps');
             Route::get('check-carton-no', [AdminPackingController::class, 'checkCartonNo'])->name('check-carton-no');
             Route::post('/bulk-save', [AdminPackingController::class, 'bulkSaveCarton'])->name('bulk-save');
             Route::post('/save-multi-plan', [AdminPackingController::class, 'saveMultiCartonPlan'])->name('saveMultiCartonPlan');
-            Route::post('/save-domestic-box', [AdminPackingController::class, 'saveDomesticBox'])->name('saveDomesticBox');
             Route::post('/save-corporate-domestic-bulk', [AdminPackingController::class, 'saveCorporateDomesticBulk'])->name('saveCorporateDomesticBulk');
             Route::post('/save-domestic-bulk', [AdminPackingController::class, 'saveDomesticBulk'])->name('saveDomesticBulk');
             Route::post('/save-sampling-bulk', [AdminPackingController::class, 'saveSamplingBulk'])->name('saveSamplingBulk');
-            Route::post('/delete-domestic-box/{id}', [AdminPackingController::class, 'deleteDomesticBox'])->name('deleteDomesticBox');
             Route::post('/delete-outflow/{id}', [AdminPackingController::class, 'deleteOutflow'])->name('deleteOutflow');
             Route::post('/delete-rework/{id}', [AdminPackingController::class, 'deleteRework'])->name('deleteRework');
             Route::post('/bulk-delete-cartons/{slip_id}', [AdminPackingController::class, 'bulkDeleteCartons'])->name('bulkDeleteCartons');
@@ -775,17 +765,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/edit', [AdminSizeMeasurementController::class, 'edit'])->name('edit');
             Route::post('/update', [AdminSizeMeasurementController::class, 'update'])->name('update');
             Route::get('/delete', [AdminSizeMeasurementController::class, 'delete'])->name('delete');
-        });
-
-        Route::prefix('/packing')->name('packing.')->group(function () {
-            Route::get('/index', [AdminPackingController::class, 'index'])->name('index');
-            Route::get('/indexList', [AdminPackingController::class, 'indexList'])->name('indexList');
-            Route::post('/store', [AdminPackingController::class, 'store'])->name('store');
-            Route::post('/finalize', [AdminPackingController::class, 'finalize'])->name('finalize');
-            Route::get('/view/{order}', [AdminPackingController::class, 'view'])->name('view');
-            Route::get('/print/{main}', [AdminPackingController::class, 'print'])->name('print');
-            Route::post('/{slip_id}/reset-slip', [AdminPackingController::class, 'resetSlip'])->name('reset_slip');
-            Route::post('/delete-session/{id}', [AdminPackingController::class, 'deleteSession'])->name('deleteSession');
         });
 
         Route::prefix('/inventory')->name('inventory.')->group(function () {
@@ -1786,6 +1765,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::delete('/process-new/{slip_id}/api/delete-domestic/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'apiDeleteDomestic'])->name('apiDeleteDomestic');
             
             Route::get('/view/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'view'])->name('view');
+            Route::get('/print/{main}', [\App\Http\Controllers\Admin\PackingController::class, 'print'])->name('print');
+            Route::post('/store', [\App\Http\Controllers\Admin\PackingController::class, 'store'])->name('store');
+            Route::post('/{slip_id}/reset-slip', [\App\Http\Controllers\Admin\PackingController::class, 'resetSlip'])->name('reset_slip');
+            Route::post('/delete-session/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'deleteSession'])->name('deleteSession');
             Route::post('/save-carton', [\App\Http\Controllers\Admin\PackingController::class, 'saveCarton'])->name('saveCarton');
             Route::post('/save-box', [\App\Http\Controllers\Admin\PackingController::class, 'saveBox'])->name('saveBox');
             Route::post('/finalize', [\App\Http\Controllers\Admin\PackingController::class, 'finalize'])->name('finalize');

@@ -12,48 +12,45 @@ class FixRemainingQuantities extends Command
 
     public function handle()
     {
-        $this->info("Scanning for stuck OrderStageTransactions...");
+        $this->info("Scanning for Stage 11 (Packing) transactions with stuck remaining_quantity...");
 
-        // Find all transactions where remaining_quantity != quantity
-        $transactions = \App\Models\OrderStageTransaction::whereColumn('remaining_quantity', '!=', 'quantity')->get();
-
+        $txs = \App\Models\OrderStageTransaction::where('to_stage_id', 11)->get();
         $fixedCount = 0;
 
-        foreach ($transactions as $tx) {
-            // Check if there are ANY child transactions from this stage and unit
-            $hasChildStage = \App\Models\OrderStageTransaction::where('lot_no', $tx->lot_no)
-                ->where('from_stage_id', $tx->to_stage_id)
+        foreach ($txs as $tx) {
+            // 1. Forward transfers from this stage & unit
+            $forwardQty = (int) \App\Models\OrderStageTransaction::where('lot_no', $tx->lot_no)
+                ->where('from_stage_id', 11)
                 ->where('sub_stage_id', $tx->sub_stage_id_to)
-                ->exists();
+                ->sum('quantity');
 
-            // Check if there are any outflows (packing, etc)
-            $hasOutflow = \App\Models\ProductionOutflowInventory::where('lot_no', $tx->lot_no)
-                ->where('responsible_unit_id', $tx->sub_stage_id_to)
-                ->exists();
-
-            // Check if there are corporate packing items for this order and unit
-            $hasPacking = DB::table('packing_items as pi')
+            // 2. Packing items packed for this lot at this unit
+            $packedQty = (int) \DB::table('packing_items as pi')
+                ->join('packing_cartons as pc', 'pi.packing_carton_id', '=', 'pc.id')
                 ->join('packing_mains as pm', 'pi.packing_main_id', '=', 'pm.id')
                 ->join('production_slip_digitization as psd', 'pm.slip_id', '=', 'psd.id')
-                ->where('pm.order_main_id', function($q) use ($tx) {
-                    $q->select('order_main_id')->from('order_lots')->where('lot_no', $tx->lot_no)->limit(1);
-                })
+                ->where('pi.lot_no', $tx->lot_no)
                 ->where('psd.stage_master_unit_id', $tx->sub_stage_id_to)
-                ->exists();
+                ->where('pc.status', 1)
+                ->sum('pi.quantity');
 
-            if (!$hasChildStage && !$hasOutflow && !$hasPacking) {
-                // This is a leaf transaction but its remaining quantity is reduced!
-                // This means it was affected by the "Mark as Final" bug.
-                $this->info("Fixing Lot: {$tx->lot_no} | Stage: {$tx->to_stage_id} | Unit: {$tx->sub_stage_id_to}");
-                $tx->remaining_quantity = $tx->quantity;
-                $tx->is_closed_for_unit = 0;
-                $tx->status = 1;
+            // 3. Outflows for this lot at this unit
+            $outflowQty = (int) \App\Models\ProductionOutflowInventory::join('production_slip_digitization as psd', 'production_outflow_inventories.slip_id', '=', 'psd.id')
+                ->where('production_outflow_inventories.lot_no', $tx->lot_no)
+                ->where('psd.stage_master_unit_id', $tx->sub_stage_id_to)
+                ->sum('production_outflow_inventories.quantity');
+
+            $expected = max(0, (int)$tx->quantity - $forwardQty - $packedQty - $outflowQty);
+
+            if ($tx->remaining_quantity != $expected) {
+                $this->line("Fixing Lot: {$tx->lot_no} (Tx #{$tx->id}, Unit {$tx->sub_stage_id_to}): {$tx->remaining_quantity} -> {$expected}");
+                $tx->remaining_quantity = $expected;
                 $tx->save();
                 $fixedCount++;
             }
         }
 
-        $this->info("Fixed {$fixedCount} stuck transactions!");
+        $this->info("Successfully fixed {$fixedCount} transactions!");
         return 0;
     }
 }
