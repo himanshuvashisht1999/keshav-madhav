@@ -935,7 +935,15 @@ class OrderDigitalizationService
                 $involvedLots = \App\Models\OrderStageTransaction::where('production_slip_digitization_id', $slip->id)->pluck('lot_no')
                     ->merge(\App\Models\OrderPrintingStageTransaction::where('production_slip_digitization_id', $slip->id)->pluck('lot_no'))
                     ->merge(\App\Models\OrderPrintingToStichingTransaction::where('production_slip_digitization_id', $slip->id)->pluck('lot_no'))
-                    ->unique();
+                    ->merge(\App\Models\OrderGodamStageTransaction::where('production_slip_digitization_id', $slip->id)->pluck('lot_no'))
+                    ->merge(\App\Models\ProductionSlipDigitizationParts::where('production_slip_digitization_id', $slip->id)->pluck('lot_no'))
+                    ->merge(\App\Models\OrderLot::where('production_slip_digitization_id', $slip->id)->pluck('lot_no'));
+
+                if ($slip->lot_no) {
+                    $involvedLots = $involvedLots->merge(collect(explode(',', $slip->lot_no))->map(fn($l) => trim($l))->filter());
+                }
+
+                $involvedLots = $involvedLots->filter()->unique()->values();
 
                 foreach ($involvedLots as $lot) {
                     \App\Models\OrderLotStageTiming::where('lot_no', $lot)
@@ -976,21 +984,42 @@ class OrderDigitalizationService
             }
 
             // --- 3. UNIFIED TIMING & ALLOCATION CLEANUP ---
-            $lotNos = \App\Models\OrderLot::where('production_slip_digitization_id', $slip->id)->pluck('lot_no');
-            if ($lotNos->isEmpty() && $slip->lot_no) {
-                $lotNos = collect(explode(',', $slip->lot_no))->map(fn($l) => trim($l))->filter();
+            if (empty($involvedLots)) {
+                $involvedLots = \App\Models\OrderLot::where('production_slip_digitization_id', $slip->id)->pluck('lot_no');
+                if ($involvedLots->isEmpty() && $slip->lot_no) {
+                    $involvedLots = collect(explode(',', $slip->lot_no))->map(fn($l) => trim($l))->filter();
+                }
+                $involvedLots = $involvedLots->filter()->unique()->values();
             }
 
-            if ($lotNos->isNotEmpty()) {
+            if ($involvedLots->isNotEmpty()) {
                 // Delete timing for the target stage (since the move is being undone)
-                \App\Models\OrderLotStageTiming::whereIn('lot_no', $lotNos)
+                \App\Models\OrderLotStageTiming::whereIn('lot_no', $involvedLots)
                     ->where('master_stage_id', '!=', $slip->from_stage_id)
                     ->delete();
 
                 // If it was the initial digitization (Stage 3), clean up tracking/allocation
-                if ($slip->from_stage_id == 3) {
-                    \App\Models\MasterStageWiseTimeAllocation::whereIn('lot_no', $lotNos)->delete();
-                    \App\Models\OrderStageWiseTimeTracking::whereIn('lot_no', $lotNos)->delete();
+                if ($slip->from_stage_id == 3 && empty($slip->to_stage_id)) {
+                    \App\Models\MasterStageWiseTimeAllocation::whereIn('lot_no', $involvedLots)->delete();
+                    \App\Models\OrderStageWiseTimeTracking::whereIn('lot_no', $involvedLots)->delete();
+                }
+
+                // Revert Stage Movement flags & Fabric Roll Assigning status
+                foreach ($involvedLots as $lNo) {
+                    if ($slip->to_stage_id == 4) {
+                        $hasOtherStitching = \App\Models\OrderStageTransaction::where('lot_no', $lNo)->where('to_stage_id', 4)->where('production_slip_digitization_id', '!=', $slip->id)->exists()
+                            || \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lNo)->where('production_slip_digitization_id', '!=', $slip->id)->exists();
+                        if (!$hasOtherStitching) {
+                            \App\Models\OrderLot::where('lot_no', $lNo)->update(['is_stitching' => 0]);
+                            \App\Models\FabricRollAssigning::where('lot_no', $lNo)->where('to_stage_id', 4)->update(['status' => 1, 'to_stage_id' => null]);
+                        }
+                    } elseif ($slip->to_stage_id == 1) {
+                        $hasOtherPrinting = \App\Models\OrderPrintingStageTransaction::where('lot_no', $lNo)->where('production_slip_digitization_id', '!=', $slip->id)->exists();
+                        if (!$hasOtherPrinting) {
+                            \App\Models\OrderLot::where('lot_no', $lNo)->update(['is_printing' => 0]);
+                            \App\Models\FabricRollAssigning::where('lot_no', $lNo)->where('to_stage_id', 1)->update(['status' => 1, 'to_stage_id' => null]);
+                        }
+                    }
                 }
             }
 
@@ -999,10 +1028,6 @@ class OrderDigitalizationService
             foreach ($parts as $part) {
                 \App\Models\ProductionDigitizationSetsDetails::where('production_slip_digitization_parts_id', $part->id)->delete();
                 $part->delete();
-            }
-
-            if ($slip->to_stage_id == 4 && $lotNos->isNotEmpty()) {
-                \App\Models\OrderLot::whereIn('lot_no', $lotNos)->update(['is_stitching' => 0]);
             }
 
             // Finally, mark slip as deleted (status 3)

@@ -904,6 +904,19 @@ if (!function_exists('deleteProductionSession')) {
                         }
                     }
                     \App\Models\OrderPrintingToStichingTransactionDetail::where('order_printing_to_stiching_transaction_id', $id)->delete();
+
+                    // Check if other stitching transactions exist
+                    $otherStitching = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)
+                        ->where('to_stage_id', 4)
+                        ->exists();
+                    if (!$otherStitching) {
+                        $otherStitching = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $session->lot_no)
+                            ->where('id', '!=', $id)
+                            ->exists();
+                    }
+                    if (!$otherStitching) {
+                        \App\Models\OrderLot::where('lot_no', $session->lot_no)->update(['is_stitching' => 0]);
+                    }
                     
                 } elseif ($type == 'godam') {
                     // Source was Printing or Stitching etc.
