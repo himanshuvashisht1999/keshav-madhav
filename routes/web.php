@@ -1417,6 +1417,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/slips/export', [AdminReportController::class, 'slipWiseExport'])->name('slips.export');
             Route::get('/slips/{id}', [AdminReportController::class, 'slipDetailReport'])->name('slips.show');
             Route::get('/slips/{id}/pdf', [AdminReportController::class, 'slipDetailPdf'])->name('slips.pdf');
+
+            // Deletion Logs Report
+            Route::get('/deletion-logs', [\App\Http\Controllers\Admin\DeletionLogController::class, 'index'])->name('deletionLogs');
+            Route::get('/deletion-logs/{id}', [\App\Http\Controllers\Admin\DeletionLogController::class, 'show'])->name('deletionLogs.show');
         });
     });
 

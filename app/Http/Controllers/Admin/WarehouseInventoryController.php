@@ -701,6 +701,13 @@ class WarehouseInventoryController extends Controller
                 ->select('packing_boxes.id')
                 ->pluck('id');
 
+            log_deletion('Warehouse Inventory', $inventory->id, [
+                'inventory'         => $inventory->toArray(),
+                'deleted_boxes_qty' => $request->delete_qty,
+                'rack_id'           => $inventory->rack_id,
+                'barcode'           => $inventory->barcode,
+            ]);
+
             if ($boxesToDeleteIds->isNotEmpty()) {
                 DB::table('packing_boxes')->whereIn('id', $boxesToDeleteIds)->delete();
             }

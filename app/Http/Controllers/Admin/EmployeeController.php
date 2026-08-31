@@ -52,6 +52,9 @@ class EmployeeController extends Controller
 
     public function destroy(Employee $employee)
     {
+        log_deletion('Employee', $employee->id, [
+            'employee' => $employee->toArray()
+        ]);
         $employee->update(['status' => 3]);
         return redirect()->route('admin.master.employees.index')->with('success', 'Employee deleted successfully.');
     }

@@ -58,10 +58,22 @@ class FabricController extends Controller {
         return redirect()->route('admin.master.fabric.index')->withSuccess('The fabric has been successfully updated.');
     }
     public function delete(Request $request){
+        $fabric = \App\Models\Fabric::find($request->id);
+        if ($fabric) {
+            log_deletion('Master Fabric', $request->id, [
+                'fabric' => $fabric->toArray()
+            ]);
+        }
         $data = $this->service->delete($request);
         return redirect()->route('admin.master.fabric.index')->withSuccess('The fabric has been successfully deleted.'); 
     }
     public function deleteImage(Request $request){
+        $img = \App\Models\FabricOtherImage::find($request->id);
+        if ($img) {
+            log_deletion('Fabric Image', $request->id, [
+                'image' => $img->toArray()
+            ]);
+        }
         $data = $this->service->deleteImage($request);
         return redirect()->route('admin.master.fabric.edit',['id' => $request->fabric_id])->withSuccess('Image deleted successfully.');
     }

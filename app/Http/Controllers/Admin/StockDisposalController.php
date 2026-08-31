@@ -483,6 +483,11 @@ class StockDisposalController extends Controller
             $main = StockDisposalMain::with('items')->findOrFail($id);
             $disposal_no = $main->disposal_no;
 
+            log_deletion('Stock Disposal', $id, [
+                'main'  => $main->toArray(),
+                'items' => $main->items ? $main->items->toArray() : []
+            ]);
+
             foreach ($main->items as $item) {
                 if ($main->item_type === 'fabric') {
                     $fabric = FabricReceiptDetail::find($item->item_id);

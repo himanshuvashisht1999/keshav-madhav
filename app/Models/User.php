@@ -79,6 +79,14 @@ class User extends Authenticatable
             return asset('assets/user-image/default-image.png');
         }
     }
+    protected $appends = ['name'];
+
+    public function getNameAttribute()
+    {
+        $fullName = trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
+        return !empty($fullName) ? $fullName : ($this->email ?? 'User #' . $this->id);
+    }
+
     public function getCategoryData()
     {
         return $this->hasMany('App\Models\UserCategory', 'user_id', 'id')->with('getCategoryData');

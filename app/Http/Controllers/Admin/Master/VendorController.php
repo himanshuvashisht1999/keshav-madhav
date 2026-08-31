@@ -34,6 +34,12 @@ class VendorController extends Controller {
         return redirect()->route('admin.master.vendor.index')->withSuccess('The vendor has been successfully created.');
     }
     public function delete(Request $request){
+        $vendor = \App\Models\Vendor::find($request->id);
+        if ($vendor) {
+            log_deletion('Master Vendor', $request->id, [
+                'vendor' => $vendor->toArray()
+            ]);
+        }
         $data = $this->service->delete($request);
         return redirect()->route('admin.master.vendor.index')->withSuccess('The vendor has been successfully deleted.'); 
     }

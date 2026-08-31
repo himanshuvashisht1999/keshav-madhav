@@ -820,6 +820,10 @@ if (!function_exists('deleteProductionSession')) {
                     }
                     $roll->delete();
                 }
+                log_deletion('Production Lot', $id, [
+                    'lot'   => $session->toArray(),
+                    'rolls' => $rolls ? $rolls->toArray() : [],
+                ]);
                 $session->delete();
 
             } elseif ($type == 'packing') {
@@ -1045,6 +1049,10 @@ if (!function_exists('deleteProductionSession')) {
                     \App\Models\OrderStageTransactionDetail::where('order_stage_transaction_id', $id)->delete();
                 }
 
+                log_deletion('Production ' . ucfirst($type), $id, [
+                    'session' => $session->toArray(),
+                ]);
+
                 $session->delete();
             }
 
@@ -1133,3 +1141,58 @@ if (!function_exists('deleteProductionSession')) {
         }
     }
 }
+
+if (!function_exists('get_current_auth_user_id')) {
+    /**
+     * Get current authenticated user ID across all guards.
+     *
+     * @return int|null
+     */
+    function get_current_auth_user_id()
+    {
+        if (\Illuminate\Support\Facades\Auth::guard('admin')->check()) {
+            return \Illuminate\Support\Facades\Auth::guard('admin')->id();
+        }
+        if (\Illuminate\Support\Facades\Auth::guard('web')->check()) {
+            return \Illuminate\Support\Facades\Auth::guard('web')->id();
+        }
+        if (\Illuminate\Support\Facades\Auth::guard('sales_agent')->check()) {
+            return \Illuminate\Support\Facades\Auth::guard('sales_agent')->id();
+        }
+        if (\Illuminate\Support\Facades\Auth::check()) {
+            return \Illuminate\Support\Facades\Auth::id();
+        }
+        if (session()->has('unit_auth')) {
+            return session('unit_auth')['id'] ?? null;
+        }
+        return null;
+    }
+}
+
+if (!function_exists('log_deletion')) {
+    /**
+     * Record deleted data into deletion_logs table.
+     *
+     * @param string $module Module name (e.g. Agent Dispatch, Agent Order, etc.)
+     * @param int|string|null $recordId Original record ID
+     * @param mixed $payload Snapshot data before deletion
+     * @return \App\Models\DeletionLog
+     */
+    function log_deletion($module, $recordId, $payload)
+    {
+        try {
+            $userId = get_current_auth_user_id();
+
+            return \App\Models\DeletionLog::create([
+                'module'     => $module,
+                'record_id'  => $recordId,
+                'payload'    => is_array($payload) ? $payload : (is_object($payload) ? (array) $payload : $payload),
+                'deleted_by' => $userId,
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to log deletion: ' . $e->getMessage());
+            return null;
+        }
+    }
+}
+

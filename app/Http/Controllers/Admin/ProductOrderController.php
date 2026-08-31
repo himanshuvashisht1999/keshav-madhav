@@ -568,7 +568,15 @@ class ProductOrderController extends Controller
     {
         DB::beginTransaction();
         try {
-            $po = ProductionPO::findOrFail($id);
+            $po = ProductionPO::with(['items', 'vendor', 'customer'])->findOrFail($id);
+
+            log_deletion('Production PO', $id, [
+                'po'       => $po->toArray(),
+                'items'    => $po->items ? $po->items->toArray() : [],
+                'vendor'   => $po->vendor ? $po->vendor->toArray() : null,
+                'customer' => $po->customer ? $po->customer->toArray() : null,
+            ]);
+
             // Restore quantities to OrderProductSet before deleting items
             foreach ($po->items as $item) {
                 $set = OrderProductSet::find($item->set_product_id);

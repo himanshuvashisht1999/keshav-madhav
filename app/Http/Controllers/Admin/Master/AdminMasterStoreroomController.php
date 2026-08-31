@@ -90,6 +90,12 @@ class AdminMasterStoreroomController extends Controller
     public function delete(Request $request)
     {
         $id = $request->id;
+        $storeroom = Storeroom::find($id);
+        if ($storeroom) {
+            log_deletion('Master Storeroom', $id, [
+                'storeroom' => $storeroom->toArray()
+            ]);
+        }
         $store = Storeroom::where('id', $id)->update(['status' => 3]);
         return redirect()->route('admin.master.storeroom.index')->with('success', 'The storeroom has been successfully deleted.');
     }
@@ -115,6 +121,9 @@ class AdminMasterStoreroomController extends Controller
     public function deleteRack($id)
     {
         $rack = Rack::findOrFail($id);
+        log_deletion('Master Rack', $id, [
+            'rack' => $rack->toArray()
+        ]);
         $rack->delete();
         return response()->json(['status' => 'success', 'message' => 'Rack deleted successfully.']);
     }

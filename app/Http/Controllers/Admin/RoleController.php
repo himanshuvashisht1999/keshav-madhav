@@ -59,6 +59,10 @@ class RoleController extends Controller
         if (in_array($role->name, ['Admin', 'Owner'])) {
             return redirect()->route('admin.roles.index')->withError($role->name . ' role cannot be deleted.');
         }
+        log_deletion('User Role', $role->id, [
+            'role'        => $role->toArray(),
+            'permissions' => $role->permissions ? $role->permissions->pluck('name')->toArray() : []
+        ]);
         $role->delete();
         return redirect()->route('admin.roles.index')->withSuccess('Role deleted successfully.');
     }

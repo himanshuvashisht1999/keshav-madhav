@@ -397,6 +397,10 @@ class UploadedSlipsController extends Controller
             return redirect()->back()->with('error', 'Cannot delete slip. It has associated sessions or transactions. Please delete the sessions first.');
         }
 
+        log_deletion('Digitized Production Slip', $id, [
+            'slip' => $slip->toArray()
+        ]);
+
         $slip->delete();
         return redirect()->back()->with('success', 'Slip deleted successfully.');
     }

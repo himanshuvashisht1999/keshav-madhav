@@ -383,7 +383,13 @@ class SampleProductController extends Controller
 
     public function destroy($id)
     {
-        $batch = \App\Models\SampleBatch::findOrFail($id);
+        $batch = \App\Models\SampleBatch::with('products')->findOrFail($id);
+
+        log_deletion('Sample Product Batch', $id, [
+            'batch'    => $batch->toArray(),
+            'products' => $batch->products ? $batch->products->toArray() : []
+        ]);
+
         $batch->delete(); // Cascades to products
         return redirect()->back()->with('success', 'Sample batch deleted successfully');
     }

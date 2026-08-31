@@ -87,6 +87,9 @@ class MasterOrderRemarkController extends Controller
     public function delete(Request $request)
     {
         $remark = MasterOrderRemark::findOrFail($request->id);
+        log_deletion('Master Order Remark', $remark->id, [
+            'remark' => $remark->toArray()
+        ]);
         $remark->delete();
         return redirect()->route('admin.master.order-remarks.index')->withSuccess('Order remark deleted successfully.');
     }

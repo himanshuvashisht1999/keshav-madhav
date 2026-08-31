@@ -117,8 +117,9 @@ class PaymentHistoryController extends Controller
 
     public function destroy(Payment $payment)
     {
-        // Optional: Add delete if needed, but user only asked for edit.
-        // Leaving placeholder for now.
+        log_deletion('Payment', $payment->id, [
+            'payment' => $payment->toArray()
+        ]);
         $payment->delete();
         return redirect()->route('admin.payment.history.index')->with('success', 'Payment deleted successfully.');
     }

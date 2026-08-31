@@ -48,6 +48,14 @@ class ProductionGoodsController extends Controller {
         return redirect()->route('admin.master.production-goods.index')->withSuccess('The product has been successfully created.');
     }
     public function delete(Request $request){
+        $product = \App\Models\ProductionGoods::with(['variants', 'items'])->find($request->id);
+        if ($product) {
+            log_deletion('Master Product (Style)', $request->id, [
+                'product'  => $product->toArray(),
+                'variants' => $product->variants ? $product->variants->toArray() : [],
+                'items'    => $product->items ? $product->items->toArray() : [],
+            ]);
+        }
         $res = $this->service->delete($request);
         if ($res === true) {
             return redirect()->route('admin.master.production-goods.index')->withSuccess('The product has been successfully deleted.');

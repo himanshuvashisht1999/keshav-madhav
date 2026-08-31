@@ -632,7 +632,13 @@ class FairProductController extends Controller
 
     public function destroy($id)
     {
-        $batch = FairBatch::findOrFail($id);
+        $batch = FairBatch::with('products')->findOrFail($id);
+
+        log_deletion('Fair Product Batch', $id, [
+            'batch'    => $batch->toArray(),
+            'products' => $batch->products ? $batch->products->toArray() : []
+        ]);
+
         $batch->delete(); // Cascades to products
         return redirect()->back()->with('success', 'Sample set deleted successfully');
     }

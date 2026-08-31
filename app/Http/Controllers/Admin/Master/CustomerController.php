@@ -40,6 +40,12 @@ class CustomerController extends Controller {
         return redirect()->route('admin.master.customer.index')->withSuccess('The customer has been successfully created.');
     }
     public function delete(Request $request){
+        $customer = \App\Models\MasterCustomer::find($request->id);
+        if ($customer) {
+            log_deletion('Master Customer', $request->id, [
+                'customer' => $customer->toArray()
+            ]);
+        }
         $data = $this->service->delete($request);
         return redirect()->route('admin.master.customer.index')->withSuccess('The customer has been successfully deleted.'); 
     }

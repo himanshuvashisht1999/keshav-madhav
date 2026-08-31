@@ -201,6 +201,11 @@ class JournalVoucherController extends Controller
             foreach ($voucher->items as $item) {
                 $this->updateBalance($item->master_type, $item->master_id, $item->amount, $item->type, 'reverse', $voucher);
             }
+            log_deletion('Journal Voucher', $id, [
+                'voucher' => $voucher->toArray(),
+                'items'   => $voucher->items ? $voucher->items->toArray() : []
+            ]);
+
             \App\Models\Payment::where('reference_id', $voucher->voucher_no)->delete();
             $voucher->delete();
             DB::commit();

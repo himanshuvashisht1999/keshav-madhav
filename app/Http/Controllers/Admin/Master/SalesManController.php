@@ -71,6 +71,9 @@ class SalesManController extends Controller
 
     public function destroy(SalesMan $salesMan)
     {
+        log_deletion('Sales Man', $salesMan->id, [
+            'sales_man' => $salesMan->toArray()
+        ]);
         $salesMan->delete();
         return redirect()->route('admin.master.sales-man.index')
                          ->with('success', 'Sales man deleted successfully.');

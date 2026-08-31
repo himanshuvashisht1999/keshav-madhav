@@ -1117,6 +1117,12 @@ class AgentOrderController extends Controller
 
         DB::beginTransaction();
         try {
+            log_deletion('Agent Order', $id, [
+                'order'        => $order->toArray(),
+                'items'        => $order->items ? $order->items->toArray() : [],
+                'fabric_items' => $order->fabricItems ? $order->fabricItems->toArray() : [],
+            ]);
+
             if ($order->sale_type === 'fabric') {
                 foreach ($order->fabricItems as $item) {
                     FabricReceiptDetail::where('id', $item->fabric_receipt_detail_id)
@@ -1124,20 +1130,6 @@ class AgentOrderController extends Controller
                 }
                 $order->fabricItems()->delete();
             } else {
-                // foreach ($order->items as $item) {
-                //     if ($item->scanned_box_qty > 0) {
-                //         // Restore inventory for scanned items
-                //         $inventory = DB::table('domestic_inventories')
-                //             ->where('barcode', $item->barcode)
-                //             ->first();
-
-                //         if ($inventory) {
-                //             DB::table('domestic_inventories')
-                //                 ->where('id', $inventory->id)
-                //                 ->increment('total_boxes', $item->scanned_box_qty);
-                //         }
-                //     }
-                // }
                 $order->items()->delete();
             }
 
@@ -4319,6 +4311,12 @@ class AgentOrderController extends Controller
                 $party->decrement('balance', $return->grand_total);
             }
 
+            log_deletion('Agent Order Return', $id, [
+                'return'   => $return->toArray(),
+                'items'    => $return->items ? $return->items->toArray() : [],
+                'dispatch' => $dispatch->toArray(),
+            ]);
+
             $return->delete();
             DB::commit();
 
@@ -4408,6 +4406,15 @@ class AgentOrderController extends Controller
             }
 
             // 5. Delete Dispatch and Dispatch Items
+            log_deletion('Agent Dispatch', $id, [
+                'dispatch'          => $dispatch->toArray(),
+                'items'             => $items->toArray(),
+                'fabric_items'      => $fabricItems->toArray(),
+                'associated_orders' => $dispatch->orders->map(function ($o) {
+                    return ['id' => $o->id, 'status' => $o->status, 'grand_total' => $o->grand_total];
+                })->toArray(),
+            ]);
+
             DB::table('agent_order_dispatch_items')->where('agent_order_dispatch_id', $id)->delete();
             $dispatch->delete();
 

@@ -46,6 +46,12 @@ class SalesAgentController extends Controller
     }
     public function delete(Request $request)
     {
+        $agent = \App\Models\SalesAgent::find($request->id);
+        if ($agent) {
+            log_deletion('Master Sales Agent', $request->id, [
+                'sales_agent' => $agent->toArray()
+            ]);
+        }
         $this->service->delete($request);
         return redirect()->route('admin.master.sales-agent.index')->withSuccess('The sales agent has been successfully deactivated.');
     }

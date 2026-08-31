@@ -849,6 +849,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                         <p>Sales Man Report</p>
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.reports.deletionLogs') }}"
+                                        class="{{ str_contains(strtolower($page_url), 'admin/reports/deletion-logs') ? 'nav-link active' : 'nav-link' }}">
+                                        <i class="far fa-circle nav-icon text-danger"></i>
+                                        <p>Deletion Logs</p>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                     @endcan
@@ -1424,6 +1431,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                 </li>
 
                             @endforeach
+
+                            <li class="nav-item">
+                                <a href="{{ route('admin.reports.deletionLogs') }}"
+                                    class="{{ str_contains(strtolower($page_url), 'admin/reports/deletion-logs') ? 'nav-link active' : 'nav-link' }}">
+                                    <i class="fas fa-trash-restore-alt nav-icon text-danger"></i>
+                                    <p>Deletion Logs</p>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     <!-- Logout -->
