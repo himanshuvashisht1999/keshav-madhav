@@ -2207,6 +2207,24 @@ class ReportService
                 ->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->stage_master_unit_id => $i->sum_qty]; })
                 ->toArray();
 
+            // Fetch bulk sums for outflows (debit, dead, sampling, defect, packing_divert)
+            $outflowInventorySums = \App\Models\ProductionOutflowInventory::join('production_slip_digitization', 'production_outflow_inventories.slip_id', '=', 'production_slip_digitization.id')
+                ->whereIn('production_outflow_inventories.lot_no', $lotNos)
+                ->selectRaw('production_outflow_inventories.lot_no, production_slip_digitization.stage_master_unit_id, SUM(production_outflow_inventories.quantity) as sum_qty')
+                ->groupBy('production_outflow_inventories.lot_no', 'production_slip_digitization.stage_master_unit_id')
+                ->get()
+                ->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->stage_master_unit_id => $i->sum_qty]; })
+                ->toArray();
+
+            $standaloneOutflows = \App\Models\ProductionOutflowInventory::whereNull('slip_id')
+                ->whereIn('lot_no', $lotNos)
+                ->whereNotNull('responsible_unit_id')
+                ->selectRaw('lot_no, responsible_unit_id, SUM(quantity) as sum_qty')
+                ->groupBy('lot_no', 'responsible_unit_id')
+                ->get()
+                ->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->responsible_unit_id => $i->sum_qty]; })
+                ->toArray();
+
             $orderLots = \App\Models\OrderLot::with('orderProductSet.orderMain')
                 ->whereIn('lot_no', $lotNos)->get()->keyBy('lot_no');
                 
@@ -2268,6 +2286,11 @@ class ReportService
                     $packedQty = $packedSums[$packedKey] ?? 0;
                     $outflowAll += $packedQty;
                 }
+                
+                // Add debit, dead, sampling, defect, and packing divert outflows
+                $outflowInvKey = $item->lot_no . '_' . $item->sub_stage_id_to;
+                $outflowInvQty = ($outflowInventorySums[$outflowInvKey] ?? 0) + ($standaloneOutflows[$outflowInvKey] ?? 0);
+                $outflowAll += $outflowInvQty;
                 
                 $pendingQty = max(0, $incomingAll - $outflowAll);
 
