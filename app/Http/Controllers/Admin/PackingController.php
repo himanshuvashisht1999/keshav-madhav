@@ -483,16 +483,57 @@ class PackingController extends Controller
             ->get()
             ->groupBy('lot_no');
 
+        $packed_by_lot_size = \App\Models\PackingItem::join('order_products_set_details', 'packing_items.size_id', '=', 'order_products_set_details.id')
+            ->whereIn('packing_items.lot_no', $selected_lots)
+            ->where('packing_items.packing_main_id', $packing->id)
+            ->select('packing_items.lot_no', 'order_products_set_details.size', DB::raw('SUM(packing_items.quantity) as total'))
+            ->groupBy('packing_items.lot_no', 'order_products_set_details.size')
+            ->get()
+            ->map(function($item) {
+                $item->size = trim(strtoupper($item->size));
+                return $item;
+            })
+            ->groupBy('lot_no');
+
+        $rework_by_lot_size = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transaction_details.order_stage_transaction_id', '=', 'order_stage_transactions.id')
+            ->whereIn('order_stage_transactions.lot_no', $selected_lots)
+            ->where('order_stage_transactions.production_slip_digitization_id', $slip_id)
+            ->where('order_stage_transactions.from_stage_id', 11)
+            ->where('order_stage_transactions.type', 'rework')
+            ->select('order_stage_transactions.lot_no', 'order_stage_transaction_details.size', DB::raw('SUM(order_stage_transaction_details.quantity) as total'))
+            ->groupBy('order_stage_transactions.lot_no', 'order_stage_transaction_details.size')
+            ->get()
+            ->groupBy('lot_no');
+
+        $outflow_by_lot_size = \App\Models\ProductionOutflowInventory::join('order_products_set_details', 'production_outflow_inventories.size_id', '=', 'order_products_set_details.id')
+            ->whereIn('production_outflow_inventories.lot_no', $selected_lots)
+            ->where('production_outflow_inventories.slip_id', $slip_id)
+            ->select('production_outflow_inventories.lot_no', 'order_products_set_details.size', DB::raw('SUM(production_outflow_inventories.quantity) as total'))
+            ->groupBy('production_outflow_inventories.lot_no', 'order_products_set_details.size')
+            ->get()
+            ->map(function($item) {
+                $item->size = trim(strtoupper($item->size));
+                return $item;
+            })
+            ->groupBy('lot_no');
+
         foreach ($lots_data as $lot) {
             $lot_txs = $stage_transactions->get($lot->lot_no, collect());
             $lot->remaining_quantity = (int) $lot_txs->sum('remaining_quantity');
             $lot->quantity = (int) $lot_txs->sum('quantity');
             $lot->transaction_id = $lot_txs->first() ? $lot_txs->first()->id : null;
 
+            $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
+            $rework_for_lot = isset($rework_by_lot_size[$lot->lot_no]) ? $rework_by_lot_size[$lot->lot_no]->sum('total') : 0;
+            $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
+
+            $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
+            $total_tx_qty = (int) $lot_txs->sum('quantity');
+            $ratio = $total_tx_qty > 0 ? min(1.0, $starting_lot_qty / $total_tx_qty) : 1;
+
             $incoming_sizes = [];
             foreach ($lot_txs as $tx) {
-                if ($tx->remaining_quantity > 0 && $tx->details->isNotEmpty()) {
-                    $ratio = $tx->quantity > 0 ? ($tx->remaining_quantity / $tx->quantity) : 1;
+                if ($tx->details->isNotEmpty()) {
                     foreach ($tx->details as $d) {
                         $sz = trim(strtoupper($d->size));
                         $incoming_sizes[$sz] = ($incoming_sizes[$sz] ?? 0) + (int) round($d->quantity * $ratio);
@@ -552,40 +593,6 @@ class PackingController extends Controller
             ->pluck('design_number')
             ->unique()
             ->values();
-
-        $packed_by_lot_size = \App\Models\PackingItem::join('order_products_set_details', 'packing_items.size_id', '=', 'order_products_set_details.id')
-            ->whereIn('packing_items.lot_no', $selected_lots)
-            ->where('packing_items.packing_main_id', $packing->id)
-            ->select('packing_items.lot_no', 'order_products_set_details.size', DB::raw('SUM(packing_items.quantity) as total'))
-            ->groupBy('packing_items.lot_no', 'order_products_set_details.size')
-            ->get()
-            ->map(function($item) {
-                $item->size = trim(strtoupper($item->size));
-                return $item;
-            })
-            ->groupBy('lot_no');
-
-        $rework_by_lot_size = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transaction_details.order_stage_transaction_id', '=', 'order_stage_transactions.id')
-            ->whereIn('order_stage_transactions.lot_no', $selected_lots)
-            ->where('order_stage_transactions.production_slip_digitization_id', $slip_id)
-            ->where('order_stage_transactions.from_stage_id', 11)
-            ->where('order_stage_transactions.type', 'rework')
-            ->select('order_stage_transactions.lot_no', 'order_stage_transaction_details.size', DB::raw('SUM(order_stage_transaction_details.quantity) as total'))
-            ->groupBy('order_stage_transactions.lot_no', 'order_stage_transaction_details.size')
-            ->get()
-            ->groupBy('lot_no');
-
-        $outflow_by_lot_size = \App\Models\ProductionOutflowInventory::join('order_products_set_details', 'production_outflow_inventories.size_id', '=', 'order_products_set_details.id')
-            ->whereIn('production_outflow_inventories.lot_no', $selected_lots)
-            ->where('production_outflow_inventories.slip_id', $slip_id)
-            ->select('production_outflow_inventories.lot_no', 'order_products_set_details.size', DB::raw('SUM(production_outflow_inventories.quantity) as total'))
-            ->groupBy('production_outflow_inventories.lot_no', 'order_products_set_details.size')
-            ->get()
-            ->map(function($item) {
-                $item->size = trim(strtoupper($item->size));
-                return $item;
-            })
-            ->groupBy('lot_no');
 
         $lots_data = $lots_data->filter(function($lot) use ($packed_by_lot_size, $rework_by_lot_size, $outflow_by_lot_size) {
             $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
@@ -915,10 +922,18 @@ class PackingController extends Controller
         
         foreach ($lots_data as $lot) {
             $transactions = $stage_transactions->get($lot->lot_no, collect());
+            $rem_qty = (int) $transactions->sum('remaining_quantity');
+            $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
+            $rework_for_lot = isset($rework_by_lot_size[$lot->lot_no]) ? $rework_by_lot_size[$lot->lot_no]->sum('total') : 0;
+            $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
+
+            $starting_lot_qty = $rem_qty + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
+            $total_tx_qty = (int) $transactions->sum('quantity');
+            $ratio = $total_tx_qty > 0 ? min(1.0, $starting_lot_qty / $total_tx_qty) : 1;
+
             $incoming_sizes = [];
             foreach ($transactions as $tx) {
-                if ($tx->remaining_quantity > 0 && $tx->details->isNotEmpty()) {
-                    $ratio = $tx->quantity > 0 ? ($tx->remaining_quantity / $tx->quantity) : 1;
+                if ($tx->details->isNotEmpty()) {
                     foreach ($tx->details as $d) {
                         $sz = trim(strtoupper($d->size));
                         $incoming_sizes[$sz] = ($incoming_sizes[$sz] ?? 0) + (int) round($d->quantity * $ratio);

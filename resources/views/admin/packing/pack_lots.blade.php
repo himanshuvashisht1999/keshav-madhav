@@ -268,7 +268,69 @@
                     <tbody>
                         @foreach($lots_data as $lot)
                         @php
-                            $grand_total_pending += $lot->remaining_quantity;
+                            $packed_for_lot = 0;
+                            if (isset($packed_by_lot_size[$lot->lot_no])) {
+                                $packed_for_lot = $packed_by_lot_size[$lot->lot_no]->sum('total');
+                            }
+                            $rework_for_lot = 0;
+                            if (isset($rework_by_lot_size[$lot->lot_no])) {
+                                $rework_for_lot = $rework_by_lot_size[$lot->lot_no]->sum('total');
+                            }
+                            $outflow_for_lot = 0;
+                            if (isset($outflow_by_lot_size[$lot->lot_no])) {
+                                $outflow_for_lot = $outflow_by_lot_size[$lot->lot_no]->sum('total');
+                            }
+                            
+                            $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
+                            $total_breakdown_qty = 0;
+                            $total_live_remaining = 0;
+                            $sizes_data = [];
+
+                            if (isset($set_details[$lot->set_id])) {
+                                $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
+                                foreach($set_details[$lot->set_id] as $detail) {
+                                    $sizeName = trim(strtoupper($detail->size));
+                                    
+                                    $incoming_qty = !empty($lot->incoming_sizes) 
+                                        ? (int) ($lot->incoming_sizes[$sizeName] ?? 0) 
+                                        : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
+                                    
+                                    $packed_qty = 0;
+                                    if (isset($packed_by_lot_size[$lot->lot_no])) {
+                                        $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                                        if ($item) $packed_qty = $item->total;
+                                    }
+
+                                    $rework_qty = 0;
+                                    if (isset($rework_by_lot_size[$lot->lot_no])) {
+                                        $item = $rework_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                                        if ($item) $rework_qty = $item->total;
+                                    }
+
+                                    $outflow_qty = 0;
+                                    if (isset($outflow_by_lot_size[$lot->lot_no])) {
+                                        $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                                        if ($item) $outflow_qty = $item->total;
+                                    }
+
+                                    $live_remaining_for_size = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
+                                    $total_live_remaining += $live_remaining_for_size;
+                                    $total_breakdown_qty += $live_remaining_for_size;
+                                    
+                                    if ($incoming_qty > 0 || $live_remaining_for_size > 0) {
+                                        $sizes_data[] = [
+                                            'size' => $detail->size,
+                                            'breakdown' => $live_remaining_for_size,
+                                            'live' => $live_remaining_for_size,
+                                            'clean_size' => str_replace([' ', '.'], '-', trim(strtoupper($detail->size)))
+                                        ];
+                                    }
+                                }
+                            }
+                            
+                            $grand_total_pending += $total_breakdown_qty;
+                            $grand_total_breakdown += $total_breakdown_qty;
+                            $grand_total_remaining += $total_live_remaining;
                         @endphp
                         <tr>
                             <td class="font-weight-bold align-middle">
@@ -280,76 +342,10 @@
                                 <span class="badge badge-light border mt-1">{{ $lot->color_name }}</span>
                             </td>
                             <td class="text-center align-middle font-weight-bold text-success" style="font-size: 1.1rem;">
-                                {{ $lot->remaining_quantity }}
+                                {{ $total_breakdown_qty }}
                             </td>
                             <td class="align-middle">
-                                @if(isset($set_details[$lot->set_id]))
-                                    @php
-                                        $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
-                                        
-                                        // Sum up deductions for this lot in the current slip session first
-                                        $packed_for_lot = 0;
-                                        if (isset($packed_by_lot_size[$lot->lot_no])) {
-                                            $packed_for_lot = $packed_by_lot_size[$lot->lot_no]->sum('total');
-                                        }
-                                        $rework_for_lot = 0;
-                                        if (isset($rework_by_lot_size[$lot->lot_no])) {
-                                            $rework_for_lot = $rework_by_lot_size[$lot->lot_no]->sum('total');
-                                        }
-                                        $outflow_for_lot = 0;
-                                        if (isset($outflow_by_lot_size[$lot->lot_no])) {
-                                            $outflow_for_lot = $outflow_by_lot_size[$lot->lot_no]->sum('total');
-                                        }
-                                        
-                                        $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
-                                        
-                                        $total_breakdown_qty = 0;
-                                        $total_live_remaining = 0;
-                                        
-                                        $sizes_data = [];
-                                        foreach($set_details[$lot->set_id] as $detail) {
-                                            $sizeName = trim(strtoupper($detail->size));
-                                            
-                                            $incoming_qty = !empty($lot->incoming_sizes) 
-                                                ? (int) ($lot->incoming_sizes[$sizeName] ?? 0) 
-                                                : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
-                                            
-                                            $packed_qty = 0;
-                                            if (isset($packed_by_lot_size[$lot->lot_no])) {
-                                                $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                                                if ($item) $packed_qty = $item->total;
-                                            }
-
-                                            $rework_qty = 0;
-                                            if (isset($rework_by_lot_size[$lot->lot_no])) {
-                                                $item = $rework_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                                                if ($item) $rework_qty = $item->total;
-                                            }
-
-                                            $outflow_qty = 0;
-                                            if (isset($outflow_by_lot_size[$lot->lot_no])) {
-                                                $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                                                if ($item) $outflow_qty = $item->total;
-                                            }
-
-                                            $live_remaining_for_size = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
-                                            $total_live_remaining += $live_remaining_for_size;
-                                            $total_breakdown_qty += $live_remaining_for_size;
-                                            
-                                            if ($incoming_qty > 0 || $live_remaining_for_size > 0) {
-                                                $sizes_data[] = [
-                                                    'size' => $detail->size,
-                                                    'breakdown' => $live_remaining_for_size,
-                                                    'live' => $live_remaining_for_size,
-                                                    'clean_size' => str_replace([' ', '.'], '-', trim(strtoupper($detail->size)))
-                                                ];
-                                            }
-                                        }
-                                        
-                                        $grand_total_breakdown += $total_breakdown_qty;
-                                        $grand_total_remaining += $total_live_remaining;
-                                    @endphp
-                                    
+                                @if(!empty($sizes_data))
                                     <div class="d-flex flex-wrap" style="gap: 6px;">
                                         @foreach($sizes_data as $sd)
                                         <div class="border rounded px-2 py-1 bg-white border-secondary d-flex align-items-center" style="gap: 5px; font-size: 0.8rem; line-height: 1.2;">
@@ -376,7 +372,7 @@
                         <tr>
                             <td colspan="2" class="text-right align-middle" style="font-size: 0.9rem;">Grand Total Selected Lots:</td>
                             <td class="text-center align-middle text-success font-weight-bold" style="font-size: 1.15rem;">
-                                {{ $grand_total_pending }}
+                                {{ $grand_total_breakdown }}
                             </td>
                             <td class="align-middle">
                                 <div class="d-flex justify-content-end align-items-center" style="gap: 15px;">
