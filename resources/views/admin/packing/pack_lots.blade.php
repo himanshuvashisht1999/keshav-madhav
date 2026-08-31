@@ -138,9 +138,9 @@
             <button type="button" id="btnFinalizePacking" class="btn btn-erp btn-success text-white">
                 <i class="fas fa-check-circle mr-1"></i> Finalize Packing
             </button>
-            <a href="{{ route('admin.packing.processNew', $slip_id) }}" class="btn btn-erp btn-erp-default">
+            <button type="button" class="btn btn-erp btn-erp-default" onclick="handleBackToSelection()">
                 <i class="fas fa-arrow-left text-muted"></i> Back to Selection
-            </a>
+            </button>
         </div>
     </div>
 
@@ -2742,6 +2742,13 @@
             });
         });
 
+        // Back to Selection Guard
+        window.handleBackToSelection = function() {
+            if (confirm('Lots are already locked in this session. To select different lots, please use "Reset Slip" to clear and start fresh. Do you want to reset this slip now?')) {
+                $('#btnResetSlip').click();
+            }
+        };
+
         // Reset Slip Functionality
         $('#btnResetSlip').click(function() {
             if (!confirm('Are you absolutely sure you want to reset this slip? This will delete all cartons, domestic boxes, outflows, reworks, and completely restore all stock and order balances.')) {
@@ -2761,7 +2768,7 @@
                 success: function(res) {
                     if (res.status === 'success') {
                         toastr.success(res.message);
-                        window.location.reload();
+                        window.location.href = res.redirect_url || "{{ route('admin.packing.processNew', $slip_id) }}";
                     } else {
                         toastr.error(res.message || 'Failed to reset slip.');
                         $btn.html(originalHtml).prop('disabled', false);

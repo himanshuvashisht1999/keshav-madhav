@@ -233,6 +233,13 @@ class PackingController extends Controller
             return redirect()->back()->withError('Already digitized slip.');
         }
 
+        // If lots have already been selected or cartons saved for this session, lock Step 1 and redirect to Step 2
+        $hasSelectedLots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->exists();
+        $hasCartons = $packing && \App\Models\PackingCarton::where('packing_main_id', $packing->id)->exists();
+        if ($hasSelectedLots || $hasCartons) {
+            return redirect()->route('admin.packing.packLots', $slip_id);
+        }
+
         // Determine which order to load: prefer request(?order_id=) but fallback to linked packing session
         $orderId = $request->order_id ?: ($packing->order_main_id ?? null);
         $order = null;
@@ -403,6 +410,13 @@ class PackingController extends Controller
         
         if (!$packing) {
             return redirect()->back()->withError('Could not create packing session.');
+        }
+
+        // Prevent re-submitting lot selection if already selected
+        $hasSelectedLots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->exists();
+        $hasCartons = \App\Models\PackingCarton::where('packing_main_id', $packing->id)->exists();
+        if ($hasCartons) {
+            return redirect()->route('admin.packing.packLots', $slip_id)->with('error', 'Cartons have already been created for this session. Please Reset Slip first if you wish to change lot selection.');
         }
 
         // Save order selection
@@ -619,7 +633,11 @@ class PackingController extends Controller
     {
         $result = $this->service->deletePackingSession($slip_id);
         if ($result['status'] === 'success') {
-            return response()->json(['status' => 'success', 'message' => 'Packing session successfully reset and balances restored.']);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Packing session successfully reset and balances restored.',
+                'redirect_url' => route('admin.packing.processNew', $slip_id)
+            ]);
         }
         return response()->json(['status' => 'error', 'message' => $result['message']]);
     }
