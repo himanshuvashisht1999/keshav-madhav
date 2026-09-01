@@ -1789,59 +1789,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
 
 Route::prefix('/admin')->name('admin.')->middleware(['web', 'checkAdminLogin'])->group(function () {
-    Route::get('/fix-remaining-quantities-run', function () {
-        $txs = \App\Models\OrderStageTransaction::where('to_stage_id', 11)->get();
-        $fixedCount = 0;
-        $details = [];
-
-        foreach ($txs as $tx) {
-            $forwardQty = (int) \App\Models\OrderStageTransaction::where('lot_no', $tx->lot_no)
-                ->where('from_stage_id', 11)
-                ->where('sub_stage_id', $tx->sub_stage_id_to)
-                ->sum('quantity');
-
-            $packedQty = (int) \DB::table('packing_items as pi')
-                ->join('packing_cartons as pc', 'pi.packing_carton_id', '=', 'pc.id')
-                ->join('packing_mains as pm', 'pi.packing_main_id', '=', 'pm.id')
-                ->join('production_slip_digitization as psd', 'pm.slip_id', '=', 'psd.id')
-                ->where('pi.lot_no', $tx->lot_no)
-                ->where('psd.stage_master_unit_id', $tx->sub_stage_id_to)
-                ->where('pc.status', 1)
-                ->sum('pi.quantity');
-
-            $outflowQty = (int) \App\Models\ProductionOutflowInventory::join('production_slip_digitization as psd', 'production_outflow_inventories.slip_id', '=', 'psd.id')
-                ->where('production_outflow_inventories.lot_no', $tx->lot_no)
-                ->where('psd.stage_master_unit_id', $tx->sub_stage_id_to)
-                ->sum('production_outflow_inventories.quantity');
-
-            $expected = max(0, (int)$tx->quantity - $forwardQty - $packedQty - $outflowQty);
-
-            if ($tx->remaining_quantity != $expected) {
-                $details[] = "Lot {$tx->lot_no} (Tx #{$tx->id}, Unit {$tx->sub_stage_id_to}): {$tx->remaining_quantity} -> {$expected}";
-                $tx->remaining_quantity = $expected;
-                $tx->save();
-                $fixedCount++;
-            }
-        }
-
-        // Run migrations if deletion_logs table is missing
-        $migrationRun = false;
-        if (!\Illuminate\Support\Facades\Schema::hasTable('deletion_logs')) {
-            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-            $migrationRun = true;
-        }
-
-        // Clear all caches
-        \Illuminate\Support\Facades\Artisan::call('cache:clear');
-        \Illuminate\Support\Facades\Artisan::call('view:clear');
-
-        return response()->json([
-            'status' => 'success',
-            'message' => "Successfully synchronized {$fixedCount} Stage 11 transactions!",
-            'migration_run' => $migrationRun,
-            'details' => $details
-        ]);
-    })->name('fix-remaining-quantities-run');
 
     Route::prefix('/uploaded-slips')->name('uploaded-slips.')->group(function () {
         Route::get('/packing', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'index'])->name('packing');
