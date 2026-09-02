@@ -613,14 +613,16 @@ class PackingService
 
             // Adjust remaining Qty in OrderStageTransaction
             $slip_details = \App\Models\ProductionSlipDigitization::find($data['slip_id']);
+            $selectedLots = \App\Models\PackingSelectedLot::where('slip_id', $data['slip_id'])->pluck('lot_no')->toArray();
             $orderLots = \App\Models\OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
+            $lotsToQuery = !empty($selectedLots) ? $selectedLots : $orderLots;
 
             $orderStageTransactions = \App\Models\OrderStageTransaction::where('to_stage_id', $slip_details->from_stage_id)
                 ->where(function($q) use ($slip_details) {
                     $q->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
                       ->orWhereNull('sub_stage_id_to');
                 })
-                ->whereIn('lot_no', $orderLots)
+                ->whereIn('lot_no', $lotsToQuery)
                 ->orderBy('id')
                 ->get();
 
@@ -715,16 +717,24 @@ class PackingService
         }
     }
 
-        private function processLotDeductionAndCreateItem($main, $carton, $detail, $needed_pcs, $requested_boxes, $entry, $slip_details, $data) {
+    private function processLotDeductionAndCreateItem($main, $carton, $detail, $needed_pcs, $requested_boxes, $entry, $slip_details, $data) {
+        $selectedLots = !empty($entry['selected_lots']) 
+            ? (array)$entry['selected_lots'] 
+            : (!empty($data['selected_lots']) ? (array)$data['selected_lots'] : []);
+
+        if (empty($selectedLots) && !empty($slip_details)) {
+            $selectedLots = \App\Models\PackingSelectedLot::where('slip_id', $slip_details->id)->pluck('lot_no')->toArray();
+        }
+
         $validLotsForSize = \App\Models\OrderLot::where('order_products_set_id', $detail->order_products_set_id ?? 0)->pluck('lot_no')->toArray();
         if (empty($validLotsForSize)) {
             $validLotsForSize = \App\Models\OrderLot::where('order_main_id', $data['order_id'])->pluck('lot_no')->toArray();
         }
 
-        if (!empty($entry['selected_lots'])) {
-            $lotsToDeduct = array_intersect($entry['selected_lots'], $validLotsForSize);
+        if (!empty($selectedLots)) {
+            $lotsToDeduct = array_values(array_intersect($selectedLots, $validLotsForSize));
             if (empty($lotsToDeduct)) {
-                $lotsToDeduct = $validLotsForSize;
+                $lotsToDeduct = $selectedLots;
             }
         } else {
             $lotsToDeduct = $validLotsForSize;

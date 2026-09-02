@@ -146,14 +146,20 @@ class PackingController extends Controller
                 ->where('order_stage_transactions.to_stage_id', 11)
                 ->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
                 ->where('order_lots.order_main_id', $order->id)
-                ->where('order_stage_transactions.remaining_quantity', '>', 0)
+                ->groupBy(
+                    'order_stage_transactions.lot_no',
+                    'order_products_sets.id',
+                    'order_products_sets.design_number',
+                    'master_size_measurements.name'
+                )
+                ->havingRaw('SUM(order_stage_transactions.remaining_quantity) > 0')
                 ->select(
                     'order_stage_transactions.lot_no',
                     'order_products_sets.id as set_id',
                     'order_products_sets.design_number',
                     'master_size_measurements.name as size_set_name',
-                    'order_stage_transactions.quantity',
-                    'order_stage_transactions.remaining_quantity'
+                    DB::raw('SUM(order_stage_transactions.quantity) as quantity'),
+                    DB::raw('SUM(order_stage_transactions.remaining_quantity) as remaining_quantity')
                 )
                 ->get();
         }
@@ -322,14 +328,20 @@ class PackingController extends Controller
                 ->where('order_stage_transactions.to_stage_id', 11)
                 ->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
                 ->where('order_lots.order_main_id', $order->id)
-                ->where('order_stage_transactions.remaining_quantity', '>', 0)
+                ->groupBy(
+                    'order_stage_transactions.lot_no',
+                    'order_products_sets.id',
+                    'order_products_sets.design_number',
+                    'master_size_measurements.name'
+                )
+                ->havingRaw('SUM(order_stage_transactions.remaining_quantity) > 0')
                 ->select(
                     'order_stage_transactions.lot_no',
                     'order_products_sets.id as set_id',
                     'order_products_sets.design_number',
                     'master_size_measurements.name as size_set_name',
-                    'order_stage_transactions.quantity',
-                    'order_stage_transactions.remaining_quantity'
+                    DB::raw('SUM(order_stage_transactions.quantity) as quantity'),
+                    DB::raw('SUM(order_stage_transactions.remaining_quantity) as remaining_quantity')
                 )
                 ->get();
         }
@@ -477,8 +489,15 @@ class PackingController extends Controller
             )
             ->get();
 
+        $slip_unit_id = $packing->slip ? $packing->slip->stage_master_unit_id : (\App\Models\ProductionSlipDigitization::where('id', $slip_id)->value('stage_master_unit_id'));
         $stage_transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
             ->whereIn('lot_no', $selected_lots)
+            ->when($slip_unit_id, function($q) use ($slip_unit_id) {
+                $q->where(function($sq) use ($slip_unit_id) {
+                    $sq->where('sub_stage_id_to', $slip_unit_id)
+                      ->orWhereNull('sub_stage_id_to');
+                });
+            })
             ->with('details')
             ->get()
             ->groupBy('lot_no');
@@ -908,8 +927,15 @@ class PackingController extends Controller
             ->select('order_lots.lot_no', 'order_products_sets.id as set_id')
             ->get();
             
+        $slip_unit_id = $packing && $packing->slip ? $packing->slip->stage_master_unit_id : (\App\Models\ProductionSlipDigitization::where('id', $slip_id)->value('stage_master_unit_id'));
         $stage_transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
             ->whereIn('lot_no', $selected_lots)
+            ->when($slip_unit_id, function($q) use ($slip_unit_id) {
+                $q->where(function($sq) use ($slip_unit_id) {
+                    $sq->where('sub_stage_id_to', $slip_unit_id)
+                      ->orWhereNull('sub_stage_id_to');
+                });
+            })
             ->with('details')
             ->get()
             ->groupBy('lot_no');
@@ -1097,11 +1123,18 @@ class PackingController extends Controller
                 }
             }
             
-            // Validate and Deduct remaining quantities across all available stage transactions for each lot
+            // Validate and Deduct remaining quantities across all available stage transactions for each lot at THIS unit
+            $slip_unit_id = $packing->slip ? $packing->slip->stage_master_unit_id : (\App\Models\ProductionSlipDigitization::where('id', $slip_id)->value('stage_master_unit_id'));
             foreach($stageTransactionsToUpdate as $lot_no => $deductQty) {
                 $lotTxs = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                     ->where('lot_no', $lot_no)
                     ->where('to_stage_id', 11)
+                    ->when($slip_unit_id, function($q) use ($slip_unit_id) {
+                        $q->where(function($sq) use ($slip_unit_id) {
+                            $sq->where('sub_stage_id_to', $slip_unit_id)
+                              ->orWhereNull('sub_stage_id_to');
+                        });
+                    })
                     ->where('remaining_quantity', '>', 0)
                     ->orderBy('id', 'asc')
                     ->lockForUpdate()
@@ -1138,14 +1171,22 @@ class PackingController extends Controller
         $carton = \App\Models\PackingCarton::with('items')->find($carton_id);
         if (!$carton) return response()->json(['status' => 'error', 'message' => 'Carton not found']);
         
+        $slip_unit_id = \App\Models\ProductionSlipDigitization::where('id', $slip_id)->value('stage_master_unit_id');
+
         \DB::beginTransaction();
         try {
             foreach ($carton->items as $item) {
-                // Refund order_stage_transactions.remaining_quantity across transactions for lot_no
+                // Refund order_stage_transactions.remaining_quantity across transactions for lot_no at THIS unit
                 $refundQty = $item->quantity;
                 $txs = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                     ->where('lot_no', $item->lot_no)
                     ->where('to_stage_id', 11)
+                    ->when($slip_unit_id, function($q) use ($slip_unit_id) {
+                        $q->where(function($sq) use ($slip_unit_id) {
+                            $sq->where('sub_stage_id_to', $slip_unit_id)
+                              ->orWhereNull('sub_stage_id_to');
+                        });
+                    })
                     ->orderBy('id', 'desc')
                     ->get();
 
@@ -1185,17 +1226,25 @@ class PackingController extends Controller
             return response()->json(['status' => 'error', 'message' => 'No cartons selected for deletion']);
         }
 
+        $slip_unit_id = \App\Models\ProductionSlipDigitization::where('id', $slip_id)->value('stage_master_unit_id');
+
         \DB::beginTransaction();
         try {
             $cartons = \App\Models\PackingCarton::with('items')->whereIn('id', $ids)->get();
             
             foreach ($cartons as $carton) {
                 foreach ($carton->items as $item) {
-                    // Refund order_stage_transactions.remaining_quantity across transactions for lot_no
+                    // Refund order_stage_transactions.remaining_quantity across transactions for lot_no at THIS unit
                     $refundQty = $item->quantity;
                     $txs = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                         ->where('lot_no', $item->lot_no)
                         ->where('to_stage_id', 11)
+                        ->when($slip_unit_id, function($q) use ($slip_unit_id) {
+                            $q->where(function($sq) use ($slip_unit_id) {
+                                $sq->where('sub_stage_id_to', $slip_unit_id)
+                                  ->orWhereNull('sub_stage_id_to');
+                            });
+                        })
                         ->orderBy('id', 'desc')
                         ->get();
 
