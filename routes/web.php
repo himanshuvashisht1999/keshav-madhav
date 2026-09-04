@@ -1261,7 +1261,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'index'])->name('index');
                 Route::get('/list', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'indexList'])->name('indexList');
                 Route::get('/view/{id}', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'view'])->name('view');
-                Route::get('/view/{id}', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'view'])->name('view');
+                Route::get('/lots/{id}', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'getLotsJson'])->name('lots');
                 Route::get('/pdf/{id}', [\App\Http\Controllers\Admin\Report\AdminOrderSummaryReportController::class, 'downloadOrderSummaryPdf'])->name('pdf');
             });
 

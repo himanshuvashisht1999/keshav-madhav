@@ -162,13 +162,24 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
-                                <label class="small font-weight-bold text-muted mb-1">Uploaded By Unit</label>
-                                <select name="stage_master_unit_id" class="form-control select2 form-control-sm">
-                                    <option value="">-- All Units --</option>
+                            <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">From Unit</label>
+                                <select name="from_unit_id" class="form-control select2 form-control-sm">
+                                    <option value="">-- All From Units --</option>
                                     @foreach($units as $un)
-                                        <option value="{{ $un->id }}" {{ request('stage_master_unit_id') == $un->id ? 'selected' : '' }}>
-                                            {{ $un->name }} ({{ $un->stage->name ?? 'Stage' }})
+                                        <option value="{{ $un->id }}" {{ request('from_unit_id') == $un->id || request('stage_master_unit_id') == $un->id ? 'selected' : '' }}>
+                                            {{ $un->name }} ({{ $un->masterStage->name ?? 'Unit' }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">To Unit</label>
+                                <select name="to_unit_id" class="form-control select2 form-control-sm">
+                                    <option value="">-- All To Units --</option>
+                                    @foreach($units as $un)
+                                        <option value="{{ $un->id }}" {{ request('to_unit_id') == $un->id ? 'selected' : '' }}>
+                                            {{ $un->name }} ({{ $un->masterStage->name ?? 'Unit' }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -182,7 +193,7 @@
                                     <option value="2" {{ request('status') === '2' ? 'selected' : '' }}>Skipped</option>
                                 </select>
                             </div>
-                            <div class="col-lg-3 col-md-4 col-sm-6 mb-2 d-flex align-items-center">
+                            <div class="col-lg-4 col-md-6 col-sm-12 mb-2 d-flex align-items-center">
                                 <button type="submit" class="btn btn-sm btn-primary px-3 shadow-sm mr-2 font-weight-bold">
                                     <i class="fas fa-search mr-1"></i> Apply Filter
                                 </button>
@@ -210,15 +221,16 @@
                         <table class="table table-hover table-striped mb-0 align-middle">
                             <thead style="background: #f8fafc; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
                                 <tr>
-                                    <th class="py-3 px-3">Slip ID / Bill</th>
-                                    <th class="py-3">Date</th>
-                                    <th class="py-3">From Stage & Unit</th>
-                                    <th class="py-3">To Stage(s)</th>
-                                    <th class="py-3">Lots & Designs Involved</th>
-                                    <th class="py-3 text-center">Entries</th>
-                                    <th class="py-3 text-right">Total Pieces</th>
-                                    <th class="py-3 text-center">Status</th>
-                                    <th class="py-3 text-right px-3">Action</th>
+                                    <th class="py-3 px-3 text-nowrap">Slip ID / Bill</th>
+                                    <th class="py-3 text-nowrap">Date</th>
+                                    <th class="py-3 text-nowrap">From Stage & Unit</th>
+                                    <th class="py-3 text-nowrap">To Stage(s)</th>
+                                    <th class="py-3 text-nowrap">Lots Involved</th>
+                                    <th class="py-3 text-nowrap">Designs</th>
+                                    <th class="py-3 text-center text-nowrap">Entries</th>
+                                    <th class="py-3 text-right text-nowrap">Total Pieces</th>
+                                    <th class="py-3 text-center text-nowrap">Status</th>
+                                    <th class="py-3 text-right px-3 text-nowrap">Action</th>
                                 </tr>
                             </thead>
                             <tbody style="font-size: 13px;">
@@ -228,7 +240,7 @@
                                     @endphp
                                     <tr>
                                         <!-- Slip ID & Bill -->
-                                        <td class="px-3">
+                                        <td class="px-3 text-nowrap">
                                             <a href="{{ route('admin.reports.slips.show', $slip->id) }}" class="font-weight-bold text-primary" style="font-size: 14px;">
                                                 #{{ $slip->id }}
                                             </a>
@@ -240,9 +252,10 @@
                                         </td>
 
                                         <!-- Date -->
-                                        <td>
-                                            <div class="font-weight-bold text-dark">{{ $slip->created_at->format('d M, Y') }}</div>
-                                            <small class="text-muted">{{ $slip->created_at->format('h:i A') }}</small>
+                                        <td class="text-nowrap">
+                                            <div class="font-weight-bold text-dark" style="font-size: 13px;">
+                                                {{ $slip->created_at->format('d M, Y') }}
+                                            </div>
                                         </td>
 
                                         <!-- From Stage & Unit -->
@@ -251,7 +264,7 @@
                                                 <i class="fas fa-layer-group text-primary mr-1"></i>{{ $slip->fromStage->name ?? '-' }}
                                             </span>
                                             @if($slip->getUnitMaster)
-                                                <div class="small text-muted mt-1">
+                                                <div class="small text-muted mt-1 text-nowrap">
                                                     <i class="fas fa-user-tie mr-1 text-secondary"></i>{{ $slip->getUnitMaster->name }}
                                                 </div>
                                             @endif
@@ -261,12 +274,12 @@
                                         <td>
                                             @if(!empty($computed['destinations']))
                                                 @foreach($computed['destinations'] as $dest)
-                                                    <span class="badge badge-light border text-dark mb-1" style="font-size: 11px;">
+                                                    <span class="badge badge-light border text-dark mb-1 text-nowrap" style="font-size: 11px;">
                                                         <i class="fas fa-arrow-right text-success mr-1"></i>{{ $dest }}
                                                     </span><br>
                                                 @endforeach
                                             @elseif($slip->toStage)
-                                                <span class="badge badge-light border text-dark" style="font-size: 11px;">
+                                                <span class="badge badge-light border text-dark text-nowrap" style="font-size: 11px;">
                                                     <i class="fas fa-arrow-right text-success mr-1"></i>{{ $slip->toStage->name }}
                                                 </span>
                                             @else
@@ -280,10 +293,10 @@
                                             @endif
                                         </td>
 
-                                        <!-- Lots & Designs Involved -->
+                                        <!-- Lots Involved -->
                                         <td>
                                             @if(!empty($computed['lots_with_qty']))
-                                                <div class="d-flex flex-wrap gap-1" style="max-width: 280px;">
+                                                <div class="d-flex flex-wrap gap-1" style="max-width: 250px;">
                                                     @foreach($computed['lots_with_qty'] as $lot => $lqty)
                                                         <span class="badge badge-info shadow-xs mb-1 mr-1 px-2 py-1" style="font-size: 11px;">
                                                             #{{ $lot }} @if($lqty > 0) <span class="badge badge-light text-dark ml-1">{{ number_format($lqty) }}</span> @endif
@@ -293,33 +306,45 @@
                                             @else
                                                 <span class="text-muted">-</span>
                                             @endif
+                                        </td>
 
-                                            @if(!empty($computed['designs']))
-                                                <div class="mt-1 d-flex flex-wrap align-items-center">
-                                                    <small class="text-muted font-weight-bold mr-1"><i class="fas fa-drafting-compass text-secondary"></i> Design:</small>
+                                        <!-- Designs -->
+                                        <td>
+                                            @if(!empty($computed['designs_with_qty']))
+                                                <div class="d-flex flex-wrap gap-1 align-items-center" style="max-width: 240px;">
+                                                    @foreach($computed['designs_with_qty'] as $dsn => $dqty)
+                                                        <span class="badge badge-dark border mb-1 mr-1 px-2 py-1" style="font-size: 11px; background-color: #334155;">
+                                                            {{ $dsn }} @if($dqty > 0) <span class="badge badge-light text-dark ml-1">{{ number_format($dqty) }}</span> @endif
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            @elseif(!empty($computed['designs']))
+                                                <div class="d-flex flex-wrap gap-1 align-items-center" style="max-width: 200px;">
                                                     @foreach($computed['designs'] as $dsn)
                                                         <span class="badge badge-dark border mb-1 mr-1 px-2 py-1" style="font-size: 11px; background-color: #334155;">
                                                             {{ $dsn }}
                                                         </span>
                                                     @endforeach
                                                 </div>
+                                            @else
+                                                <span class="text-muted">-</span>
                                             @endif
                                         </td>
 
                                         <!-- Entries / Sessions Count -->
-                                        <td class="text-center">
+                                        <td class="text-center text-nowrap">
                                             <span class="badge badge-secondary px-2 py-1 font-weight-bold" style="font-size: 11px;">
                                                 {{ $computed['entries_count'] }} {{ Str::plural('Entry', $computed['entries_count']) }}
                                             </span>
                                         </td>
 
                                         <!-- Total Pieces -->
-                                        <td class="text-right font-weight-bold" style="font-size: 14px; color: #047857;">
+                                        <td class="text-right text-nowrap font-weight-bold" style="font-size: 14px; color: #047857;">
                                             {{ number_format($computed['total_quantity']) }} <small class="text-muted">pcs</small>
                                         </td>
 
                                         <!-- Status -->
-                                        <td class="text-center">
+                                        <td class="text-center text-nowrap">
                                             @if($slip->status == 1)
                                                 <span class="badge badge-success px-2 py-1 font-weight-bold">
                                                     <i class="fas fa-check-circle mr-1"></i>Digitized
@@ -336,10 +361,10 @@
                                         </td>
 
                                         <!-- Action Buttons -->
-                                        <td class="text-right px-3">
+                                        <td class="text-right px-3 text-nowrap">
                                             <div class="btn-group btn-group-sm">
-                                                <a href="{{ route('admin.reports.slips.show', $slip->id) }}" class="btn btn-primary shadow-xs font-weight-bold" title="View Detailed Report">
-                                                    <i class="fas fa-eye mr-1"></i> View Detail
+                                                <a href="{{ route('admin.reports.slips.show', $slip->id) }}" class="btn btn-outline-primary shadow-xs" title="View Details">
+                                                    <i class="fas fa-eye"></i>
                                                 </a>
                                                 @if($slip->image)
                                                     <button type="button" class="btn btn-outline-dark shadow-xs" data-toggle="modal" data-target="#slipImageModal{{ $slip->id }}" title="View Physical Slip Photo">
@@ -358,20 +383,22 @@
                                                         <div class="modal-content border-0 shadow-lg">
                                                             <div class="modal-header bg-dark text-white py-2 px-3">
                                                                 <h6 class="modal-title font-weight-bold mb-0">
-                                                                    <i class="fas fa-file-image mr-2"></i>Physical Slip Scan - Slip #{{ $slip->id }}
+                                                                    <i class="fas fa-image mr-2"></i>Physical Slip #{{ $slip->id }}
                                                                 </h6>
                                                                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                                                     <span aria-hidden="true">&times;</span>
                                                                 </button>
                                                             </div>
-                                                            <div class="modal-body text-center p-2 bg-light">
-                                                                <img src="{{ asset('storage/' . $slip->image) }}" class="img-fluid rounded shadow-sm" alt="Slip Photo" style="max-height: 80vh;">
+                                                            <div class="modal-body text-center p-0 bg-light">
+                                                                <img src="{{ asset('storage/' . $slip->image) }}" class="img-fluid rounded" style="max-height: 80vh; width: auto;" alt="Slip #{{ $slip->id }}">
                                                             </div>
-                                                            <div class="modal-footer py-2 px-3 justify-content-between">
-                                                                <a href="{{ asset('storage/' . $slip->image) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                                                    <i class="fas fa-external-link-alt mr-1"></i> Open Full Image
+                                                            <div class="modal-footer py-2 px-3 bg-white justify-content-between">
+                                                                <div class="small text-muted font-weight-bold">
+                                                                    Uploaded: {{ $slip->created_at->format('d M, Y h:i A') }}
+                                                                </div>
+                                                                <a href="{{ asset('storage/' . $slip->image) }}" target="_blank" class="btn btn-sm btn-primary">
+                                                                    <i class="fas fa-external-link-alt mr-1"></i> Open Original Image
                                                                 </a>
-                                                                <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Close</button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -381,7 +408,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center py-5 text-muted">
+                                        <td colspan="10" class="text-center py-5 text-muted">
                                             <i class="fas fa-folder-open fa-3x text-muted mb-3 d-block" style="opacity: 0.4;"></i>
                                             <h6 class="font-weight-bold">No production slips found matching your filters.</h6>
                                             <p class="small text-muted mb-0">Try changing date range, stages, or clearing filters.</p>
@@ -408,4 +435,35 @@
         </div>
     </section>
 </div>
+@endsection
+
+@section('scripts')
+<style>
+    .select2-container .select2-selection--single {
+        height: 31px !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 4px !important;
+        font-size: 13px !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 29px !important;
+        padding-left: 8px !important;
+        color: #495057 !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 29px !important;
+    }
+</style>
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'default',
+            width: '100%',
+            allowClear: true,
+            placeholder: function(){
+                $(this).data('placeholder');
+            }
+        });
+    });
+</script>
 @endsection

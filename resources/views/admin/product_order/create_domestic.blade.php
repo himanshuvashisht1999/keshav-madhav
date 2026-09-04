@@ -17,15 +17,14 @@
                     <div class="col-md-11">
                         <div class="card shadow-sm border-0">
                             <div class="card-body">
-                                <form action="{{ route('admin.sales_order.store_domestic') }}" method="POST">
+                                <form action="{{ route('admin.sales_order.store_domestic') }}" method="POST" id="domesticOrderForm">
                                     @csrf
 
-                                    <div class="row">
+                                    <div class="row align-items-end">
                                         <div class="col-md-4">
                                             <div class="form-group mb-3">
                                                 <label class="font-weight-bold">Select Design (Optional)</label>
-                                                <select name="production_goods_id" id="production_goods_id"
-                                                    class="form-control select2">
+                                                <select id="production_goods_id" class="form-control select2">
                                                     <option value="">-- Use Default Domestic Design --</option>
                                                     @foreach($products as $prod)
                                                         <option value="{{ $prod->id }}">{{ $prod->design_number }}
@@ -37,15 +36,14 @@
                                         <div class="col-md-4">
                                             <div class="form-group mb-3">
                                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <label class="mb-0 font-weight-bold">Select Size Set</label>
+                                                    <label class="mb-0 font-weight-bold">Select Size Set <span class="text-danger">*</span></label>
                                                     <a href="javascript:void(0)" id="openCustomSizeBtn"
                                                         class="text-primary font-weight-bold"
                                                         style="display:none; font-size:13px; text-decoration:underline;">
                                                         Update Ratio
                                                     </a>
                                                 </div>
-                                                <select name="set_size_id" id="set_size_id" class="form-control select2"
-                                                    required>
+                                                <select id="set_size_id" class="form-control select2">
                                                     <option value="">Select Size Set</option>
                                                     @foreach($sizes as $size)
                                                         <option value="{{ $size->id }}" data-set-group="{{ $size->size_group }}"
@@ -56,17 +54,56 @@
                                                 </select>
                                                 <div id="custom_ratio_info"
                                                     class="mt-1 small text-success font-weight-bold"></div>
-                                                <input type="hidden" id="size_set_hidden" name="size_set_hidden">
-                                                <input type="hidden" id="no_of_pcs_hidden" name="no_of_pcs_hidden">
+                                                <input type="hidden" id="size_set_hidden">
+                                                <input type="hidden" id="no_of_pcs_hidden">
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group mb-4">
-                                                <label class="font-weight-bold">Quantity (Sets)</label>
-                                                <input type="number" name="product_quantity" class="form-control" min="1"
-                                                    required placeholder="Enter number of sets">
+                                        <div class="col-md-3">
+                                            <div class="form-group mb-3">
+                                                <label class="font-weight-bold">Quantity (Sets) <span class="text-danger">*</span></label>
+                                                <input type="number" id="product_quantity" class="form-control" min="1"
+                                                    placeholder="Enter number of sets">
                                             </div>
                                         </div>
+                                        <div class="col-md-1">
+                                            <div class="form-group mb-3">
+                                                <button type="button" id="btnAddItem" class="btn btn-primary btn-block font-weight-bold shadow-sm allow-multiple-submit" style="height: 38px;">
+                                                    <i class="fas fa-plus mr-1"></i> Add
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Table of Added Items -->
+                                    <div class="table-responsive mb-4" id="itemsTableWrapper">
+                                        <table class="table table-bordered table-striped align-middle mb-0" id="itemsTable">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th style="width: 5%;" class="text-center">#</th>
+                                                    <th style="width: 40%;">Design</th>
+                                                    <th style="width: 25%;">Size Set</th>
+                                                    <th style="width: 12%;" class="text-center">Qty (Sets)</th>
+                                                    <th style="width: 10%;" class="text-center">Total Pcs</th>
+                                                    <th style="width: 8%;" class="text-center">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="itemsTableBody">
+                                                <tr id="emptyRow">
+                                                    <td colspan="6" class="text-center text-muted py-3">
+                                                        <i class="fas fa-info-circle mr-1"></i> No items added yet. Select Design, Size Set, Quantity and click <strong>+ Add</strong> above.
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot id="itemsTableFoot" style="display: none;">
+                                                <tr class="font-weight-bold bg-light">
+                                                    <td colspan="3" class="text-right">Total:</td>
+                                                    <td class="text-center text-primary" id="totalSetsCount">0</td>
+                                                    <td class="text-center text-success" id="totalPcsCount">0 pcs</td>
+                                                    <td></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                        <input type="hidden" name="items_json" id="items_json" value="[]">
                                     </div>
 
                                     <hr>
@@ -158,6 +195,11 @@
                                         </div>
                                     </div>
 
+                                    <div class="form-group mb-3">
+                                        <label>Belt</label>
+                                        <input type="text" name="belt" class="form-control" placeholder="Enter belt details">
+                                    </div>
+
                                     <div class="form-group mb-4">
                                         <label>Remark</label>
                                         <textarea name="remark" class="form-control" rows="2"
@@ -183,8 +225,9 @@
         const warehouses = Object.values(@json($cutting_units));
         const printing_warehouses = Object.values(@json($printing_units ?? []));
     </script>
-
     <script>
+        let addedItems = [];
+
         $(document).ready(function () {
             $('.select2').select2({ width: '100%' });
             
@@ -207,7 +250,123 @@
             $('#openCustomSizeBtn').on('click', function () {
                 openModal();
             });
+
+            // Add Item to Table
+            $('#btnAddItem').on('click', function () {
+                let prodSelect = $('#production_goods_id');
+                let prodId = prodSelect.val();
+                let prodText = prodId ? prodSelect.find(':selected').text().trim() : 'Domestic Design (Domestic Garment)';
+
+                let sizeSelect = $('#set_size_id');
+                let originalSizeId = sizeSelect.val();
+                if (!originalSizeId) {
+                    alert('Please select a Size Set.');
+                    sizeSelect.select2('open');
+                    return;
+                }
+
+                let sizeOption = sizeSelect.find(':selected');
+                let sizeName = sizeOption.text().trim();
+                let pcsPerSet = parseInt($('#no_of_pcs_hidden').val()) || parseInt(sizeOption.data('pcs')) || 1;
+                let actualSizeId = $('#size_set_hidden').val() || originalSizeId;
+                let customRatioText = $('#custom_ratio_info').text();
+
+                let qtyInput = $('#product_quantity');
+                let qty = parseInt(qtyInput.val());
+                if (!qty || qty < 1) {
+                    alert('Please enter a valid Quantity (Sets).');
+                    qtyInput.focus();
+                    return;
+                }
+
+                let totalPcs = qty * pcsPerSet;
+
+                addedItems.push({
+                    production_goods_id: prodId,
+                    production_goods_name: prodText,
+                    set_size_id: actualSizeId,
+                    set_size_name: sizeName,
+                    custom_ratio: customRatioText,
+                    pcs_per_set: pcsPerSet,
+                    product_quantity: qty,
+                    total_pcs: totalPcs
+                });
+
+                renderItemsTable();
+            });
+
+            // Form Submit Validation
+            $('#domesticOrderForm').on('submit', function (e) {
+                if (addedItems.length === 0) {
+                    let sizeVal = $('#set_size_id').val();
+                    let qtyVal = $('#product_quantity').val();
+                    if (sizeVal && qtyVal && parseInt(qtyVal) > 0) {
+                        $('#btnAddItem').trigger('click');
+                    } else {
+                        e.preventDefault();
+                        alert('Please add at least one item using the "+ Add" button before creating the order.');
+                        return false;
+                    }
+                }
+                return true;
+            });
         });
+
+        function renderItemsTable() {
+            let tbody = $('#itemsTableBody');
+            tbody.empty();
+
+            if (addedItems.length === 0) {
+                tbody.append(`
+                    <tr id="emptyRow">
+                        <td colspan="6" class="text-center text-muted py-3">
+                            <i class="fas fa-info-circle mr-1"></i> No items added yet. Select Design, Size Set, Quantity and click <strong>+ Add</strong> above.
+                        </td>
+                    </tr>
+                `);
+                $('#itemsTableFoot').hide();
+                $('#items_json').val('[]');
+                return;
+            }
+
+            let totalSets = 0;
+            let totalPcs = 0;
+
+            addedItems.forEach((item, index) => {
+                totalSets += item.product_quantity;
+                totalPcs += item.total_pcs;
+
+                let ratioBadge = item.custom_ratio ? `<div class="small text-success font-weight-bold">${item.custom_ratio}</div>` : '';
+
+                tbody.append(`
+                    <tr>
+                        <td class="text-center font-weight-bold">${index + 1}</td>
+                        <td><strong>${item.production_goods_name}</strong></td>
+                        <td>
+                            <span>${item.set_size_name}</span>
+                            ${ratioBadge}
+                        </td>
+                        <td class="text-center font-weight-bold">${item.product_quantity}</td>
+                        <td class="text-center font-weight-bold text-success">${item.total_pcs} pcs</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-outline-danger btn-sm allow-multiple-submit" onclick="removeItem(${index})" title="Remove">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+
+            $('#totalSetsCount').text(totalSets);
+            $('#totalPcsCount').text(totalPcs + ' pcs');
+            $('#itemsTableFoot').show();
+            $('#items_json').val(JSON.stringify(addedItems));
+        }
+
+        function removeItem(index) {
+            addedItems.splice(index, 1);
+            renderItemsTable();
+        }
 
         let sizeCounts = {};
         let currentSetSizeOption = null;
@@ -260,9 +419,9 @@
                 <div class="size-editor-row">
                     <strong>Size: ${size}</strong>
                     <div class="counter-controls">
-                        <button type="button" onclick="changeCount('${size}', -1)">-</button>
+                        <button type="button" class="allow-multiple-submit" onclick="changeCount('${size}', -1)">-</button>
                         <span>${count}</span>
-                        <button type="button" onclick="changeCount('${size}', 1)">+</button>
+                        <button type="button" class="allow-multiple-submit" onclick="changeCount('${size}', 1)">+</button>
                     </div>
                 </div>
             `);
@@ -393,7 +552,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">Update Ratio</h4>
-                <button type="button" class="close" onclick="closeModal()"
+                <button type="button" class="close allow-multiple-submit" onclick="closeModal()"
                     style="border:none; background:none; font-size:24px;">&times;</button>
             </div>
             <div class="modal-body">
@@ -408,8 +567,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveCustomRatio()">Save Changes</button>
+                <button type="button" class="btn btn-secondary allow-multiple-submit" onclick="closeModal()">Cancel</button>
+                <button type="button" class="btn btn-primary allow-multiple-submit" onclick="saveCustomRatio()">Save Changes</button>
             </div>
         </div>
     </div>

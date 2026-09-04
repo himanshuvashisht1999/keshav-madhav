@@ -62,7 +62,25 @@ class AdminOrderSummaryReportController extends Controller
         )->setPaper('A4', 'portrait');
         
         return $pdf->download('order-summary.pdf');
+    }
 
+    public function getLotsJson($id)
+    {
+        $lots = $this->service->lots($id);
+        $order = \App\Models\OrderMain::find($id);
+
+        return response()->json([
+            'status' => true,
+            'order' => [
+                'id' => $order->id ?? $id,
+                'sku' => $order->sku ?? '',
+                'customer' => $order->customer->name ?? 'N/A',
+                'po_number' => $order->po_number ?? '-',
+            ],
+            'lots' => $lots,
+            'total_lots' => count($lots),
+            'total_quantity' => collect($lots)->sum('lot_quantity')
+        ]);
     }
 
 }

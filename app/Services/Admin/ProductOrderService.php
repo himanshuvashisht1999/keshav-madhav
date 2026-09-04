@@ -1381,6 +1381,27 @@ class ProductOrderService
     {
         DB::beginTransaction();
         try {
+            // Determine items to process (supports array, JSON, or legacy single item)
+            $rawItems = [];
+            if ($request->filled('items_json')) {
+                $decoded = json_decode($request->items_json, true);
+                if (is_array($decoded) && count($decoded) > 0) {
+                    $rawItems = $decoded;
+                }
+            } elseif ($request->has('items') && is_array($request->items) && count($request->items) > 0) {
+                $rawItems = $request->items;
+            } elseif ($request->filled('set_size_id') && $request->filled('product_quantity')) {
+                $rawItems[] = [
+                    'production_goods_id' => $request->production_goods_id,
+                    'set_size_id' => $request->set_size_id,
+                    'product_quantity' => $request->product_quantity,
+                ];
+            }
+
+            if (empty($rawItems)) {
+                return ['status_code' => 0, 'message' => 'Please add at least one design & size set to create orders.'];
+            }
+
             // 1. Find or Create Customer "SnapKid DM"
             $customer = MasterCustomer::where('name', 'SnapKid DM')->first();
             if (!$customer) {
@@ -1392,22 +1413,7 @@ class ProductOrderService
                 $customer->save();
             }
 
-            // 2. Find or Create Design
-            if ($request->filled('production_goods_id')) {
-                $product = ProductionGoods::find($request->production_goods_id);
-            } else {
-                $product = ProductionGoods::where('design_number', 'Domestic Design')->first();
-                if (!$product) {
-                    $product = new ProductionGoods();
-                    $product->design_number = 'Domestic Design';
-                    $product->name_of_garment = 'Domestic Garment';
-                    $product->sku = 'DM-DESIGN';
-                    $product->status = 1;
-                    $product->save();
-                }
-            }
-
-            // 2.5 Find or Create Color "No Color"
+            // 2. Find or Create Color "No Color"
             $noColor = \App\Models\MasterColor::where('name', 'No Color')->first();
             if (!$noColor) {
                 $noColor = new \App\Models\MasterColor();
@@ -1416,118 +1422,141 @@ class ProductOrderService
                 $noColor->save();
             }
 
-            // 3. Create Order
-            $save_data_main = new OrderMain;
-            $save_data_main->sku = '';
-            $save_data_main->order_type = 'domestic';
-            $save_data_main->expected_delivery_date = date('Y-m-d');
-            $save_data_main->master_customer_id = $customer->id;
-            $save_data_main->status = 1;
-            $save_data_main->save();
-
             $firstThree = strtoupper(substr($customer->name, 0, 3));
-            $save_data_main->sku = $firstThree . "/" . date('d/m/Y') . '/' . $save_data_main->id;
-            $save_data_main->save();
+            $fabricId = is_array($request->fabric_id) ? implode(',', $request->fabric_id) : $request->fabric_id;
 
-            // 4. Create Order Product Set
-            $size_data = $this->getSizeDetails($request->set_size_id);
-            $size_explode = explode(',', $size_data->size_group);
-            $order_quantity = $request->product_quantity;
+            $createdCount = 0;
 
-            $save_orderProductSet = new OrderProductSet;
-            $save_orderProductSet->order_main_id = $save_data_main->id;
-            $save_orderProductSet->sku = $save_data_main->sku . '/1';
-            $save_orderProductSet->design_number = $product->design_number;
-            $save_orderProductSet->production_goods_id = $product->id;
-            $save_orderProductSet->set_size = $request->set_size_id;
-            $save_orderProductSet->color_id = $noColor->id;
-            $save_orderProductSet->set_quantity = $order_quantity;
-            $save_orderProductSet->no_of_pcs = $size_data->no_of_pcs;
-            $save_orderProductSet->total_quantity = $order_quantity * $size_data->no_of_pcs;
-            $save_orderProductSet->remain_total_quantity = $order_quantity * $size_data->no_of_pcs;
-            $save_orderProductSet->remain_set_quantity = $order_quantity;
-            $save_orderProductSet->status = 1;
-            
-            // Save Printing Preference
-            $save_orderProductSet->is_printing = ($request->is_printing == 'yes' || $request->is_printing == 1) ? 1 : 0;
-            $save_orderProductSet->printing_unit_id = ($save_orderProductSet->is_printing == 1) ? $request->printing_unit_id : null;
-            
-            $save_orderProductSet->save();
+            foreach ($rawItems as $item) {
+                $prodGoodsId = $item['production_goods_id'] ?? null;
+                $setSizeId = $item['set_size_id'] ?? null;
+                $orderQuantity = (int) ($item['product_quantity'] ?? 0);
 
-            $sizeCounts = array_count_values($size_explode);
-            foreach ($sizeCounts as $size => $count) {
-                $totalQty = $count * $order_quantity;
-                $save_orderProductSetDetail = new OrderProductSetDetail();
-                $save_orderProductSetDetail->order_products_set_id = $save_orderProductSet->id;
-                $save_orderProductSetDetail->sku = '';
-                $save_orderProductSetDetail->size = $size;
-                $save_orderProductSetDetail->total_quantity = $totalQty;
-                $save_orderProductSetDetail->remaining_quantity = $totalQty;
-                $save_orderProductSetDetail->remaining_lot_allocated = $totalQty;
-                $save_orderProductSetDetail->status = 1;
-                $save_orderProductSetDetail->save();
-            }
-
-            // 5. Immediate Assign to Cutting Master
-            if ($request->filled('master_cutting_id')) {
-                $assignQty = $save_orderProductSet->total_quantity;
-
-                $cuttingSku = $save_orderProductSet->sku . "/C1";
-
-                // Support multiple fabrics
-                $fabricId = is_array($request->fabric_id) ? implode(',', $request->fabric_id) : $request->fabric_id;
-
-                $cuttingStage = new OrderCuttingStage();
-                $cuttingStage->sku = $cuttingSku;
-                $cuttingStage->order_main_id = $save_data_main->id;
-                $cuttingStage->set_product_id = $save_orderProductSet->id;
-                $cuttingStage->to_assign_id = $request->master_cutting_id;
-                $cuttingStage->warehouse_id = $request->warehouse_id;
-                $cuttingStage->fabric_id = $fabricId ?? null;
-                $cuttingStage->master_fitting_id = $request->master_fitting_id;
-                $cuttingStage->master_pattern_id = $request->master_pattern_id;
-                $cuttingStage->quantity = $assignQty;
-                $cuttingStage->remaining_quantity = $assignQty;
-                $cuttingStage->remarks = $request->remark ?? null;
-                $cuttingStage->processed_by = auth()->id();
-                $cuttingStage->status = 1;
-
-                // Set Timing Details
-                $cuttingStage->start_date = now();
-                $unit = StageMasterUnit::find($request->master_cutting_id);
-                $days = $unit->lot_time_in_days ?? 0;
-                if ($days > 0) {
-                    $cuttingStage->end_date = now()->addDays($days);
+                if (!$setSizeId || $orderQuantity <= 0) {
+                    continue;
                 }
 
-                $cuttingStage->save();
+                // 2.1 Find or Create Design
+                if (!empty($prodGoodsId)) {
+                    $product = ProductionGoods::find($prodGoodsId);
+                } else {
+                    $product = ProductionGoods::where('design_number', 'Domestic Design')->first();
+                    if (!$product) {
+                        $product = new ProductionGoods();
+                        $product->design_number = 'Domestic Design';
+                        $product->name_of_garment = 'Domestic Garment';
+                        $product->sku = 'DM-DESIGN';
+                        $product->status = 1;
+                        $product->save();
+                    }
+                }
 
-                // ✅ Removed: Populate Unified Timing table for Domestic Order
-                // \App\Models\OrderLotStageTiming::updateOrCreate(
-                //     ['lot_no' => $save_orderProductSet->design_number, 'master_stage_id' => 3],
-                //     [
-                //         'unit_id' => $request->master_cutting_id,
-                //         'start_date' => $cuttingStage->start_date,
-                //         'end_date' => $cuttingStage->end_date,
-                //         'days_allocated' => $days,
-                //         'status' => 1 // Progress
-                //     ]
-                // );
+                // 3. Create OrderMain
+                $save_data_main = new OrderMain;
+                $save_data_main->sku = '';
+                $save_data_main->order_type = 'domestic';
+                $save_data_main->expected_delivery_date = date('Y-m-d');
+                $save_data_main->master_customer_id = $customer->id;
+                $save_data_main->status = 1;
+                $save_data_main->save();
 
-                // Update Order Product Set status
-                $save_orderProductSet->remain_total_quantity = 0;
-                $save_orderProductSet->remain_set_quantity = 0;
-                $save_orderProductSet->status = 2; // Fully assigned
-                $save_orderProductSet->stage_master_unit_id = $request->master_cutting_id;
-                $save_orderProductSet->fabric_id = $fabricId ?? null;
-                $save_orderProductSet->master_product_fitting_id = $request->master_fitting_id;
-                $save_orderProductSet->master_design_pattern_id = $request->master_pattern_id;
-                $save_orderProductSet->remark = $request->remark ?? null;
+                $save_data_main->sku = $firstThree . "/" . date('d/m/Y') . '/' . $save_data_main->id;
+                $save_data_main->save();
+
+                // 4. Create Order Product Set
+                $size_data = $this->getSizeDetails($setSizeId);
+                $size_explode = explode(',', $size_data->size_group);
+
+                $save_orderProductSet = new OrderProductSet;
+                $save_orderProductSet->order_main_id = $save_data_main->id;
+                $save_orderProductSet->sku = $save_data_main->sku . '/1';
+                $save_orderProductSet->design_number = $product->design_number;
+                $save_orderProductSet->production_goods_id = $product->id;
+                $save_orderProductSet->set_size = $setSizeId;
+                $save_orderProductSet->color_id = $noColor->id;
+                $save_orderProductSet->set_quantity = $orderQuantity;
+                $save_orderProductSet->no_of_pcs = $size_data->no_of_pcs;
+                $save_orderProductSet->total_quantity = $orderQuantity * $size_data->no_of_pcs;
+                $save_orderProductSet->remain_total_quantity = $orderQuantity * $size_data->no_of_pcs;
+                $save_orderProductSet->remain_set_quantity = $orderQuantity;
+                $save_orderProductSet->status = 1;
+                
+                // Save Printing Preference
+                $save_orderProductSet->is_printing = ($request->is_printing == 'yes' || $request->is_printing == 1) ? 1 : 0;
+                $save_orderProductSet->printing_unit_id = ($save_orderProductSet->is_printing == 1) ? $request->printing_unit_id : null;
+                
                 $save_orderProductSet->save();
+
+                $sizeCounts = array_count_values($size_explode);
+                foreach ($sizeCounts as $size => $count) {
+                    $totalQty = $count * $orderQuantity;
+                    $save_orderProductSetDetail = new OrderProductSetDetail();
+                    $save_orderProductSetDetail->order_products_set_id = $save_orderProductSet->id;
+                    $save_orderProductSetDetail->sku = '';
+                    $save_orderProductSetDetail->size = $size;
+                    $save_orderProductSetDetail->total_quantity = $totalQty;
+                    $save_orderProductSetDetail->remaining_quantity = $totalQty;
+                    $save_orderProductSetDetail->remaining_lot_allocated = $totalQty;
+                    $save_orderProductSetDetail->status = 1;
+                    $save_orderProductSetDetail->save();
+                }
+
+                // 5. Immediate Assign to Cutting Master
+                if ($request->filled('master_cutting_id')) {
+                    $assignQty = $save_orderProductSet->total_quantity;
+                    $cuttingSku = $save_orderProductSet->sku . "/C1";
+
+                    $cuttingStage = new OrderCuttingStage();
+                    $cuttingStage->sku = $cuttingSku;
+                    $cuttingStage->order_main_id = $save_data_main->id;
+                    $cuttingStage->set_product_id = $save_orderProductSet->id;
+                    $cuttingStage->to_assign_id = $request->master_cutting_id;
+                    $cuttingStage->warehouse_id = $request->warehouse_id;
+                    $cuttingStage->fabric_id = $fabricId ?? null;
+                    $cuttingStage->master_fitting_id = $request->master_fitting_id;
+                    $cuttingStage->master_pattern_id = $request->master_pattern_id;
+                    $cuttingStage->quantity = $assignQty;
+                    $cuttingStage->remaining_quantity = $assignQty;
+                    $cuttingStage->belt = $request->belt ?? null;
+                    $cuttingStage->remarks = $request->remark ?? null;
+                    $cuttingStage->processed_by = auth()->id();
+                    $cuttingStage->status = 1;
+
+                    // Set Timing Details
+                    $cuttingStage->start_date = now();
+                    $unit = StageMasterUnit::find($request->master_cutting_id);
+                    $days = $unit->lot_time_in_days ?? 0;
+                    if ($days > 0) {
+                        $cuttingStage->end_date = now()->addDays($days);
+                    }
+
+                    $cuttingStage->save();
+
+                    // Update Order Product Set status
+                    $save_orderProductSet->remain_total_quantity = 0;
+                    $save_orderProductSet->remain_set_quantity = 0;
+                    $save_orderProductSet->status = 2; // Fully assigned
+                    $save_orderProductSet->stage_master_unit_id = $request->master_cutting_id;
+                    $save_orderProductSet->fabric_id = $fabricId ?? null;
+                    $save_orderProductSet->master_product_fitting_id = $request->master_fitting_id;
+                    $save_orderProductSet->master_design_pattern_id = $request->master_pattern_id;
+                    $save_orderProductSet->remark = $request->remark ?? null;
+                    $save_orderProductSet->save();
+                }
+
+                $createdCount++;
+            }
+
+            if ($createdCount === 0) {
+                DB::rollBack();
+                return ['status_code' => 0, 'message' => 'No valid orders were created. Please verify size sets and quantities.'];
             }
 
             DB::commit();
-            return ['status_code' => 1, 'message' => 'The domestic order and assignment have been successfully created.'];
+            $msg = $createdCount > 1 
+                ? "{$createdCount} domestic orders and assignments have been successfully created." 
+                : "The domestic order and assignment have been successfully created.";
+            return ['status_code' => 1, 'message' => $msg];
         } catch (\Exception $e) {
             DB::rollBack();
             return ['status_code' => 0, 'message' => $e->getMessage()];

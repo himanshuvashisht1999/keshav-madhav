@@ -72,9 +72,28 @@ class SlipReportService
             $query->where('from_stage_id', $request->from_stage_id);
         }
 
-        // Filter: Uploaded By Unit
-        if ($request->filled('stage_master_unit_id')) {
-            $query->where('stage_master_unit_id', $request->stage_master_unit_id);
+        // Filter: From Unit
+        if ($request->filled('from_unit_id') || $request->filled('stage_master_unit_id')) {
+            $from_unit_id = $request->get('from_unit_id', $request->get('stage_master_unit_id'));
+            $query->where(function($q) use ($from_unit_id) {
+                $q->where('stage_master_unit_id', $from_unit_id)
+                  ->orWhereHas('orderPrintingStageTransaction', fn($pq) => $pq->where('sub_stage_id', $from_unit_id))
+                  ->orWhereHas('orderStageTransaction', fn($sq) => $sq->where('sub_stage_id', $from_unit_id))
+                  ->orWhereHas('orderPrintingToStichingTransaction', fn($tq) => $tq->where('sub_stage_id', $from_unit_id))
+                  ->orWhereHas('orderGodamStageTransaction', fn($gq) => $gq->where('sub_stage_id', $from_unit_id))
+                  ->orWhereHas('fabricRollAssignings', fn($fq) => $fq->where('stage_master_unit_id', $from_unit_id));
+            });
+        }
+
+        // Filter: To Unit
+        if ($request->filled('to_unit_id')) {
+            $to_unit_id = $request->to_unit_id;
+            $query->where(function($q) use ($to_unit_id) {
+                $q->whereHas('orderPrintingStageTransaction', fn($pq) => $pq->where('sub_stage_id_to', $to_unit_id))
+                  ->orWhereHas('orderStageTransaction', fn($sq) => $sq->where('sub_stage_id_to', $to_unit_id))
+                  ->orWhereHas('orderPrintingToStichingTransaction', fn($tq) => $tq->where('sub_stage_id_to', $to_unit_id))
+                  ->orWhereHas('orderGodamStageTransaction', fn($gq) => $gq->where('sub_stage_id_to', $to_unit_id));
+            });
         }
 
         // Filter: Status
@@ -235,14 +254,19 @@ class SlipReportService
         });
 
         $stages = MasterProductStage::where('status', 1)->get();
-        $units = StageMasterUnit::where('status', 1)->get();
+        $units = StageMasterUnit::with('masterStage')->where('status', 1)->orderBy('name')->get();
 
         // Get distinct design numbers for dropdown filter
-        $designs = \App\Models\ProductionGoods::whereNotNull('design_number')
+        $designs = \App\Models\OrderProductSet::whereNotNull('design_number')
             ->where('design_number', '!=', '')
             ->pluck('design_number')
             ->merge(
-                \App\Models\OrderProductSet::whereNotNull('design_number')
+                \App\Models\ProductionGoods::whereNotNull('design_number')
+                    ->where('design_number', '!=', '')
+                    ->pluck('design_number')
+            )
+            ->merge(
+                \App\Models\ProductionSlipDigitizationParts::whereNotNull('design_number')
                     ->where('design_number', '!=', '')
                     ->pluck('design_number')
             )
@@ -266,6 +290,7 @@ class SlipReportService
         $destinationUnits = collect();
         $customers = collect();
         $designNumbers = collect();
+        $lotToDesignMap = [];
 
         // Direct Order Product Set on Slip
         if ($slip->orderProductSet && $slip->orderProductSet->design_number) {
@@ -285,6 +310,7 @@ class SlipReportService
                 if ($lot->orderProductSet) {
                     if ($lot->orderProductSet->design_number) {
                         $designNumbers->push($lot->orderProductSet->design_number);
+                        $lotToDesignMap[$lotNo] = $lot->orderProductSet->design_number;
                     }
                     if ($lot->orderProductSet->orderMain && $lot->orderProductSet->orderMain->customer) {
                         $customers->push($lot->orderProductSet->orderMain->customer->name);
@@ -304,6 +330,7 @@ class SlipReportService
 
                 if ($roll->orderProductSet && $roll->orderProductSet->design_number) {
                     $designNumbers->push($roll->orderProductSet->design_number);
+                    $lotToDesignMap[$lotNo] = $roll->orderProductSet->design_number;
                 }
             }
         }
@@ -322,6 +349,7 @@ class SlipReportService
                 if ($pt->orderProduct && $pt->orderProduct->orderProductSet) {
                     if ($pt->orderProduct->orderProductSet->design_number) {
                         $designNumbers->push($pt->orderProduct->orderProductSet->design_number);
+                        $lotToDesignMap[$lotNo] = $pt->orderProduct->orderProductSet->design_number;
                     }
                     if ($pt->orderProduct->orderProductSet->orderMain && $pt->orderProduct->orderProductSet->orderMain->customer) {
                         $customers->push($pt->orderProduct->orderProductSet->orderMain->customer->name);
@@ -344,6 +372,7 @@ class SlipReportService
                 if ($st->orderProduct && $st->orderProduct->orderProductSet) {
                     if ($st->orderProduct->orderProductSet->design_number) {
                         $designNumbers->push($st->orderProduct->orderProductSet->design_number);
+                        $lotToDesignMap[$lotNo] = $st->orderProduct->orderProductSet->design_number;
                     }
                     if ($st->orderProduct->orderProductSet->orderMain && $st->orderProduct->orderProductSet->orderMain->customer) {
                         $customers->push($st->orderProduct->orderProductSet->orderMain->customer->name);
@@ -366,6 +395,7 @@ class SlipReportService
                 if ($pst->orderProduct && $pst->orderProduct->orderProductSet) {
                     if ($pst->orderProduct->orderProductSet->design_number) {
                         $designNumbers->push($pst->orderProduct->orderProductSet->design_number);
+                        $lotToDesignMap[$lotNo] = $pst->orderProduct->orderProductSet->design_number;
                     }
                     if ($pst->orderProduct->orderProductSet->orderMain && $pst->orderProduct->orderProductSet->orderMain->customer) {
                         $customers->push($pst->orderProduct->orderProductSet->orderMain->customer->name);
@@ -388,6 +418,7 @@ class SlipReportService
                 if ($gt->orderProduct && $gt->orderProduct->orderProductSet) {
                     if ($gt->orderProduct->orderProductSet->design_number) {
                         $designNumbers->push($gt->orderProduct->orderProductSet->design_number);
+                        $lotToDesignMap[$lotNo] = $gt->orderProduct->orderProductSet->design_number;
                     }
                     if ($gt->orderProduct->orderProductSet->orderMain && $gt->orderProduct->orderProductSet->orderMain->customer) {
                         $customers->push($gt->orderProduct->orderProductSet->orderMain->customer->name);
@@ -411,6 +442,7 @@ class SlipReportService
 
                             if ($it->detail && $it->detail->orderProductSet && $it->detail->orderProductSet->design_number) {
                                 $designNumbers->push($it->detail->orderProductSet->design_number);
+                                $lotToDesignMap[$lotNo] = $it->detail->orderProductSet->design_number;
                             }
                         }
                     }
@@ -421,12 +453,13 @@ class SlipReportService
         // 7. Parts
         if ($slip->parts && $slip->parts->isNotEmpty()) {
             foreach ($slip->parts as $part) {
+                $lotNo = $part->lot_no;
+                $qty = $part->set_quantity ?? $part->single_quantity ?? 0;
                 if ($part->design_number) {
                     $designNumbers->push($part->design_number);
+                    if ($lotNo) $lotToDesignMap[$lotNo] = $part->design_number;
                 }
-                if ($part->lot_no) {
-                    $lotNo = $part->lot_no;
-                    $qty = $part->set_quantity ?? $part->single_quantity ?? 0;
+                if ($lotNo) {
                     if (!isset($lotsWithQty[$lotNo])) $lotsWithQty[$lotNo] = 0;
                     $lotsWithQty[$lotNo] += $qty;
                     $totalQty += $qty;
@@ -435,8 +468,10 @@ class SlipReportService
         }
 
         // Fallback: If any lots did not resolve designs/customers from direct transaction relations, resolve via OrderLot table
-        $missingLots = array_keys($lotsWithQty);
-        if (!empty($missingLots) && ($designNumbers->isEmpty() || $customers->isEmpty())) {
+        $missingLots = array_filter(array_keys($lotsWithQty), function($l) use ($lotToDesignMap) {
+            return !isset($lotToDesignMap[$l]);
+        });
+        if (!empty($missingLots)) {
             $orderLotsLookup = OrderLot::whereIn('lot_no', $missingLots)
                 ->with(['orderProductSet.orderMain.customer'])
                 ->get();
@@ -444,11 +479,31 @@ class SlipReportService
                 if ($ol->orderProductSet) {
                     if ($ol->orderProductSet->design_number) {
                         $designNumbers->push($ol->orderProductSet->design_number);
+                        $lotToDesignMap[$ol->lot_no] = $ol->orderProductSet->design_number;
                     }
                     if ($ol->orderProductSet->orderMain && $ol->orderProductSet->orderMain->customer) {
                         $customers->push($ol->orderProductSet->orderMain->customer->name);
                     }
                 }
+            }
+        }
+
+        // Build design-wise quantities
+        $designsWithQty = [];
+        foreach ($lotsWithQty as $lotNo => $lQty) {
+            $dsn = $lotToDesignMap[$lotNo] ?? ($slip->orderProductSet->design_number ?? null);
+            if ($dsn) {
+                if (!isset($designsWithQty[$dsn])) {
+                    $designsWithQty[$dsn] = 0;
+                }
+                $designsWithQty[$dsn] += $lQty;
+            }
+        }
+
+        // Include any remaining unique designs
+        foreach ($designNumbers->unique()->filter() as $dsn) {
+            if (!isset($designsWithQty[$dsn])) {
+                $designsWithQty[$dsn] = 0;
             }
         }
 
@@ -466,6 +521,7 @@ class SlipReportService
             'lots' => array_keys($lotsWithQty),
             'lots_with_qty' => $lotsWithQty,
             'designs' => $designNumbers->unique()->filter()->values()->toArray(),
+            'designs_with_qty' => $designsWithQty,
             'total_quantity' => $totalQty,
             'destinations' => $destinationStages->unique()->filter()->values()->toArray(),
             'destination_units' => $destinationUnits->unique()->filter()->values()->toArray(),
@@ -737,7 +793,14 @@ class SlipReportService
                 $lotsFormatted[] = '#' . $lot . ($qty > 0 ? " ({$qty})" : '');
             }
             $lotText = implode(', ', $lotsFormatted) ?: '-';
-            $designsText = !empty($computed['designs']) ? implode(', ', $computed['designs']) : '-';
+
+            $designsFormatted = [];
+            if (!empty($computed['designs_with_qty'])) {
+                foreach ($computed['designs_with_qty'] as $dsn => $qty) {
+                    $designsFormatted[] = $dsn . ($qty > 0 ? " ({$qty})" : '');
+                }
+            }
+            $designsText = !empty($designsFormatted) ? implode(', ', $designsFormatted) : (!empty($computed['designs']) ? implode(', ', $computed['designs']) : '-');
 
             $statusText = match($slip->status) {
                 0 => 'Pending',

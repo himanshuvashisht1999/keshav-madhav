@@ -12,7 +12,7 @@ class OrderSummaryReportService
 {
     public function indexList($request)
     {
-        $query = OrderMain::with(['customer', 'OrderProductSets'])
+        $query = OrderMain::with(['customer', 'OrderProductSets', 'orderLots'])
             ->select('order_main.*')->orderBy('id', 'desc');
 
         return DataTables::of($query)
@@ -27,6 +27,24 @@ class OrderSummaryReportService
                 if ($request->filled('design_number')) {
                     $q->whereHas('OrderProductSets', function($sq) use ($request) {
                         $sq->where('design_number', 'like', '%' . $request->design_number . '%');
+                    });
+                }
+                if ($request->filled('lot_no')) {
+                    $lotNo = trim($request->lot_no);
+                    $q->where(function ($lq) use ($lotNo) {
+                        $lq->whereHas('orderLots', function ($olq) use ($lotNo) {
+                            $olq->where('lot_no', 'like', '%' . $lotNo . '%');
+                        })
+                        ->orWhereIn('sku', function ($frq) use ($lotNo) {
+                            $frq->select('order_no')->from('production_fabric_roll_assigning')
+                                ->where('lot_no', 'like', '%' . $lotNo . '%');
+                        })
+                        ->orWhereHas('OrderProductSets', function ($osq) use ($lotNo) {
+                            $osq->whereIn('id', function ($frq2) use ($lotNo) {
+                                $frq2->select('order_products_set_id')->from('production_fabric_roll_assigning')
+                                    ->where('lot_no', 'like', '%' . $lotNo . '%');
+                            });
+                        });
                     });
                 }
                 if ($request->filled('customer_id')) {
@@ -47,6 +65,17 @@ class OrderSummaryReportService
                     return $sets->sum('total_quantity');
                 })->toArray();
                 return $designs;
+            })
+            ->addColumn('lots', function ($row) {
+                $orderLots = $row->orderLots ? $row->orderLots->pluck('lot_no') : collect();
+                $rollLotsCount = \App\Models\FabricRollAssigning::where('order_no', $row->sku)->distinct('lot_no')->count('lot_no');
+                $totalLotsCount = max($orderLots->filter()->unique()->count(), $rollLotsCount);
+
+                if ($totalLotsCount > 0) {
+                    return '<button type="button" class="btn btn-sm btn-outline-info font-weight-bold px-2 py-1 shadow-xs" onclick="showLotsModal(' . $row->id . ', \'' . htmlspecialchars($row->sku, ENT_QUOTES) . '\')" title="View ' . $totalLotsCount . ' Lots"><i class="fas fa-eye mr-1"></i> ' . $totalLotsCount . '</button>';
+                } else {
+                    return '<button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1" onclick="showLotsModal(' . $row->id . ', \'' . htmlspecialchars($row->sku, ENT_QUOTES) . '\')" title="0 Lots"><i class="fas fa-eye mr-1"></i> 0</button>';
+                }
             })
             ->addColumn('total_pcs', function ($row) {
                 return getOrderDispatchData($row->id)['total'] ?? 0;
@@ -70,7 +99,7 @@ class OrderSummaryReportService
             ->addColumn('action', function ($row) {
                 return '<a href="' . route('admin.report.order-summary.view', ['id' => $row->id]) . '" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> View Summary</a>';
             })
-            ->rawColumns(['action', 'status'])
+            ->rawColumns(['action', 'status', 'lots'])
             ->make(true);
     }
 
@@ -92,33 +121,11 @@ class OrderSummaryReportService
         if (!$order)
             return null;
 
-        // 1. Production Stages (Lots)
-        // Assuming OrderStage or FabricRollAssigning links to OrderMain. 
-        // Based on previous context, OrderMain hasMany OrderProductSets. 
-        // We might need to fetch stages from a related model or if OrderStage links directly.
-        // Let's assume there's a way to get stages or we just list the defined stages for now.
-        // CHECK: OrderMain doesn't seem to have direct Stage link in previous files, but ProductOrderService used OrderStage.
-        // Usage: `OrderStage::where('order_main_id', $id)->get()`?
-        // Let's try to fetch generic stages if specific ones aren't linked, or check if we can find lot details.
-
-        // For now, let's look for "Lots" which seem to be FabricRollAssigning or similar.
-        // Actually, let's load what we can find. Users mentioned "orders lot details".
-
-        // 2. Packing Details
-        // OrderMain -> PackingMain -> PackingCarton
-        // We need to fetch all cartons for this order.
         $cartons = PackingCarton::whereHas('main', function ($q) use ($id) {
             $q->where('order_main_id', $id);
         })->with(['items.detail'])->get();
-        // dd($cartons);
-        // 3. Dispatch Details
-        // OrderMain -> OrderDispatch (via connection or direct)
-        // OrderDispatch usually links to OrderMain.
+
         $dispatches = OrderDispatch::with('orderMain.customer')->where('main_order_id', $id)->get();
-
-        // dd($order);
-
-        // lot details 
 
         $stats = getOrderDispatchData($id);
         $status = '<span class="badge badge-primary px-3">In Progress</span>';
@@ -138,25 +145,22 @@ class OrderSummaryReportService
 
     public function lots($id)
     {
-        // $searchLot   = $request->lot_no;
         $searchOrder = $id;
         $orderMain = \App\Models\OrderMain::find($searchOrder);
         $orderSku = $orderMain->sku ?? '';
 
         $lots = \App\Models\FabricRollAssigning::query()
-
             ->selectRaw('
                 lot_no,
                 MIN(id) as id,
-                MIN(order_products_set_id) as order_products_set_id
+                MIN(order_products_set_id) as order_products_set_id,
+                MIN(stage_master_unit_id) as stage_master_unit_id
             ')
-
             ->withSum('fabricRollAssigningsDetail as lot_quantity', 'quantity')
-
             ->with([
-                'orderProductSet.orderMain.customer'
+                'orderProductSet.orderMain.customer',
+                'stageMasterUnit'
             ])
-
             ->when($searchOrder, function ($q) use ($searchOrder, $orderSku) {
                 $q->where(function ($qq) use ($searchOrder, $orderSku) {
                     $qq->whereHas('orderProductSet.orderMain', function ($qqq) use ($searchOrder) {
@@ -167,36 +171,72 @@ class OrderSummaryReportService
                     }
                 });
             })
-
             ->groupBy('lot_no')
             ->get();
 
-        $result = $lots->map(function ($lot) {
-            $orderMain = $lot->orderProductSet?->orderMain;
+        $existingLotNos = $lots->pluck('lot_no')->filter()->toArray();
 
-            // Fetch Cutting Master (Stage 3) info
+        $orderLots = \App\Models\OrderLot::where(function($q) use ($searchOrder) {
+                $q->where('order_main_id', $searchOrder)
+                  ->orWhereHas('orderProductSet', function($sq) use ($searchOrder) {
+                      $sq->where('order_main_id', $searchOrder);
+                  });
+            })
+            ->whereNotIn('lot_no', $existingLotNos)
+            ->with(['orderProductSet.orderMain.customer'])
+            ->get();
+
+        $result = collect();
+
+        foreach ($lots as $lot) {
+            $om = $lot->orderProductSet?->orderMain ?? $orderMain;
             $cuttingMaster = $lot->stageMasterUnit->name ?? 'N/A';
-
-            // Fetch Timing for Cutting Stage (ID 3)
             $timing = \App\Models\OrderLotStageTiming::where('lot_no', $lot->lot_no)
                 ->where('master_stage_id', 3)
                 ->first();
 
-            return [
-                'order_id' => $orderMain->id ?? null,
-                'order_no' => $orderMain->sku ?? '',
-                'customer_name' => $orderMain->customer->name ?? '',
+            $result->push([
+                'order_id' => $om->id ?? null,
+                'order_no' => $om->sku ?? '',
+                'customer_name' => $om->customer->name ?? '',
                 'lot_no' => $lot->lot_no,
-                'lot_quantity' => $lot->lot_quantity ?? 0,
+                'lot_quantity' => (int)($lot->lot_quantity ?? 0),
                 'design_number' => $lot->orderProductSet?->design_number ?? 'N/A',
                 'cutting_master' => $cuttingMaster,
                 'start_time' => $timing ? $timing->start_date : null,
                 'end_time' => $timing ? $timing->end_date : null,
                 'status' => $timing ? $timing->status : 0,
-                'last_current_stage' => getLastCurrentStage($lot->lot_no),
-            ];
-        });
+                'last_current_stage' => function_exists('getLastCurrentStage') ? getLastCurrentStage($lot->lot_no) : 'N/A',
+            ]);
+        }
 
-        return $result;
+        foreach ($orderLots as $ol) {
+            $om = $ol->orderProductSet?->orderMain ?? $orderMain;
+            $roll = \App\Models\FabricRollAssigning::where('lot_no', $ol->lot_no)
+                ->with('stageMasterUnit')
+                ->withSum('fabricRollAssigningsDetail as roll_qty', 'quantity')
+                ->first();
+            $qty = $roll ? $roll->roll_qty : ($ol->orderProductSet->total_quantity ?? 0);
+            $cuttingMaster = $roll?->stageMasterUnit?->name ?? 'N/A';
+            $timing = \App\Models\OrderLotStageTiming::where('lot_no', $ol->lot_no)
+                ->where('master_stage_id', 3)
+                ->first();
+
+            $result->push([
+                'order_id' => $om->id ?? null,
+                'order_no' => $om->sku ?? '',
+                'customer_name' => $om->customer->name ?? '',
+                'lot_no' => $ol->lot_no,
+                'lot_quantity' => (int)($qty ?? 0),
+                'design_number' => $ol->orderProductSet?->design_number ?? 'N/A',
+                'cutting_master' => $cuttingMaster,
+                'start_time' => $timing ? $timing->start_date : null,
+                'end_time' => $timing ? $timing->end_date : null,
+                'status' => $timing ? $timing->status : 0,
+                'last_current_stage' => function_exists('getLastCurrentStage') ? getLastCurrentStage($ol->lot_no) : 'N/A',
+            ]);
+        }
+
+        return $result->toArray();
     }
 }
