@@ -1233,6 +1233,17 @@ class AgentOrderController extends Controller
             )
             ->groupBy('product_id', 'color_id', 'size_set_id');
 
+        // Subquery for current order items to sum box_qty across split rows
+        $currentOrderItems = DB::table('agent_order_items')
+            ->where('agent_order_id', $order->id)
+            ->select(
+                'product_id',
+                'color_id',
+                'size_set_id',
+                DB::raw('SUM(box_qty) as current_order_qty')
+            )
+            ->groupBy('product_id', 'color_id', 'size_set_id');
+
         $query = DomesticInventory::where('domestic_inventories.status', 1)
             ->where(function ($q) {
                 $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
@@ -1312,16 +1323,15 @@ class AgentOrderController extends Controller
         if ($request->filled('fabric_type_id')) {
             $query->where('production_goods.fabric_type_id', $request->fabric_type_id);
         }
-        $boxes = $query->leftJoinSub($allocated, 'alloc', function ($join) {
+        $query = $query->leftJoinSub($allocated, 'alloc', function ($join) {
             $join->on('domestic_inventories.product_id', '=', 'alloc.product_id')
                 ->on('domestic_inventories.color_id', '=', 'alloc.color_id')
                 ->on('domestic_inventories.size_set_id', '=', 'alloc.size_set_id');
         })
-            ->leftJoin('agent_order_items as current_items', function ($join) use ($order) {
+            ->leftJoinSub($currentOrderItems, 'current_items', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'current_items.product_id')
                     ->on('domestic_inventories.color_id', '=', 'current_items.color_id')
-                    ->on('domestic_inventories.size_set_id', '=', 'current_items.size_set_id')
-                    ->where('current_items.agent_order_id', '=', $order->id);
+                    ->on('domestic_inventories.size_set_id', '=', 'current_items.size_set_id');
             })
             ->select(
                 'domestic_inventories.product_id',
@@ -1338,7 +1348,7 @@ class AgentOrderController extends Controller
                 DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
                 DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample'),
-                DB::raw('MAX(current_items.box_qty) as current_order_qty')
+                DB::raw('MAX(COALESCE(current_items.current_order_qty, 0)) as current_order_qty')
             )
             ->groupBy(
                 'domestic_inventories.product_id',
@@ -1349,15 +1359,16 @@ class AgentOrderController extends Controller
                 'master_size_measurements.name',
 
                 DB::raw($discount_col)
-            )
-            ->havingRaw('(SUM(domestic_inventories.total_boxes) > MAX(COALESCE(alloc.total_allocated, 0)) OR MAX(current_items.box_qty) > 0) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)')
-            ->orderByRaw('current_order_qty DESC')
-            ->orderBy('production_goods.design_number');
+            );
 
         // Clone the builder before applying pagination, so we can fetch all selected items
         $queryForSelected = $query->clone();
 
-        $boxes = $query->paginate(20)
+        $boxes = $query
+            ->havingRaw('(SUM(domestic_inventories.total_boxes) > MAX(COALESCE(alloc.total_allocated, 0)) OR MAX(COALESCE(current_items.current_order_qty, 0)) > 0) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)')
+            ->orderByRaw('current_order_qty DESC')
+            ->orderBy('production_goods.design_number')
+            ->paginate(20)
             ->appends($request->except('page'));
 
         // Fetch images for the boxes
@@ -1386,7 +1397,7 @@ class AgentOrderController extends Controller
 
         // Selected quantities for existing order with updated prices
         $existing_items_with_prices = $queryForSelected
-            ->havingRaw('MAX(current_items.box_qty) > 0')
+            ->havingRaw('MAX(COALESCE(current_items.current_order_qty, 0)) > 0')
             ->get();
 
         $selected_quantities = $existing_items_with_prices->keyBy(function ($item) {

@@ -883,18 +883,27 @@ class OrderController extends Controller
         }
 
         // Selected quantities for existing order with updated prices
+        $currentOrderItems = DB::table('agent_order_items')
+            ->where('agent_order_id', $order->id)
+            ->select(
+                'product_id',
+                'color_id',
+                'size_set_id',
+                DB::raw('SUM(box_qty) as current_order_qty')
+            )
+            ->groupBy('product_id', 'color_id', 'size_set_id');
+
         $existing_items_with_prices = $unfilteredQuery->clone()
-            ->join('agent_order_items as current_items', function ($join) use ($order) {
+            ->joinSub($currentOrderItems, 'current_items', function ($join) {
                 $join->on('domestic_inventories.product_id', '=', 'current_items.product_id')
                     ->on('domestic_inventories.color_id', '=', 'current_items.color_id')
-                    ->on('domestic_inventories.size_set_id', '=', 'current_items.size_set_id')
-                    ->where('current_items.agent_order_id', '=', $order->id);
+                    ->on('domestic_inventories.size_set_id', '=', 'current_items.size_set_id');
             })
             ->select(
                 'domestic_inventories.product_id',
                 'domestic_inventories.color_id',
                 'domestic_inventories.size_set_id',
-                DB::raw('MAX(current_items.box_qty) as current_order_qty'),
+                DB::raw('MAX(COALESCE(current_items.current_order_qty, 0)) as current_order_qty'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price')
             )
@@ -904,6 +913,7 @@ class OrderController extends Controller
                 'domestic_inventories.size_set_id',
                 DB::raw($discount_col)
             )
+            ->havingRaw('MAX(COALESCE(current_items.current_order_qty, 0)) > 0')
             ->get();
 
         $selected_quantities = $existing_items_with_prices->keyBy(function ($item) {
