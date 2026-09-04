@@ -28,7 +28,6 @@
                                 <label class="small font-weight-bold text-muted mb-1">Bill No</label>
                                 <input type="text" name="bill_number" class="form-control form-control-sm" placeholder="Search Bill..." value="{{ request('bill_number') }}">
                             </div>
-                            @if(empty($is_packing))
                             <div class="col-md mb-2">
                                 <label class="small font-weight-bold text-muted mb-1">From Stage</label>
                                 <select name="from_stage_id" class="form-control select2 form-control-sm">
@@ -40,9 +39,6 @@
                                     @endforeach
                                 </select>
                             </div>
-                            @else
-                                <input type="hidden" name="from_stage_id" value="11">
-                            @endif
                             <div class="col-md mb-2">
                                 <label class="small font-weight-bold text-muted mb-1">To Stage</label>
                                 <select name="to_stage_id" class="form-control select2 form-control-sm">

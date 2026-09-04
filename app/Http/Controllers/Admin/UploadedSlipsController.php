@@ -30,8 +30,15 @@ class UploadedSlipsController extends Controller
     public function index(Request $request)
     {
         $is_packing = $request->route() && $request->route()->named('admin.uploaded-slips.packing');
-        if ($is_packing) {
-            $request->merge(['from_stage_id' => 11]);
+        
+        $packingStageIds = MasterProductStage::whereIn('name', ['Button Revit', 'Pressing', 'Checking', 'Packing'])->pluck('id')->toArray();
+        if (empty($packingStageIds)) {
+            $packingStageIds = [8, 9, 10, 11];
+        }
+
+        $excludedGeneralStageIds = MasterProductStage::whereIn('name', ['Button Revit', 'Pressing', 'Checking', 'Packing', 'Dispatch', 'Godam'])->pluck('id')->toArray();
+        if (empty($excludedGeneralStageIds)) {
+            $excludedGeneralStageIds = [8, 9, 10, 11, 12, 13];
         }
 
         $query = ProductionSlipDigitization::with([
@@ -51,8 +58,18 @@ class UploadedSlipsController extends Controller
             ->orderBy('id', 'desc')
             ->where('status', '!=', 3);
 
-        if ($request->filled('from_stage_id')) {
-            $query->where('from_stage_id', $request->from_stage_id);
+        if ($is_packing) {
+            if ($request->filled('from_stage_id')) {
+                $query->where('from_stage_id', $request->from_stage_id);
+            } else {
+                $query->whereIn('from_stage_id', $packingStageIds);
+            }
+        } else {
+            if ($request->filled('from_stage_id')) {
+                $query->where('from_stage_id', $request->from_stage_id);
+            } else {
+                $query->whereNotIn('from_stage_id', $excludedGeneralStageIds);
+            }
         }
 
         if ($request->has('status') && $request->status !== '') {
@@ -110,8 +127,14 @@ class UploadedSlipsController extends Controller
         }
 
         $slips = $query->paginate(20);
-        $stages = MasterProductStage::where('status', 1)->get();
-        $units = StageMasterUnit::where('status', 1)->get();
+
+        if ($is_packing) {
+            $stages = MasterProductStage::where('status', 1)->whereIn('id', $packingStageIds)->get();
+            $units = StageMasterUnit::where('status', 1)->whereIn('master_stage_id', $packingStageIds)->get();
+        } else {
+            $stages = MasterProductStage::where('status', 1)->whereNotIn('id', $excludedGeneralStageIds)->get();
+            $units = StageMasterUnit::where('status', 1)->whereNotIn('master_stage_id', $excludedGeneralStageIds)->get();
+        }
 
         return view('admin.uploaded_slips.index', compact('slips', 'stages', 'units', 'is_packing'));
     }
