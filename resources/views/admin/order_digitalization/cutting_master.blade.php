@@ -273,10 +273,49 @@
                                             </div>
                                             <small class="text-danger" id="err_lot_no"></small>
 
-                                            <div class="card p-2 mt-3 border">
-                                                <label>Bill Number (Optional)</label>
-                                                <input type="text" name="bill_number" id="bill_number" class="form-control" placeholder="Enter Bill Number">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="card p-2 mt-3 border">
+                                                        <label>Bill Number (Optional)</label>
+                                                        <input type="text" name="bill_number" id="bill_number" class="form-control" placeholder="Enter Bill Number" value="{{ old('bill_number', $cutting_slip->bill_number ?? '') }}">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="card p-2 mt-3 border">
+                                                        <label class="font-weight-bold text-dark">Total Pieces (Optional)</label>
+                                                        <input type="number" min="1" name="total_pieces" id="slip_total_pieces_rolls" class="form-control font-weight-bold text-primary" placeholder="Enter Slip Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}">
+                                                    </div>
+                                                </div>
                                             </div>
+                                            @php
+                                                $cuttingDigitizedPieces = $cutting_slip->total_digitized_pieces ?? 0;
+                                                $cuttingTargetPieces = $cutting_slip->total_pieces ?? null;
+                                            @endphp
+                                            @if(!empty($cuttingDigitizedPieces) || !empty($cuttingTargetPieces))
+                                                <div class="mt-2 mb-2">
+                                                    <div class="p-2 px-3 rounded border d-flex justify-content-between align-items-center flex-wrap shadow-xs" style="background-color: #f8fafc; border-color: #cbd5e1 !important;">
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fas fa-layer-group text-primary mr-2" style="font-size: 15px;"></i>
+                                                            <span class="text-dark font-weight-bold" style="font-size: 13px;">Digitized so far:</span>
+                                                            <span class="badge badge-primary px-2 py-1 ml-2 font-weight-bold" style="font-size: 13px;">{{ $cuttingDigitizedPieces }} pcs</span>
+                                                        </div>
+                                                        @if(!empty($cuttingTargetPieces))
+                                                            <div class="d-flex align-items-center mt-1 mt-sm-0">
+                                                                <span class="text-dark font-weight-bold mr-1" style="font-size: 13px;">Target:</span>
+                                                                <span class="badge badge-secondary px-2 py-1 mr-2 font-weight-bold" style="font-size: 13px;">{{ $cuttingTargetPieces }} pcs</span>
+                                                                @php $rem = (int)$cuttingTargetPieces - (int)$cuttingDigitizedPieces; @endphp
+                                                                @if($rem > 0)
+                                                                    <span class="badge badge-warning text-dark px-2 py-1 font-weight-bold" style="font-size: 12px;"><i class="fas fa-hourglass-half mr-1"></i> {{ $rem }} pcs remaining</span>
+                                                                @elseif($rem == 0)
+                                                                    <span class="badge badge-success px-2 py-1 font-weight-bold" style="font-size: 12px;"><i class="fas fa-check mr-1"></i> Exact Match</span>
+                                                                @else
+                                                                    <span class="badge badge-danger px-2 py-1 font-weight-bold" style="font-size: 12px;"><i class="fas fa-exclamation-triangle mr-1"></i> {{ abs($rem) }} pcs excess</span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endif
 
                                             {{-- CUTTING MASTER --}}
                                             <input type="hidden" name="to_master_unit" value="">
@@ -429,9 +468,19 @@
                                                 </select>
                                             </div>
 
-                                            <div class="form-group border p-2 mt-2">
-                                                <label class="font-weight-bold">Bill Number (Optional)</label>
-                                                <input type="text" name="bill_number" class="form-control" placeholder="Enter Bill Number">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group border p-2 mt-2">
+                                                        <label class="font-weight-bold">Bill Number (Optional)</label>
+                                                        <input type="text" name="bill_number" class="form-control" placeholder="Enter Bill Number" value="{{ old('bill_number', $cutting_slip->bill_number ?? '') }}">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group border p-2 mt-2">
+                                                        <label class="font-weight-bold text-dark">Total Pieces (Optional)</label>
+                                                        <input type="number" min="1" name="total_pieces" class="form-control font-weight-bold text-primary" placeholder="Enter Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}">
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             {{-- Lot Details Display --}}
@@ -512,9 +561,19 @@
                                                 </select>
                                             </div>
 
-                                            <div class="form-group border p-2 mt-2">
-                                                <label class="font-weight-bold">Bill Number (Optional)</label>
-                                                <input type="text" name="bill_number" class="form-control" placeholder="Enter Bill Number">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group border p-2 mt-2">
+                                                        <label class="font-weight-bold">Bill Number (Optional)</label>
+                                                        <input type="text" name="bill_number" class="form-control" placeholder="Enter Bill Number" value="{{ old('bill_number', $cutting_slip->bill_number ?? '') }}">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group border p-2 mt-2">
+                                                        <label class="font-weight-bold text-dark">Total Pieces (Optional)</label>
+                                                        <input type="number" min="1" name="total_pieces" class="form-control font-weight-bold text-primary" placeholder="Enter Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}">
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             {{-- Lot Details Display --}}

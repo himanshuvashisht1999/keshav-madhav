@@ -398,6 +398,12 @@ class UploadedSlipsController extends Controller
     public function finalize($id)
     {
         $slip = ProductionSlipDigitization::findOrFail($id);
+
+        $totalDigitized = $slip->total_digitized_pieces;
+        if ($slip->total_pieces !== null && $slip->total_pieces > 0 && $totalDigitized != $slip->total_pieces) {
+            return redirect()->back()->with('error', "Cannot finalize slip: Total digitized pieces ($totalDigitized) does not match Total Pieces ({$slip->total_pieces}).");
+        }
+
         $slip->status = 1;
         $slip->save();
 

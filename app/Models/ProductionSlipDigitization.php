@@ -21,6 +21,7 @@ class ProductionSlipDigitization extends Model
         'stage_master_unit_id',
         'lot_no',
         'bill_number',
+        'total_pieces',
         'save_type',
         'slip_file',
         'order_product_set_id',
@@ -97,5 +98,24 @@ class ProductionSlipDigitization extends Model
     public function parts()
     {
         return $this->hasMany(\App\Models\ProductionSlipDigitizationParts::class, 'production_slip_digitization_id', 'id');
+    }
+
+    public function getTotalDigitizedPiecesAttribute()
+    {
+        $total = 0;
+        $total += $this->orderStageTransaction()->sum('quantity');
+        $total += $this->orderPrintingStageTransaction()->sum('quantity');
+        $total += $this->orderPrintingToStichingTransaction()->sum('quantity');
+        $total += $this->orderGodamStageTransaction()->sum('quantity');
+
+        if ($this->fabricRollAssignings()->exists()) {
+            foreach ($this->fabricRollAssignings as $roll) {
+                if ($roll->fabricRollAssigningsDetail) {
+                    $total += $roll->fabricRollAssigningsDetail->sum('quantity');
+                }
+            }
+        }
+
+        return $total;
     }
 }

@@ -164,6 +164,17 @@
                                                 ({{ $totalSlipQty }})
                                             @endif
                                         </span>
+                                        @if(!empty($slip->total_pieces))
+                                            <br>
+                                            <small class="font-weight-bold {{ isset($totalSlipQty) && $totalSlipQty == $slip->total_pieces ? 'text-success' : 'text-muted' }}" style="font-size: 11px;">
+                                                Target: {{ $slip->total_pieces }} pcs
+                                                @if(isset($totalSlipQty) && $totalSlipQty == $slip->total_pieces)
+                                                    <i class="fas fa-check-circle text-success" title="Total pieces matched"></i>
+                                                @else
+                                                    <i class="fas fa-hourglass-half text-warning" title="Pieces not yet fully digitized"></i>
+                                                @endif
+                                            </small>
+                                        @endif
                                     </td>
                                     <td>
                                         @if($slip->toStage)

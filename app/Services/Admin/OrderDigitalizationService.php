@@ -340,14 +340,21 @@ class OrderDigitalizationService
 
             $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
 
+            $totalPieces = $request->filled('total_pieces') ? (int)$request->total_pieces : ($slip->total_pieces ?? null);
+
             $slipUpdate = [
                 'save_type' => 1,
                 'lot_no' => $lotNos[0] ?? null,
-                'bill_number' => $request->bill_number
+                'bill_number' => $request->bill_number,
+                'total_pieces' => $totalPieces
             ];
 
             // Only set status to 1 if user explicitly marks it as final
             if ($request->is_final == 1) {
+                $currentDigitizedTotal = $slip->fresh()->total_digitized_pieces;
+                if ($totalPieces !== null && $totalPieces > 0 && $currentDigitizedTotal != $totalPieces) {
+                    throw new \Exception("Cannot finalize slip: Total digitized pieces ($currentDigitizedTotal) does not match entered Total Pieces ($totalPieces). Please use 'Save & Add More' until all lots/pieces are digitized, or adjust Total Pieces.");
+                }
                 $slipUpdate['status'] = 1;
             } else {
                 // If it's already 1, keep it 1. If not, keep it 0.
@@ -831,7 +838,9 @@ class OrderDigitalizationService
                 'last_production_datetime' => $last_production_datetime,
                 'last_to_stage_id' => $last_to_stage_id,
                 'last_movement_type' => $last_movement_type,
-                'bill_number' => $results->bill_number ?? ''
+                'bill_number' => $results->bill_number ?? '',
+                'total_pieces' => $results->total_pieces ?? null,
+                'total_digitized_pieces' => $results->total_digitized_pieces ?? 0
             ];
         }
 
@@ -1758,10 +1767,31 @@ class OrderDigitalizationService
 
             $this->createTransactionWithDetails($request->lot_no, $from_stage_id, 4, $slip->id, $fab_roll_assigning->order_products_set_id, $sub_stage_id_from, $request->to_stage_unit_id, $fab_roll_assigning->id, $request->production_datetime);
 
+            $totalPieces = $request->filled('total_pieces') ? (int)$request->total_pieces : ($slip->total_pieces ?? null);
+
+            $slipUpdate = [
+                'lot_no' => $request->lot_no,
+                'save_type' => 3,
+                'to_stage_id' => $request->to_stage_id ?? 4,
+                'bill_number' => $request->bill_number,
+                'total_pieces' => $totalPieces
+            ];
+
             if ($request->is_final == 1) {
+                $currentDigitizedTotal = $slip->fresh()->total_digitized_pieces;
+                if ($totalPieces !== null && $totalPieces > 0 && $currentDigitizedTotal != $totalPieces) {
+                    throw new \Exception("Cannot finalize slip: Total digitized pieces ($currentDigitizedTotal) does not match entered Total Pieces ($totalPieces). Please use 'Save & Next' until all pieces/lots are digitized or adjust Total Pieces.");
+                }
+                $slipUpdate['status'] = 1;
                 // Close ANY incoming assignments for this lot and this unit to hide from Unit assignments list
                 $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime);
+            } else {
+                if ($slip->status != 1) {
+                    $slipUpdate['status'] = 0;
+                }
             }
+
+            $slip->update($slipUpdate);
 
             // Send WhatsApp notification
             if ($request->has('send_whatsapp')) {
@@ -1792,15 +1822,22 @@ class OrderDigitalizationService
                 throw new \Exception('Production slip not found');
             }
 
+            $totalPieces = $request->filled('total_pieces') ? (int)$request->total_pieces : ($slip->total_pieces ?? null);
+
             // Update slip status based on is_final flag
             $slipUpdate = [
                 'lot_no' => $request->lot_no,
                 'save_type' => 2,
                 'to_stage_id' => $request->to_stage_id ?? 1,
-                'bill_number' => $request->bill_number
+                'bill_number' => $request->bill_number,
+                'total_pieces' => $totalPieces
             ];
 
             if ($request->is_final == 1) {
+                $currentDigitizedTotal = $slip->fresh()->total_digitized_pieces;
+                if ($totalPieces !== null && $totalPieces > 0 && $currentDigitizedTotal != $totalPieces) {
+                    throw new \Exception("Cannot finalize slip: Total digitized pieces ($currentDigitizedTotal) does not match entered Total Pieces ($totalPieces). Please use 'Save & Next' until all pieces/lots are digitized or adjust Total Pieces.");
+                }
                 $slipUpdate['status'] = 1;
             } else {
                 if ($slip->status != 1) {
@@ -2637,14 +2674,22 @@ class OrderDigitalizationService
                 }
             }
 
+            $totalPieces = $request->filled('total_pieces') ? (int)$request->total_pieces : ($slip->total_pieces ?? null);
+
             $slipUpdate = [
                 'lot_no' => $lot_no,
                 'type' => $movement_type,
                 'to_stage_id' => $to_stage_id,
-                'bill_number' => $request->bill_number
+                'bill_number' => $request->bill_number,
+                'total_pieces' => $totalPieces
             ];
 
             if ($request->is_final == 1) {
+                // Check if total pieces is specified and matches total digitized pieces across all sessions
+                $currentDigitizedTotal = $slip->fresh()->total_digitized_pieces;
+                if ($totalPieces !== null && $totalPieces > 0 && $currentDigitizedTotal != $totalPieces) {
+                    throw new \Exception("Cannot finalize slip: Total digitized pieces ($currentDigitizedTotal) does not match entered Total Pieces ($totalPieces). Please use 'Save & Add More' until all pieces are digitized or adjust Total Pieces.");
+                }
                 $slipUpdate['status'] = 1;
             } else {
                 if ($slip->status != 1) {
