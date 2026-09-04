@@ -1845,6 +1845,8 @@ class AgentOrderController extends Controller
                     ->first();
             }
 
+            $itemRemarks = $group->pluck('remark')->filter()->unique()->implode(', ');
+
             return (object) [
                 'product_name' => $first->product_name,
                 'series_name' => $first->series_name ?? '',
@@ -1862,6 +1864,7 @@ class AgentOrderController extends Controller
                 'barcode' => $first->barcode,
                 'warehouse_name' => $inventoryInfo->warehouse_name ?? 'N/A',
                 'rack_name' => $inventoryInfo->rack_name ?? 'N/A',
+                'remark' => $itemRemarks ?: ($first->remark ?? null),
             ];
         })->values();
 
@@ -1938,11 +1941,14 @@ class AgentOrderController extends Controller
                 ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
                 ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
                 ->leftJoin('master_product_fittings', 'production_goods.master_product_fitting_id', '=', 'master_product_fittings.id')
+                ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
                 ->where('agent_order_id', $id)
                 ->select(
                     'agent_order_items.*',
                     'master_design_patterns.name as db_pattern_name',
-                    'master_product_fittings.name as db_fitting_name'
+                    'master_product_fittings.name as db_fitting_name',
+                    'production_goods.name_of_garment',
+                    'master_series.name as series_name'
                 )
                 ->get();
 
@@ -1962,8 +1968,12 @@ class AgentOrderController extends Controller
                     ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
                     ->first();
 
+                $itemRemarks = $group->pluck('remark')->filter()->unique()->implode(', ');
+
                 return (object) [
                     'product_name' => $first->product_name,
+                    'series_name' => $first->series_name ?? '',
+                    'name_of_garment' => $first->name_of_garment ?? '',
                     'design_number' => $first->design_number,
                     'color_name' => $first->color_name,
                     'color_id' => $first->color_id,
@@ -1977,6 +1987,7 @@ class AgentOrderController extends Controller
                     'barcode' => $first->barcode,
                     'warehouse_name' => $inventoryInfo->warehouse_name ?? 'N/A',
                     'rack_name' => $inventoryInfo->rack_name ?? 'N/A',
+                    'remark' => $itemRemarks ?: ($first->remark ?? null),
                 ];
             })->values();
 

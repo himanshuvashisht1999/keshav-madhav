@@ -105,23 +105,24 @@
         <table class="items-table">
             <thead>
                 <tr>
-                    <th width="5%">S.N.</th>
+                    <th width="4%">S.N.</th>
                     @if($withWarehouse)
-                        <th width="{{ $showPrice ? '23%' : ($showUnitPriceOnly ? '36%' : '48%') }}">Product Particulars</th>
-                        <th width="10%" class="text-center">Warehouse</th>
-                        <th width="10%" class="text-center">Rack</th>
+                        <th width="{{ $showPrice ? '20%' : ($showUnitPriceOnly ? '26%' : '32%') }}">Product Particulars</th>
+                        <th width="9%" class="text-center">Warehouse</th>
+                        <th width="9%" class="text-center">Rack</th>
                     @else
-                        <th width="{{ $showPrice ? '43%' : ($showUnitPriceOnly ? '56%' : '68%') }}">Product Particulars</th>
+                        <th width="{{ $showPrice ? '30%' : ($showUnitPriceOnly ? '38%' : '46%') }}">Product Particulars</th>
                     @endif
-                    <th width="10%" class="text-center">Set/Size</th>
-                    <th width="8%" class="text-center">Boxes</th>
-                    <th width="9%" class="text-center">Pcs Qty</th>
+                    <th width="8%" class="text-center">Set/Size</th>
+                    <th width="6%" class="text-center">Boxes</th>
+                    <th width="7%" class="text-center">Pcs Qty</th>
                     @if($showAnyPrice)
-                    <th width="12%" class="text-right">Unit Price</th>
+                    <th width="10%" class="text-right">Unit Price</th>
                     @endif
                     @if($showPrice)
-                    <th width="13%" class="text-right">Total</th>
+                    <th width="12%" class="text-right">Total</th>
                     @endif
+                    <th width="{{ $withWarehouse ? ($showPrice ? '15%' : ($showUnitPriceOnly ? '18%' : '25%')) : ($showPrice ? '19%' : ($showUnitPriceOnly ? '23%' : '27%')) }}" class="text-center">Remark</th>
                 </tr>
             </thead>
             <tbody>
@@ -146,6 +147,13 @@
                         @if($showPrice)
                         <td class="text-right">Rs. {{ number_format($item->total_qty * $item->selling_price, 2) }}</td>
                         @endif
+                        <td class="text-center" style="font-size: 10px;">
+                            @if(!empty($item->remark))
+                                <span style="font-weight: bold; color: #111;">{{ $item->remark }}</span>
+                            @else
+                                <span style="color: #999;">—</span>
+                            @endif
+                        </td>
                     </tr>
                     @php $tPcs += $item->total_qty; $tBoxes += $item->box_count; $tAmt += ($item->total_qty * $item->selling_price); @endphp
                 @endforeach
@@ -167,6 +175,7 @@
                         @if($showPrice)
                             <td></td>
                         @endif
+                        <td></td>
                     </tr>
                 @endfor
 
@@ -184,32 +193,33 @@
                     @if($showPrice)
                     <td class="text-right">Rs. {{ number_format($tAmt, 2) }}</td>
                     @endif
+                    <td></td>
                 </tr>
 
                 @if($showPrice)
                     @if($order->discount_amount > 0)
                     <tr class="summary-row">
                         <td colspan="{{ $withWarehouse ? 8 : 6 }}" class="text-right">Discount ({{ $order->discount_percentage }}%)</td>
-                        <td class="text-right">-Rs. {{ number_format($order->discount_amount, 2) }}</td>
+                        <td colspan="2" class="text-right">-Rs. {{ number_format($order->discount_amount, 2) }}</td>
                     </tr>
                     @endif
                     <tr class="summary-row">
                         <td colspan="{{ $withWarehouse ? 8 : 6 }}" class="text-right small">Taxable Amount</td>
-                        <td class="text-right small">Rs. {{ number_format($tAmt - $order->discount_amount, 2) }}</td>
+                        <td colspan="2" class="text-right small">Rs. {{ number_format($tAmt - $order->discount_amount, 2) }}</td>
                     </tr>
                     <tr class="summary-row">
                         <td colspan="{{ $withWarehouse ? 8 : 6 }}" class="text-right small">GST ({{ $order->gst_percentage }}%)</td>
-                        <td class="text-right small">+Rs. {{ number_format($order->gst_amount, 2) }}</td>
+                        <td colspan="2" class="text-right small">+Rs. {{ number_format($order->gst_amount, 2) }}</td>
                     </tr>
                     @if($order->other_charges > 0)
                     <tr class="summary-row">
                         <td colspan="{{ $withWarehouse ? 8 : 6 }}" class="text-right small">Other Charges</td>
-                        <td class="text-right small">+Rs. {{ number_format($order->other_charges, 2) }}</td>
+                        <td colspan="2" class="text-right small">+Rs. {{ number_format($order->other_charges, 2) }}</td>
                     </tr>
                     @endif
                     <tr class="summary-row" style="background:#f0f0f0;">
                         <td colspan="{{ $withWarehouse ? 8 : 6 }}" class="text-right" style="font-size:14px;">GRAND TOTAL</td>
-                        <td class="text-right" style="font-size:14px; color:#d32f2f;">Rs. {{ number_format($order->grand_total, 2) }}</td>
+                        <td colspan="2" class="text-right" style="font-size:14px; color:#d32f2f;">Rs. {{ number_format($order->grand_total, 2) }}</td>
                     </tr>
                 @endif
             </tbody>
