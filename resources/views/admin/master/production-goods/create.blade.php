@@ -309,6 +309,48 @@
                                     </div>
                                 </div>
 
+                                <div class="col-md-12 mt-3">
+                                    <div class="card card-secondary">
+                                        <div class="card-header">
+                                            <h3 class="card-title"><i class="fas fa-images mr-2"></i>Product Images</h3>
+                                            <div class="card-tools">
+                                                <button type="button" class="btn btn-primary btn-sm add-product-image-btn">
+                                                    <i class="fas fa-plus mr-1"></i> Add More Image
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body" id="product-images-container">
+                                            <div class="product-image-row mb-3 p-3 border rounded bg-light">
+                                                <div class="row align-items-center">
+                                                    <div class="col-md-5">
+                                                        <div class="form-group mb-0">
+                                                            <label class="text-muted small font-weight-bold text-uppercase">Image Title / Description</label>
+                                                            <input type="text" name="product_image_titles[]" class="form-control" placeholder="e.g. Front Photo, Back Photo, Neck Detail">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-5">
+                                                        <div class="form-group mb-0">
+                                                            <label class="text-muted small font-weight-bold text-uppercase">Select Image</label>
+                                                            <div class="custom-file">
+                                                                <input type="file" name="product_images[]" class="custom-file-input product-image-file-input" accept="image/*">
+                                                                <label class="custom-file-label text-truncate">Choose image file</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-1 text-center">
+                                                        <div class="image-preview-box" style="display:none;">
+                                                            <img src="" class="img-thumbnail" style="height: 48px; width: 48px; object-fit: cover;">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-1 text-right">
+                                                        <button type="button" class="btn btn-danger btn-sm remove-product-image-btn" title="Remove"><i class="fa fa-trash"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="col-md-12 text-right mt-3">
                                     <button type="submit" class="btn btn-success btn-lg px-5 shadow">Submit Product
                                         Specification</button>
@@ -883,6 +925,69 @@
                     }
                 });
             }
+
+            // Product Images Dynamic Rows & Live Preview
+            $('.add-product-image-btn').on('click', function() {
+                let rowHtml = `
+                    <div class="product-image-row mb-3 p-3 border rounded bg-light">
+                        <div class="row align-items-center">
+                            <div class="col-md-5">
+                                <div class="form-group mb-0">
+                                    <label class="text-muted small font-weight-bold text-uppercase">Image Title / Description</label>
+                                    <input type="text" name="product_image_titles[]" class="form-control" placeholder="e.g. Front Photo, Back Photo, Neck Detail">
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-group mb-0">
+                                    <label class="text-muted small font-weight-bold text-uppercase">Select Image</label>
+                                    <div class="custom-file">
+                                        <input type="file" name="product_images[]" class="custom-file-input product-image-file-input" accept="image/*">
+                                        <label class="custom-file-label text-truncate">Choose image file</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-1 text-center">
+                                <div class="image-preview-box" style="display:none;">
+                                    <img src="" class="img-thumbnail" style="height: 48px; width: 48px; object-fit: cover;">
+                                </div>
+                            </div>
+                            <div class="col-md-1 text-right">
+                                <button type="button" class="btn btn-danger btn-sm remove-product-image-btn" title="Remove"><i class="fa fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $('#product-images-container').append(rowHtml);
+            });
+
+            $(document).on('click', '.remove-product-image-btn', function() {
+                if ($('.product-image-row').length > 1) {
+                    $(this).closest('.product-image-row').remove();
+                } else {
+                    let row = $(this).closest('.product-image-row');
+                    row.find('input[type="text"]').val('');
+                    row.find('input[type="file"]').val('');
+                    row.find('.custom-file-label').text('Choose image file');
+                    row.find('.image-preview-box').hide().find('img').attr('src', '');
+                }
+            });
+
+            $(document).on('change', '.product-image-file-input', function(e) {
+                let file = e.target.files[0];
+                let row = $(this).closest('.product-image-row');
+                if (file) {
+                    row.find('.custom-file-label').text(file.name);
+                    let reader = new FileReader();
+                    reader.onload = function(event) {
+                        row.find('.image-preview-box img').attr('src', event.target.result);
+                        row.find('.image-preview-box').show();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    row.find('.custom-file-label').text('Choose image file');
+                    row.find('.image-preview-box').hide().find('img').attr('src', '');
+                }
+            });
         });
     </script>
 @endsection

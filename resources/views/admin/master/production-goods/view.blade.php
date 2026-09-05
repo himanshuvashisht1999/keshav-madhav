@@ -243,7 +243,36 @@
                         </div>
                     </div>
 
+                    <hr>
 
+                    {{-- ============================= --}}
+                    {{-- PRODUCT IMAGES --}}
+                    {{-- ============================= --}}
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5 class="font-weight-bold mb-3"><i class="fas fa-images mr-2"></i>Product Images</h5>
+                            @if($data->images && $data->images->count() > 0)
+                                <div class="row">
+                                    @foreach($data->images as $img)
+                                        <div class="col-md-3 col-sm-6 mb-3">
+                                            <div class="card h-100 shadow-sm text-center p-2">
+                                                <a href="{{ $img->image }}" target="_blank">
+                                                    <img src="{{ $img->image }}" class="card-img-top img-fluid rounded" style="max-height: 180px; object-fit: contain;" alt="{{ $img->title ?? 'Product Image' }}">
+                                                </a>
+                                                <div class="card-body p-2">
+                                                    <h6 class="card-title font-weight-bold mb-0 text-truncate d-block" title="{{ $img->title ?? 'No title' }}">
+                                                        {{ $img->title ?: 'Product Image' }}
+                                                    </h6>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-muted border p-3 rounded bg-light">No additional images uploaded for this product.</p>
+                            @endif
+                        </div>
+                    </div>
 
                     <hr>
 

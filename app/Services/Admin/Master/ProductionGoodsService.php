@@ -136,47 +136,35 @@ class ProductionGoodsService
         $save_data->status = 1;
         $save_data->save();
 
-        /////////  save images
-        $imgName = NULL;
-        if ($request->file('main_image')) {
-            $image = $request->file('main_image');
-            $extImage = $image->getClientOriginalExtension();
-            $imgName = "product-" . rand() . "_" . time() . "." . $extImage;
-            $destinationPath = public_path() . '/assets/products';
-            $image->move($destinationPath, $imgName);
+        /////////  save product images to public/product
+        $productImagesPath = public_path('product');
+        if (!file_exists($productImagesPath)) {
+            mkdir($productImagesPath, 0777, true);
         }
 
-        $save_main_image = new ProductionGoodImage;
-        $save_main_image->product_id = $save_data->id;
-        $save_main_image->is_main = 1;
-        $save_main_image->image = $imgName;
-        $save_main_image->status = 1;
-        $save_main_image->save();
-
-        if ($request->hasFile('other_images')) {
-            foreach ($request->file('other_images') as $key => $imageFile) {
-                if (!$imageFile) {
+        if ($request->hasFile('product_images')) {
+            $titles = $request->input('product_image_titles', []);
+            $first = true;
+            foreach ($request->file('product_images') as $key => $imageFile) {
+                if (!$imageFile || !$imageFile->isValid()) {
                     continue;
                 }
-                // Generate file name
                 $extImage = $imageFile->getClientOriginalExtension();
-                $imgName = "product-" . rand() . "_" . time() . "_$key." . $extImage;
-                // Move to folder
-                $destinationPath = public_path() . '/assets/products';
-                $imageFile->move($destinationPath, $imgName);
+                $imgName = "product-" . rand(1000, 9999) . "_" . time() . "_" . $key . "." . $extImage;
+                $imageFile->move($productImagesPath, $imgName);
 
-                // Save record in DB
-                $save_other_image = new ProductionGoodImage;
-                $save_other_image->product_id = $save_data->id;
-                $save_other_image->is_main = 0; // <-- Not main image
-                $save_other_image->image = $imgName;
-                $save_other_image->status = 1;
-                $save_other_image->save();
+                $title = isset($titles[$key]) ? trim($titles[$key]) : null;
+
+                $save_img = new ProductionGoodImage;
+                $save_img->product_id = $save_data->id;
+                $save_img->title = $title;
+                $save_img->is_main = $first ? 1 : 0;
+                $save_img->image = $imgName;
+                $save_img->status = 1;
+                $save_img->save();
+                $first = false;
             }
         }
-
-
-
         ////////// end images
 
         /**
@@ -297,7 +285,7 @@ class ProductionGoodsService
 
     public function edit(Request $request)
     {
-        $data = ProductionGoods::with('bill_of_materials', 'product_stages', 'variants.items.color')->where('id', $request->id)->first();
+        $data = ProductionGoods::with('bill_of_materials', 'product_stages', 'variants.items.color', 'images')->where('id', $request->id)->first();
 
         if ($data) {
             // Check if ANY variant has stock in inventory to lock product level fields (fitting, pattern)
@@ -498,89 +486,81 @@ class ProductionGoodsService
             }
         }
 
-        if ($request->file('main_image')) {
-            $image = $request->file('main_image');
-
-            // New file name
-            $extImage = $image->getClientOriginalExtension();
-            $imgName = "product-" . rand() . "_" . time() . "." . $extImage;
-
-            // Move to /public/assets/products
-            $destinationPath = public_path() . '/assets/products';
-            $image->move($destinationPath, $imgName);
-
-            // Find existing main image row (if any)
-            $oldMain = ProductionGoodImage::where('product_id', $productId)
-                ->where('is_main', 1)
-                ->first();
-
-            if ($oldMain) {
-                // OPTIONAL: delete old file from disk
-                // We need the raw value from DB, not the accessor URL
-                $oldFilename = $oldMain->getRawOriginal('image');
-                if ($oldFilename) {
-                    $oldPath = public_path('assets/products/' . $oldFilename);
-                    if (file_exists($oldPath)) {
-                        @unlink($oldPath);
-                    }
-                }
-
-                // Update existing row
-                $oldMain->image = $imgName;
-                $oldMain->status = 1;
-                $oldMain->save();
-            } else {
-                // No main image yet → create new row
-                $save_main_image = new ProductionGoodImage;
-                $save_main_image->product_id = $productId;
-                $save_main_image->is_main = 1;
-                $save_main_image->image = $imgName;
-                $save_main_image->status = 1;
-                $save_main_image->save();
-            }
+        // Handle Product Images update / delete / add (stored in public/product)
+        $productImagesPath = public_path('product');
+        if (!file_exists($productImagesPath)) {
+            mkdir($productImagesPath, 0777, true);
         }
 
-        if ($request->hasFile('other_images')) {
-            foreach ($request->file('other_images') as $key => $imageFile) {
-                if (!$imageFile) {
-                    continue;
-                }
-
-                $extImage = $imageFile->getClientOriginalExtension();
-                $imgName = "product-" . rand() . "_" . time() . "_$key." . $extImage;
-
-                $destinationPath = public_path() . '/assets/products';
-                $imageFile->move($destinationPath, $imgName);
-
-                $save_other_image = new ProductionGoodImage;
-                $save_other_image->product_id = $productId;
-                $save_other_image->is_main = 0; // NOT main
-                $save_other_image->image = $imgName;
-                $save_other_image->status = 1;
-                $save_other_image->save();
-            }
-        }
-
+        // 1. Delete removed images
         if ($request->has('delete_image_ids') && is_array($request->delete_image_ids)) {
-            $idsToDelete = $request->delete_image_ids;
-
             $images = ProductionGoodImage::where('product_id', $productId)
-                ->whereIn('id', $idsToDelete)
+                ->whereIn('id', $request->delete_image_ids)
                 ->get();
 
             foreach ($images as $img) {
-                // Get raw filename from DB (not the accessor URL)
                 $filename = $img->getRawOriginal('image');
                 if ($filename) {
-                    $path = public_path('assets/products/' . $filename);
-                    if (file_exists($path)) {
-                        @unlink($path);
+                    $pathProduct = public_path('product/' . $filename);
+                    if (file_exists($pathProduct)) {
+                        @unlink($pathProduct);
+                    }
+                    $pathAssets = public_path('assets/products/' . $filename);
+                    if (file_exists($pathAssets)) {
+                        @unlink($pathAssets);
                     }
                 }
-
-                // Hard delete row (or set status=0 if you prefer soft delete)
                 $img->delete();
-                // or: $img->status = 0; $img->save();
+            }
+        }
+
+        // 2. Update existing image titles and optional replacement files
+        if ($request->has('existing_image_titles') && is_array($request->existing_image_titles)) {
+            foreach ($request->existing_image_titles as $imgId => $title) {
+                $existingImg = ProductionGoodImage::where('product_id', $productId)->find($imgId);
+                if ($existingImg) {
+                    $existingImg->title = $title;
+                    if ($request->hasFile("existing_images.{$imgId}")) {
+                        $newFile = $request->file("existing_images.{$imgId}");
+                        if ($newFile && $newFile->isValid()) {
+                            $oldFilename = $existingImg->getRawOriginal('image');
+                            if ($oldFilename) {
+                                @unlink(public_path('product/' . $oldFilename));
+                                @unlink(public_path('assets/products/' . $oldFilename));
+                            }
+                            $ext = $newFile->getClientOriginalExtension();
+                            $newName = "product-" . rand(1000, 9999) . "_" . time() . "_" . $imgId . "." . $ext;
+                            $newFile->move($productImagesPath, $newName);
+                            $existingImg->image = $newName;
+                        }
+                    }
+                    $existingImg->save();
+                }
+            }
+        }
+
+        // 3. Add new uploaded images
+        if ($request->hasFile('new_product_images')) {
+            $newTitles = $request->input('new_product_image_titles', []);
+            foreach ($request->file('new_product_images') as $key => $imageFile) {
+                if (!$imageFile || !$imageFile->isValid()) {
+                    continue;
+                }
+                $extImage = $imageFile->getClientOriginalExtension();
+                $imgName = "product-" . rand(1000, 9999) . "_" . time() . "_" . $key . "." . $extImage;
+                $imageFile->move($productImagesPath, $imgName);
+
+                $title = isset($newTitles[$key]) ? trim($newTitles[$key]) : null;
+
+                $hasMain = ProductionGoodImage::where('product_id', $productId)->where('is_main', 1)->exists();
+
+                $save_img = new ProductionGoodImage;
+                $save_img->product_id = $productId;
+                $save_img->title = $title;
+                $save_img->is_main = $hasMain ? 0 : 1;
+                $save_img->image = $imgName;
+                $save_img->status = 1;
+                $save_img->save();
             }
         }
 

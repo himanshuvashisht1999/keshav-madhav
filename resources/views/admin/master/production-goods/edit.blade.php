@@ -364,6 +364,97 @@
                                     </div>
                                 </div>
 
+                                <div class="col-md-12 mt-3">
+                                    <div class="card card-secondary">
+                                        <div class="card-header">
+                                            <h3 class="card-title"><i class="fas fa-images mr-2"></i>Product Images</h3>
+                                            <div class="card-tools">
+                                                <button type="button" class="btn btn-primary btn-sm add-new-product-image-btn">
+                                                    <i class="fas fa-plus mr-1"></i> Add More Image
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            {{-- Container to hold delete IDs --}}
+                                            <div id="deleted-images-holder"></div>
+
+                                            {{-- Existing Images --}}
+                                            @if($data->images && $data->images->count() > 0)
+                                                <h6 class="font-weight-bold text-muted text-uppercase mb-3" style="font-size: 0.85rem;"><i class="fas fa-layer-group mr-1"></i> Existing Product Images</h6>
+                                                <div id="existing-product-images-container" class="mb-4">
+                                                    @foreach($data->images as $img)
+                                                        <div class="existing-image-row mb-3 p-3 border rounded bg-light" id="existing-image-{{ $img->id }}">
+                                                            <div class="row align-items-center">
+                                                                <div class="col-md-1 text-center">
+                                                                    <a href="{{ $img->image }}" target="_blank" title="View Full Image">
+                                                                        <img src="{{ $img->image }}" class="img-thumbnail" style="height: 50px; width: 50px; object-fit: cover;">
+                                                                    </a>
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <div class="form-group mb-0">
+                                                                        <label class="text-muted small font-weight-bold text-uppercase">Title / Description</label>
+                                                                        <input type="text" name="existing_image_titles[{{ $img->id }}]" class="form-control" value="{{ $img->title }}" placeholder="e.g. Front Photo, Back Photo">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <div class="form-group mb-0">
+                                                                        <label class="text-muted small font-weight-bold text-uppercase">Replace Image (optional)</label>
+                                                                        <div class="custom-file">
+                                                                            <input type="file" name="existing_images[{{ $img->id }}]" class="custom-file-input existing-image-file-input" accept="image/*">
+                                                                            <label class="custom-file-label text-truncate">Choose replacement image</label>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-1 text-right">
+                                                                    <button type="button" class="btn btn-danger btn-sm remove-existing-image-btn" data-id="{{ $img->id }}" title="Delete image">
+                                                                        <i class="fa fa-trash"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+
+                                            {{-- New Images Container --}}
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="font-weight-bold text-muted text-uppercase mb-0" style="font-size: 0.85rem;"><i class="fas fa-plus-circle mr-1"></i> Add New Product Images</h6>
+                                            </div>
+                                            <div id="new-product-images-container">
+                                                @if(!$data->images || $data->images->count() == 0)
+                                                    <div class="new-product-image-row mb-3 p-3 border rounded bg-light">
+                                                        <div class="row align-items-center">
+                                                            <div class="col-md-5">
+                                                                <div class="form-group mb-0">
+                                                                    <label class="text-muted small font-weight-bold text-uppercase">Image Title / Description</label>
+                                                                    <input type="text" name="new_product_image_titles[]" class="form-control" placeholder="e.g. Front Photo, Back Photo, Neck Detail">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-5">
+                                                                <div class="form-group mb-0">
+                                                                    <label class="text-muted small font-weight-bold text-uppercase">Select Image</label>
+                                                                    <div class="custom-file">
+                                                                        <input type="file" name="new_product_images[]" class="custom-file-input new-product-image-file-input" accept="image/*">
+                                                                        <label class="custom-file-label text-truncate">Choose image file</label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-1 text-center">
+                                                                <div class="image-preview-box" style="display:none;">
+                                                                    <img src="" class="img-thumbnail" style="height: 48px; width: 48px; object-fit: cover;">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-1 text-right">
+                                                                <button type="button" class="btn btn-danger btn-sm remove-new-product-image-btn" title="Remove"><i class="fa fa-trash"></i></button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="col-md-12 text-right mt-3">
                                     <button type="submit" class="btn btn-primary btn-lg px-5 shadow">Update Product
                                         Specification</button>
@@ -913,6 +1004,84 @@
                     }
                 });
             }
+
+            // Product Images in Edit
+            $('.add-new-product-image-btn').on('click', function() {
+                let rowHtml = `
+                    <div class="new-product-image-row mb-3 p-3 border rounded bg-light">
+                        <div class="row align-items-center">
+                            <div class="col-md-5">
+                                <div class="form-group mb-0">
+                                    <label class="text-muted small font-weight-bold text-uppercase">Image Title / Description</label>
+                                    <input type="text" name="new_product_image_titles[]" class="form-control" placeholder="e.g. Front Photo, Back Photo, Neck Detail">
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-group mb-0">
+                                    <label class="text-muted small font-weight-bold text-uppercase">Select Image</label>
+                                    <div class="custom-file">
+                                        <input type="file" name="new_product_images[]" class="custom-file-input new-product-image-file-input" accept="image/*">
+                                        <label class="custom-file-label text-truncate">Choose image file</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-1 text-center">
+                                <div class="image-preview-box" style="display:none;">
+                                    <img src="" class="img-thumbnail" style="height: 48px; width: 48px; object-fit: cover;">
+                                </div>
+                            </div>
+                            <div class="col-md-1 text-right">
+                                <button type="button" class="btn btn-danger btn-sm remove-new-product-image-btn" title="Remove"><i class="fa fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $('#new-product-images-container').append(rowHtml);
+            });
+
+            $(document).on('click', '.remove-new-product-image-btn', function() {
+                $(this).closest('.new-product-image-row').remove();
+            });
+
+            $(document).on('click', '.remove-existing-image-btn', function() {
+                let imgId = $(this).data('id');
+                if (confirm('Are you sure you want to delete this product image?')) {
+                    $('#deleted-images-holder').append('<input type="hidden" name="delete_image_ids[]" value="' + imgId + '">');
+                    $('#existing-image-' + imgId).slideUp(300, function() {
+                        $(this).remove();
+                    });
+                }
+            });
+
+            $(document).on('change', '.new-product-image-file-input', function(e) {
+                let file = e.target.files[0];
+                let row = $(this).closest('.new-product-image-row');
+                if (file) {
+                    row.find('.custom-file-label').text(file.name);
+                    let reader = new FileReader();
+                    reader.onload = function(event) {
+                        row.find('.image-preview-box img').attr('src', event.target.result);
+                        row.find('.image-preview-box').show();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    row.find('.custom-file-label').text('Choose image file');
+                    row.find('.image-preview-box').hide().find('img').attr('src', '');
+                }
+            });
+
+            $(document).on('change', '.existing-image-file-input', function(e) {
+                let file = e.target.files[0];
+                let row = $(this).closest('.existing-image-row');
+                if (file) {
+                    row.find('.custom-file-label').text(file.name);
+                    let reader = new FileReader();
+                    reader.onload = function(event) {
+                        row.find('img').attr('src', event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
         });
     </script>
 @endsection

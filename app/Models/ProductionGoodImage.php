@@ -16,6 +16,7 @@ class ProductionGoodImage extends Model
         'project_id',
         'sku',
         'product_id',
+        'title',
         'is_main',
         'image',
         'status',
@@ -26,7 +27,13 @@ class ProductionGoodImage extends Model
     public function getImageAttribute($value)
     {
         if ($value) {
-            return asset('assets/products/'. $value);
+            if (file_exists(public_path('product/' . $value))) {
+                return asset('product/' . $value);
+            }
+            if (file_exists(public_path('assets/products/' . $value))) {
+                return asset('assets/products/' . $value);
+            }
+            return asset('product/' . $value);
         } else { 
             return asset('images/image-placeholder.png');
         }
