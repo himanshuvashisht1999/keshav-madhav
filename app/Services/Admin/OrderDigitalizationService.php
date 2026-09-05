@@ -341,6 +341,9 @@ class OrderDigitalizationService
             $slip = ProductionSlipDigitization::find($request->production_slip_digitization_id);
 
             $totalPieces = $request->filled('total_pieces') ? (int)$request->total_pieces : ($slip->total_pieces ?? null);
+            if (empty($totalPieces)) {
+                throw new \Exception('Total Pieces is required.');
+            }
 
             $slipUpdate = [
                 'save_type' => 1,
@@ -1768,6 +1771,9 @@ class OrderDigitalizationService
             $this->createTransactionWithDetails($request->lot_no, $from_stage_id, 4, $slip->id, $fab_roll_assigning->order_products_set_id, $sub_stage_id_from, $request->to_stage_unit_id, $fab_roll_assigning->id, $request->production_datetime);
 
             $totalPieces = $request->filled('total_pieces') ? (int)$request->total_pieces : ($slip->total_pieces ?? null);
+            if (empty($totalPieces)) {
+                throw new \Exception('Total Pieces is required.');
+            }
 
             $slipUpdate = [
                 'lot_no' => $request->lot_no,
@@ -1800,14 +1806,16 @@ class OrderDigitalizationService
 
             DB::commit();
             return [
+                'status' => 'success',
                 'status_code' => 1,
-                'message' => 'Lot successfully sent to Stitching stage.'
+                'message' => 'Stitching stage details stored successfully'
             ];
         } catch (\Exception $e) {
             DB::rollBack();
             return [
+                'status' => 'error',
                 'status_code' => 0,
-                'message' => $e->getMessage()
+                'message' => 'Failed to store stitching stage details: ' . $e->getMessage()
             ];
         }
     }
@@ -1823,6 +1831,9 @@ class OrderDigitalizationService
             }
 
             $totalPieces = $request->filled('total_pieces') ? (int)$request->total_pieces : ($slip->total_pieces ?? null);
+            if (empty($totalPieces)) {
+                throw new \Exception('Total Pieces is required.');
+            }
 
             // Update slip status based on is_final flag
             $slipUpdate = [
@@ -2675,6 +2686,9 @@ class OrderDigitalizationService
             }
 
             $totalPieces = $request->filled('total_pieces') ? (int)$request->total_pieces : ($slip->total_pieces ?? null);
+            if (empty($totalPieces)) {
+                throw new \Exception('Total Pieces is required.');
+            }
 
             $slipUpdate = [
                 'lot_no' => $lot_no,

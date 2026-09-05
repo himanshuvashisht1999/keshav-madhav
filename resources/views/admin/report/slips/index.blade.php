@@ -313,15 +313,15 @@
                                             @if(!empty($computed['designs_with_qty']))
                                                 <div class="d-flex flex-wrap gap-1 align-items-center" style="max-width: 240px;">
                                                     @foreach($computed['designs_with_qty'] as $dsn => $dqty)
-                                                        <span class="badge badge-dark border mb-1 mr-1 px-2 py-1" style="font-size: 11px; background-color: #334155;">
-                                                            {{ $dsn }} @if($dqty > 0) <span class="badge badge-light text-dark ml-1">{{ number_format($dqty) }}</span> @endif
+                                                        <span class="badge shadow-xs mb-1 mr-1 px-2 py-1 font-weight-bold" style="font-size: 11px; background-color: #6366f1; color: #ffffff;">
+                                                            {{ $dsn }} @if($dqty > 0) <span class="badge badge-light text-dark ml-1 font-weight-bold">{{ number_format($dqty) }}</span> @endif
                                                         </span>
                                                     @endforeach
                                                 </div>
                                             @elseif(!empty($computed['designs']))
                                                 <div class="d-flex flex-wrap gap-1 align-items-center" style="max-width: 200px;">
                                                     @foreach($computed['designs'] as $dsn)
-                                                        <span class="badge badge-dark border mb-1 mr-1 px-2 py-1" style="font-size: 11px; background-color: #334155;">
+                                                        <span class="badge shadow-xs mb-1 mr-1 px-2 py-1 font-weight-bold" style="font-size: 11px; background-color: #6366f1; color: #ffffff;">
                                                             {{ $dsn }}
                                                         </span>
                                                     @endforeach

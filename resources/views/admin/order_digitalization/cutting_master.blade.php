@@ -282,8 +282,8 @@
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="card p-2 mt-3 border">
-                                                        <label class="font-weight-bold text-dark">Total Pieces (Optional)</label>
-                                                        <input type="number" min="1" name="total_pieces" id="slip_total_pieces_rolls" class="form-control font-weight-bold text-primary" placeholder="Enter Slip Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}">
+                                                        <label class="font-weight-bold text-dark">Total Pieces <span class="text-danger">*</span></label>
+                                                        <input type="number" min="1" name="total_pieces" id="slip_total_pieces_rolls" class="form-control font-weight-bold text-primary" placeholder="Enter Slip Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}" required>
                                                     </div>
                                                 </div>
                                             </div>
@@ -477,8 +477,8 @@
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="form-group border p-2 mt-2">
-                                                        <label class="font-weight-bold text-dark">Total Pieces (Optional)</label>
-                                                        <input type="number" min="1" name="total_pieces" class="form-control font-weight-bold text-primary" placeholder="Enter Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}">
+                                                        <label class="font-weight-bold text-dark">Total Pieces <span class="text-danger">*</span></label>
+                                                        <input type="number" min="1" name="total_pieces" class="form-control font-weight-bold text-primary" placeholder="Enter Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}" required>
                                                     </div>
                                                 </div>
                                             </div>
@@ -570,8 +570,8 @@
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="form-group border p-2 mt-2">
-                                                        <label class="font-weight-bold text-dark">Total Pieces (Optional)</label>
-                                                        <input type="number" min="1" name="total_pieces" class="form-control font-weight-bold text-primary" placeholder="Enter Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}">
+                                                        <label class="font-weight-bold text-dark">Total Pieces <span class="text-danger">*</span></label>
+                                                        <input type="number" min="1" name="total_pieces" class="form-control font-weight-bold text-primary" placeholder="Enter Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}" required>
                                                     </div>
                                                 </div>
                                             </div>

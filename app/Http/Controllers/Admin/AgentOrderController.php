@@ -2870,6 +2870,7 @@ class AgentOrderController extends Controller
             return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
         })->map(function ($group) {
             $first = $group->first();
+            $sizeSetName = !empty($first->size_set_name) ? $first->size_set_name : (\App\Models\MasterSizeMeasurement::where('id', $first->size_set_id)->value('name') ?? '');
             return (object) [
                 'group_key' => $first->product_id . '_' . $first->color_id . '_' . $first->size_set_id,
                 'product_id' => $first->product_id,
@@ -2880,7 +2881,7 @@ class AgentOrderController extends Controller
                 'product_name' => $first->product_name,
                 'design_number' => $first->design_number,
                 'color_name' => $first->color_name,
-                'size_set_name' => $first->size_set_name,
+                'size_set_name' => $sizeSetName,
                 'mrp' => $first->mrp,
                 'selling_price' => $first->selling_price,
                 'total_qty' => $group->sum('quantity'),
@@ -3003,6 +3004,7 @@ class AgentOrderController extends Controller
 
                     // If partially scanned, split the row so the remainder stays pending
                     if ($item->scanned_box_qty < $item->box_qty) {
+                        $sizeSetName = !empty($item->size_set_name) ? $item->size_set_name : (DB::table('master_size_measurements')->where('id', $item->size_set_id)->value('name') ?? null);
                         // Create remaining pending item
                         DB::table('agent_order_items')->insert([
                             'agent_order_id' => $item->agent_order_id,
@@ -3012,6 +3014,7 @@ class AgentOrderController extends Controller
                             'color_id' => $item->color_id,
                             'color_name' => $item->color_name ?? null,
                             'size_set_id' => $item->size_set_id,
+                            'size_set_name' => $sizeSetName,
                             'box_qty' => $item->box_qty - $item->scanned_box_qty,
                             'quantity' => $item->quantity - $scannedPcs, // remaining pcs
                             'selling_price' => $item->selling_price,
@@ -3173,11 +3176,12 @@ class AgentOrderController extends Controller
             return $item->product_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
         })->map(function ($group) {
             $first = $group->first();
+            $sizeSetName = !empty($first->size_set_name) ? $first->size_set_name : (\App\Models\MasterSizeMeasurement::where('id', $first->size_set_id)->value('name') ?? '');
             return (object) [
                 'product_name' => $first->product_name,
                 'design_number' => $first->design_number,
                 'color_name' => '', // Blank out color as requested
-                'size_set_name' => $first->size_set_name,
+                'size_set_name' => $sizeSetName,
                 'mrp' => $first->mrp,
                 'selling_price' => $first->selling_price,
                 'total_qty' => $group->sum('quantity'),
@@ -3249,11 +3253,12 @@ class AgentOrderController extends Controller
         })->map(function ($group) {
             $first = $group->first();
             $colors = $group->pluck('color_name')->unique()->filter(function($c){ return !empty(trim($c)); })->implode(', ');
+            $sizeSetName = !empty($first->size_set_name) ? $first->size_set_name : (\App\Models\MasterSizeMeasurement::where('id', $first->size_set_id)->value('name') ?? '');
             return (object) [
                 'product_name' => $first->product_name,
                 'design_number' => $first->design_number,
                 'color_name' => $colors,
-                'size_set_name' => $first->size_set_name,
+                'size_set_name' => $sizeSetName,
                 'mrp' => $first->mrp,
                 'selling_price' => $first->selling_price,
                 'total_qty' => $group->sum('quantity'),
@@ -3315,11 +3320,12 @@ class AgentOrderController extends Controller
         })->map(function ($group) {
             $first = $group->first();
             $colors = $group->pluck('color_name')->unique()->filter(function($c){ return !empty(trim($c)); })->implode(', ');
+            $sizeSetName = !empty($first->size_set_name) ? $first->size_set_name : (\App\Models\MasterSizeMeasurement::where('id', $first->size_set_id)->value('name') ?? '');
             return (object) [
                 'product_name' => $first->product_name,
                 'design_number' => $first->design_number,
                 'color_name' => $colors,
-                'size_set_name' => $first->size_set_name,
+                'size_set_name' => $sizeSetName,
                 'mrp' => $first->mrp,
                 'selling_price' => $first->selling_price,
                 'total_qty' => $group->sum('quantity'),
@@ -3579,13 +3585,14 @@ class AgentOrderController extends Controller
             return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
         })->map(function ($group) {
             $first = $group->first();
+            $sizeSetName = !empty($first->size_set_name) ? $first->size_set_name : (\App\Models\MasterSizeMeasurement::where('id', $first->size_set_id)->value('name') ?? '');
             return (object) [
                 'product_id' => $first->product_id,
                 'brand_id' => $first->brand_id,
                 'product_name' => $first->product_name,
                 'design_number' => $first->design_number,
                 'color_name' => $first->color_name,
-                'size_set_name' => $first->size_set_name,
+                'size_set_name' => $sizeSetName,
                 'mrp' => $first->mrp,
                 'selling_price' => $first->selling_price,
                 'box_count' => $group->sum('box_qty'),
@@ -3671,11 +3678,12 @@ class AgentOrderController extends Controller
                 return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
             })->map(function ($group) {
                 $first = $group->first();
+                $sizeSetName = !empty($first->size_set_name) ? $first->size_set_name : (\App\Models\MasterSizeMeasurement::where('id', $first->size_set_id)->value('name') ?? '');
                 return (object) [
                     'product_name' => $first->product_name,
                     'design_number' => $first->design_number,
                     'color_name' => $first->color_name,
-                    'size_set_name' => $first->size_set_name,
+                    'size_set_name' => $sizeSetName,
                     'mrp' => $first->mrp,
                     'selling_price' => $first->selling_price,
                     'total_qty' => $group->sum('quantity'),
@@ -3778,13 +3786,14 @@ class AgentOrderController extends Controller
                 return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
             })->map(function ($group) {
                 $first = $group->first();
+                $sizeSetName = !empty($first->size_set_name) ? $first->size_set_name : (\App\Models\MasterSizeMeasurement::where('id', $first->size_set_id)->value('name') ?? '');
                 return (object) [
                     'product_id' => $first->product_id,
                     'brand_id' => $first->brand_id,
                     'product_name' => $first->product_name,
                     'design_number' => $first->design_number,
                     'color_name' => $first->color_name,
-                    'size_set_name' => $first->size_set_name,
+                    'size_set_name' => $sizeSetName,
                     'mrp' => $first->mrp,
                     'selling_price' => $first->selling_price,
                     'box_count' => $group->sum('box_qty'),

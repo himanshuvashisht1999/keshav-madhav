@@ -119,8 +119,8 @@
                                             <input type="text" name="bill_number" class="form-control" placeholder="Enter Bill Number" value="{{ old('bill_number', $slip_data['bill_number'] ?? '') }}">
                                         </div>
                                         <div class="col-md-6 mt-2 mb-2">
-                                            <label class="font-weight-bold text-dark">Total Pieces (Optional)</label>
-                                            <input type="number" min="1" name="total_pieces" id="slip_total_pieces" class="form-control font-weight-bold text-primary" placeholder="Enter Total Pieces" value="{{ old('total_pieces', $slip_data['total_pieces'] ?? '') }}">
+                                            <label class="font-weight-bold text-dark">Total Pieces <span class="text-danger">*</span></label>
+                                            <input type="number" min="1" name="total_pieces" id="slip_total_pieces" class="form-control font-weight-bold text-primary" placeholder="Enter Total Pieces" value="{{ old('total_pieces', $slip_data['total_pieces'] ?? '') }}" required>
                                         </div>
                                         @if(!empty($slip_data['total_digitized_pieces']) || !empty($slip_data['total_pieces']))
                                             <div class="col-md-12 mt-2 mb-2">
