@@ -508,6 +508,7 @@
             }
 
             let cart = new Map();
+            const seePrice = {{ Auth::guard('sales_agent')->user()->see_price ? 'true' : 'false' }};
             const initialVariations = @json($selected_quantities);
 
             // Populate cart with initial variations from the order
@@ -745,9 +746,11 @@
                                             </div>
                                         </div>
                                         <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                                            ${seePrice ? `
                                             <div class="font-weight-bold text-primary">
                                                 ₹${$(this).data('price')}
                                             </div>
+                                            ` : ''}
                                             <div class="quantity-control-app d-flex align-items-center p-1">
                                                 <button type="button" class="btn-q btn-minus">-</button>
                                                 <input type="number" class="box-qty-input" value="${qty}" max="${$(this).attr('max')}">

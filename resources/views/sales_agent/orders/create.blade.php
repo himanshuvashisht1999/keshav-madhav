@@ -513,6 +513,7 @@
 
             let cart = new Map();
             const storageKey = 'agent_order_cart_{{ $agent->id }}_{{ $shop->id }}';
+            const seePrice = {{ Auth::guard('sales_agent')->user()->see_price ? 'true' : 'false' }};
 
             // --- SCANNER LOGIC ---
             let html5QrcodeScanner = null;
@@ -786,9 +787,11 @@
                                             </div>
                                         </div>
                                         <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                                            ${seePrice ? `
                                             <div class="font-weight-bold text-primary">
                                                 ₹${$(this).data('price')}
                                             </div>
+                                            ` : ''}
                                             <div class="quantity-control-app d-flex align-items-center p-1">
                                                 <button type="button" class="btn-q btn-minus">-</button>
                                                 <input type="number" class="box-qty-input" value="${qty}" max="${$(this).attr('max')}">
@@ -1039,7 +1042,6 @@
 
                 let totalBoxes = 0;
                 let subTotal = 0;
-                const seePrice = {{ Auth::guard('sales_agent')->user()->see_price ? 'true' : 'false' }};
 
                 cart.forEach((item) => {
                     if (item.qty > 0) {
