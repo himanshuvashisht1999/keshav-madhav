@@ -102,19 +102,53 @@ class ProductionSlipDigitization extends Model
 
     public function getTotalDigitizedPiecesAttribute()
     {
-        $total = 0;
-        $total += $this->orderStageTransaction()->sum('quantity');
-        $total += $this->orderPrintingStageTransaction()->sum('quantity');
-        $total += $this->orderPrintingToStichingTransaction()->sum('quantity');
-        $total += $this->orderGodamStageTransaction()->sum('quantity');
+        // For Cutting stage slip (stage 3)
+        if ($this->from_stage_id == 3) {
+            $total = 0;
+            if ($this->fabricRollAssignings()->exists()) {
+                foreach ($this->fabricRollAssignings as $roll) {
+                    if ($roll->fabricRollAssigningsDetail) {
+                        $total += $roll->fabricRollAssigningsDetail->sum('quantity');
+                    }
+                }
+            }
+            if ($total > 0) {
+                return $total;
+            }
+        }
 
+        // For Printing stage slip (stage 1)
+        if ($this->from_stage_id == 1) {
+            $total = (int)$this->orderPrintingToStichingTransaction()->sum('quantity');
+            if ($total > 0) return $total;
+            return (int)$this->orderPrintingStageTransaction()->sum('quantity');
+        }
+
+        // For Godam stage slip (stage 13)
+        if ($this->from_stage_id == 13) {
+            return (int)$this->orderGodamStageTransaction()->sum('quantity');
+        }
+
+        // For Stitching (stage 4) and other general stages
+        if ($this->orderStageTransaction()->exists()) {
+            return (int)$this->orderStageTransaction()->sum('quantity');
+        }
+
+        // Fallback for general cases
+        $total = 0;
         if ($this->fabricRollAssignings()->exists()) {
             foreach ($this->fabricRollAssignings as $roll) {
                 if ($roll->fabricRollAssigningsDetail) {
                     $total += $roll->fabricRollAssigningsDetail->sum('quantity');
                 }
             }
+            if ($total > 0) return $total;
         }
+
+        $total += (int)$this->orderStageTransaction()->sum('quantity');
+        $total += (int)$this->orderPrintingStageTransaction()->sum('quantity');
+        $total += (int)$this->orderPrintingToStichingTransaction()->sum('quantity');
+        $total += (int)$this->orderGodamStageTransaction()->sum('quantity');
 
         return $total;
     }

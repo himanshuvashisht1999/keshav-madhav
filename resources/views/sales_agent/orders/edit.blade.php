@@ -195,7 +195,7 @@
     </div>
 
     <!-- Image Zoom Modal -->
-    <div class="modal fade" id="imageZoomModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal fade" id="imageZoomModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 1070;">
         <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 100%; margin: 0; height: 100vh;">
             <div class="modal-content border-0" style="min-height: 100vh; border-radius: 0; background: rgba(0, 0, 0, 0.9);">
                 <button type="button" class="close text-white rounded-circle p-2" data-dismiss="modal" aria-label="Close" style="position: absolute; top: 15px; right: 20px; z-index: 1100; background: rgba(255,255,255,0.2); opacity: 1;">
@@ -475,7 +475,8 @@
             const elem = document.getElementById('zoomedImage');
             
             $(document).on('click', '.zoom-image', function() {
-                var src = $(this).attr('src');
+                var src = $(this).attr('src') || $(this).data('src');
+                if (!src) return;
                 $('#zoomedImage').attr('src', src);
                 $('#imageZoomModal').modal('show');
                 
@@ -500,6 +501,9 @@
             $('#imageZoomModal').on('hidden.bs.modal', function () {
                 if(pz) {
                     pz.reset();
+                }
+                if ($('#scanSelectionModal').hasClass('show')) {
+                    $('body').addClass('modal-open');
                 }
             });
 
@@ -654,16 +658,27 @@
                     const currentQty = item ? item.qty : 0;
 
                     const html = `
-                        <div class="card border-0 shadow-sm mb-3 rounded-lg overflow-hidden" data-key="${vKey}">
-                            ${color.image ? `<div style="background-color: #f8f9fa; text-align: center; border-bottom: 1px solid #dee2e6;"><img src="${color.image}" class="zoom-image" style="max-height: 250px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer;"></div>` : `<div class="bg-light d-flex align-items-center justify-content-center" style="height: 150px; border-bottom: 1px solid #dee2e6;"><i class="fas fa-image fa-3x text-muted opacity-25"></i></div>`}
-                            <div class="card-body p-3 d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="font-weight-bold text-dark mb-0">${color.name}</h6>
-                                    ${showStock && !data.is_advance_sample ? `<small class="text-muted">${color.available_boxes} Boxes available</small>` : (data.is_advance_sample ? '<small class="text-success font-weight-bold">Advance Sample (Unlimited)</small>' : '')}
+                        <div class="card border shadow-sm mb-2 rounded-lg" data-key="${vKey}" style="border-radius: 12px; background: #fff;">
+                            <div class="card-body p-2 d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mr-2 text-muted flex-shrink-0" style="width: 36px; height: 36px;">
+                                        <i class="fas fa-palette text-secondary" style="font-size: 14px;"></i>
+                                    </div>
+                                    <div>
+                                        <div class="d-flex align-items-center">
+                                            <h6 class="font-weight-bold text-dark mb-0">${color.name}</h6>
+                                            ${color.image ? `
+                                                <button type="button" class="btn btn-light btn-sm rounded-circle p-0 ml-2 zoom-image d-inline-flex align-items-center justify-content-center border" data-src="${color.image}" title="View Image" style="width: 28px; height: 28px;">
+                                                    <i class="fas fa-eye text-primary" style="font-size: 12px;"></i>
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                        ${showStock && !data.is_advance_sample ? `<small class="text-muted d-block">${color.available_boxes} Boxes available</small>` : (data.is_advance_sample ? '<small class="text-success font-weight-bold d-block">Advance Sample (Unlimited)</small>' : '')}
+                                    </div>
                                 </div>
                                 <div class="quantity-control-app d-flex align-items-center p-1">
                                     <button class="btn-q btn-minus-scan" data-key="${vKey}">-</button>
-                                    <input type="number" class="box-qty-scan-input" 
+                                    <input type="number" class="box-qty-scan-input font-weight-bold" 
                                         data-product-id="${data.product.id}"
                                         data-color-id="${color.id}"
                                         data-size-set-id="${data.product.size_set_id}"
