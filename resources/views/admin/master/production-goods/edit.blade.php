@@ -379,10 +379,10 @@
                                             <div id="deleted-images-holder"></div>
 
                                             {{-- Existing Images --}}
-                                            @if($data->images && $data->images->count() > 0)
+                                            @if($data->product_images && $data->product_images->count() > 0)
                                                 <h6 class="font-weight-bold text-muted text-uppercase mb-3" style="font-size: 0.85rem;"><i class="fas fa-layer-group mr-1"></i> Existing Product Images</h6>
                                                 <div id="existing-product-images-container" class="mb-4">
-                                                    @foreach($data->images as $img)
+                                                    @foreach($data->product_images as $img)
                                                         <div class="existing-image-row mb-3 p-3 border rounded bg-light" id="existing-image-{{ $img->id }}">
                                                             <div class="row align-items-center">
                                                                 <div class="col-md-1 text-center">
@@ -421,7 +421,7 @@
                                                 <h6 class="font-weight-bold text-muted text-uppercase mb-0" style="font-size: 0.85rem;"><i class="fas fa-plus-circle mr-1"></i> Add New Product Images</h6>
                                             </div>
                                             <div id="new-product-images-container">
-                                                @if(!$data->images || $data->images->count() == 0)
+                                                @if(!$data->product_images || $data->product_images->count() == 0)
                                                     <div class="new-product-image-row mb-3 p-3 border rounded bg-light">
                                                         <div class="row align-items-center">
                                                             <div class="col-md-5">

@@ -87,23 +87,37 @@
                     <div class="col-md-8">
                         <div class="card shadow-sm border-0">
                             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                                <h3 class="card-title mb-0">Order Requirements</h3>
+                                <h3 class="card-title mb-0"><i class="fas fa-boxes mr-2"></i>Order Requirements</h3>
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 mr-1" id="selectAllBtn">
+                                        <i class="fas fa-check-double mr-1"></i> Select All Items
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" id="unselectAllBtn">
+                                        <i class="fas fa-times-circle mr-1"></i> Clear All
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body p-0">
                                 <div class="table-responsive">
                                     <table class="table table-hover mb-0">
                                         <thead class="bg-light text-muted small text-uppercase">
                                             <tr>
+                                                <th width="45" class="text-center align-middle">
+                                                    <input type="checkbox" id="selectAllCheckbox" style="transform: scale(1.3); cursor: pointer;" title="Select All Items">
+                                                </th>
                                                 <th>Product Details</th>
-                                                <th class="text-center" width="200">Progress</th>
-                                                <th class="text-center" width="150">Count</th>
-                                                <th class="text-right" width="100">Status</th>
+                                                <th class="text-center" width="180">Progress</th>
+                                                <th class="text-center" width="130">Count</th>
+                                                <th class="text-right" width="90">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach($groupedItems as $key => $group)
                                                 <tr id="row_{{ $key }}"
                                                     class="variation-row {{ $group['scanned'] == $group['required'] ? 'bg-light-success' : '' }}">
+                                                    <td class="text-center vertical-align-middle">
+                                                        <input type="checkbox" class="item-checkbox" data-key="{{ $key }}" data-barcode="{{ $group['barcode'] }}" style="transform: scale(1.3); cursor: pointer;" {{ $group['scanned'] == $group['required'] ? 'checked' : '' }}>
+                                                    </td>
                                                     <td>
                                                         <div class="font-weight-bold">{{ $group['product_name'] }}</div>
                                                         <small class="text-muted">
@@ -495,11 +509,10 @@
                     }
                 });
             });
-
             function updateHeaderTotalScanned() {
                 let totalScanned = 0;
                 $('.variation-row').each(function() {
-                    const countSpan = $(this).find('td:eq(2) span[id^="count_"]');
+                    const countSpan = $(this).find('td:eq(3) span[id^="count_"]');
                     if (countSpan.length) {
                         totalScanned += parseInt(countSpan.text()) || 0;
                     }
@@ -507,28 +520,49 @@
                 $('#header_scanned_val').text(totalScanned);
             }
 
+            function checkMasterCheckboxStatus() {
+                let allChecked = true;
+                let total = $('.item-checkbox').length;
+                if (total === 0) {
+                    $('#selectAllCheckbox').prop('checked', false);
+                    return;
+                }
+                $('.item-checkbox').each(function() {
+                    if (!$(this).is(':checked')) {
+                        allChecked = false;
+                    }
+                });
+                $('#selectAllCheckbox').prop('checked', allChecked);
+            }
+
+            // Run initial check on page load
+            checkMasterCheckboxStatus();
+
             function updateUI(key, response) {
                 const countSpan = $(`#count_${key}`);
                 const progressBar = $(`#progress_bar_${key}`);
                 const statusIcon = $(`#status_icon_${key}`);
                 const row = $(`#row_${key}`);
+                const checkbox = row.find('.item-checkbox');
 
                 let current = response.scanned;
                 const total = response.required;
 
                 countSpan.text(current);
 
-                const percentage = (current / total) * 100;
+                const percentage = total > 0 ? (current / total) * 100 : 0;
                 progressBar.css('width', percentage + '%');
 
-                if (current >= total) {
+                if (current >= total && total > 0) {
                     progressBar.removeClass('bg-primary pulse').addClass('bg-success');
                     statusIcon.html('<i class="fas fa-check-circle text-success fa-lg animate__animated animate__bounceIn"></i>');
                     row.addClass('bg-light-success');
+                    checkbox.prop('checked', true);
                 } else {
-                    progressBar.removeClass('bg-success').addClass('bg-primary pulse');
+                    progressBar.removeClass('bg-success').addClass('bg-primary ' + (current > 0 ? 'pulse' : ''));
                     statusIcon.html('<i class="fas fa-clock text-warning fa-lg"></i>');
                     row.removeClass('bg-light-success');
+                    checkbox.prop('checked', false);
                 }
 
                 // Update OR Append to history
@@ -541,19 +575,19 @@
                 const existingHistory = $(`#history_${boxNo}`);
 
                 const historyHTML = `
-                                                                <div class="d-flex justify-content-between align-items-center">
-                                                                    <div>
-                                                                        <div class="font-weight-bold">Scanned: ${designNumber}</div>
-                                                                        <small class="text-muted d-block">${productName}</small>
-                                                                        <small class="text-muted">${color} | Count: ${current} / ${total}</small>
-                                                                        <div class="mt-1"><small class="text-white bg-success px-2 rounded">Just Scanned</small></div>
-                                                                    </div>
-                                                                    <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
-                                                                        data-id="${boxNo}" data-barcode="${response.barcode}" title="Undo one scan">
-                                                                        <i class="fas fa-undo"></i>
-                                                                    </button>
-                                                                </div>
-                                            `;
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="font-weight-bold">Scanned: ${designNumber}</div>
+                            <small class="text-muted d-block">${productName}</small>
+                            <small class="text-muted">${color} | Count: ${current} / ${total}</small>
+                            <div class="mt-1"><small class="text-white bg-success px-2 rounded">Just Scanned</small></div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
+                            data-id="${boxNo}" data-barcode="${response.barcode}" title="Undo one scan">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                    </div>
+                `;
 
                 if (existingHistory.length) {
                     existingHistory.html(historyHTML).addClass('animate__animated animate__pulse');
@@ -571,6 +605,7 @@
                 }
 
                 updateHeaderTotalScanned();
+                checkMasterCheckboxStatus();
             }
 
             function revertUI(key, boxNo, response) {
@@ -578,19 +613,21 @@
                 const progressBar = $(`#progress_bar_${key}`);
                 const statusIcon = $(`#status_icon_${key}`);
                 const row = $(`#row_${key}`);
+                const checkbox = row.find('.item-checkbox');
 
                 let current = response.scanned;
-                const total = parseInt(countSpan.next().text().replace('/ ', ''));
+                const total = parseInt(countSpan.next().text().replace('/ ', '')) || response.required;
 
                 countSpan.text(current);
 
-                const percentage = (current / total) * 100;
+                const percentage = total > 0 ? (current / total) * 100 : 0;
                 progressBar.css('width', percentage + '%');
 
                 if (current < total) {
-                    progressBar.removeClass('bg-success').addClass('bg-primary pulse');
+                    progressBar.removeClass('bg-success').addClass('bg-primary ' + (current > 0 ? 'pulse' : ''));
                     statusIcon.html('<i class="fas fa-clock text-warning fa-lg"></i>');
                     row.removeClass('bg-light-success');
+                    checkbox.prop('checked', false);
                 }
 
                 // If scanned becomes 0, we can remove the history item
@@ -602,7 +639,6 @@
                         }
                     });
                 } else {
-                    // Update the sidebar text too if it exists
                     const existingHistory = $(`#history_${boxNo}`);
                     if (existingHistory.length) {
                         existingHistory.find('.text-muted:last').text(`${response.color_name || ''} | Count: ${response.scanned} / ${response.required}`);
@@ -619,7 +655,161 @@
                 }
 
                 updateHeaderTotalScanned();
+                checkMasterCheckboxStatus();
             }
+
+            function applyBulkVariations(response) {
+                if (response.variations) {
+                    $.each(response.variations, function(key, vData) {
+                        const countSpan = $(`#count_${key}`);
+                        const progressBar = $(`#progress_bar_${key}`);
+                        const statusIcon = $(`#status_icon_${key}`);
+                        const row = $(`#row_${key}`);
+                        const checkbox = row.find('.item-checkbox');
+
+                        let current = vData.scanned;
+                        let total = vData.required;
+
+                        countSpan.text(current);
+                        const percentage = total > 0 ? (current / total) * 100 : 0;
+                        progressBar.css('width', percentage + '%');
+
+                        if (vData.is_complete || (current >= total && total > 0)) {
+                            progressBar.removeClass('bg-primary pulse').addClass('bg-success');
+                            statusIcon.html('<i class="fas fa-check-circle text-success fa-lg animate__animated animate__bounceIn"></i>');
+                            row.addClass('bg-light-success');
+                            checkbox.prop('checked', true);
+                        } else {
+                            progressBar.removeClass('bg-success').addClass('bg-primary ' + (current > 0 ? 'pulse' : ''));
+                            statusIcon.html('<i class="fas fa-clock text-warning fa-lg"></i>');
+                            row.removeClass('bg-light-success');
+                            checkbox.prop('checked', false);
+                        }
+
+                        // Update Recent Scans history
+                        const boxNo = key;
+                        if (current > 0) {
+                            $('#no_scans_msg').hide();
+                            const existingHistory = $(`#history_${boxNo}`);
+                            const historyHTML = `
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="font-weight-bold">Selected: ${vData.design_number}</div>
+                                        <small class="text-muted d-block">${vData.product_name}</small>
+                                        <small class="text-muted">${vData.color_name} | Count: ${current} / ${total}</small>
+                                        <div class="mt-1"><small class="text-white bg-success px-2 rounded">Scanned / Selected</small></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
+                                        data-id="${boxNo}" data-barcode="${vData.barcode}" title="Undo one scan">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                </div>
+                            `;
+
+                            if (existingHistory.length) {
+                                existingHistory.html(historyHTML);
+                            } else {
+                                const historyItem = `<div class="list-group-item" id="history_${boxNo}">${historyHTML}</div>`;
+                                $('#scan_history').prepend(historyItem);
+                            }
+                        } else {
+                            $(`#history_${CSS.escape(boxNo)}`).remove();
+                        }
+                    });
+
+                    if ($('#scan_history .list-group-item').length === 0) {
+                        $('#no_scans_msg').show();
+                    }
+                }
+
+                if (response.total_scanned_boxes !== undefined) {
+                    $('#header_scanned_val').text(response.total_scanned_boxes);
+                }
+                if (response.total_required_boxes !== undefined) {
+                    $('#header_required_val').text(response.total_required_boxes);
+                }
+                if (response.scanned_total !== undefined) {
+                    $('#modal_total_amount').val(response.scanned_total);
+                    $('#dispatchBtn').prop('disabled', response.scanned_total <= 0);
+                    if (typeof calculateDispatch === 'function') calculateDispatch('default');
+                }
+
+                checkMasterCheckboxStatus();
+            }
+
+            // Bulk scan AJAX helper
+            function performBulkScan(payload, $triggerElement) {
+                setLoadingStatus('Processing bulk selection...');
+                if ($triggerElement) {
+                    $triggerElement.prop('disabled', true);
+                }
+                $('#selectAllCheckbox, #selectAllBtn, #unselectAllBtn').prop('disabled', true);
+
+                $.ajax({
+                    url: "{{ route('admin.agent-orders.bulk-scan', $order->id) }}",
+                    method: 'POST',
+                    data: Object.assign({ _token: "{{ csrf_token() }}" }, payload),
+                    success: function (response) {
+                        $('#selectAllCheckbox, #selectAllBtn, #unselectAllBtn').prop('disabled', false);
+                        if ($triggerElement) {
+                            $triggerElement.prop('disabled', false);
+                        }
+                        if (response.success) {
+                            setSuccessStatus(response.message);
+                            applyBulkVariations(response);
+                            playBeep(true);
+                        } else {
+                            setErrorStatus(response.message);
+                            if ($triggerElement && payload.mode === 'toggle_row') {
+                                $triggerElement.prop('checked', !payload.checked);
+                            }
+                            checkMasterCheckboxStatus();
+                            playBeep(false);
+                        }
+                        barcodeInput.focus();
+                    },
+                    error: function (xhr) {
+                        $('#selectAllCheckbox, #selectAllBtn, #unselectAllBtn').prop('disabled', false);
+                        if ($triggerElement) {
+                            $triggerElement.prop('disabled', false);
+                            if (payload.mode === 'toggle_row') {
+                                $triggerElement.prop('checked', !payload.checked);
+                            }
+                        }
+                        setErrorStatus('Server error occurred during bulk operation.');
+                        barcodeInput.focus();
+                        playBeep(false);
+                    }
+                });
+            }
+
+            // Master checkbox change
+            $('#selectAllCheckbox').on('change', function() {
+                let checked = $(this).is(':checked');
+                let mode = checked ? 'select_all' : 'unselect_all';
+                performBulkScan({ mode: mode });
+            });
+
+            // Select All Button
+            $('#selectAllBtn').on('click', function() {
+                performBulkScan({ mode: 'select_all' });
+            });
+
+            // Clear All Button
+            $('#unselectAllBtn').on('click', function() {
+                performBulkScan({ mode: 'unselect_all' });
+            });
+
+            // Individual row checkbox change
+            $(document).on('change', '.item-checkbox', function() {
+                let barcode = $(this).data('barcode');
+                let checked = $(this).is(':checked');
+                performBulkScan({
+                    mode: 'toggle_row',
+                    barcode: barcode,
+                    checked: checked
+                }, $(this));
+            });
 
             function setLoadingStatus(barcode) {
                 scanStatus.removeClass('alert-secondary alert-success alert-danger').addClass('alert-info');

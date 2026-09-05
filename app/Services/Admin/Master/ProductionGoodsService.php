@@ -15,6 +15,7 @@ use App\Models\MasterProductType;
 use App\Models\MasterProductStage;
 use App\Models\ProductStage;
 use App\Models\ProductionGoodImage;
+use App\Models\ProductImage;
 use App\Models\ItemAttributeValue;
 use App\Http\DataTable\Admin\Master\ProductionGoodsDataTable as DataTable;
 use App\Models\MasterPattern;
@@ -144,7 +145,6 @@ class ProductionGoodsService
 
         if ($request->hasFile('product_images')) {
             $titles = $request->input('product_image_titles', []);
-            $first = true;
             foreach ($request->file('product_images') as $key => $imageFile) {
                 if (!$imageFile || !$imageFile->isValid()) {
                     continue;
@@ -155,14 +155,12 @@ class ProductionGoodsService
 
                 $title = isset($titles[$key]) ? trim($titles[$key]) : null;
 
-                $save_img = new ProductionGoodImage;
+                $save_img = new ProductImage;
                 $save_img->product_id = $save_data->id;
                 $save_img->title = $title;
-                $save_img->is_main = $first ? 1 : 0;
                 $save_img->image = $imgName;
                 $save_img->status = 1;
                 $save_img->save();
-                $first = false;
             }
         }
         ////////// end images
@@ -285,7 +283,7 @@ class ProductionGoodsService
 
     public function edit(Request $request)
     {
-        $data = ProductionGoods::with('bill_of_materials', 'product_stages', 'variants.items.color', 'images')->where('id', $request->id)->first();
+        $data = ProductionGoods::with('bill_of_materials', 'product_stages', 'variants.items.color', 'product_images')->where('id', $request->id)->first();
 
         if ($data) {
             // Check if ANY variant has stock in inventory to lock product level fields (fitting, pattern)
@@ -486,7 +484,7 @@ class ProductionGoodsService
             }
         }
 
-        // Handle Product Images update / delete / add (stored in public/product)
+        // Handle Product Images update / delete / add (stored in product_images table & public/product)
         $productImagesPath = public_path('product');
         if (!file_exists($productImagesPath)) {
             mkdir($productImagesPath, 0777, true);
@@ -494,7 +492,7 @@ class ProductionGoodsService
 
         // 1. Delete removed images
         if ($request->has('delete_image_ids') && is_array($request->delete_image_ids)) {
-            $images = ProductionGoodImage::where('product_id', $productId)
+            $images = ProductImage::where('product_id', $productId)
                 ->whereIn('id', $request->delete_image_ids)
                 ->get();
 
@@ -517,7 +515,7 @@ class ProductionGoodsService
         // 2. Update existing image titles and optional replacement files
         if ($request->has('existing_image_titles') && is_array($request->existing_image_titles)) {
             foreach ($request->existing_image_titles as $imgId => $title) {
-                $existingImg = ProductionGoodImage::where('product_id', $productId)->find($imgId);
+                $existingImg = ProductImage::where('product_id', $productId)->find($imgId);
                 if ($existingImg) {
                     $existingImg->title = $title;
                     if ($request->hasFile("existing_images.{$imgId}")) {
@@ -552,12 +550,9 @@ class ProductionGoodsService
 
                 $title = isset($newTitles[$key]) ? trim($newTitles[$key]) : null;
 
-                $hasMain = ProductionGoodImage::where('product_id', $productId)->where('is_main', 1)->exists();
-
-                $save_img = new ProductionGoodImage;
+                $save_img = new ProductImage;
                 $save_img->product_id = $productId;
                 $save_img->title = $title;
-                $save_img->is_main = $hasMain ? 0 : 1;
                 $save_img->image = $imgName;
                 $save_img->status = 1;
                 $save_img->save();

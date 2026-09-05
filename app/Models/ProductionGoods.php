@@ -81,6 +81,11 @@ class ProductionGoods extends Model
         return $this->hasMany(ProductionGoodImage::class, 'product_id');
     }
 
+    public function product_images()
+    {
+        return $this->hasMany(ProductImage::class, 'product_id')->where('status', 1);
+    }
+
     public function mainImage()
     {
         return $this->hasOne(ProductionGoodImage::class, 'product_id')->where('is_main', 1);

@@ -576,6 +576,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/{id}/dispatch-scan', [AdminAgentOrderController::class, 'dispatchScan'])->name('dispatch-scan');
             Route::post('/{id}/process-scan', [AdminAgentOrderController::class, 'processScan'])->name('process-scan');
             Route::post('/{id}/remove-scan', [AdminAgentOrderController::class, 'removeScan'])->name('remove-scan');
+            Route::post('/{id}/bulk-scan', [AdminAgentOrderController::class, 'bulkScan'])->name('bulk-scan');
             Route::post('/{id}/dispatch', [AdminAgentOrderController::class, 'dispatchOrder'])->name('dispatch');
             Route::post('/{id}/dispatch-fabric', [AdminAgentOrderController::class, 'dispatchFabric'])->name('dispatch-fabric');
             Route::get('/export/pdf',   [AdminAgentOrderController::class, 'exportPdf'])->name('export-pdf');

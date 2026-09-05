@@ -2552,6 +2552,215 @@ class AgentOrderController extends Controller
         }
     }
 
+    public function bulkScan(Request $request, $id)
+    {
+        $mode = $request->input('mode'); // 'toggle_row', 'select_all', 'unselect_all'
+        
+        DB::beginTransaction();
+        try {
+            if ($mode === 'toggle_row') {
+                $barcode = trim($request->barcode);
+                $barcode = preg_replace('/[\x00-\x1F\x7F]/', '', $barcode);
+                $barcode = parseCompactBarcode($barcode);
+                $checked = filter_var($request->checked, FILTER_VALIDATE_BOOLEAN);
+
+                if (preg_match('/^D(\d+)S(\d+)C(\d+)/', $barcode, $matches)) {
+                    $productId = $matches[1];
+                    $sizeSetId = $matches[2];
+                    $colorId = $matches[3];
+                } else {
+                    return response()->json(['success' => false, 'message' => 'Invalid barcode format.']);
+                }
+
+                $item = DB::table('agent_order_items')
+                    ->where('agent_order_id', $id)
+                    ->where('product_id', $productId)
+                    ->where('color_id', $colorId)
+                    ->where('size_set_id', $sizeSetId)
+                    ->whereNull('dispatched_at')
+                    ->first();
+
+                if (!$item) {
+                    return response()->json(['success' => false, 'message' => 'Order item not found.']);
+                }
+
+                $inventory = DB::table('domestic_inventories')
+                    ->where('product_id', $productId)
+                    ->where('size_set_id', $sizeSetId)
+                    ->where('color_id', $colorId)
+                    ->first();
+
+                $pcsPerBox = $inventory && $inventory->quantity > 0 ? $inventory->quantity : ($item->box_qty > 0 ? ($item->quantity / $item->box_qty) : 1);
+
+                if ($checked) {
+                    $neededBoxes = $item->box_qty - $item->scanned_box_qty;
+                    if ($neededBoxes <= 0) {
+                        DB::rollBack();
+                        return response()->json(['success' => true, 'message' => 'Already fully scanned.', 'already_done' => true]);
+                    }
+
+                    $availableBoxes = $inventory ? max(0, (int)$inventory->total_boxes) : 0;
+                    if ($availableBoxes <= 0) {
+                        DB::rollBack();
+                        return response()->json(['success' => false, 'message' => 'No stock available in inventory for this item.']);
+                    }
+
+                    $boxesToScan = min($neededBoxes, $availableBoxes);
+
+                    DB::table('domestic_inventories')->where('id', $inventory->id)->decrement('total_boxes', $boxesToScan);
+
+                    $newScannedBoxes = $item->scanned_box_qty + $boxesToScan;
+                    $newScannedQty = $item->scanned_quantity + ($boxesToScan * $pcsPerBox);
+
+                    DB::table('agent_order_items')->where('id', $item->id)->update([
+                        'scanned_box_qty' => $newScannedBoxes,
+                        'scanned_quantity' => $newScannedQty,
+                        'box_no' => $inventory->box_no ?? $item->box_no,
+                        'updated_at' => now()
+                    ]);
+
+                    $message = $boxesToScan < $neededBoxes 
+                        ? "Scanned {$boxesToScan} boxes (limited by available stock: {$availableBoxes})."
+                        : "All {$boxesToScan} boxes selected successfully!";
+                } else {
+                    $scannedBoxes = (int)$item->scanned_box_qty;
+                    if ($scannedBoxes > 0) {
+                        if ($inventory) {
+                            DB::table('domestic_inventories')->where('id', $inventory->id)->increment('total_boxes', $scannedBoxes);
+                        }
+
+                        DB::table('agent_order_items')->where('id', $item->id)->update([
+                            'scanned_box_qty' => 0,
+                            'scanned_quantity' => 0,
+                            'updated_at' => now()
+                        ]);
+                    }
+                    $message = "Selection cleared for this item.";
+                }
+
+            } elseif ($mode === 'select_all') {
+                $items = DB::table('agent_order_items')
+                    ->where('agent_order_id', $id)
+                    ->whereNull('dispatched_at')
+                    ->whereRaw('scanned_box_qty < box_qty')
+                    ->get();
+
+                $totalFulfilled = 0;
+                $shortageCount = 0;
+
+                foreach ($items as $item) {
+                    $neededBoxes = $item->box_qty - $item->scanned_box_qty;
+                    if ($neededBoxes <= 0) continue;
+
+                    $inventory = DB::table('domestic_inventories')
+                        ->where('product_id', $item->product_id)
+                        ->where('size_set_id', $item->size_set_id)
+                        ->where('color_id', $item->color_id)
+                        ->first();
+
+                    $availableBoxes = $inventory ? max(0, (int)$inventory->total_boxes) : 0;
+                    if ($availableBoxes <= 0) {
+                        $shortageCount++;
+                        continue;
+                    }
+
+                    $boxesToScan = min($neededBoxes, $availableBoxes);
+                    $pcsPerBox = $inventory && $inventory->quantity > 0 ? $inventory->quantity : ($item->box_qty > 0 ? ($item->quantity / $item->box_qty) : 1);
+
+                    DB::table('domestic_inventories')->where('id', $inventory->id)->decrement('total_boxes', $boxesToScan);
+
+                    DB::table('agent_order_items')->where('id', $item->id)->update([
+                        'scanned_box_qty' => $item->scanned_box_qty + $boxesToScan,
+                        'scanned_quantity' => $item->scanned_quantity + ($boxesToScan * $pcsPerBox),
+                        'box_no' => $inventory->box_no ?? $item->box_no,
+                        'updated_at' => now()
+                    ]);
+
+                    $totalFulfilled += $boxesToScan;
+                    if ($boxesToScan < $neededBoxes) {
+                        $shortageCount++;
+                    }
+                }
+
+                $message = $shortageCount > 0 
+                    ? "Selected available boxes ({$totalFulfilled} added). Some items had stock shortage." 
+                    : "All required items selected successfully ({$totalFulfilled} boxes added)!";
+
+            } elseif ($mode === 'unselect_all') {
+                $items = DB::table('agent_order_items')
+                    ->where('agent_order_id', $id)
+                    ->whereNull('dispatched_at')
+                    ->where('scanned_box_qty', '>', 0)
+                    ->get();
+
+                foreach ($items as $item) {
+                    $scannedBoxes = (int)$item->scanned_box_qty;
+                    if ($scannedBoxes > 0) {
+                        $inventory = DB::table('domestic_inventories')
+                            ->where('product_id', $item->product_id)
+                            ->where('size_set_id', $item->size_set_id)
+                            ->where('color_id', $item->color_id)
+                            ->first();
+
+                        if ($inventory) {
+                            DB::table('domestic_inventories')->where('id', $inventory->id)->increment('total_boxes', $scannedBoxes);
+                        }
+
+                        DB::table('agent_order_items')->where('id', $item->id)->update([
+                            'scanned_box_qty' => 0,
+                            'scanned_quantity' => 0,
+                            'updated_at' => now()
+                        ]);
+                    }
+                }
+
+                $message = "All selections have been cleared.";
+            }
+
+            DB::commit();
+
+            // Fetch fresh state of all order items to send back to UI
+            $allOrderItems = DB::table('agent_order_items')
+                ->where('agent_order_id', $id)
+                ->whereNull('dispatched_at')
+                ->get();
+
+            $variations = [];
+            $totalScannedBoxes = 0;
+            $totalRequiredBoxes = 0;
+            $scannedTotalAmount = 0;
+
+            foreach ($allOrderItems as $oi) {
+                $key = "{$oi->product_id}_{$oi->color_id}_{$oi->size_set_id}";
+                $variations[$key] = [
+                    'scanned' => (int)$oi->scanned_box_qty,
+                    'required' => (int)$oi->box_qty,
+                    'is_complete' => (int)$oi->scanned_box_qty >= (int)$oi->box_qty,
+                    'design_number' => $oi->design_number,
+                    'product_name' => $oi->product_name,
+                    'color_name' => $oi->color_name,
+                    'barcode' => $oi->barcode
+                ];
+                $totalScannedBoxes += (int)$oi->scanned_box_qty;
+                $totalRequiredBoxes += (int)$oi->box_qty;
+                $scannedTotalAmount += ((float)$oi->scanned_quantity * (float)$oi->selling_price);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'variations' => $variations,
+                'total_scanned_boxes' => $totalScannedBoxes,
+                'total_required_boxes' => $totalRequiredBoxes,
+                'scanned_total' => $scannedTotalAmount
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
     public function dispatchFabric(Request $request, $id)
     {
         $selectedItems = $request->input('fabric_item_ids');
