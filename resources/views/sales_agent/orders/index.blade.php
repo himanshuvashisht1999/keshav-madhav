@@ -40,10 +40,7 @@
                             </div>
                             <hr class="my-2 border-dashed">
                             <div class="d-flex justify-content-between">
-                                <span class="text-muted small">{{ $order->total_qty }} Items</span>
-                                @if(Auth::guard('sales_agent')->user()->see_price)
-                                    <span class="font-weight-bold text-primary">₹{{ number_format($order->grand_total, 2) }}</span>
-                                @endif
+                                <span class="text-muted small font-weight-bold">{{ $order->total_qty }} Items</span>
                             </div>
                         </div>
                     </div>

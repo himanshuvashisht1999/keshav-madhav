@@ -1,531 +1,9 @@
-@extends('sales_agent.layouts.app', ['title' => 'Edit Order'])
 
-@section('content')
-    <div class="content-wrapper bg-light" style="min-height: 100vh; padding-bottom: 180px;">
-        <!-- Header App Bar -->
-        <div class="bg-white shadow-sm sticky-top" style="z-index: 1040;">
-            <div class="container-fluid py-1 px-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div style="max-width: 50%;">
-                        <h5 class="mb-0 font-weight-bold text-dark text-truncate" style="font-size: 1.1rem; max-width: 100%;">Edit Order #{{ $order->id }}</h5>
-                        <small class="text-muted text-truncate d-block" style="max-width: 100%;"><i class="fas fa-store mr-1"></i> {{ $shop->name }}</small>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <button class="btn btn-primary btn-sm rounded-circle mr-2 shadow-sm" id="btnScanQR"
-                            style="width: 36px; height: 36px;" title="Scan Barcode">
-                            <i class="fas fa-qrcode"></i>
-                        </button>
-                        <button class="btn btn-light btn-sm rounded-circle mr-2" id="toggleFilters"
-                            style="width: 36px; height: 36px;" title="Filters">
-                            <i class="fas fa-filter text-primary"></i>
-                        </button>
-                        <button class="btn btn-outline-danger btn-sm rounded-circle mr-2 shadow-xs btn-clear-order"
-                            style="width: 36px; height: 36px;" title="Clear Order">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                        <a href="{{ route('agent.orders.show', $order->id) }}" class="btn btn-light btn-sm rounded-circle"
-                            style="width: 36px; height: 36px;" title="Back to Order">
-                            <i class="fas fa-arrow-left"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Order-Level Settings and Filters -->
-            <form method="GET" action="{{ route('agent.orders.edit', $order->id) }}" id="filterForm" class="allow-multiple-submit">
-                <div class="container-fluid pt-2 px-3 pb-2">
-                    <div class="custom-control custom-switch border p-1 rounded bg-white shadow-sm d-flex align-items-center" style="border-radius: 10px !important;">
-                        <input type="checkbox" class="custom-control-input" id="sampleSetToggle" name="sample_set" value="1" {{ (request()->has('product_name') ? request('sample_set') == '1' : $order->is_sample_set == 1) ? 'checked' : '' }} onchange="this.form.submit()">
-                        <label class="custom-control-label font-weight-bold ml-2 pt-0 text-primary mb-0" for="sampleSetToggle" style="cursor:pointer; user-select: none;">Use Sample Set Pricing for this Order</label>
-                    </div>
-                </div>
-
-                <!-- Collapsible Filters -->
-                <div id="filterContainer" style="display: none;"
-                    class="bg-white border-top animate__animated animate__fadeInDown p-3 shadow-sm mt-2">
-                    <div class="row" id="filters-container">
-                        <div class="col-6 col-md-3 mb-2">
-                            <label class="small text-muted font-weight-bold uppercase mb-1">Product</label>
-                            <select name="product_name" class="form-control form-control-sm select2">
-                                <option value="">All Products</option>
-                                @foreach($product_names as $name)
-                                    <option value="{{ $name }}" {{ request('product_name') == $name ? 'selected' : '' }}>
-                                        {{ $name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-6 col-md-3 mb-2">
-                            <label class="small text-muted font-weight-bold uppercase mb-1">Color</label>
-                            <select name="color_name" class="form-control form-control-sm select2">
-                                <option value="">All Colors</option>
-                                @foreach($colors as $color)
-                                    <option value="{{ $color }}" {{ request('color_name') == $color ? 'selected' : '' }}>
-                                        {{ $color }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-6 col-md-3 mb-2">
-                            <label class="small text-muted font-weight-bold uppercase mb-1">Size Set</label>
-                            <select name="size_set_name" class="form-control form-control-sm select2">
-                                <option value="">All Sets</option>
-                                @foreach($size_sets as $set)
-                                    <option value="{{ $set }}" {{ request('size_set_name') == $set ? 'selected' : '' }}>{{ $set }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-6 col-md-3 mb-2">
-                            <label class="small text-muted font-weight-bold uppercase mb-1">Brand</label>
-                            <select name="brand_id" class="form-control form-control-sm select2">
-                                <option value="">All Brands</option>
-                                @foreach($brands as $id => $name)
-                                    <option value="{{ $id }}" {{ request('brand_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-6 col-md-3 mb-2">
-                            <label class="small text-muted font-weight-bold uppercase mb-1">Fitting</label>
-                            <select name="fitting_id" class="form-control form-control-sm select2">
-                                <option value="">All Fittings</option>
-                                @foreach($fittings as $id => $name)
-                                    <option value="{{ $id }}" {{ request('fitting_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-6 col-md-3 mb-2">
-                            <label class="small text-muted font-weight-bold uppercase mb-1">Pattern</label>
-                            <select name="pattern_id" class="form-control form-control-sm select2">
-                                <option value="">All Patterns</option>
-                                @foreach($patterns as $id => $name)
-                                    <option value="{{ $id }}" {{ request('pattern_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-6 col-md-3 mb-2">
-                            <label class="small text-muted font-weight-bold uppercase mb-1">Product Nature</label>
-                            <select name="product_nature_id" class="form-control form-control-sm select2">
-                                <option value="">All Natures</option>
-                                @foreach($product_natures as $id => $name)
-                                    <option value="{{ $id }}" {{ request('product_nature_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-6 col-md-3 mb-2">
-                            <label class="small text-muted font-weight-bold uppercase mb-1">Fabric Type</label>
-                            <select name="fabric_type_id" class="form-control form-control-sm select2">
-                                <option value="">All Fabric Types</option>
-                                @foreach($fabric_types as $id => $name)
-                                    <option value="{{ $id }}" {{ request('fabric_type_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="d-flex">
-                        <button type="submit"
-                            class="btn btn-primary btn-sm flex-grow-1 mr-2 rounded-pill font-weight-bold">Apply
-                            Filters</button>
-                        <button type="button" id="resetFiltersBtn" class="btn btn-light btn-sm rounded-pill"><i
-                                class="fas fa-undo"></i></button>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <!-- Main Content Area -->
-        <div class="container-fluid mt-3">
-            <!-- Variation Cards -->
-            <div id="variation-container" class="row">
-                @forelse($boxes as $variation)
-                    @php
-                        $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
-                        $image = $boxImages[$vKey] ?? null;
-                    @endphp
-                    <div class="col-md-4 col-lg-3 mb-3 variation-row-container" id="row-{{ $vKey }}">
-                        @include('sales_agent.orders.partials.variation_card', ['variation' => $variation, 'vKey' => $vKey, 'image' => $image])
-                    </div>
-                @empty
-                    <div class="col-12 text-center py-5">
-                        <div class="bg-white p-5 rounded-lg shadow-sm border" style="border-radius: 20px;">
-                            <div class="mb-4">
-                                <div class="bg-primary-soft rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                    <i class="fas fa-search fa-2x text-primary"></i>
-                                </div>
-                            </div>
-                            <h5 class="text-dark font-weight-bold">Looking for Products?</h5>
-                            <p class="text-muted px-4">Use the <b>filters</b> above or <b>scan a barcode</b> to find variations and update your order.</p>
-                            <button class="btn btn-primary rounded-pill px-4 mt-2 font-weight-bold" onclick="$('#toggleFilters').click()">
-                                <i class="fas fa-filter mr-2"></i> Open Filters
-                            </button>
-                        </div>
-                    </div>
-                @endforelse
-            </div>
-
-            @if($boxes->hasPages())
-                <div class="text-center mt-3">
-                    <button type="button" id="loadMoreBtn"
-                        class="btn btn-white btn-sm px-5 rounded-pill shadow-sm border font-weight-bold text-primary">
-                        Load More Products
-                    </button>
-                </div>
-            @endif
-        </div>
-    </div>
-
-    <!-- Compact App Summary Bar -->
-    <div class="fixed-bottom bg-white shadow-lg border-top animate__animated animate__slideInUp" id="summaryBar"
-        style="z-index: 1050; display: none; bottom: 60px; border-radius: 20px 20px 0 0;">
-        <div class="container-fluid py-2">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <div class="bg-primary-soft rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center"
-                        style="width: 40px; height: 40px;">
-                        <i class="fas fa-shopping-cart text-primary"></i>
-                    </div>
-                    <div>
-                        <span class="h6 font-weight-bold mb-0 d-block text-dark"><span id="selectedCount">0</span> Boxes Selected</span>
-                    </div>
-                </div>
-                    <div class="d-flex align-items-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill mr-2 px-2 py-1 font-weight-bold btn-clear-order" style="font-size: 11px;">
-                            <i class="fas fa-trash-alt mr-1"></i> Clear
-                        </button>
-                        <button type="button" class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" id="btnNextSummary" style="width: 42px; height: 42px; border-radius: 50%;">
-                            <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Image Zoom Modal -->
-    <div class="modal fade" id="imageZoomModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 1070;">
-        <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 100%; margin: 0; height: 100vh;">
-            <div class="modal-content border-0" style="min-height: 100vh; border-radius: 0; background: rgba(0, 0, 0, 0.9);">
-                <button type="button" class="close text-white rounded-circle p-2" data-dismiss="modal" aria-label="Close" style="position: absolute; top: 15px; right: 20px; z-index: 1100; background: rgba(255,255,255,0.2); opacity: 1;">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-                <div class="modal-body p-0" style="overflow: hidden; touch-action: none; position: relative; height: 100vh; display: flex; align-items: center; justify-content: center;">
-                    <img src="" id="zoomedImage" style="max-height: 100vh; max-width: 100vw; width: auto; height: auto; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
-                    <div style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1060; background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 30px; display: flex; gap: 15px;">
-                        <button type="button" class="btn btn-light btn-sm rounded-circle" id="btnZoomOut" style="width: 45px; height: 45px;"><i class="fas fa-search-minus"></i></button>
-                        <button type="button" class="btn btn-light btn-sm rounded-circle" id="btnZoomIn" style="width: 45px; height: 45px;"><i class="fas fa-search-plus"></i></button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Order Details Modal/Drawer (Mobile App Style) -->
-    <div class="modal fade bottom-drawer" id="detailsModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content border-0" style="border-radius: 20px 20px 0 0;">
-                <div class="modal-header border-0 bg-light pb-0" style="border-radius: 20px 20px 0 0;">
-                    <h6 class="modal-title font-weight-bold mx-auto text-muted uppercase tracking-wider">Dispatch & Shipping Details</h6>
-                    <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body p-0" style="max-height: 70vh; overflow-y: auto;">
-                    <!-- Hidden inputs for backend compatibility -->
-                    <input type="hidden" id="discountAmountInput" value="{{ $order->discount_amount ?? 0 }}" data-manual="true">
-                    <input type="hidden" id="gstAmountInput" value="{{ $order->gst_amount ?? 0 }}" data-manual="true">
-                    <input type="hidden" id="other_charges" value="{{ $order->other_charges ?? 0 }}">
-
-                    <div class="card shadow-none border-0 mb-3" style="border-radius: 15px;">
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label class="small font-weight-bold text-muted uppercase">Dispatch & Shipping</label>
-                                <div class="form-group mb-2">
-                                    <label class="small text-muted font-weight-bold">Sales Man</label>
-                                    <select id="sales_man_id" class="form-control form-control-sm">
-                                        <option value="">Select Sales Man (Optional)</option>
-                                        @foreach($sales_men as $sm)
-                                            <option value="{{ $sm->id }}" {{ $order->sales_man_id == $sm->id ? 'selected' : '' }}>{{ $sm->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="form-group mb-2">
-                                    <label class="small text-muted font-weight-bold">Expected Dispatch Date</label>
-                                    <input type="date" id="expectedDispatchDate" class="form-control form-control-sm"
-                                        value="{{ $order->expected_dispatch_date ?: date('Y-m-d', strtotime('+3 days')) }}">
-                                </div>
-                                <div class="form-group mb-2">
-                                    <label class="small text-muted font-weight-bold">Booking Station</label>
-                                    <input type="text" id="booking_station" class="form-control form-control-sm"
-                                        placeholder="Booking Station" value="{{ $order->booking_station }}">
-                                </div>
-                                <div class="form-group mb-2">
-                                    <label class="small text-muted font-weight-bold">Transport Name</label>
-                                    <input type="text" id="transport" class="form-control form-control-sm"
-                                        placeholder="Transport Name" value="{{ $order->transport }}">
-                                </div>
-                                <div class="form-group mb-2">
-                                    <label class="small text-muted font-weight-bold">Remark</label>
-                                    @php
-                                        $previousRemarks = \DB::table('master_order_remarks')->where('status', 1)->orderBy('name')->pluck('name');
-                                    @endphp
-                                    <input type="text" id="remark" class="form-control form-control-sm" list="previous_remarks_list" placeholder="Any special instructions..." value="{{ $order->remark }}" autocomplete="off">
-                                    <datalist id="previous_remarks_list">
-                                        @foreach($previousRemarks as $rem)
-                                            <option value="{{ $rem }}">
-                                        @endforeach
-                                    </datalist>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light border-0 d-flex">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary flex-grow-1 rounded-pill font-weight-bold update-order-btn">
-                        Update Order <i class="fas fa-check ml-1"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scanner Modal -->
-    <div class="modal fade" id="scannerModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-                <div class="modal-header border-0 pb-0">
-                    <h6 class="modal-title font-weight-bold text-muted uppercase tracking-wider mx-auto">Scan Product Barcode</h6>
-                    <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body p-4">
-                    <div id="reader" style="width: 100%; border-radius: 15px; overflow: hidden; background: #000;"></div>
-                    <div class="mt-3 text-center">
-                        <p class="small text-muted mb-2">Scan the 'Fair Product' barcode to select colors</p>
-                        <div class="input-group input-group-sm rounded-pill bg-light px-2" style="border: 1px solid #eee;">
-                            <input type="text" id="manual_barcode" class="form-control border-0 bg-transparent" placeholder="Enter barcode manually...">
-                            <div class="input-group-append">
-                                <button class="btn btn-link text-primary font-weight-bold" id="btnManualSubmit">Submit</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scan Selection Modal -->
-    <div class="modal fade bottom-drawer" id="scanSelectionModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document" style="max-width: 850px;">
-            <div class="modal-content border-0 position-relative" style="border-radius: 20px 20px 0 0;">
-                <button type="button" class="close position-absolute" data-dismiss="modal" aria-label="Close" style="top: 12px; right: 16px; z-index: 1050; font-size: 24px; opacity: 0.7;">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-                <div class="modal-body bg-white pt-3" style="overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; max-height: calc(100vh - 120px);">
-                    <div id="colorSelectionList" class="pb-2">
-                        <!-- Excel Matrix Content dynamically injected here -->
-                    </div>
-                </div>
-                <div class="modal-footer border-0 bg-white shadow-lg pt-1 pb-3">
-                    <button type="button" class="btn btn-primary btn-block btn-lg rounded-xl font-weight-bold" data-dismiss="modal">Apply Selections</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <style>
-        .bg-primary-soft {
-            background-color: rgba(0, 123, 255, 0.1);
-        }
-
-        .rounded-xl {
-            border-radius: 12px !important;
-        }
-
-        .uppercase {
-            text-transform: uppercase;
-        }
-
-        .tracking-wider {
-            letter-spacing: 0.5px;
-        }
-
-        .variation-row-container {
-            animation: fadeInUp 0.5s ease backwards;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Mobile Drawer Style Modal */
-        #scanSelectionModal .modal-dialog {
-            max-width: 850px;
-        }
-
-        @media (max-width: 768px) {
-            .modal.bottom-drawer .modal-dialog {
-                margin: 0;
-                margin-top: auto;
-                align-items: flex-end;
-                display: flex;
-                height: 100%;
-                max-width: 100% !important;
-            }
-
-            .modal.bottom-drawer .modal-content {
-                border-radius: 20px 20px 0 0;
-                width: 100%;
-                max-height: 92vh;
-                display: flex;
-                flex-direction: column;
-            }
-
-            .modal.bottom-drawer .modal-body {
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-                flex: 1;
-            }
-        }
-
-        /* Matrix Table Styles */
-        .matrix-table {
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100%;
-        }
-
-        .matrix-table thead th {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background-color: #f8f9fa;
-            border-top: none;
-        }
-
-        /* Sticky Left Column for Size Sets */
-        .matrix-table th:first-child,
-        .matrix-table td:first-child {
-            position: sticky;
-            left: 0;
-            z-index: 5;
-            background-color: #f1f7ff;
-            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
-        }
-
-        .matrix-table thead th:first-child {
-            z-index: 15;
-            background-color: #007bff !important;
-        }
-
-        .matrix-row-deselected {
-            opacity: 0.38 !important;
-            background-color: #f1f3f5 !important;
-        }
-        .matrix-row-deselected td,
-        .matrix-row-deselected td:first-child {
-            background-color: #f1f3f5 !important;
-        }
-        .matrix-col-deselected {
-            opacity: 0.5 !important;
-            background-color: #495057 !important;
-        }
-        .matrix-cell.cell-disabled {
-            opacity: 0.35 !important;
-            background-color: #f1f3f5 !important;
-        }
-
-        /* Color Column Header Checkbox High Contrast */
-        .matrix-col-header .custom-control-label::before {
-            background-color: rgba(255, 255, 255, 0.3);
-            border: 2px solid #ffffff;
-            border-radius: 4px;
-        }
-        .matrix-col-header .custom-control-input:checked ~ .custom-control-label::before {
-            background-color: #ffffff !important;
-            border-color: #ffffff !important;
-        }
-        .matrix-col-header .custom-control-input:checked ~ .custom-control-label::after {
-            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%23007bff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3E%3C/svg%3E") !important;
-        }
-        .matrix-col-header .custom-control-input:focus ~ .custom-control-label::before {
-            box-shadow: 0 0 0 1px #fff, 0 0 0 0.2rem rgba(255, 255, 255, 0.4);
-        }
-
-        .size-filter-pill, .color-filter-pill {
-            transition: all 0.2s ease-in-out;
-            cursor: pointer;
-            border-radius: 20px !important;
-            font-size: 13px !important;
-            padding: 4px 12px !important;
-        }
-
-        .size-filter-pill:not(.active), .color-filter-pill:not(.active) {
-            background-color: #f1f3f5 !important;
-            color: #6c757d !important;
-            border: 1px solid #ced4da !important;
-        }
-
-        .size-filter-pill:not(.active) .filter-check, 
-        .color-filter-pill:not(.active) .filter-check {
-            display: none !important;
-        }
-
-        .variation-card {
-            border-radius: 15px;
-            transition: all 0.3s;
-            border: 1px solid transparent;
-        }
-
-        .variation-card.has-qty {
-            border-color: #007bff;
-            background-color: #f0f7ff;
-        }
-
-        .quantity-control-app {
-            background: #f8f9fa;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .quantity-control-app input {
-            background: transparent;
-            border: 0;
-            font-weight: 800;
-            text-align: center;
-            width: 40px;
-        }
-
-        .quantity-control-app .btn-q {
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #fff;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            color: #007bff;
-        }
-    </style>
-@endsection
-
-@push('scripts')
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
-    <script>
-        let isSampleSet = {{ isset($isSampleSet) && $isSampleSet ? 'true' : 'false' }};
-        let allowOverStockNormal = {{ isset($settings) && $settings->agent_app_allow_over_stock ? 'true' : 'false' }};
-        let allowOverStockSample = {{ isset($settings) && $settings->agent_app_allow_over_stock_sample ? 'true' : 'false' }};
+        let isSampleSet = 0;
+        let allowOverStockNormal = 0;
+        let allowOverStockSample = 0;
         let allowOverStock = isSampleSet ? allowOverStockSample : allowOverStockNormal;
-        let showStock = {{ !isset($settings) || $settings->agent_app_show_stock ? 'true' : 'false' }};
+        let showStock = 0;
         $(document).ready(function () {
 
             // Image Zoom functionality
@@ -565,27 +43,13 @@
                     $('body').addClass('modal-open');
                 }
             });
-
             if ($.fn.select2) {
                 $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
             }
 
             let cart = new Map();
-            const seePrice = {{ Auth::guard('sales_agent')->user()->see_price ? 'true' : 'false' }};
-            const initialVariations = @json($selected_quantities);
-
-            // Populate cart with initial variations from the order
-            Object.keys(initialVariations).forEach(key => {
-                const item = initialVariations[key];
-                cart.set(key, {
-                    product_id: item.product_id,
-                    color_id: item.color_id,
-                    size_set_id: item.size_set_id,
-                    qty: parseInt(item.qty) || 0,
-                    pcs_per_box: parseFloat(item.pcs_per_box),
-                    unit_price: parseFloat(item.unit_price)
-                });
-            });
+            const storageKey = 'agent_order_cart_0_0';
+            const seePrice = 0;
 
             // --- SCANNER LOGIC ---
             let html5QrcodeScanner = null;
@@ -658,12 +122,14 @@
                 });
 
                 $.ajax({
-                    url: "{{ route('agent.orders.get-variation-by-barcode') }}",
-                    data: { barcode: barcode, order_id: '{{ $order->id }}' },
+                    url: "0",
+                    data: { barcode: barcode },
                     success: function(res) {
                         Swal.close();
                         if (res.success) {
-                            showColorSelection(res);
+                            setTimeout(() => {
+                                showColorSelection(res);
+                            }, 400);
                         } else {
                             Swal.fire('Error', res.message, 'error');
                         }
@@ -720,6 +186,7 @@
 
                 let html = '';
 
+                // 1 & 2: Top Header Section (Left: Design Info, Right: Larger Image)
                 // 1. Centered Design Number at Starting
                 html += `
                     <div class="text-center mb-2">
@@ -1173,9 +640,11 @@
                         color_id: cId,
                         size_set_id: ssId,
                         pcs_per_box: parseFloat($(this).data('pcs')),
-                        unit_price: parseFloat($(this).data('price'))
+                        unit_price: parseFloat($(this).data('price')),
+                        remark: $('.size-set-remark-input[data-size-set="'+ssId+'"]').val() || ''
                     };
                     item.qty = qty;
+                    item.remark = $('.size-set-remark-input[data-size-set="'+ssId+'"]').val() || item.remark || '';
                     cart.set(key, item);
 
                     // Append to DOM if not exists
@@ -1227,6 +696,88 @@
                 updateUI();
             });
 
+            $(document).on('change', '.size-set-remark-input', function() {
+                const sizeSetId = $(this).data('size-set');
+                const remark = $(this).val();
+                cart.forEach((item, key) => {
+                    if (item.size_set_id == sizeSetId) {
+                        item.remark = remark;
+                        cart.set(key, item);
+                    }
+                });
+                
+                // Update localStorage right away
+                const cartData = {};
+                cart.forEach((v, k) => { if (v.qty > 0) cartData[k] = v; });
+                localStorage.setItem(storageKey, JSON.stringify(cartData));
+            });
+
+            // Load from local storage
+            const saved = localStorage.getItem(storageKey);
+            let hasCartItems = false;
+            
+            if (saved) {
+                const data = JSON.parse(saved);
+                Object.keys(data).forEach(key => {
+                    cart.set(key, data[key]);
+                    if (data[key].qty > 0) hasCartItems = true;
+                });
+            }
+            
+            if (hasCartItems) {
+                const missingKeys = [];
+                cart.forEach((v, k) => {
+                    if (v.qty > 0) {
+                        // Check if this key exists in the DOM
+                        let exists = false;
+                        $('.variation-card').each(function() {
+                            if ($(this).data('key') == k) exists = true;
+                        });
+                        if (!exists) missingKeys.push(k);
+                    }
+                });
+
+                if (missingKeys.length > 0) {
+                    fetchCartItemsHtml(missingKeys);
+                } else {
+                    updateUI();
+                }
+            } else {
+                updateUI();
+            }
+
+            function fetchCartItemsHtml(keysToFetch = null) {
+                $('#empty-state').hide();
+                $('#variation-container').append('<div class="col-12 text-center py-5" id="loading-cart"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><p class="mt-2 text-muted font-weight-bold">Loading your selected products...</p></div>');
+                
+                const keys = keysToFetch || Array.from(cart.keys());
+                
+                $.ajax({
+                    url: window.location.pathname,
+                    method: 'GET',
+                    data: {
+                        shop_id: '0',
+                        party_type: '0',
+                        load_more: 1, 
+                        cart_keys: keys,
+                        sample_set: $('#sampleSetToggle').is(':checked') ? 1 : 0
+                    },
+                    success: function(res) {
+                        $('#loading-cart').remove();
+                        if (res.html) {
+                            $('#variation-container').append(res.html);
+                            updateUI(); 
+                        } else {
+                            $('#empty-state').show();
+                        }
+                    },
+                    error: function() {
+                        $('#loading-cart').remove();
+                        $('#empty-state').show();
+                    }
+                });
+            }
+
             $('#toggleFilters').click(function () {
                 $('#filterContainer').slideToggle();
             });
@@ -1236,7 +787,7 @@
             });
 
             // --- INFINITE SCROLL / LOAD MORE ---
-            let nextPage = {{ $boxes->nextPageUrl() ? ($boxes->currentPage() + 1) : 'null' }};
+            let nextPage = 0;
             let loading = false;
             const container = $('#variation-container');
 
@@ -1291,43 +842,12 @@
                         } else {
                             $('#loadMoreBtn').prop('disabled', false).text('Load More Variations');
                         }
-                        
-                        // Check for missing cart items
-                        if (reset && cart.size > 0) {
-                            const missingKeys = [];
-                            cart.forEach((v, k) => {
-                                if (v.qty > 0 && $('.variation-card[data-key="' + k + '"]').length === 0) {
-                                    missingKeys.push(k);
-                                }
-                            });
-                            if (missingKeys.length > 0) {
-                                fetchCartItemsHtml(missingKeys);
-                            } else {
-                                updateUI();
-                            }
-                        } else {
-                            updateUI();
-                        }
-                    }
-                });
-            }
-
-            function fetchCartItemsHtml(keysToFetch = null) {
-                const keys = keysToFetch || Array.from(cart.keys());
-                
-                $.ajax({
-                    url: window.location.pathname,
-                    method: 'GET',
-                    data: {
-                        load_more: 1, 
-                        cart_keys: keys,
-                        sample_set: $('#sampleSetToggle').is(':checked') ? 1 : 0
-                    },
-                    success: function(res) {
-                        if (res.html) {
-                            container.append(res.html);
-                        }
                         updateUI();
+                    },
+                    error: function () {
+                        loading = false;
+                        $('#loading-spinner').hide();
+                        $('#loadMoreBtn').prop('disabled', false).text('Load More Variations');
                     }
                 });
             }
@@ -1366,10 +886,9 @@
 
                 subTotal = Math.ceil(subTotal);
 
+                const otherCharges = Math.ceil(parseFloat($('#other_charges').val()) || 0);
                 const discountAmount = Math.ceil(parseFloat($('#discountAmountInput').val()) || 0);
                 const taxableAmount = Math.ceil(subTotal - discountAmount);
-
-                const otherCharges = Math.ceil(parseFloat($('#other_charges').val()) || 0);
 
                 let gstAmount = Math.ceil(parseFloat($('#gstAmountInput').val()) || 0);
 
@@ -1398,7 +917,16 @@
                         $(this).removeClass('has-qty');
                     }
                 });
+
+                const storageObj = {};
+                cart.forEach((val, key) => { if (val.qty > 0) storageObj[key] = val; });
+                localStorage.setItem(storageKey, JSON.stringify(storageObj));
             }
+
+            $('#gstAmountInput').on('input', function() {
+                $(this).data('manual', true);
+                updateUI();
+            });
 
             $(document).on('change', '.box-qty-input', function () {
                 const card = $(this).closest('.variation-card');
@@ -1410,15 +938,16 @@
                 if (!allowOverStock && qty > max) { qty = max; $(this).val(qty); }
 
                 if (qty > 0) {
-                    cart.set(key, {
+                    let item = cart.get(key) || {
                         product_id: card.data('product-id'),
                         color_id: card.data('color-id'),
                         size_set_id: card.data('size-set-id'),
-                        qty: qty,
                         pcs_per_box: parseFloat(card.data('pcs')),
-                        unit_price: parseFloat(card.data('price'))
-                    });
-
+                        unit_price: parseFloat(card.data('price')),
+                        remark: ''
+                    };
+                    item.qty = qty;
+                    cart.set(key, item);
                     // Move the PREVIOUSLY edited card to the top when selecting a new product
                     const row = card.closest('.variation-row-container');
                     
@@ -1436,10 +965,7 @@
                 updateUI();
             });
 
-            $(document).on('input', '#discountAmountInput, #gstAmountInput, #other_charges', function () {
-                if ($(this).attr('id') === 'gstAmountInput' || $(this).attr('id') === 'discountAmountInput') {
-                    $(this).data('manual', true);
-                }
+            $(document).on('input', '#discountAmountInput, #other_charges', function () {
                 updateUI();
             });
 
@@ -1456,7 +982,7 @@
                 if (current > 0) input.val(current - 1).trigger('change');
             });
 
-            $('.update-order-btn').click(function () {
+            $('.place-order-btn').click(function () {
                 const btn = $(this);
                 let variations = [];
                 cart.forEach((item) => { if (item.qty > 0) variations.push(item); });
@@ -1464,27 +990,31 @@
                 if (variations.length === 0) return;
 
                 Swal.fire({
-                    title: 'Update Order?',
-                    text: "Update order with " + variations.reduce((a, b) => a + b.qty, 0) + " boxes?",
+                    title: 'Confirm Order',
+                    text: "Create order for " + variations.reduce((a, b) => a + b.qty, 0) + " boxes?",
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonText: 'Yes, Update',
+                    confirmButtonText: 'Yes, Confirm',
                     confirmButtonColor: '#007bff'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+                        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
                         $.ajax({
-                            url: "{{ route('agent.orders.update', $order->id) }}",
+                            url: "0",
                             method: "POST",
                             data: {
-                                _method: 'PUT',
-                                _token: "{{ csrf_token() }}",
+                                _token: "0",
+                                shop_id: "0",
+                                party_type: "0",
+                                order_date: "0",
+                                order_type: 'normal',
+                                sale_type: 'item',
+                                is_sample_set: "0",
                                 variations: variations,
                                 sales_man_id: $('#sales_man_id').val(),
                                 expected_dispatch_date: $('#expectedDispatchDate').val(),
                                 discount_amount: $('#discountAmountInput').val(),
                                 gst_amount: $('#gstAmountInput').val(),
-                                is_sample_set: $('#sampleSetToggle').is(':checked') ? 1 : 0,
                                 other_charges: $('#other_charges').val(),
                                 remark: $('#remark').val(),
                                 booking_station: $('#booking_station').val(),
@@ -1492,12 +1022,13 @@
                             },
                             success: function (response) {
                                 if (response.success) {
-                                    Swal.fire('Updated!', 'Order has been updated successfully.', 'success').then(() => {
+                                    localStorage.removeItem(storageKey);
+                                    Swal.fire('Ordered!', 'Your order has been placed successfully.', 'success').then(() => {
                                         window.location.href = response.redirect_url;
                                     });
                                 } else {
                                     Swal.fire('Error', response.message, 'error');
-                                    btn.prop('disabled', false).html('Update Order <i class="fas fa-save ml-2"></i>');
+                                    btn.prop('disabled', false).html('Confirm Order <i class="fas fa-arrow-right ml-2"></i>');
                                 }
                             }
                         });
@@ -1507,5 +1038,4 @@
 
             updateUI();
         });
-    </script>
-@endpush
+    

@@ -17,90 +17,63 @@
                     <h4 class="font-weight-bold mb-0 text-uppercase">{{ $order->status }}</h4>
                 </div>
                 <div class="text-right">
-                    @if(Auth::guard('sales_agent')->user()->see_price)
-                        <p class="small mb-1 opacity-75">Grand Total</p>
-                        <h3 class="font-weight-bold mb-0">₹{{ number_format($order->grand_total, 2) }}</h3>
-                        <div class="d-flex flex-wrap justify-content-end mt-2">
-                            <div class="dropdown mr-2 mb-1">
-                                <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-3 font-weight-bold shadow-sm text-nowrap" 
-                                    type="button" id="whatsappOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="background-color: #25D366; border-color: #25D366;">
-                                    <i class="fab fa-whatsapp"></i> WA PDF
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="whatsappOrderDropdown">
-                                    <a class="dropdown-item py-2" href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=1" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
-                                        <i class="fas fa-file-invoice-dollar text-success mr-2"></i> With Price
-                                    </a>
-                                    <a class="dropdown-item py-2" href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=0" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
-                                        <i class="fas fa-file-contract text-secondary mr-2"></i> Without Price
-                                    </a>
-                                    <a class="dropdown-item py-2" href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=2" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
-                                        <i class="fas fa-file-invoice text-info mr-2"></i> Unit Price Only
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="dropdown mb-1">
-                                <button class="btn btn-sm btn-light dropdown-toggle rounded-pill px-3 font-weight-bold shadow-sm text-nowrap" 
-                                    type="button" id="downloadOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="fas fa-file-pdf text-danger"></i> PDF
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="downloadOrderDropdown">
-                                    <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=1">
-                                        <i class="fas fa-file-invoice-dollar text-success mr-2"></i> With Price
-                                    </a>
-                                    <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=0">
-                                        <i class="fas fa-file-contract text-secondary mr-2"></i> Without Price
-                                    </a>
-                                    <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=2">
-                                        <i class="fas fa-file-invoice text-info mr-2"></i> Unit Price Only
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    @else
-                        <p class="small mb-1 opacity-75">Items</p>
-                        <h3 class="font-weight-bold mb-0">{{ $order->total_qty }} pcs</h3>
-                        <div class="d-flex justify-content-end flex-wrap mt-2">
-                            <a href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=0"
-                                class="btn btn-sm btn-success rounded-pill px-3 font-weight-bold shadow-sm mr-2 mb-1 text-nowrap" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
+                    <p class="small mb-1 opacity-75">Total Items</p>
+                    <h3 class="font-weight-bold mb-0">{{ $order->total_qty }} pcs</h3>
+                    <div class="d-flex flex-wrap justify-content-end mt-2">
+                        <div class="dropdown mr-2 mb-1">
+                            <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-3 font-weight-bold shadow-sm text-nowrap" 
+                                type="button" id="whatsappOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="background-color: #25D366; border-color: #25D366;">
                                 <i class="fab fa-whatsapp"></i> WA PDF
-                            </a>
-                            <a href="{{ route('agent.orders.download-order', $order->id) }}?see_price=0"
-                                class="btn btn-sm btn-light rounded-pill px-3 font-weight-bold shadow-sm mb-1 text-nowrap">
-                                <i class="fas fa-file-pdf text-danger"></i> PDF
-                            </a>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="whatsappOrderDropdown">
+                                @if(Auth::guard('sales_agent')->user()->see_price)
+                                <a class="dropdown-item py-2" href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=1" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
+                                    <i class="fas fa-file-invoice-dollar text-success mr-2"></i> With Price
+                                </a>
+                                @endif
+                                <a class="dropdown-item py-2" href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=0" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
+                                    <i class="fas fa-file-contract text-secondary mr-2"></i> Without Price
+                                </a>
+                                @if(Auth::guard('sales_agent')->user()->see_price)
+                                <a class="dropdown-item py-2" href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=2" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
+                                    <i class="fas fa-file-invoice text-info mr-2"></i> Unit Price Only
+                                </a>
+                                @endif
+                            </div>
                         </div>
-                    @endif
+                        <div class="dropdown mb-1">
+                            <button class="btn btn-sm btn-light dropdown-toggle rounded-pill px-3 font-weight-bold shadow-sm text-nowrap" 
+                                type="button" id="downloadOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-file-pdf text-danger"></i> PDF
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="downloadOrderDropdown">
+                                @if(Auth::guard('sales_agent')->user()->see_price)
+                                <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=1">
+                                    <i class="fas fa-file-invoice-dollar text-success mr-2"></i> With Price
+                                </a>
+                                @endif
+                                <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=0">
+                                    <i class="fas fa-file-contract text-secondary mr-2"></i> Without Price
+                                </a>
+                                @if(Auth::guard('sales_agent')->user()->see_price)
+                                <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=2">
+                                    <i class="fas fa-file-invoice text-info mr-2"></i> Unit Price Only
+                                </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="app-card shadow-sm border-0 mb-4 bg-white">
             <div class="row">
-                <div class="col-{{Auth::guard('sales_agent')->user()->see_price ? '6' : '12'}} bor-{{Auth::guard('sales_agent')->user()->see_price ? 'right' : '0'}}">
+                <div class="col-12">
                     <h6 class="font-weight-bold text-muted small uppercase mb-1 text-secondary">Shipping to:</h6>
                     <h5 class="font-weight-bold mb-1">{{ $order->shop_name }}</h5>
-                    <p class="text-muted small mb-0">{{ \Carbon\Carbon::parse($order->order_date)->format('d M Y, h:i A') }}
-                    </p>
+                    <p class="text-muted small mb-0">{{ \Carbon\Carbon::parse($order->order_date)->format('d M Y, h:i A') }}</p>
                 </div>
-                @if(Auth::guard('sales_agent')->user()->see_price)
-                    <div class="col-6">
-                        <h6 class="font-weight-bold text-muted small uppercase mb-1 text-secondary">Bill Summary:</h6>
-                        <div class="d-flex justify-content-between small mb-1">
-                            <span class="text-muted">Subtotal:</span>
-                            <span class="font-weight-bold text-dark">₹{{ number_format($order->total_amount, 2) }}</span>
-                        </div>
-                        @if($order->discount_amount > 0)
-                            <div class="d-flex justify-content-between small mb-1 text-success">
-                                <span>Discount ({{ number_format($order->discount_percentage, 0) }}%):</span>
-                                <span>-₹{{ number_format($order->discount_amount, 2) }}</span>
-                            </div>
-                        @endif
-                        <div class="d-flex justify-content-between small text-danger">
-                            <span>GST ({{ number_format($order->gst_percentage, 0) }}%):</span>
-                            <span>+₹{{ number_format($order->gst_amount, 2) }}</span>
-                        </div>
-                    </div>
-                @endif
             </div>
         </div>
 

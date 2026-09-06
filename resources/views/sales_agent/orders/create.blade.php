@@ -11,15 +11,19 @@
                     </div>
                     <div class="d-flex align-items-center">
                         <button class="btn btn-primary btn-sm rounded-circle mr-2 shadow-sm" id="btnScanQR"
-                            style="width: 36px; height: 36px;">
+                            style="width: 36px; height: 36px;" title="Scan Barcode">
                             <i class="fas fa-qrcode"></i>
                         </button>
                         <button class="btn btn-light btn-sm rounded-circle mr-2" id="toggleFilters"
-                            style="width: 36px; height: 36px;">
+                            style="width: 36px; height: 36px;" title="Filters">
                             <i class="fas fa-filter text-primary"></i>
                         </button>
+                        <button class="btn btn-outline-danger btn-sm rounded-circle mr-2 shadow-xs btn-clear-order"
+                            style="width: 36px; height: 36px;" title="Clear Order">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                         <a href="{{ route('agent.shops.index') }}" class="btn btn-light btn-sm rounded-circle"
-                            style="width: 36px; height: 36px;">
+                            style="width: 36px; height: 36px;" title="Switch Shop">
                             <i class="fas fa-exchange-alt"></i>
                         </a>
                     </div>
@@ -182,16 +186,17 @@
                         <i class="fas fa-shopping-cart text-primary"></i>
                     </div>
                     <div>
-                        @if(Auth::guard('sales_agent')->user()->see_price)
-                        <span class="h5 font-weight-bold mb-0 d-block text-dark">₹<span
-                                id="grandTotalAmount">0</span></span>
-                        @endif
-                        <small class="text-muted"><span id="selectedCount">0</span> Boxes Selected</small>
+                        <span class="h6 font-weight-bold mb-0 d-block text-dark"><span id="selectedCount">0</span> Boxes Selected</span>
                     </div>
                 </div>
-                <button type="button" class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" id="btnNextSummary" style="width: 42px; height: 42px; border-radius: 50%;">
-                    <i class="fas fa-arrow-right"></i>
-                </button>
+                    <div class="d-flex align-items-center">
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill mr-2 px-2 py-1 font-weight-bold btn-clear-order" style="font-size: 11px;">
+                            <i class="fas fa-trash-alt mr-1"></i> Clear
+                        </button>
+                        <button type="button" class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" id="btnNextSummary" style="width: 42px; height: 42px; border-radius: 50%;">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
             </div>
         </div>
     </div>
@@ -201,42 +206,16 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content border-0" style="border-radius: 20px 20px 0 0;">
                 <div class="modal-header border-0 bg-light pb-0" style="border-radius: 20px 20px 0 0;">
-                    <h6 class="modal-title font-weight-bold mx-auto text-muted uppercase tracking-wider">Order Summary &
-                        Adjustments</h6>
+                    <h6 class="modal-title font-weight-bold mx-auto text-muted uppercase tracking-wider">Dispatch & Shipping Details</h6>
                     <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body bg-light">
-                    @if(Auth::guard('sales_agent')->user()->see_price)
-                    <div class="card shadow-none border-0 mb-3" style="border-radius: 15px;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Subtotal:</span>
-                                <span class="font-weight-bold">₹<span id="subTotalAmount">0</span></span>
-                            </div>
-                            <div class="form-group mb-3">
-                                <label class="small font-weight-bold text-muted uppercase">Manual Discount (₹)</label>
-                                <input type="number" id="discountAmountInput"
-                                    class="form-control form-control-lg border-0 bg-light font-weight-bold" value="0">
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Taxable Amount:</span>
-                                <span class="font-weight-bold">₹<span id="taxableAmount">0</span></span>
-                            </div>
-                            <div class="form-group mb-3">
-                                <label class="small font-weight-bold text-muted uppercase">GST Amount (₹)</label>
-                                <input type="number" id="gstAmountInput"
-                                    class="form-control form-control-lg border-0 bg-light font-weight-bold" value="0">
-                            </div>
-                            <div class="form-group mb-3">
-                                <label class="small font-weight-bold text-muted uppercase">Other Charges (₹)</label>
-                                <input type="number" id="other_charges"
-                                    class="form-control form-control-lg border-0 bg-light font-weight-bold" value="0">
-                            </div>
-                        </div>
-                    </div>
-                    @endif
+                    <!-- Hidden inputs for backend compatibility -->
+                    <input type="hidden" id="discountAmountInput" value="0">
+                    <input type="hidden" id="gstAmountInput" value="0">
+                    <input type="hidden" id="other_charges" value="0">
 
                     <div class="card shadow-none border-0 mb-3" style="border-radius: 15px;">
                         <div class="card-body">
@@ -320,28 +299,17 @@
 
     <!-- Scan Selection Modal -->
     <div class="modal fade bottom-drawer" id="scanSelectionModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
-            <div class="modal-content border-0" style="border-radius: 20px 20px 0 0;">
-                <div class="modal-header border-0 bg-white pb-0" style="border-radius: 20px 20px 0 0;">
-                    <h6 class="modal-title font-weight-bold text-dark mx-auto text-uppercase tracking-wider">Select Color & Quantity</h6>
-                    <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body bg-white pt-2" style="overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; max-height: calc(100vh - 150px);">
-                    <div id="scanProductHeader" class="mb-3 p-3 bg-light rounded-lg">
-                        <h6 id="scanProductName" class="font-weight-bold text-dark mb-1">Product Name</h6>
-                        <div class="d-flex justify-content-between align-items-center">
-
-                            <span class="small text-muted font-weight-bold" id="scanSizeSet">Size Set</span>
-                        </div>
-                    </div>
-
-                    <div id="colorSelectionList" class="pb-3">
-                        <!-- Colors will be injected here -->
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document" style="max-width: 850px;">
+            <div class="modal-content border-0 position-relative" style="border-radius: 20px 20px 0 0;">
+                <button type="button" class="close position-absolute" data-dismiss="modal" aria-label="Close" style="top: 12px; right: 16px; z-index: 1050; font-size: 24px; opacity: 0.7;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <div class="modal-body bg-white pt-3" style="overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; max-height: calc(100vh - 120px);">
+                    <div id="colorSelectionList" class="pb-2">
+                        <!-- Excel Matrix Content dynamically injected here -->
                     </div>
                 </div>
-                <div class="modal-footer border-0 bg-white shadow-lg">
+                <div class="modal-footer border-0 bg-white shadow-lg pt-1 pb-3">
                     <button type="button" class="btn btn-primary btn-block btn-lg rounded-xl font-weight-bold" data-dismiss="modal">Apply Selections</button>
                 </div>
             </div>
@@ -401,6 +369,10 @@
         }
 
         /* Mobile Drawer Style Modal */
+        #scanSelectionModal .modal-dialog {
+            max-width: 850px;
+        }
+
         @media (max-width: 768px) {
             .modal.bottom-drawer .modal-dialog {
                 margin: 0;
@@ -408,12 +380,13 @@
                 align-items: flex-end;
                 display: flex;
                 height: 100%;
+                max-width: 100% !important;
             }
 
             .modal.bottom-drawer .modal-content {
                 border-radius: 20px 20px 0 0;
                 width: 100%;
-                max-height: 90vh;
+                max-height: 92vh;
                 display: flex;
                 flex-direction: column;
             }
@@ -423,6 +396,89 @@
                 -webkit-overflow-scrolling: touch;
                 flex: 1;
             }
+        }
+
+        /* Matrix Table Styles */
+        .matrix-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+
+        .matrix-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #f8f9fa;
+            border-top: none;
+        }
+
+        /* Sticky Left Column for Size Sets */
+        .matrix-table th:first-child,
+        .matrix-table td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            background-color: #f1f7ff;
+            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .matrix-table thead th:first-child {
+            z-index: 15;
+            background-color: #007bff !important;
+        }
+
+        .matrix-row-deselected {
+            opacity: 0.38 !important;
+            background-color: #f1f3f5 !important;
+        }
+        .matrix-row-deselected td,
+        .matrix-row-deselected td:first-child {
+            background-color: #f1f3f5 !important;
+        }
+        .matrix-col-deselected {
+            opacity: 0.5 !important;
+            background-color: #495057 !important;
+        }
+        .matrix-cell.cell-disabled {
+            opacity: 0.35 !important;
+            background-color: #f1f3f5 !important;
+        }
+
+        /* Color Column Header Checkbox High Contrast */
+        .matrix-col-header .custom-control-label::before {
+            background-color: rgba(255, 255, 255, 0.3);
+            border: 2px solid #ffffff;
+            border-radius: 4px;
+        }
+        .matrix-col-header .custom-control-input:checked ~ .custom-control-label::before {
+            background-color: #ffffff !important;
+            border-color: #ffffff !important;
+        }
+        .matrix-col-header .custom-control-input:checked ~ .custom-control-label::after {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%23007bff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3E%3C/svg%3E") !important;
+        }
+        .matrix-col-header .custom-control-input:focus ~ .custom-control-label::before {
+            box-shadow: 0 0 0 1px #fff, 0 0 0 0.2rem rgba(255, 255, 255, 0.4);
+        }
+
+        .size-filter-pill, .color-filter-pill {
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            border-radius: 20px !important;
+            font-size: 13px !important;
+            padding: 4px 12px !important;
+        }
+
+        .size-filter-pill:not(.active), .color-filter-pill:not(.active) {
+            background-color: #f1f3f5 !important;
+            color: #6c757d !important;
+            border: 1px solid #ced4da !important;
+        }
+
+        .size-filter-pill:not(.active) .filter-check, 
+        .color-filter-pill:not(.active) .filter-check {
+            display: none !important;
         }
 
         .variation-card {
@@ -479,7 +535,8 @@
             let pz = null;
             const elem = document.getElementById('zoomedImage');
             
-            $(document).on('click', '.zoom-image', function() {
+            $(document).on('click', '.zoom-image, .btn-preview-photo', function(e) {
+                e.stopPropagation();
                 var src = $(this).attr('src') || $(this).data('src');
                 if (!src) return;
                 $('#zoomedImage').attr('src', src);
@@ -610,131 +667,467 @@
             }
 
             function showColorSelection(data) {
-                $('#scanProductName').text(data.product.name);
-
-                // For multiple size sets, we don't just show one text. We can clear it or show all.
-                $('#scanSizeSet').text(''); // We will show size sets in tabs now
-
                 const list = $('#colorSelectionList');
                 list.empty();
 
                 if (!data.size_sets || data.size_sets.length === 0) {
-                    list.append('<div class="alert alert-warning">No variations found.</div>');
-                    $('#scanSelectionModal').modal('show');
-                    return;
+                    if (data.product && data.colors) {
+                        data.size_sets = [{
+                            size_set_id: data.product.size_set_id || (data.product.variants && data.product.variants[0] ? data.product.variants[0].master_size_measurement_id : 1),
+                            size_set_name: data.product.size_set_name || 'Standard',
+                            mrp: data.product.mrp || 0,
+                            unit_price: data.product.unit_price || 0,
+                            image: data.product.image || null,
+                            colors: data.colors
+                        }];
+                    } else {
+                        list.append('<div class="alert alert-warning">No variations found.</div>');
+                        $('#scanSelectionModal').modal('show');
+                        return;
+                    }
                 }
 
-                // Create Nav Tabs
-                let navHtml = '<ul class="nav nav-pills mb-3" id="sizeSetTabs" role="tablist">';
-                let contentHtml = '<div class="tab-content" id="sizeSetTabsContent">';
-
-                data.size_sets.forEach((sizeSet, index) => {
-                    const isActive = sizeSet.size_set_id === data.scanned_size_set_id ? 'active' : '';
-                    const isSelected = sizeSet.size_set_id === data.scanned_size_set_id ? 'true' : 'false';
-                    
-                    // Tab Link
-                    navHtml += `
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link ${isActive} font-weight-bold" id="tab-ss-${sizeSet.size_set_id}" data-toggle="pill" data-target="#pane-ss-${sizeSet.size_set_id}" type="button" role="tab" aria-controls="pane-ss-${sizeSet.size_set_id}" aria-selected="${isSelected}">
-                                ${sizeSet.size_set_name}
-                            </button>
-                        </li>
-                    `;
-
-                    // Tab Pane
-                    const showClass = isActive ? 'show active' : '';
-                    contentHtml += `<div class="tab-pane fade ${showClass}" id="pane-ss-${sizeSet.size_set_id}" role="tabpanel" aria-labelledby="tab-ss-${sizeSet.size_set_id}">`;
-
-                    let maxGlobalQty = 0;
-                    sizeSet.colors.forEach(color => {
-                        if (parseInt(color.available_boxes) > maxGlobalQty) {
-                            maxGlobalQty = parseInt(color.available_boxes);
+                // Find initial Hero Image (first size set image or product image or first color image)
+                let initialHeroImage = '';
+                for (let ss of data.size_sets) {
+                    if (ss.image) { initialHeroImage = ss.image; break; }
+                    if (ss.colors && ss.colors.length > 0) {
+                        for (let c of ss.colors) {
+                            if (c.image) { initialHeroImage = c.image; break; }
                         }
-                    });
+                    }
+                    if (initialHeroImage) break;
+                }
+                if (!initialHeroImage && data.product && data.product.image) {
+                    initialHeroImage = data.product.image;
+                }
 
-                    // Global Apply for this Size Set
-                    contentHtml += `
-                        <div class="card border-primary shadow-sm mb-3 rounded-lg overflow-hidden" style="background-color: #f8faff;">
-                            ${sizeSet.image ? `<div style="background-color: #f8f9fa; text-align: center; border-bottom: 1px solid #dee2e6;"><img src="${sizeSet.image}" class="zoom-image" style="max-height: 250px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer;"></div>` : `<div class="bg-light d-flex align-items-center justify-content-center" style="height: 150px; border-bottom: 1px solid #dee2e6;"><i class="fas fa-image fa-3x text-muted opacity-25"></i></div>`}
-                            <div class="card-body p-3 d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="font-weight-bold text-primary mb-0"><i class="fas fa-layer-group mr-2"></i>Apply to All Colors</h6>
-                                    <small class="text-muted">Set quantity for every color in ${sizeSet.size_set_name}</small>
-                                </div>
-                                <div class="quantity-control-app d-flex align-items-center p-1 border-primary">
-                                    <button class="btn-q btn-minus-global text-primary" data-size-set="${sizeSet.size_set_id}">-</button>
-                                    <input type="number" class="box-qty-global-input text-primary font-weight-bold" 
-                                        data-size-set="${sizeSet.size_set_id}"
-                                        min="0"
-                                        ${(data.is_advance_sample || allowOverStock) ? '' : `max="${maxGlobalQty}"`}
-                                        value="0">
-                                    <button class="btn-q btn-plus-global text-primary" data-size-set="${sizeSet.size_set_id}">+</button>
-                                </div>
+                let maxColors = 0;
+                data.size_sets.forEach(ss => {
+                    const count = (ss.colors || []).length;
+                    if (count > maxColors) maxColors = count;
+                });
+                if (maxColors === 0) maxColors = 1;
+
+                let html = '';
+
+                // 1 & 2: Top Header Section (Left: Design Info, Right: Larger Image)
+                // 1. Centered Design Number at Starting
+                html += `
+                    <div class="text-center mb-2">
+                        <span class="badge badge-primary px-3 py-2 font-weight-bold shadow-sm d-inline-block" style="font-size: 16px; border-radius: 8px; letter-spacing: 1px;">
+                            DESIGN NO: ${data.product.design_number || data.product.name || 'N/A'}
+                        </span>
+                        ${(data.product.name && data.product.name !== data.product.design_number) ? `
+                            <div class="font-weight-bold text-dark mt-1" style="font-size: 15px;">${data.product.name}</div>
+                        ` : ''}
+                        ${data.product.series_name ? `
+                            <div class="small text-muted font-weight-bold"><i class="fas fa-layer-group mr-1"></i> ${data.product.series_name}</div>
+                        ` : ''}
+                    </div>
+                `;
+
+                // 2. Centered Large Preview Image
+                html += `
+                    <div class="text-center mb-3">
+                        <div class="d-inline-block position-relative rounded-xl shadow-sm border overflow-hidden bg-white" style="max-width: 100%;">
+                            <img id="scanHeroImage" 
+                                 src="${initialHeroImage || ''}" 
+                                 class="img-fluid zoom-image" 
+                                 style="max-height: 340px; min-height: 200px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer; ${!initialHeroImage ? 'display:none;' : ''}" 
+                                 data-src="${initialHeroImage || ''}"
+                                 alt="Product Preview">
+                            <div id="scanHeroPlaceholder" style="width: 260px; height: 180px; display: ${initialHeroImage ? 'none' : 'flex'}; align-items: center; justify-content: center; background: #f8f9fa;">
+                                <div class="text-muted text-center"><i class="fas fa-image fa-3x opacity-50 mb-1"></i><div class="small font-weight-bold">No Image</div></div>
+                            </div>
+                            <span class="badge badge-dark position-absolute" style="bottom: 8px; right: 8px; opacity: 0.85; pointer-events: none; font-size: 11px; padding: 4px 8px; border-radius: 6px;">
+                                <i class="fas fa-search-plus mr-1"></i>Tap to Zoom
+                            </span>
+                        </div>
+                    </div>
+                `;
+
+                // 3. Master Global Apply Bar
+                html += `
+                    <div class="card border-primary mb-3 shadow-sm" style="background: #eef5ff; border-radius: 12px;">
+                        <div class="card-body p-2 d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
+                            <div>
+                                <span class="font-weight-bold text-primary"><i class="fas fa-bolt mr-1"></i> Apply Quantity to All</span>
+                                <div class="small text-muted">Set quantity for all size sets and colors</div>
+                            </div>
+                            <div class="quantity-control-app d-flex align-items-center p-1 border-primary bg-white shadow-sm" style="border-radius: 8px;">
+                                <button type="button" class="btn-q btn-minus-master text-primary font-weight-bold">-</button>
+                                <input type="number" id="masterQtyInput" class="text-primary font-weight-bold" min="0" value="0" style="width: 45px; text-align: center; border: 0; background: transparent;">
+                                <button type="button" class="btn-q btn-plus-master text-primary font-weight-bold">+</button>
                             </div>
                         </div>
-                        
-                        <div class="mb-3 px-1">
-                            <label class="font-weight-bold text-muted small mb-1">Remark for ${sizeSet.size_set_name}</label>
-                            <input type="text" class="form-control form-control-sm size-set-remark-input" data-size-set="${sizeSet.size_set_id}" placeholder="Enter remark (optional)">
-                        </div>
+                    </div>
+                `;
+
+                // 4. Excel Structure Table (Size Sets = Vertical, Colors = Horizontal)
+                html += `
+                    <div class="table-responsive border rounded-lg mb-3 shadow-sm bg-white" style="max-height: 440px; overflow-y: auto;">
+                        <table class="table table-bordered table-sm mb-0 matrix-table text-center align-middle" style="font-size: 13px;">
+                            <thead>
+                                <tr>
+                                    <th class="align-middle text-center font-weight-bold text-white px-2 py-2" style="min-width: 140px; width: 140px; background-color: #007bff;">
+                                        SIZE SET
+                                    </th>
+                                    ${Array.from({ length: maxColors }).map((_, idx) => {
+                                        let colColorObj = null;
+                                        for (let ss of data.size_sets) {
+                                            if (ss.colors && ss.colors[idx]) {
+                                                colColorObj = ss.colors[idx];
+                                                break;
+                                            }
+                                        }
+                                        const colName = colColorObj ? (colColorObj.name ? `${colColorObj.name}(${colColorObj.id})` : `COLOR ${colColorObj.id}`) : `COL ${idx + 1}`;
+
+                                        return `
+                                            <th class="align-middle text-center font-weight-bold text-white p-2 matrix-col-header matrix-col-${idx}" data-col-index="${idx}" style="min-width: 145px; background-color: #007bff; color: #fff;">
+                                                <div class="custom-control custom-checkbox d-inline-block text-left" style="max-width: 100%;">
+                                                    <input type="checkbox" class="custom-control-input toggle-col-checkbox" id="toggle_col_${idx}" data-col-index="${idx}" checked>
+                                                    <label class="custom-control-label font-weight-bold text-white" for="toggle_col_${idx}" style="font-size: 13px; cursor: pointer; user-select: none; line-height: 1.5;" title="${colName}">
+                                                        <span class="d-inline-block text-truncate" style="max-width: 105px; vertical-align: middle;">${colName}</span>
+                                                    </label>
+                                                </div>
+                                                <!-- Color Column batch stepper -->
+                                                <div class="mt-1">
+                                                    <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px;">
+                                                        <button type="button" class="btn-q btn-minus-col px-2 py-0 text-primary font-weight-bold" data-col-index="${idx}" style="line-height: 1;">-</button>
+                                                        <input type="number" class="col-batch-qty-input font-weight-bold text-center text-primary" data-col-index="${idx}" min="0" value="0" style="width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
+                                                        <button type="button" class="btn-q btn-plus-col px-2 py-0 text-primary font-weight-bold" data-col-index="${idx}" style="line-height: 1;">+</button>
+                                                    </div>
+                                                </div>
+                                            </th>
+                                        `;
+                                    }).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                data.size_sets.forEach(ss => {
+                    html += `
+                        <tr class="matrix-row-${ss.size_set_id}">
+                            <td class="align-middle p-2 text-center matrix-ss-header-cell" style="min-width: 140px; width: 140px; background-color: #f1f7ff; border-right: 2px solid #b8daff;">
+                                <div class="custom-control custom-checkbox d-inline-block mb-1">
+                                    <input type="checkbox" class="custom-control-input toggle-ss-checkbox" id="toggle_ss_${ss.size_set_id}" data-size-set="${ss.size_set_id}" checked>
+                                    <label class="custom-control-label font-weight-bold text-primary" for="toggle_ss_${ss.size_set_id}" style="font-size: 14px; cursor: pointer; user-select: none;">
+                                        ${ss.size_set_name}
+                                    </label>
+                                </div>
+                                <!-- Size Set Row batch stepper -->
+                                <div>
+                                    <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px;">
+                                        <button type="button" class="btn-q btn-minus-ss px-2 py-0 text-primary" data-size-set="${ss.size_set_id}" style="line-height: 1;">-</button>
+                                        <input type="number" class="ss-batch-qty-input font-weight-bold text-center text-primary" data-size-set="${ss.size_set_id}" min="0" value="0" style="width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
+                                        <button type="button" class="btn-q btn-plus-ss px-2 py-0 text-primary" data-size-set="${ss.size_set_id}" style="line-height: 1;">+</button>
+                                    </div>
+                                </div>
+                            </td>
                     `;
 
-                    // Colors for this Size Set
-                    contentHtml += `<div class="size-set-colors-container" id="colors-container-${sizeSet.size_set_id}">`;
-                    sizeSet.colors.forEach(color => {
-                        const vKey = data.product.id + '_' + color.id + '_' + sizeSet.size_set_id;
-                        const item = cart.get(vKey);
-                        const currentQty = item ? item.qty : 0;
+                    for (let c = 0; c < maxColors; c++) {
+                        const colorObj = (ss.colors && ss.colors[c]) ? ss.colors[c] : null;
+                        if (!colorObj) {
+                            html += `<td class="matrix-cell align-middle text-muted bg-light p-2" data-size-set="${ss.size_set_id}" data-col-index="${c}">-</td>`;
+                        } else {
+                            const vKey = data.product.id + '_' + colorObj.id + '_' + ss.size_set_id;
+                            const item = cart.get(vKey);
+                            const currentQty = item ? item.qty : 0;
+                            const isAdv = data.is_advance_sample;
+                            const maxAttr = (isAdv || allowOverStock) ? '' : `max="${colorObj.available_boxes}"`;
+                            const cImg = colorObj.image || ss.image || '';
 
-                        contentHtml += `
-                            <div class="card border shadow-sm mb-2 rounded-lg" data-key="${vKey}" style="border-radius: 12px; background: #fff;">
-                                <div class="card-body p-2 d-flex justify-content-between align-items-center">
-                                    <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mr-2 text-muted flex-shrink-0" style="width: 36px; height: 36px;">
-                                            <i class="fas fa-palette text-secondary" style="font-size: 14px;"></i>
-                                        </div>
-                                        <div>
-                                            <div class="d-flex align-items-center">
-                                                <h6 class="font-weight-bold text-dark mb-0">${color.name}</h6>
-                                                ${color.image ? `
-                                                    <button type="button" class="btn btn-light btn-sm rounded-circle p-0 ml-2 zoom-image d-inline-flex align-items-center justify-content-center border" data-src="${color.image}" title="View Image" style="width: 28px; height: 28px;">
-                                                        <i class="fas fa-eye text-primary" style="font-size: 12px;"></i>
-                                                    </button>
-                                                ` : ''}
-                                            </div>
-                                            ${showStock && !data.is_advance_sample ? `<small class="text-muted d-block">${color.available_boxes} Boxes available</small>` : (data.is_advance_sample ? '<small class="text-success font-weight-bold d-block">Advance Sample (Unlimited)</small>' : '')}
+                            html += `
+                                <td class="matrix-cell matrix-cell-ss-${ss.size_set_id} matrix-cell-col-${c} align-middle p-2" data-size-set="${ss.size_set_id}" data-col-index="${c}" style="background: #fff; min-width: 145px;">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="font-weight-bold text-dark text-truncate text-left flex-grow-1" style="font-size: 13px;" title="${colorObj.name}(${colorObj.id})">
+                                            <i class="fas fa-palette text-secondary mr-1" style="font-size: 11px;"></i>${colorObj.name}(${colorObj.id})
+                                        </span>
+                                        ${colorObj.image ? `
+                                            <button type="button" class="btn btn-outline-info btn-xs btn-preview-photo rounded-circle p-0 ml-1 d-inline-flex align-items-center justify-content-center" data-src="${colorObj.image}" title="View Photo" style="width: 22px; height: 22px; flex-shrink: 0;">
+                                                <i class="fas fa-eye" style="font-size: 10px;"></i>
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <div class="quantity-control-app d-inline-flex align-items-center p-0 border mx-auto shadow-xs" style="border-radius: 6px;">
+                                            <button type="button" class="btn-q btn-minus-scan px-2 py-1" data-key="${vKey}">-</button>
+                                            <input type="number" class="box-qty-scan-input font-weight-bold" 
+                                                data-product-id="${data.product.id}"
+                                                data-product-name="${(data.product.name || '').replace(/"/g, '&quot;')}"
+                                                data-size-set-id="${ss.size_set_id}"
+                                                data-size-set-name="${(ss.size_set_name || '').replace(/"/g, '&quot;')}"
+                                                data-color-id="${colorObj.id}"
+                                                data-color-name="${(colorObj.name || '').replace(/"/g, '&quot;')}"
+                                                data-pcs="${colorObj.pcs_per_box}"
+                                                data-price="${ss.unit_price}"
+                                                ${maxAttr}
+                                                value="${currentQty}"
+                                                style="width: 38px; border: 0; background: transparent; text-align: center; font-size: 13px;">
+                                            <button type="button" class="btn-q btn-plus-scan px-2 py-1" data-key="${vKey}">+</button>
                                         </div>
                                     </div>
-                                    <div class="quantity-control-app d-flex align-items-center p-1">
-                                        <button class="btn-q btn-minus-scan" data-key="${vKey}">-</button>
-                                        <input type="number" class="box-qty-scan-input font-weight-bold" 
-                                            data-product-id="${data.product.id}"
-                                            data-color-id="${color.id}"
-                                            data-size-set-id="${sizeSet.size_set_id}"
-                                            data-pcs="${color.pcs_per_box}"
-                                            data-price="${sizeSet.unit_price}"
-                                            ${(data.is_advance_sample || allowOverStock) ? '' : `max="${color.available_boxes}"`}
-                                            value="${currentQty}">
-                                        <button class="btn-q btn-plus-scan" data-key="${vKey}">+</button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    contentHtml += `</div>`; // End colors container
-                    
-                    contentHtml += `</div>`; // End tab pane
+                                    ${showStock && !isAdv ? `<div class="text-muted text-center mt-1" style="font-size: 10px; line-height: 1;">${colorObj.available_boxes} avl</div>` : ''}
+                                </td>
+                            `;
+                        }
+                    }
+
+                    html += `</tr>`;
                 });
 
-                navHtml += '</ul>';
-                contentHtml += '</div>';
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
 
-                list.append(navHtml);
-                list.append(contentHtml);
+                // 5. Size Set Remarks
+                html += `
+                    <div class="card border-0 bg-light rounded-lg p-2 mb-2">
+                        <span class="font-weight-bold text-muted small mb-2 d-block"><i class="fas fa-comment-alt mr-1"></i> Size Set Remarks (Optional)</span>
+                        <div class="row">
+                            ${data.size_sets.map(ss => `
+                                <div class="col-sm-6 mb-2">
+                                    <div class="input-group input-group-sm">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-white font-weight-bold" style="font-size: 11px;">${ss.size_set_name}</span>
+                                        </div>
+                                        <input type="text" class="form-control size-set-remark-input" data-size-set="${ss.size_set_id}" placeholder="Remark...">
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
 
+                list.append(html);
                 $('#scanSelectionModal').modal('show');
             }
 
+            // Master Stepper Handlers
+            $(document).on('click', '.btn-plus-master', function() {
+                let input = $('#masterQtyInput');
+                let val = parseInt(input.val()) || 0;
+                input.val(val + 1).trigger('change');
+            });
+
+            $(document).on('click', '.btn-minus-master', function() {
+                let input = $('#masterQtyInput');
+                let val = parseInt(input.val()) || 0;
+                if (val > 0) {
+                    input.val(val - 1).trigger('change');
+                }
+            });
+
+            $(document).on('change', '#masterQtyInput', function() {
+                let masterQty = parseInt($(this).val()) || 0;
+                if (masterQty < 0) {
+                    masterQty = 0;
+                    $(this).val(0);
+                }
+
+                // Sync active Size Set row and Color column steppers
+                $('.matrix-table .ss-batch-qty-input:not(:disabled)').val(masterQty);
+                $('.matrix-table .col-batch-qty-input:not(:disabled)').val(masterQty);
+
+                $('.matrix-table .box-qty-scan-input:not(:disabled)').each(function() {
+                    const max = parseInt($(this).attr('max'));
+                    let targetQty = masterQty;
+                    if (!allowOverStock && !isNaN(max) && targetQty > max) targetQty = max;
+
+                    if (parseInt($(this).val()) !== targetQty) {
+                        $(this).val(targetQty).trigger('change');
+                    }
+                });
+            });
+
+            // Size Set Row Quick Stepper Handlers
+            $(document).on('click', '.btn-plus-ss', function() {
+                let input = $(this).siblings('.ss-batch-qty-input');
+                if (input.prop('disabled')) return;
+                let val = parseInt(input.val()) || 0;
+                input.val(val + 1).trigger('change');
+            });
+
+            $(document).on('click', '.btn-minus-ss', function() {
+                let input = $(this).siblings('.ss-batch-qty-input');
+                if (input.prop('disabled')) return;
+                let val = parseInt(input.val()) || 0;
+                if (val > 0) {
+                    input.val(val - 1).trigger('change');
+                }
+            });
+
+            $(document).on('change', '.ss-batch-qty-input', function() {
+                const ssId = $(this).data('size-set');
+                let rowQty = parseInt($(this).val()) || 0;
+                if (rowQty < 0) {
+                    rowQty = 0;
+                    $(this).val(0);
+                }
+
+                $(`.matrix-row-${ssId} .box-qty-scan-input:not(:disabled)`).each(function() {
+                    const max = parseInt($(this).attr('max'));
+                    let targetQty = rowQty;
+                    if (!allowOverStock && !isNaN(max) && targetQty > max) targetQty = max;
+
+                    if (parseInt($(this).val()) !== targetQty) {
+                        $(this).val(targetQty).trigger('change');
+                    }
+                });
+            });
+
+            // Color Column Quick Stepper Handlers
+            $(document).on('click', '.btn-plus-col', function() {
+                let input = $(this).siblings('.col-batch-qty-input');
+                if (input.prop('disabled')) return;
+                let val = parseInt(input.val()) || 0;
+                input.val(val + 1).trigger('change');
+            });
+
+            $(document).on('click', '.btn-minus-col', function() {
+                let input = $(this).siblings('.col-batch-qty-input');
+                if (input.prop('disabled')) return;
+                let val = parseInt(input.val()) || 0;
+                if (val > 0) {
+                    input.val(val - 1).trigger('change');
+                }
+            });
+
+            $(document).on('change', '.col-batch-qty-input', function() {
+                const colIndex = $(this).data('col-index');
+                let colQty = parseInt($(this).val()) || 0;
+                if (colQty < 0) {
+                    colQty = 0;
+                    $(this).val(0);
+                }
+
+                $(`.matrix-cell-col-${colIndex} .box-qty-scan-input:not(:disabled)`).each(function() {
+                    const max = parseInt($(this).attr('max'));
+                    let targetQty = colQty;
+                    if (!allowOverStock && !isNaN(max) && targetQty > max) targetQty = max;
+
+                    if (parseInt($(this).val()) !== targetQty) {
+                        $(this).val(targetQty).trigger('change');
+                    }
+                });
+            });
+
+            // Toggle Size Set Row Selection
+            $(document).on('change', '.toggle-ss-checkbox', function() {
+                const ssId = $(this).data('size-set');
+                const isChecked = $(this).is(':checked');
+                const row = $(this).closest('tr');
+                
+                if (!isChecked) {
+                    row.addClass('matrix-row-deselected');
+                    row.find('.ss-batch-qty-input').prop('disabled', true).val(0);
+                    row.find('.btn-minus-ss, .btn-plus-ss').prop('disabled', true);
+                    
+                    row.find('.box-qty-scan-input').each(function() {
+                        $(this).prop('disabled', true);
+                        if (parseInt($(this).val()) > 0) {
+                            $(this).val(0).trigger('change');
+                        }
+                    });
+                    row.find('.btn-minus-scan, .btn-plus-scan').prop('disabled', true);
+                } else {
+                    row.removeClass('matrix-row-deselected');
+                    row.find('.ss-batch-qty-input').prop('disabled', false);
+                    row.find('.btn-minus-ss, .btn-plus-ss').prop('disabled', false);
+                    
+                    row.find('.matrix-cell').each(function() {
+                        const colIndex = $(this).data('col-index');
+                        const isColChecked = $(`.toggle-col-checkbox[data-col-index="${colIndex}"]`).is(':checked');
+                        if (isColChecked) {
+                            $(this).removeClass('cell-disabled');
+                            $(this).find('.box-qty-scan-input').prop('disabled', false);
+                            $(this).find('.btn-minus-scan, .btn-plus-scan').prop('disabled', false);
+                        }
+                    });
+                }
+            });
+
+            // Toggle Color Column Selection
+            $(document).on('change', '.toggle-col-checkbox', function() {
+                const colIndex = $(this).data('col-index');
+                const isChecked = $(this).is(':checked');
+                const th = $(this).closest('th');
+                
+                if (!isChecked) {
+                    th.addClass('matrix-col-deselected');
+                    th.find('.col-batch-qty-input').prop('disabled', true).val(0);
+                    th.find('.btn-minus-col, .btn-plus-col').prop('disabled', true);
+                    
+                    $(`.matrix-cell-col-${colIndex}`).each(function() {
+                        $(this).addClass('cell-disabled');
+                        const input = $(this).find('.box-qty-scan-input');
+                        input.prop('disabled', true);
+                        if (parseInt(input.val()) > 0) {
+                            input.val(0).trigger('change');
+                        }
+                        $(this).find('.btn-minus-scan, .btn-plus-scan').prop('disabled', true);
+                    });
+                } else {
+                    th.removeClass('matrix-col-deselected');
+                    th.find('.col-batch-qty-input').prop('disabled', false);
+                    th.find('.btn-minus-col, .btn-plus-col').prop('disabled', false);
+                    
+                    $(`.matrix-cell-col-${colIndex}`).each(function() {
+                        const ssId = $(this).data('size-set');
+                        const isRowChecked = $(`.toggle-ss-checkbox[data-size-set="${ssId}"]`).is(':checked');
+                        if (isRowChecked) {
+                            $(this).removeClass('cell-disabled');
+                            $(this).find('.box-qty-scan-input').prop('disabled', false);
+                            $(this).find('.btn-minus-scan, .btn-plus-scan').prop('disabled', false);
+                        }
+                    });
+                }
+            });
+
+            // Clear Order Handler
+            $(document).on('click', '.btn-clear-order', function() {
+                if (cart.size === 0) {
+                    Swal.fire('Info', 'Your cart is already empty.', 'info');
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Clear Order?',
+                    text: 'Are you sure you want to remove all selected items from this order?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Yes, Clear All',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        cart.clear();
+                        localStorage.removeItem(storageKey);
+                        $('.box-qty-input').val(0);
+                        $('.variation-card').removeClass('has-qty');
+                        $('.has-qty-top').remove();
+                        $('.box-qty-scan-input').val(0);
+                        $('#masterQtyInput').val(0);
+                        $('.ss-batch-qty-input').val(0);
+                        updateUI();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Order Cleared',
+                            text: 'All items have been removed.',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    }
+                });
+            });
+
+            // Individual Cell Stepper Handlers
             $(document).on('click', '.btn-plus-scan', function() {
                 const input = $(this).closest('.quantity-control-app').find('.box-qty-scan-input');
                 const max = parseInt(input.attr('max'));
@@ -755,40 +1148,43 @@
             });
 
             $(document).on('change', '.box-qty-scan-input', function() {
-                const key = $(this).closest('.card').data('key');
+                const pId = $(this).data('product-id');
+                const cId = $(this).data('color-id');
+                const ssId = $(this).data('size-set-id');
+                const key = pId + '_' + cId + '_' + ssId;
                 let qty = parseInt($(this).val()) || 0;
                 const max = parseInt($(this).attr('max'));
                 
                 if (qty < 0) qty = 0;
-                if (!allowOverStock && qty > max) qty = max;
+                if (!allowOverStock && !isNaN(max) && qty > max) qty = max;
                 $(this).val(qty);
 
                 if (qty > 0) {
                     let item = cart.get(key) || {
-                        product_id: $(this).data('product-id'),
-                        color_id: $(this).data('color-id'),
-                        size_set_id: $(this).data('size-set-id'),
+                        product_id: pId,
+                        color_id: cId,
+                        size_set_id: ssId,
                         pcs_per_box: parseFloat($(this).data('pcs')),
                         unit_price: parseFloat($(this).data('price')),
-                        remark: $('.size-set-remark-input[data-size-set="'+$(this).data('size-set-id')+'"]').val() || ''
+                        remark: $('.size-set-remark-input[data-size-set="'+ssId+'"]').val() || ''
                     };
                     item.qty = qty;
-                    item.remark = $('.size-set-remark-input[data-size-set="'+$(this).data('size-set-id')+'"]').val() || item.remark || '';
+                    item.remark = $('.size-set-remark-input[data-size-set="'+ssId+'"]').val() || item.remark || '';
                     cart.set(key, item);
 
                     // Append to DOM if not exists
                     if ($('.variation-card[data-key="' + key + '"]').length === 0) {
-                        const productName = $('#scanProductName').text();
-                        const sizeSetName = $('#scanSizeSet').text();
-                        const colorName = $(this).closest('.card').find('h6.text-dark').text();
+                        const productName = $(this).data('product-name') || '';
+                        const sizeSetName = $(this).data('size-set-name') || '';
+                        const colorName = $(this).data('color-name') || '';
                         
                         const cardHtml = `
                             <div class="col-md-4 col-lg-3 mb-3 variation-row-container has-qty-top">
                                 <div class="card variation-card shadow-sm h-100 has-qty"
                                     data-key="${key}"
-                                    data-product-id="${$(this).data('product-id')}"
-                                    data-color-id="${$(this).data('color-id')}"
-                                    data-size-set-id="${$(this).data('size-set-id')}"
+                                    data-product-id="${pId}"
+                                    data-color-id="${cId}"
+                                    data-size-set-id="${ssId}"
                                     data-price="${$(this).data('price')}"
                                     data-pcs="${$(this).data('pcs')}">
                                     <div class="card-body p-3">
@@ -823,58 +1219,6 @@
                     cart.delete(key);
                 }
                 updateUI();
-            });
-
-            $(document).on('click', '.btn-plus-global', function() {
-                const input = $(this).siblings('.box-qty-global-input');
-                let val = parseInt(input.val()) || 0;
-                const max = parseInt(input.attr('max'));
-                if (allowOverStock || isNaN(max) || val < max) {
-                    val++;
-                    input.val(val).trigger('change');
-                }
-            });
-
-            $(document).on('click', '.btn-minus-global', function() {
-                const input = $(this).siblings('.box-qty-global-input');
-                let val = parseInt(input.val()) || 0;
-                if (val > 0) {
-                    val--;
-                    input.val(val).trigger('change');
-                }
-            });
-
-            $(document).on('change', '.box-qty-global-input', function() {
-                let globalQty = parseInt($(this).val()) || 0;
-                if (globalQty < 0) {
-                    globalQty = 0;
-                    $(this).val(0);
-                }
-
-                if (!allowOverStock) {
-                    const max = parseInt($(this).attr('max'));
-                    if (!isNaN(max) && globalQty > max) {
-                        globalQty = max;
-                        $(this).val(globalQty);
-                    }
-                }
-
-                const sizeSetId = $(this).data('size-set');
-                
-                let targetSelector = '#colorSelectionList .box-qty-scan-input';
-                if (sizeSetId) {
-                    targetSelector = `#colors-container-${sizeSetId} .box-qty-scan-input`;
-                }
-
-                $(targetSelector).each(function() {
-                    const max = parseInt($(this).attr('max'));
-                    let targetQty = globalQty;
-                    if (!allowOverStock && targetQty > max) targetQty = max; // Cap at max available
-                    
-                    if (parseInt($(this).val()) !== targetQty) {
-                        $(this).val(targetQty).trigger('change');
-                    }
-                });
             });
 
             $(document).on('change', '.size-set-remark-input', function() {
