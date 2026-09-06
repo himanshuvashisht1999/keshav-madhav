@@ -299,12 +299,12 @@
 
     <!-- Scan Selection Modal -->
     <div class="modal fade bottom-drawer" id="scanSelectionModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document" style="max-width: 850px;">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document" style="max-width: 980px; width: 96%;">
             <div class="modal-content border-0 position-relative" style="border-radius: 20px 20px 0 0;">
-                <button type="button" class="close position-absolute" data-dismiss="modal" aria-label="Close" style="top: 12px; right: 16px; z-index: 1050; font-size: 24px; opacity: 0.7;">
+                <button type="button" class="close position-absolute" data-dismiss="modal" aria-label="Close" style="top: 10px; right: 16px; z-index: 1050; font-size: 26px; opacity: 0.7;">
                     <span aria-hidden="true">&times;</span>
                 </button>
-                <div class="modal-body bg-white pt-3" style="overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; max-height: calc(100vh - 120px);">
+                <div class="modal-body bg-white pt-2 px-3" style="overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; max-height: calc(100vh - 120px);">
                     <div id="colorSelectionList" class="pb-2">
                         <!-- Excel Matrix Content dynamically injected here -->
                     </div>
@@ -370,7 +370,8 @@
 
         /* Mobile Drawer Style Modal */
         #scanSelectionModal .modal-dialog {
-            max-width: 850px;
+            max-width: 980px;
+            width: 96%;
         }
 
         @media (max-width: 768px) {
@@ -714,12 +715,12 @@
                 // 1 & 2: Top Header Section (Left: Design Info, Right: Larger Image)
                 // 1. Centered Design Number at Starting
                 html += `
-                    <div class="text-center mb-2">
-                        <span class="badge badge-primary px-3 py-2 font-weight-bold shadow-sm d-inline-block" style="font-size: 16px; border-radius: 8px; letter-spacing: 1px;">
+                    <div class="text-center mb-1">
+                        <span class="badge badge-primary px-3 py-1 font-weight-bold shadow-sm d-inline-block" style="font-size: 15px; border-radius: 8px; letter-spacing: 0.5px;">
                             DESIGN NO: ${data.product.design_number || data.product.name || 'N/A'}
                         </span>
                         ${(data.product.name && data.product.name !== data.product.design_number) ? `
-                            <div class="font-weight-bold text-dark mt-1" style="font-size: 15px;">${data.product.name}</div>
+                            <div class="font-weight-bold text-dark mt-1" style="font-size: 14px;">${data.product.name}</div>
                         ` : ''}
                         ${data.product.series_name ? `
                             <div class="small text-muted font-weight-bold"><i class="fas fa-layer-group mr-1"></i> ${data.product.series_name}</div>
@@ -729,15 +730,15 @@
 
                 // 2. Centered Large Preview Image
                 html += `
-                    <div class="text-center mb-3">
+                    <div class="text-center mb-2">
                         <div class="d-inline-block position-relative rounded-xl shadow-sm border overflow-hidden bg-white" style="max-width: 100%;">
                             <img id="scanHeroImage" 
                                  src="${initialHeroImage || ''}" 
                                  class="img-fluid zoom-image" 
-                                 style="max-height: 340px; min-height: 200px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer; ${!initialHeroImage ? 'display:none;' : ''}" 
+                                 style="max-height: 480px; min-height: 240px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer; ${!initialHeroImage ? 'display:none;' : ''}" 
                                  data-src="${initialHeroImage || ''}"
                                  alt="Product Preview">
-                            <div id="scanHeroPlaceholder" style="width: 260px; height: 180px; display: ${initialHeroImage ? 'none' : 'flex'}; align-items: center; justify-content: center; background: #f8f9fa;">
+                            <div id="scanHeroPlaceholder" style="width: 280px; height: 220px; display: ${initialHeroImage ? 'none' : 'flex'}; align-items: center; justify-content: center; background: #f8f9fa;">
                                 <div class="text-muted text-center"><i class="fas fa-image fa-3x opacity-50 mb-1"></i><div class="small font-weight-bold">No Image</div></div>
                             </div>
                             <span class="badge badge-dark position-absolute" style="bottom: 8px; right: 8px; opacity: 0.85; pointer-events: none; font-size: 11px; padding: 4px 8px; border-radius: 6px;">

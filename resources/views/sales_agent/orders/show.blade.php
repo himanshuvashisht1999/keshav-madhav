@@ -26,11 +26,11 @@
                                 <i class="fab fa-whatsapp"></i> WA PDF
                             </button>
                             <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="whatsappOrderDropdown">
-                                @if(Auth::guard('sales_agent')->user()->see_price)
+                                {{-- @if(Auth::guard('sales_agent')->user()->see_price)
                                 <a class="dropdown-item py-2" href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=1" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
                                     <i class="fas fa-file-invoice-dollar text-success mr-2"></i> With Price
                                 </a>
-                                @endif
+                                @endif --}}
                                 <a class="dropdown-item py-2" href="{{ route('agent.orders.send-whatsapp-order', $order->id) }}?see_price=0" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $order->shop_phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
                                     <i class="fas fa-file-contract text-secondary mr-2"></i> Without Price
                                 </a>
@@ -47,11 +47,11 @@
                                 <i class="fas fa-file-pdf text-danger"></i> PDF
                             </button>
                             <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="downloadOrderDropdown">
-                                @if(Auth::guard('sales_agent')->user()->see_price)
+                                {{-- @if(Auth::guard('sales_agent')->user()->see_price)
                                 <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=1">
                                     <i class="fas fa-file-invoice-dollar text-success mr-2"></i> With Price
                                 </a>
-                                @endif
+                                @endif --}}
                                 <a class="dropdown-item py-2" href="{{ route('agent.orders.download-order', $order->id) }}?see_price=0">
                                     <i class="fas fa-file-contract text-secondary mr-2"></i> Without Price
                                 </a>
