@@ -542,20 +542,12 @@ class PackingController extends Controller
             $lot->quantity = (int) $lot_txs->sum('quantity');
             $lot->transaction_id = $lot_txs->first() ? $lot_txs->first()->id : null;
 
-            $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
-            $rework_for_lot = isset($rework_by_lot_size[$lot->lot_no]) ? $rework_by_lot_size[$lot->lot_no]->sum('total') : 0;
-            $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
-
-            $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
-            $total_tx_qty = (int) $lot_txs->sum('quantity');
-            $ratio = $total_tx_qty > 0 ? min(1.0, $starting_lot_qty / $total_tx_qty) : 1;
-
             $incoming_sizes = [];
             foreach ($lot_txs as $tx) {
                 if ($tx->details->isNotEmpty()) {
                     foreach ($tx->details as $d) {
                         $sz = trim(strtoupper($d->size));
-                        $incoming_sizes[$sz] = ($incoming_sizes[$sz] ?? 0) + (int) round($d->quantity * $ratio);
+                        $incoming_sizes[$sz] = ($incoming_sizes[$sz] ?? 0) + (int) $d->quantity;
                     }
                 }
             }
@@ -1126,8 +1118,9 @@ class PackingController extends Controller
             // Validate and Deduct remaining quantities across all available stage transactions for each lot at THIS unit
             $slip_unit_id = $packing->slip ? $packing->slip->stage_master_unit_id : (\App\Models\ProductionSlipDigitization::where('id', $slip_id)->value('stage_master_unit_id'));
             foreach($stageTransactionsToUpdate as $lot_no => $deductQty) {
+                $lotNoStr = (string) $lot_no;
                 $lotTxs = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-                    ->where('lot_no', $lot_no)
+                    ->whereRaw('BINARY lot_no = ?', [$lotNoStr])
                     ->where('to_stage_id', 11)
                     ->when($slip_unit_id, function($q) use ($slip_unit_id) {
                         $q->where(function($sq) use ($slip_unit_id) {
@@ -1149,9 +1142,14 @@ class PackingController extends Controller
                 foreach ($lotTxs as $tx) {
                     if ($remainingToDeduct <= 0) break;
                     $take = min($tx->remaining_quantity, $remainingToDeduct);
+                    $newRem = max(0, $tx->remaining_quantity - $take);
                     \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                         ->where('id', $tx->id)
-                        ->decrement('remaining_quantity', $take);
+                        ->update([
+                            'remaining_quantity' => $newRem,
+                            'is_closed_for_unit' => $newRem <= 0 ? 1 : 0,
+                            'status' => $newRem <= 0 ? 2 : 1
+                        ]);
                     $remainingToDeduct -= $take;
                 }
             }
@@ -1178,8 +1176,9 @@ class PackingController extends Controller
             foreach ($carton->items as $item) {
                 // Refund order_stage_transactions.remaining_quantity across transactions for lot_no at THIS unit
                 $refundQty = $item->quantity;
+                $lotNoStr = (string) $item->lot_no;
                 $txs = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-                    ->where('lot_no', $item->lot_no)
+                    ->whereRaw('BINARY lot_no = ?', [$lotNoStr])
                     ->where('to_stage_id', 11)
                     ->when($slip_unit_id, function($q) use ($slip_unit_id) {
                         $q->where(function($sq) use ($slip_unit_id) {
@@ -1195,15 +1194,26 @@ class PackingController extends Controller
                         if ($refundQty <= 0) break;
                         $maxAdd = max(0, $tx->quantity - $tx->remaining_quantity);
                         $add = min($refundQty, $maxAdd > 0 ? $maxAdd : $refundQty);
+                        $newRem = $tx->remaining_quantity + $add;
                         \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                             ->where('id', $tx->id)
-                            ->increment('remaining_quantity', $add);
+                            ->update([
+                                'remaining_quantity' => $newRem,
+                                'is_closed_for_unit' => $newRem <= 0 ? 1 : 0,
+                                'status' => $newRem <= 0 ? 2 : 1
+                            ]);
                         $refundQty -= $add;
                     }
                     if ($refundQty > 0) {
+                        $firstTx = $txs->first();
+                        $newRem = $firstTx->remaining_quantity + $refundQty;
                         \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-                            ->where('id', $txs->first()->id)
-                            ->increment('remaining_quantity', $refundQty);
+                            ->where('id', $firstTx->id)
+                            ->update([
+                                'remaining_quantity' => $newRem,
+                                'is_closed_for_unit' => $newRem <= 0 ? 1 : 0,
+                                'status' => $newRem <= 0 ? 2 : 1
+                            ]);
                     }
                 }
             }
@@ -1236,8 +1246,9 @@ class PackingController extends Controller
                 foreach ($carton->items as $item) {
                     // Refund order_stage_transactions.remaining_quantity across transactions for lot_no at THIS unit
                     $refundQty = $item->quantity;
+                    $lotNoStr = (string) $item->lot_no;
                     $txs = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-                        ->where('lot_no', $item->lot_no)
+                        ->whereRaw('BINARY lot_no = ?', [$lotNoStr])
                         ->where('to_stage_id', 11)
                         ->when($slip_unit_id, function($q) use ($slip_unit_id) {
                             $q->where(function($sq) use ($slip_unit_id) {
@@ -1253,15 +1264,26 @@ class PackingController extends Controller
                             if ($refundQty <= 0) break;
                             $maxAdd = max(0, $tx->quantity - $tx->remaining_quantity);
                             $add = min($refundQty, $maxAdd > 0 ? $maxAdd : $refundQty);
+                            $newRem = $tx->remaining_quantity + $add;
                             \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                                 ->where('id', $tx->id)
-                                ->increment('remaining_quantity', $add);
+                                ->update([
+                                    'remaining_quantity' => $newRem,
+                                    'is_closed_for_unit' => $newRem <= 0 ? 1 : 0,
+                                    'status' => $newRem <= 0 ? 2 : 1
+                                ]);
                             $refundQty -= $add;
                         }
                         if ($refundQty > 0) {
+                            $firstTx = $txs->first();
+                            $newRem = $firstTx->remaining_quantity + $refundQty;
                             \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-                                ->where('id', $txs->first()->id)
-                                ->increment('remaining_quantity', $refundQty);
+                                ->where('id', $firstTx->id)
+                                ->update([
+                                    'remaining_quantity' => $newRem,
+                                    'is_closed_for_unit' => $newRem <= 0 ? 1 : 0,
+                                    'status' => $newRem <= 0 ? 2 : 1
+                                ]);
                         }
                     }
                 }

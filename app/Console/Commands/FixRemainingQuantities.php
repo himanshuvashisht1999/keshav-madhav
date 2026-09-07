@@ -25,21 +25,22 @@ class FixRemainingQuantities extends Command
         // Collect all distinct lots
         $lotsQuery = \App\Models\OrderStageTransaction::distinct();
         if ($lotFilter) {
-            $lotsQuery->where('lot_no', $lotFilter);
+            $lotsQuery->whereRaw('BINARY lot_no = ?', [(string) $lotFilter]);
         }
         $lots = $lotsQuery->pluck('lot_no')
-            ->concat(\App\Models\OrderPrintingStageTransaction::when($lotFilter, fn($q) => $q->where('lot_no', $lotFilter))->distinct()->pluck('lot_no'))
-            ->concat(\App\Models\OrderPrintingToStichingTransaction::when($lotFilter, fn($q) => $q->where('lot_no', $lotFilter))->distinct()->pluck('lot_no'))
-            ->concat(\App\Models\OrderGodamStageTransaction::when($lotFilter, fn($q) => $q->where('lot_no', $lotFilter))->distinct()->pluck('lot_no'))
-            ->filter()->unique()->values();
+            ->concat(\App\Models\OrderPrintingStageTransaction::when($lotFilter, fn($q) => $q->whereRaw('BINARY lot_no = ?', [(string) $lotFilter]))->distinct()->pluck('lot_no'))
+            ->concat(\App\Models\OrderPrintingToStichingTransaction::when($lotFilter, fn($q) => $q->whereRaw('BINARY lot_no = ?', [(string) $lotFilter]))->distinct()->pluck('lot_no'))
+            ->concat(\App\Models\OrderGodamStageTransaction::when($lotFilter, fn($q) => $q->whereRaw('BINARY lot_no = ?', [(string) $lotFilter]))->distinct()->pluck('lot_no'))
+            ->filter()->unique()->map(fn($l) => (string) $l)->values();
 
         $fixedCount = 0;
 
         foreach ($lots as $lotNo) {
+            $lotNoStr = (string) $lotNo;
             // Group incoming transactions by (to_stage_id, sub_stage_id_to)
             $incomingTxs = collect();
             foreach ($models as $type => $model) {
-                $txs = $model::where('lot_no', $lotNo)->whereNotNull('sub_stage_id_to')->orderBy('id', 'asc')->get();
+                $txs = $model::whereRaw('BINARY lot_no = ?', [$lotNoStr])->whereNotNull('sub_stage_id_to')->orderBy('id', 'asc')->get();
                 foreach ($txs as $t) {
                     $incomingTxs->push($t);
                 }
@@ -57,10 +58,10 @@ class FixRemainingQuantities extends Command
 
                 // Calculate total outflow from this stage & unit
                 $outflow = 0;
-                $outflow += \App\Models\OrderStageTransaction::where('lot_no', $lotNo)->where('from_stage_id', $stageId)->where('sub_stage_id', $unitId)->sum('quantity');
-                $outflow += \App\Models\OrderPrintingStageTransaction::where('lot_no', $lotNo)->where('from_stage_id', $stageId)->where('sub_stage_id', $unitId)->sum('quantity');
-                $outflow += \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lotNo)->where('from_stage_id', $stageId)->where('sub_stage_id', $unitId)->sum('quantity');
-                $outflow += \App\Models\OrderGodamStageTransaction::where('lot_no', $lotNo)->where('from_stage_id', $stageId)->where('sub_stage_id', $unitId)->sum('quantity');
+                $outflow += \App\Models\OrderStageTransaction::whereRaw('BINARY lot_no = ?', [$lotNoStr])->where('from_stage_id', $stageId)->where('sub_stage_id', $unitId)->sum('quantity');
+                $outflow += \App\Models\OrderPrintingStageTransaction::whereRaw('BINARY lot_no = ?', [$lotNoStr])->where('from_stage_id', $stageId)->where('sub_stage_id', $unitId)->sum('quantity');
+                $outflow += \App\Models\OrderPrintingToStichingTransaction::whereRaw('BINARY lot_no = ?', [$lotNoStr])->where('from_stage_id', $stageId)->where('sub_stage_id', $unitId)->sum('quantity');
+                $outflow += \App\Models\OrderGodamStageTransaction::whereRaw('BINARY lot_no = ?', [$lotNoStr])->where('from_stage_id', $stageId)->where('sub_stage_id', $unitId)->sum('quantity');
 
                 // If stage is packing (11), add packed items
                 if ($stageId == 11) {
@@ -68,7 +69,7 @@ class FixRemainingQuantities extends Command
                         ->join('packing_cartons as pc', 'pi.packing_carton_id', '=', 'pc.id')
                         ->join('packing_mains as pm', 'pi.packing_main_id', '=', 'pm.id')
                         ->join('production_slip_digitization as psd', 'pm.slip_id', '=', 'psd.id')
-                        ->where('pi.lot_no', $lotNo)
+                        ->whereRaw('BINARY pi.lot_no = ?', [$lotNoStr])
                         ->where('psd.stage_master_unit_id', $unitId)
                         ->where('pc.status', 1)
                         ->sum('pi.quantity');
@@ -77,7 +78,7 @@ class FixRemainingQuantities extends Command
 
                 // Add production outflows (debit, dead, sampling, defect)
                 $outflowInv = (int) \App\Models\ProductionOutflowInventory::join('production_slip_digitization as psd', 'production_outflow_inventories.slip_id', '=', 'psd.id')
-                    ->where('production_outflow_inventories.lot_no', $lotNo)
+                    ->whereRaw('BINARY production_outflow_inventories.lot_no = ?', [$lotNoStr])
                     ->where('psd.stage_master_unit_id', $unitId)
                     ->sum('production_outflow_inventories.quantity');
                 $outflow += $outflowInv;
