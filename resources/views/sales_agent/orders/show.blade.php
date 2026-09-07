@@ -10,8 +10,8 @@
         </div>
 
         <!-- ORDER INFO CARD -->
-        <div class="app-card shadow-sm border-0 mb-4 bg-primary text-white position-relative overflow-hidden" style="border-radius: 18px;">
-            <div style="height: 5px; background: #ffe600; width: 100%; position: absolute; top: 0; left: 0;"></div>
+        <div class="app-card shadow-sm border-0 mb-4 bg-primary text-white position-relative" style="border-radius: 18px;">
+            <div style="height: 5px; background: #ffe600; width: 100%; position: absolute; top: 0; left: 0; border-top-left-radius: 18px; border-top-right-radius: 18px;"></div>
             <div class="d-flex justify-content-between align-items-center pt-2">
                 <div>
                     <p class="small mb-1 font-weight-bold uppercase" style="color: #fef08a; letter-spacing: 0.5px; font-size: 11px;">Status</p>
