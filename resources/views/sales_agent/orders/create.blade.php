@@ -420,13 +420,16 @@
             position: sticky;
             left: 0;
             z-index: 5;
-            background-color: #f1f7ff;
+            background-color: #fefce8;
             box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
         }
 
         .matrix-table thead th:first-child {
             z-index: 15;
-            background-color: #007bff !important;
+            background: linear-gradient(135deg, #ffd600 0%, #f59e0b 100%) !important;
+            background-color: #ffd600 !important;
+            color: #78350f !important;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
         }
 
         .matrix-row-deselected {
@@ -457,7 +460,7 @@
             border-color: #ffffff !important;
         }
         .matrix-col-header .custom-control-input:checked ~ .custom-control-label::after {
-            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%23007bff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3E%3C/svg%3E") !important;
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%2316a34a' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3E%3C/svg%3E") !important;
         }
         .matrix-col-header .custom-control-input:focus ~ .custom-control-label::before {
             box-shadow: 0 0 0 1px #fff, 0 0 0 0.2rem rgba(255, 255, 255, 0.4);
@@ -489,8 +492,8 @@
         }
 
         .variation-card.has-qty {
-            border-color: #007bff;
-            background-color: #f0f7ff;
+            border-color: #22c55e;
+            background-color: #f0fdf4;
         }
 
         .quantity-control-app {
@@ -516,7 +519,7 @@
             background: #fff;
             border: 1px solid #dee2e6;
             border-radius: 8px;
-            color: #007bff;
+            color: #16a34a;
         }
     </style>
 @endsection
@@ -750,16 +753,16 @@
 
                 // 3. Master Global Apply Bar
                 html += `
-                    <div class="card border-primary mb-3 shadow-sm" style="background: #eef5ff; border-radius: 12px;">
+                    <div class="card border-0 mb-3 shadow-sm" style="background: linear-gradient(90deg, #fefce8 0%, #f0fdf4 100%); border: 1.5px solid #facc15 !important; border-radius: 12px;">
                         <div class="card-body p-2 d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
                             <div>
-                                <span class="font-weight-bold text-primary"><i class="fas fa-bolt mr-1"></i> Apply Quantity to All</span>
+                                <span class="font-weight-bold" style="color: #854d0e;"><i class="fas fa-bolt mr-1" style="color: #eab308;"></i> Apply Quantity to All</span>
                                 <div class="small text-muted">Set quantity for all size sets and colors</div>
                             </div>
-                            <div class="quantity-control-app d-flex align-items-center p-1 border-primary bg-white shadow-sm" style="border-radius: 8px;">
-                                <button type="button" class="btn-q btn-minus-master text-primary font-weight-bold">-</button>
-                                <input type="number" id="masterQtyInput" class="text-primary font-weight-bold" min="0" value="0" style="width: 45px; text-align: center; border: 0; background: transparent;">
-                                <button type="button" class="btn-q btn-plus-master text-primary font-weight-bold">+</button>
+                            <div class="quantity-control-app d-flex align-items-center p-1 bg-white shadow-xs" style="border-radius: 8px; border: 1.5px solid #facc15;">
+                                <button type="button" class="btn-q btn-minus-master font-weight-bold" style="color: #854d0e;">-</button>
+                                <input type="number" id="masterQtyInput" class="font-weight-bold" min="0" value="0" style="color: #854d0e; width: 45px; text-align: center; border: 0; background: transparent;">
+                                <button type="button" class="btn-q btn-plus-master font-weight-bold" style="color: #854d0e;">+</button>
                             </div>
                         </div>
                     </div>
@@ -771,7 +774,7 @@
                         <table class="table table-bordered table-sm mb-0 matrix-table text-center align-middle" style="font-size: 13px;">
                             <thead>
                                 <tr>
-                                    <th class="align-middle text-center font-weight-bold text-white px-2 py-2" style="min-width: 140px; width: 140px; background-color: #007bff;">
+                                    <th class="align-middle text-center font-weight-bold px-2 py-2" style="min-width: 140px; width: 140px; background: linear-gradient(135deg, #ffd600 0%, #f59e0b 100%); background-color: #ffd600; color: #78350f !important; text-shadow: 0 1px 0 rgba(255,255,255,0.3);">
                                         SIZE SET
                                     </th>
                                     ${Array.from({ length: maxColors }).map((_, idx) => {
@@ -785,7 +788,7 @@
                                         const colName = colColorObj ? (colColorObj.name ? `${colColorObj.name}(${colColorObj.id})` : `COLOR ${colColorObj.id}`) : `COL ${idx + 1}`;
 
                                         return `
-                                            <th class="align-middle text-center font-weight-bold text-white p-2 matrix-col-header matrix-col-${idx}" data-col-index="${idx}" style="min-width: 145px; background-color: #007bff; color: #fff;">
+                                            <th class="align-middle text-center font-weight-bold text-white p-2 matrix-col-header matrix-col-${idx}" data-col-index="${idx}" style="min-width: 145px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); background-color: #16a34a; color: #fff;">
                                                 <div class="custom-control custom-checkbox d-inline-block text-left" style="max-width: 100%;">
                                                     <input type="checkbox" class="custom-control-input toggle-col-checkbox" id="toggle_col_${idx}" data-col-index="${idx}" checked>
                                                     <label class="custom-control-label font-weight-bold text-white" for="toggle_col_${idx}" style="font-size: 13px; cursor: pointer; user-select: none; line-height: 1.5;" title="${colName}">
@@ -795,9 +798,9 @@
                                                 <!-- Color Column batch stepper -->
                                                 <div class="mt-1">
                                                     <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px;">
-                                                        <button type="button" class="btn-q btn-minus-col px-2 py-0 text-primary font-weight-bold" data-col-index="${idx}" style="line-height: 1;">-</button>
-                                                        <input type="number" class="col-batch-qty-input font-weight-bold text-center text-primary" data-col-index="${idx}" min="0" value="0" style="width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
-                                                        <button type="button" class="btn-q btn-plus-col px-2 py-0 text-primary font-weight-bold" data-col-index="${idx}" style="line-height: 1;">+</button>
+                                                        <button type="button" class="btn-q btn-minus-col px-2 py-0 text-success font-weight-bold" data-col-index="${idx}" style="line-height: 1;">-</button>
+                                                        <input type="number" class="col-batch-qty-input font-weight-bold text-center text-success" data-col-index="${idx}" min="0" value="0" style="width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
+                                                        <button type="button" class="btn-q btn-plus-col px-2 py-0 text-success font-weight-bold" data-col-index="${idx}" style="line-height: 1;">+</button>
                                                     </div>
                                                 </div>
                                             </th>
@@ -811,19 +814,19 @@
                 data.size_sets.forEach(ss => {
                     html += `
                         <tr class="matrix-row-${ss.size_set_id}">
-                            <td class="align-middle p-2 text-center matrix-ss-header-cell" style="min-width: 140px; width: 140px; background-color: #f1f7ff; border-right: 2px solid #b8daff;">
+                            <td class="align-middle p-2 text-center matrix-ss-header-cell" style="min-width: 140px; width: 140px; background-color: #fefce8; border-right: 2px solid #fef08a;">
                                 <div class="custom-control custom-checkbox d-inline-block mb-1">
                                     <input type="checkbox" class="custom-control-input toggle-ss-checkbox" id="toggle_ss_${ss.size_set_id}" data-size-set="${ss.size_set_id}" checked>
-                                    <label class="custom-control-label font-weight-bold text-primary" for="toggle_ss_${ss.size_set_id}" style="font-size: 14px; cursor: pointer; user-select: none;">
+                                    <label class="custom-control-label font-weight-bold" for="toggle_ss_${ss.size_set_id}" style="color: #854d0e; font-size: 14px; cursor: pointer; user-select: none;">
                                         ${ss.size_set_name}
                                     </label>
                                 </div>
                                 <!-- Size Set Row batch stepper -->
                                 <div>
-                                    <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px;">
-                                        <button type="button" class="btn-q btn-minus-ss px-2 py-0 text-primary" data-size-set="${ss.size_set_id}" style="line-height: 1;">-</button>
-                                        <input type="number" class="ss-batch-qty-input font-weight-bold text-center text-primary" data-size-set="${ss.size_set_id}" min="0" value="0" style="width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
-                                        <button type="button" class="btn-q btn-plus-ss px-2 py-0 text-primary" data-size-set="${ss.size_set_id}" style="line-height: 1;">+</button>
+                                    <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px; border-color: #fde047 !important;">
+                                        <button type="button" class="btn-q btn-minus-ss px-2 py-0 font-weight-bold" data-size-set="${ss.size_set_id}" style="color: #854d0e; line-height: 1;">-</button>
+                                        <input type="number" class="ss-batch-qty-input font-weight-bold text-center" data-size-set="${ss.size_set_id}" min="0" value="0" style="color: #854d0e; width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
+                                        <button type="button" class="btn-q btn-plus-ss px-2 py-0 font-weight-bold" data-size-set="${ss.size_set_id}" style="color: #854d0e; line-height: 1;">+</button>
                                     </div>
                                 </div>
                             </td>
@@ -1521,7 +1524,7 @@
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonText: 'Yes, Confirm',
-                    confirmButtonColor: '#007bff'
+                    confirmButtonColor: '#16a34a'
                 }).then((result) => {
                     if (result.isConfirmed) {
                         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');

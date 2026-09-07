@@ -19,11 +19,15 @@
 
     <style>
         :root {
-            --primary-color: #4f46e5;
-            --secondary-color: #818cf8;
+            --primary-color: #26A744;
+            --primary-light: #32c454;
+            --primary-dark: #1a8733;
+            --accent-yellow: #ffe600;
+            --accent-yellow-light: #fef08a;
+            --secondary-color: #84d232;
             --bg-color: #f8fafc;
-            --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --header-height: 60px;
+            --card-shadow: 0 4px 12px -2px rgba(38, 167, 68, 0.1), 0 2px 6px -2px rgba(0, 0, 0, 0.05);
+            --header-height: 62px;
             --nav-height: 65px;
         }
 
@@ -42,18 +46,21 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 20px;
+            padding: 0 16px;
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border-top: 4px solid var(--accent-yellow);
         }
 
         .agent-header h1 {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             font-weight: 700;
             margin: 0;
-            color: var(--primary-color);
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
         }
 
         .bottom-nav {
@@ -66,7 +73,7 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.05);
             z-index: 1000;
             border-top: 1px solid #f1f5f9;
         }
@@ -79,21 +86,39 @@
             color: #94a3b8;
             font-size: 11px;
             font-weight: 600;
-            transition: 0.3s;
+            transition: all 0.25s ease;
             width: 20%;
+            position: relative;
         }
 
         .nav-item i {
             font-size: 20px;
             margin-bottom: 4px;
+            transition: transform 0.2s ease;
         }
 
         .nav-item.active {
+            color: var(--primary-color) !important;
+            font-weight: 700;
+        }
+
+        .nav-item.active i {
+            transform: translateY(-2px);
             color: var(--primary-color);
         }
 
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            width: 20px;
+            height: 3.5px;
+            background: var(--accent-yellow);
+            border-radius: 3px;
+        }
+
         .main-content {
-            padding: 20px;
+            padding: 18px;
         }
 
         .app-card {
@@ -102,22 +127,84 @@
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: var(--card-shadow);
-            border: none;
+            border: 1px solid rgba(226, 232, 240, 0.7);
         }
 
         .btn-app {
-            background: var(--primary-color);
+            background: linear-gradient(135deg, #26A744 0%, #1a8733 100%);
             color: #fff;
             border-radius: 12px;
             padding: 12px 20px;
-            font-weight: 600;
+            font-weight: 700;
             border: none;
             width: 100%;
-            transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(38, 167, 68, 0.25);
+            transition: all 0.25s ease;
+        }
+
+        .btn-app:hover, .btn-app:focus {
+            background: linear-gradient(135deg, #1a8733 0%, #136626 100%);
+            color: #fff;
+            box-shadow: 0 6px 16px rgba(38, 167, 68, 0.35);
         }
 
         .btn-app:active {
             transform: scale(0.98);
+        }
+
+        /* SnapKid Global Bootstrap Overrides */
+        .btn-primary {
+            background: linear-gradient(135deg, #26A744 0%, #1a8733 100%) !important;
+            border-color: #1a8733 !important;
+            color: #fff !important;
+            box-shadow: 0 3px 10px rgba(38, 167, 68, 0.25);
+        }
+
+        .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+            background: linear-gradient(135deg, #1a8733 0%, #136626 100%) !important;
+            border-color: #136626 !important;
+            color: #fff !important;
+            box-shadow: 0 4px 14px rgba(38, 167, 68, 0.35);
+        }
+
+        .text-primary {
+            color: #26A744 !important;
+        }
+
+        .bg-primary {
+            background: linear-gradient(135deg, #26A744 0%, #1a8733 100%) !important;
+            color: #fff !important;
+        }
+
+        .badge-primary {
+            background-color: #fef08a !important;
+            color: #854d0e !important;
+            border: 1px solid #fde047;
+            font-weight: 700;
+        }
+
+        .border-primary {
+            border-color: #26A744 !important;
+        }
+
+        .custom-control-input:checked ~ .custom-control-label::before {
+            background-color: #26A744 !important;
+            border-color: #26A744 !important;
+        }
+
+        .form-control:focus {
+            border-color: #26A744 !important;
+            box-shadow: 0 0 0 0.2rem rgba(38, 167, 68, 0.2) !important;
+        }
+
+        .select2-container--bootstrap4 .select2-results__option--highlighted[aria-selected] {
+            background-color: #26A744 !important;
+            color: #fff !important;
+        }
+
+        .select2-container--bootstrap4.select2-container--focus .select2-selection {
+            border-color: #26A744 !important;
+            box-shadow: 0 0 0 0.2rem rgba(38, 167, 68, 0.2) !important;
         }
 
         /* Specific Mobile Tweaks */
@@ -134,11 +221,14 @@
 
     @auth('sales_agent')
         <div class="agent-header">
-            <h1>{{ $title ?? 'SnapKid Sales' }}</h1>
+            <h1 class="d-flex align-items-center">
+                <img src="{{ asset('images/snapkid_logo.png') }}" alt="SnapKid" style="height: 36px; width: auto; object-fit: contain;" class="mr-2">
+                <span>{{ $title ?? 'SnapKid Agent' }}</span>
+            </h1>
             <div class="header-actions">
                 <form action="{{ route('agent.logout') }}" method="POST" id="logout-form">
                     @csrf
-                    <button type="submit" class="btn btn-link text-muted"><i class="fas fa-sign-out-alt"></i></button>
+                    <button type="submit" class="btn btn-link text-muted" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
                 </form>
             </div>
         </div>

@@ -7,9 +7,10 @@
         <div class="order-list">
             @forelse($orders as $order)
                 <a href="{{ route('agent.orders.show', $order->id) }}" class="text-decoration-none">
-                    <div class="app-card p-3 mb-3 shadow-sm border-0 d-flex align-items-center">
-                        <div class="bg-light p-3 rounded-lg mr-3">
-                            <i class="fas fa-receipt text-muted"></i>
+                    <div class="app-card p-3 mb-3 shadow-sm border-0 d-flex align-items-center position-relative overflow-hidden">
+                        <div style="height: 3px; background: {{ $order->status == 'pending' ? '#ffd600' : '#22c55e' }}; width: 100%; position: absolute; top: 0; left: 0;"></div>
+                        <div class="p-3 rounded-lg mr-3" style="background: #fef9c3;">
+                            <i class="fas fa-receipt" style="color: #ca8a04;"></i>
                         </div>
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between mb-1 align-items-center">
@@ -23,7 +24,7 @@
                                         </span>
                                     @endif
                                     <span
-                                        class="badge {{ $order->status == 'pending' ? 'badge-warning' : 'badge-success' }} small rounded-pill px-3 py-1">
+                                        class="badge {{ $order->status == 'pending' ? 'badge-warning' : 'badge-success' }} small rounded-pill px-3 py-1 font-weight-bold">
                                         {{ ucfirst($order->status) }}
                                     </span>
                                 </div>
@@ -40,7 +41,7 @@
                             </div>
                             <hr class="my-2 border-dashed">
                             <div class="d-flex justify-content-between">
-                                <span class="text-muted small font-weight-bold">{{ $order->total_qty }} Items</span>
+                                <span class="badge px-2 py-1 font-weight-bold" style="background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; border-radius: 6px;">{{ $order->total_qty }} Items</span>
                             </div>
                         </div>
                     </div>

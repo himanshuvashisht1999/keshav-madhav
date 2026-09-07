@@ -10,15 +10,18 @@
         </div>
 
         <!-- ORDER INFO CARD -->
-        <div class="app-card shadow-sm border-0 mb-4 bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
+        <div class="app-card shadow-sm border-0 mb-4 bg-primary text-white position-relative overflow-hidden" style="border-radius: 18px;">
+            <div style="height: 5px; background: #ffe600; width: 100%; position: absolute; top: 0; left: 0;"></div>
+            <div class="d-flex justify-content-between align-items-center pt-2">
                 <div>
-                    <p class="small mb-1 opacity-75">Status</p>
-                    <h4 class="font-weight-bold mb-0 text-uppercase">{{ $order->status }}</h4>
+                    <p class="small mb-1 font-weight-bold uppercase" style="color: #fef08a; letter-spacing: 0.5px; font-size: 11px;">Status</p>
+                    <span class="badge px-3 py-1 font-weight-bold shadow-xs" style="background: #ffe600; color: #14532d; font-size: 0.95rem; border-radius: 8px; letter-spacing: 0.5px;">
+                        {{ strtoupper($order->status) }}
+                    </span>
                 </div>
                 <div class="text-right">
-                    <p class="small mb-1 opacity-75">Total Items</p>
-                    <h3 class="font-weight-bold mb-0">{{ $order->total_qty }} pcs</h3>
+                    <p class="small mb-1 font-weight-bold uppercase" style="color: #fef08a; letter-spacing: 0.5px; font-size: 11px;">Total Items</p>
+                    <h3 class="font-weight-bold mb-0 text-white" style="font-size: 1.6rem; text-shadow: 0 1px 2px rgba(0,0,0,0.15);">{{ $order->total_qty }} <span style="font-size: 1rem; color: #fef08a;">pcs</span></h3>
                     <div class="d-flex flex-wrap justify-content-end mt-2">
                         <div class="dropdown mr-2 mb-1">
                             <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-3 font-weight-bold shadow-sm text-nowrap" 
@@ -98,7 +101,7 @@
                         @else
                             <span class="badge badge-secondary mr-2">PENDING</span>
                         @endif
-                        <span class="badge badge-primary">{{ $group->box_count }} Boxes</span>
+                        <span class="badge font-weight-bold px-2 py-1" style="background: #fef08a; color: #854d0e; border: 1px solid #fde047; border-radius: 6px;">{{ $group->box_count }} Boxes</span>
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mb-2">
@@ -196,7 +199,7 @@
         }
 
         .bg-primary {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+            background: linear-gradient(135deg, #26A744 0%, #16812d 100%) !important;
         }
     </style>
 @endpush

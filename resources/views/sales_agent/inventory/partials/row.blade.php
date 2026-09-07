@@ -1,13 +1,14 @@
 <div class="col-12 col-md-6 mb-3">
-    <div class="card border-0 shadow-sm h-100" style="border-radius: 16px; overflow: hidden;">
+    <div class="card border-0 shadow-sm h-100 position-relative" style="border-radius: 16px; overflow: hidden;">
+        <div style="height: 3px; background: linear-gradient(90deg, #ffd600 0%, #22c55e 100%); width: 100%;"></div>
         <div class="card-body p-3">
             <div class="d-flex align-items-center mb-3">
-                <div class="bg-primary-soft rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(0,123,255,0.1);">
-                    <i class="fas fa-tshirt text-primary"></i>
+                <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: #fef9c3;">
+                    <i class="fas fa-tshirt" style="color: #ca8a04;"></i>
                 </div>
                 <div class="flex-grow-1">
                     <h6 class="font-weight-bold text-dark mb-0" style="font-size: 1rem;">{{ trim($row->product_name) ?: $row->design_number }}</h6>
-                    <span class="badge badge-light text-muted border py-1 px-2 mt-1" style="font-size: 0.7rem; border-radius: 6px;">
+                    <span class="badge py-1 px-2 mt-1" style="font-size: 0.7rem; border-radius: 6px; background-color: #fef08a; color: #854d0e; border: 1px solid #fde047;">
                         <i class="fas fa-barcode mr-1"></i>{{ $row->design_number }}
                     </span>
                 </div>

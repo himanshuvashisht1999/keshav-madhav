@@ -33,10 +33,11 @@
         <div class="row">
             @forelse($shops as $shop)
                 <div class="col-12 mb-3">
-                    <div class="app-card">
-                        <div class="d-flex align-items-start">
-                            <div class="bg-light p-3 rounded-circle mr-3">
-                                <i class="fas fa-store text-primary"></i>
+                    <div class="app-card position-relative overflow-hidden">
+                        <div style="height: 3px; background: linear-gradient(90deg, #ffd600 0%, #22c55e 100%); width: 100%; position: absolute; top: 0; left: 0;"></div>
+                        <div class="d-flex align-items-start pt-1">
+                            <div class="p-3 rounded-circle mr-3" style="background: #fef9c3;">
+                                <i class="fas fa-store" style="color: #ca8a04;"></i>
                             </div>
                             <div class="flex-grow-1">
                                 <h6 class="font-weight-bold mb-1">{{ $shop->name }}</h6>
