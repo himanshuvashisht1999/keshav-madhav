@@ -1002,6 +1002,7 @@ class AgentOrderController extends Controller
                 $itemRackId = $item->item_rack_id ?? null;
                 $inventoryInfo = null;
                 $currentRackValid = false;
+                $currentRackDispatchable = false;
                 
                 $allocated_qty = DB::table('agent_order_items')
                     ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
@@ -1019,8 +1020,15 @@ class AgentOrderController extends Controller
                     ->where('domestic_inventories.color_id', $item->color_id)
                     ->where('domestic_inventories.size_set_id', $item->size_set_id)
                     ->where('domestic_inventories.total_boxes', '>', 0)
-                    ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name', 'domestic_inventories.total_boxes as boxes')
-                    ->orderByRaw("CASE WHEN LOWER(storerooms.name) = 'advance sample' THEN 1 ELSE 0 END")
+                    ->select(
+                        'racks.id as rack_id', 
+                        'racks.name as rack_name', 
+                        'storerooms.name as warehouse_name', 
+                        'storerooms.order_dispatch',
+                        'domestic_inventories.total_boxes as boxes'
+                    )
+                    ->orderByRaw("CASE WHEN storerooms.order_dispatch = 'Yes' THEN 0 ELSE 1 END ASC")
+                    ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
                     ->orderBy('domestic_inventories.total_boxes', 'desc')
                     ->get();
                 
@@ -1028,26 +1036,34 @@ class AgentOrderController extends Controller
                     $currentRackValid = $allLocations->contains('rack_id', $itemRackId);
                     if ($currentRackValid) {
                         $inventoryInfo = $allLocations->firstWhere('rack_id', $itemRackId);
+                        $currentRackDispatchable = ($inventoryInfo->order_dispatch ?? 'Yes') === 'Yes';
                     } else {
                         // Rack doesn't have boxes anymore, but we still need its name to show if no available locations exist
                         $inventoryInfo = DB::table('racks')
                             ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
                             ->where('racks.id', $itemRackId)
-                            ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name')
+                            ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name', 'storerooms.order_dispatch')
                             ->first();
+                        $currentRackDispatchable = $inventoryInfo && ($inventoryInfo->order_dispatch ?? 'Yes') === 'Yes';
                     }
                 }
 
-                $available_global = $allLocations->sum('boxes') - $allocated_qty;
-                $availableLocations = $allLocations;
+                $dispatchableLocation = $allLocations->first(function($loc) {
+                    return ($loc->order_dispatch ?? 'Yes') === 'Yes';
+                });
 
-                if (!$currentRackValid && $availableLocations->count() > 0) {
-                    $inventoryInfo = $availableLocations->first();
-                        
+                // Auto-update to a dispatchable warehouse if current rack is not dispatchable (or invalid) but dispatchable stock is present
+                if ((!$currentRackValid || !$currentRackDispatchable) && $dispatchableLocation) {
+                    $inventoryInfo = $dispatchableLocation;
+                    DB::table('agent_order_items')
+                        ->where('id', $item->id)
+                        ->update(['rack_id' => $dispatchableLocation->rack_id, 'updated_at' => now()]);
+                } elseif (!$currentRackValid && $allLocations->isNotEmpty()) {
+                    $inventoryInfo = $allLocations->first();
                     if ($inventoryInfo && isset($inventoryInfo->rack_id)) {
                         DB::table('agent_order_items')
                             ->where('id', $item->id)
-                            ->update(['rack_id' => $inventoryInfo->rack_id]);
+                            ->update(['rack_id' => $inventoryInfo->rack_id, 'updated_at' => now()]);
                     }
                 }
 
@@ -1074,7 +1090,8 @@ class AgentOrderController extends Controller
                     'warehouse_name' => $inventoryInfo->warehouse_name ?? 'N/A',
                     'rack_name' => $inventoryInfo->rack_name ?? 'N/A',
                     'rack_id' => $inventoryInfo->rack_id ?? null,
-                    'available_locations' => $availableLocations,
+                    'order_dispatch' => $inventoryInfo->order_dispatch ?? 'Yes',
+                    'available_locations' => $allLocations,
                 ];
             });
         }
@@ -1825,15 +1842,31 @@ class AgentOrderController extends Controller
             $inventoryInfo = null;
 
             if ($itemRackId) {
-                $inventoryInfo = DB::table('racks')
-                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                    ->where('racks.id', $itemRackId)
-                    ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
-                    ->first();
+                $hasStockInAssignedRack = DB::table('domestic_inventories')
+                    ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                    ->join('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                    ->where('domestic_inventories.product_id', $first->product_id)
+                    ->where('domestic_inventories.color_id', $first->color_id)
+                    ->where('domestic_inventories.size_set_id', $first->size_set_id)
+                    ->where('domestic_inventories.rack_id', $itemRackId)
+                    ->where('domestic_inventories.total_boxes', '>', 0)
+                    ->where(function($q) {
+                        $q->whereNull('storerooms.id')
+                          ->orWhere('storerooms.order_dispatch', '!=', 'No');
+                    })
+                    ->exists();
+
+                if ($hasStockInAssignedRack) {
+                    $inventoryInfo = DB::table('racks')
+                        ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                        ->where('racks.id', $itemRackId)
+                        ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
+                        ->first();
+                }
             }
 
             if (!$inventoryInfo) {
-                // Find rack info separately to avoid multiplying the order items rows
+                // Find best dispatchable rack info separately
                 $inventoryInfo = DB::table('domestic_inventories')
                     ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
                     ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
@@ -1841,6 +1874,20 @@ class AgentOrderController extends Controller
                     ->where('domestic_inventories.color_id', $first->color_id)
                     ->where('domestic_inventories.size_set_id', $first->size_set_id)
                     ->where('domestic_inventories.total_boxes', '>', 0)
+                    ->where(function($q) {
+                        $q->whereNull('storerooms.id')
+                          ->orWhere('storerooms.order_dispatch', '!=', 'No');
+                    })
+                    ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
+                    ->orderBy('domestic_inventories.total_boxes', 'desc')
+                    ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
+                    ->first();
+            }
+
+            if (!$inventoryInfo && $itemRackId) {
+                $inventoryInfo = DB::table('racks')
+                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                    ->where('racks.id', $itemRackId)
                     ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
                     ->first();
             }
@@ -2312,11 +2359,27 @@ class AgentOrderController extends Controller
                 $inventoryInfo = null;
                 
                 if ($itemRackId) {
-                    $inventoryInfo = DB::table('racks')
-                        ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                        ->where('racks.id', $itemRackId)
-                        ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name')
-                        ->first();
+                    $hasStockInAssignedRack = DB::table('domestic_inventories')
+                        ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                        ->join('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                        ->where('domestic_inventories.product_id', $item->product_id)
+                        ->where('domestic_inventories.color_id', $item->color_id)
+                        ->where('domestic_inventories.size_set_id', $item->size_set_id)
+                        ->where('domestic_inventories.rack_id', $itemRackId)
+                        ->where('domestic_inventories.total_boxes', '>', 0)
+                        ->where(function($q) {
+                            $q->whereNull('storerooms.id')
+                              ->orWhere('storerooms.order_dispatch', '!=', 'No');
+                        })
+                        ->exists();
+
+                    if ($hasStockInAssignedRack) {
+                        $inventoryInfo = DB::table('racks')
+                            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                            ->where('racks.id', $itemRackId)
+                            ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name')
+                            ->first();
+                    }
                 }
 
                 if (!$inventoryInfo) {
@@ -2327,6 +2390,12 @@ class AgentOrderController extends Controller
                         ->where('domestic_inventories.color_id', $item->color_id)
                         ->where('domestic_inventories.size_set_id', $item->size_set_id)
                         ->where('domestic_inventories.total_boxes', '>', 0)
+                        ->where(function($q) {
+                            $q->whereNull('storerooms.id')
+                              ->orWhere('storerooms.order_dispatch', '!=', 'No');
+                        })
+                        ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
+                        ->orderBy('domestic_inventories.total_boxes', 'desc')
                         ->select('racks.id as rack_id', 'racks.name as rack_name', 'storerooms.name as warehouse_name')
                         ->first();
                 }
@@ -2379,32 +2448,57 @@ class AgentOrderController extends Controller
             return response()->json(['success' => false, 'message' => 'No barcode received.']);
         }
 
-        // 1. Find the inventory record by barcode (Inventory is now consolidated)
-        // Check if input is a compact barcode (D1S1C1P1F1) or a unique box_no
-        // $inventory = DB::table('domestic_inventories')
-        //     ->where(function ($q) use ($input) {
-        //         $q->where('barcode', $input)->orWhere('box_no', $input);
-        //     })
-        //     // ->where('order_main_id', 0)
-        //     ->where('total_boxes', '>', 0)
-        //     ->first();
+        // Base query restricted to dispatchable storerooms (order_dispatch != 'No')
+        $invQuery = DB::table('domestic_inventories')
+            ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+            ->where('domestic_inventories.total_boxes', '>', 0)
+            ->where(function($q) {
+                $q->whereNull('storerooms.id')
+                  ->orWhere('storerooms.order_dispatch', '!=', 'No');
+            })
+            ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
+            ->orderBy('domestic_inventories.total_boxes', 'desc')
+            ->select('domestic_inventories.*', 'storerooms.name as storeroom_name', 'storerooms.order_dispatch');
 
         if (preg_match('/^D(\d+)S(\d+)C(\d+)/', $input, $matches)) {
-            $inventory = DB::table('domestic_inventories')
-                ->where('product_id', $matches[1])
-                ->where('size_set_id', $matches[2])
-                ->where('color_id', $matches[3])
-                ->where('total_boxes', '>', 0)
+            $inventory = (clone $invQuery)
+                ->where('domestic_inventories.product_id', $matches[1])
+                ->where('domestic_inventories.size_set_id', $matches[2])
+                ->where('domestic_inventories.color_id', $matches[3])
                 ->first();
         } else {
-            $inventory = DB::table('domestic_inventories')
-                ->where('barcode', $input)
-                ->where('total_boxes', '>', 0)
+            $inventory = (clone $invQuery)
+                ->where('domestic_inventories.barcode', $input)
                 ->first();
         }
 
         if (!$inventory) {
-            return response()->json(['success' => false, 'message' => 'No available stock found in inventory for: ' . $input]);
+            // Check if stock exists in a non-dispatchable storeroom
+            $nonDispatchStock = DB::table('domestic_inventories')
+                ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                ->where('domestic_inventories.total_boxes', '>', 0)
+                ->where('storerooms.order_dispatch', '=', 'No');
+
+            if (isset($matches) && !empty($matches)) {
+                $nonDispatchStock->where('domestic_inventories.product_id', $matches[1])
+                    ->where('domestic_inventories.size_set_id', $matches[2])
+                    ->where('domestic_inventories.color_id', $matches[3]);
+            } else {
+                $nonDispatchStock->where('domestic_inventories.barcode', $input);
+            }
+
+            $nonDispatchRoom = $nonDispatchStock->value('storerooms.name');
+
+            if ($nonDispatchRoom) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Stock exists in '{$nonDispatchRoom}', but Order Dispatch is set to 'No' for this storeroom. Please transfer stock to a dispatchable warehouse."
+                ]);
+            }
+
+            return response()->json(['success' => false, 'message' => 'No available stock found in dispatchable inventory for: ' . $input]);
         }
 
         // 2. Find the pending order item for this design
@@ -2427,8 +2521,9 @@ class AgentOrderController extends Controller
             // Direct decrement in inventory
             DB::table('domestic_inventories')->where('id', $inventory->id)->decrement('total_boxes', 1);
 
-            // Directly update the aggregate order item
+            // Directly update the aggregate order item with the scanned rack and counts
             DB::table('agent_order_items')->where('id', $item->id)->update([
+                'rack_id' => $inventory->rack_id,
                 'scanned_box_qty' => $item->scanned_box_qty + 1,
                 'scanned_quantity' => $item->scanned_quantity + $inventory->quantity,
                 // We'll store the LAST scanned box_no for UI reference, but keep the row aggregated
@@ -2436,16 +2531,8 @@ class AgentOrderController extends Controller
                 'updated_at' => now()
             ]);
 
-            // Sync order totals (scanned items now represent the partial dispatch)
-            // Note: In a 'direct change' model, we might want to keep the original total_amount 
-            // representing the FULL order, while tracking 'dispatch_value'. 
-            // The user said 'why you make it so much complees', so I'll keep the standard total sync.
-            $items = DB::table('agent_order_items')->where('agent_order_id', $id)->get();
-            $order_row = DB::table('agent_orders')->where('id', $id)->first();
-
-            // Wait! For 'Dispatch Scan' UI, it usually shows only WHAT was scanned.
-            // But 'total_amount' usually means the order value. 
-            // I'll leave the totals as they were to avoid messing up the pricing logic.
+            // Sync other pending orders' rack allocation for this variation (nullify if stock depleted)
+            $this->syncPendingOrderRacks($inventory->product_id, $inventory->color_id, $inventory->size_set_id, $id);
 
             DB::commit();
 
@@ -2526,6 +2613,9 @@ class AgentOrderController extends Controller
                 'updated_at' => now()
             ]);
 
+            // Sync other pending orders' rack allocation
+            $this->syncPendingOrderRacks($inventory->product_id, $inventory->color_id, $inventory->size_set_id, $id);
+
             DB::commit();
 
             $scannedTotal = DB::table('agent_order_items')
@@ -2585,9 +2675,19 @@ class AgentOrderController extends Controller
                 }
 
                 $inventory = DB::table('domestic_inventories')
-                    ->where('product_id', $productId)
-                    ->where('size_set_id', $sizeSetId)
-                    ->where('color_id', $colorId)
+                    ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                    ->where('domestic_inventories.product_id', $productId)
+                    ->where('domestic_inventories.size_set_id', $sizeSetId)
+                    ->where('domestic_inventories.color_id', $colorId)
+                    ->where('domestic_inventories.total_boxes', '>', 0)
+                    ->where(function($q) {
+                        $q->whereNull('storerooms.id')
+                          ->orWhere('storerooms.order_dispatch', '!=', 'No');
+                    })
+                    ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
+                    ->orderBy('domestic_inventories.total_boxes', 'desc')
+                    ->select('domestic_inventories.*')
                     ->first();
 
                 $pcsPerBox = $inventory && $inventory->quantity > 0 ? $inventory->quantity : ($item->box_qty > 0 ? ($item->quantity / $item->box_qty) : 1);
@@ -2602,7 +2702,7 @@ class AgentOrderController extends Controller
                     $availableBoxes = $inventory ? max(0, (int)$inventory->total_boxes) : 0;
                     if ($availableBoxes <= 0) {
                         DB::rollBack();
-                        return response()->json(['success' => false, 'message' => 'No stock available in inventory for this item.']);
+                        return response()->json(['success' => false, 'message' => 'No dispatchable stock available in inventory for this item.']);
                     }
 
                     $boxesToScan = min($neededBoxes, $availableBoxes);
@@ -2613,11 +2713,14 @@ class AgentOrderController extends Controller
                     $newScannedQty = $item->scanned_quantity + ($boxesToScan * $pcsPerBox);
 
                     DB::table('agent_order_items')->where('id', $item->id)->update([
+                        'rack_id' => $inventory->rack_id,
                         'scanned_box_qty' => $newScannedBoxes,
                         'scanned_quantity' => $newScannedQty,
                         'box_no' => $inventory->box_no ?? $item->box_no,
                         'updated_at' => now()
                     ]);
+
+                    $this->syncPendingOrderRacks($productId, $colorId, $sizeSetId, $id);
 
                     $message = $boxesToScan < $neededBoxes 
                         ? "Scanned {$boxesToScan} boxes (limited by available stock: {$availableBoxes})."
@@ -2634,6 +2737,8 @@ class AgentOrderController extends Controller
                             'scanned_quantity' => 0,
                             'updated_at' => now()
                         ]);
+
+                        $this->syncPendingOrderRacks($productId, $colorId, $sizeSetId, $id);
                     }
                     $message = "Selection cleared for this item.";
                 }
@@ -2653,9 +2758,19 @@ class AgentOrderController extends Controller
                     if ($neededBoxes <= 0) continue;
 
                     $inventory = DB::table('domestic_inventories')
-                        ->where('product_id', $item->product_id)
-                        ->where('size_set_id', $item->size_set_id)
-                        ->where('color_id', $item->color_id)
+                        ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                        ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                        ->where('domestic_inventories.product_id', $item->product_id)
+                        ->where('domestic_inventories.size_set_id', $item->size_set_id)
+                        ->where('domestic_inventories.color_id', $item->color_id)
+                        ->where('domestic_inventories.total_boxes', '>', 0)
+                        ->where(function($q) {
+                            $q->whereNull('storerooms.id')
+                              ->orWhere('storerooms.order_dispatch', '!=', 'No');
+                        })
+                        ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
+                        ->orderBy('domestic_inventories.total_boxes', 'desc')
+                        ->select('domestic_inventories.*')
                         ->first();
 
                     $availableBoxes = $inventory ? max(0, (int)$inventory->total_boxes) : 0;
@@ -2670,11 +2785,14 @@ class AgentOrderController extends Controller
                     DB::table('domestic_inventories')->where('id', $inventory->id)->decrement('total_boxes', $boxesToScan);
 
                     DB::table('agent_order_items')->where('id', $item->id)->update([
+                        'rack_id' => $inventory->rack_id,
                         'scanned_box_qty' => $item->scanned_box_qty + $boxesToScan,
                         'scanned_quantity' => $item->scanned_quantity + ($boxesToScan * $pcsPerBox),
                         'box_no' => $inventory->box_no ?? $item->box_no,
                         'updated_at' => now()
                     ]);
+
+                    $this->syncPendingOrderRacks($item->product_id, $item->color_id, $item->size_set_id, $id);
 
                     $totalFulfilled += $boxesToScan;
                     if ($boxesToScan < $neededBoxes) {
@@ -2711,6 +2829,8 @@ class AgentOrderController extends Controller
                             'scanned_quantity' => 0,
                             'updated_at' => now()
                         ]);
+
+                        $this->syncPendingOrderRacks($item->product_id, $item->color_id, $item->size_set_id, $id);
                     }
                 }
 
@@ -2750,14 +2870,96 @@ class AgentOrderController extends Controller
                 'success' => true,
                 'message' => $message,
                 'variations' => $variations,
-                'total_scanned_boxes' => $totalScannedBoxes,
-                'total_required_boxes' => $totalRequiredBoxes,
+                'total_scanned' => $totalScannedBoxes,
+                'total_required' => $totalRequiredBoxes,
                 'scanned_total' => $scannedTotalAmount
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Re-evaluates rack assignments across other pending orders.
+     * When stock is consumed by a priority order, older pending orders with no physical stock left
+     * get their rack_id set to NULL (indicating Advance Sample / Backorder awaiting production).
+     * Conversely, if stock becomes available, it gets assigned to the earliest pending order.
+     */
+    protected function syncPendingOrderRacks($productId, $colorId, $sizeSetId, $excludeOrderId = null)
+    {
+        // 1. Get total physical boxes remaining in dispatchable domestic_inventories
+        $remainingPhysical = (int) (DB::table('domestic_inventories')
+            ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+            ->where('domestic_inventories.product_id', $productId)
+            ->where('domestic_inventories.color_id', $colorId)
+            ->where('domestic_inventories.size_set_id', $sizeSetId)
+            ->where(function($q) {
+                $q->whereNull('storerooms.id')
+                  ->orWhere('storerooms.order_dispatch', '!=', 'No');
+            })
+            ->sum('domestic_inventories.total_boxes') ?? 0);
+
+        // 2. Find available rack_id if any physical stock exists in dispatchable storeroom
+        $availableRackId = null;
+        if ($remainingPhysical > 0) {
+            $availableRackId = DB::table('domestic_inventories')
+                ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                ->where('domestic_inventories.product_id', $productId)
+                ->where('domestic_inventories.color_id', $colorId)
+                ->where('domestic_inventories.size_set_id', $sizeSetId)
+                ->where('domestic_inventories.total_boxes', '>', 0)
+                ->where(function($q) {
+                    $q->whereNull('storerooms.id')
+                      ->orWhere('storerooms.order_dispatch', '!=', 'No');
+                })
+                ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
+                ->orderBy('domestic_inventories.total_boxes', 'desc')
+                ->value('domestic_inventories.rack_id');
+        }
+
+        // 3. Find all pending orders (ordered chronologically FIFO) for this variant
+        $pendingQuery = DB::table('agent_order_items')
+            ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+            ->where('agent_orders.status', 'pending')
+            ->where('agent_order_items.product_id', $productId)
+            ->where('agent_order_items.color_id', $colorId)
+            ->where('agent_order_items.size_set_id', $sizeSetId)
+            ->whereNull('agent_order_items.dispatched_at')
+            ->select('agent_order_items.id', 'agent_order_items.box_qty', 'agent_order_items.scanned_box_qty', 'agent_order_items.rack_id', 'agent_orders.id as order_id');
+
+        if ($excludeOrderId) {
+            $pendingQuery->where('agent_orders.id', '!=', $excludeOrderId);
+        }
+
+        $pendingItems = $pendingQuery->orderBy('agent_orders.created_at', 'asc')->get();
+
+        $runningStock = $remainingPhysical;
+
+        foreach ($pendingItems as $pendingItem) {
+            $neededBoxes = max(0, (int)$pendingItem->box_qty - (int)$pendingItem->scanned_box_qty);
+            
+            if ($runningStock >= $neededBoxes && $runningStock > 0) {
+                $runningStock -= $neededBoxes;
+                // If rack is null, assign available rack
+                if (empty($pendingItem->rack_id) && $availableRackId) {
+                    DB::table('agent_order_items')->where('id', $pendingItem->id)->update([
+                        'rack_id' => $availableRackId,
+                        'updated_at' => now()
+                    ]);
+                }
+            } else {
+                // Not enough remaining physical stock for this pending order -> nullify rack_id
+                if (!empty($pendingItem->rack_id)) {
+                    DB::table('agent_order_items')->where('id', $pendingItem->id)->update([
+                        'rack_id' => null,
+                        'updated_at' => now()
+                    ]);
+                }
+            }
         }
     }
 

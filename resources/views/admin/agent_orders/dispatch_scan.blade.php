@@ -89,10 +89,10 @@
                             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                                 <h3 class="card-title mb-0"><i class="fas fa-boxes mr-2"></i>Order Requirements</h3>
                                 <div>
-                                    <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 mr-1" id="selectAllBtn">
+                                    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 mr-1 shadow-sm font-weight-bold" id="selectAllBtn">
                                         <i class="fas fa-check-double mr-1"></i> Select All Items
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" id="unselectAllBtn">
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 font-weight-bold shadow-sm" id="unselectAllBtn">
                                         <i class="fas fa-times-circle mr-1"></i> Clear All
                                     </button>
                                 </div>
@@ -124,11 +124,13 @@
                                                             D: {{ $group['design_number'] }} | C: {{ $group['color_name'] }} |
                                                             S: {{ $group['size_set_name'] }} | P: {{ $group['pattern_name'] }} |
                                                             F: {{ $group['fitting_name'] }}
-                                                            <br>
-                                                            <span class="badge badge-light border mt-1">WH: {{ $group['warehouse_name'] }}</span>
-                                                            <span class="badge badge-light border mt-1">Rack: {{ $group['rack_name'] }} @if($group['rack_id']) ({{ $group['rack_id'] }}) @endif</span>
-                                                            <span class="badge badge-info mt-1">Barcode:
-                                                                {{ $group['barcode'] }}</span>
+                                                            @if($group['warehouse_name'] && $group['warehouse_name'] !== 'N/A')
+                                                                <span class="badge badge-light border mt-1"><i class="fas fa-warehouse text-secondary mr-1"></i>WH: {{ $group['warehouse_name'] }}</span>
+                                                                <span class="badge badge-light border mt-1"><i class="fas fa-layer-group text-secondary mr-1"></i>Rack: {{ $group['rack_name'] }} @if($group['rack_id']) ({{ $group['rack_id'] }}) @endif</span>
+                                                            @else
+                                                                <span class="badge badge-warning text-dark border mt-1"><i class="fas fa-exclamation-triangle mr-1"></i>Advance Sample / Stock Depleted</span>
+                                                            @endif
+                                                            <span class="badge badge-info mt-1"><i class="fas fa-barcode mr-1"></i>{{ $group['barcode'] }}</span>
                                                         </small>
                                                     </td>
                                                     <td class="vertical-align-middle">

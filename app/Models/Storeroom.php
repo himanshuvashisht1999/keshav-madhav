@@ -9,7 +9,7 @@ class Storeroom extends Model
 {
     use HasFactory;
     
-    protected $fillable = ['name', 'description', 'status', 'order_taken', 'order_priority'];
+    protected $fillable = ['name', 'description', 'status', 'order_taken', 'order_priority', 'order_dispatch'];
 
     public function racks()
     {

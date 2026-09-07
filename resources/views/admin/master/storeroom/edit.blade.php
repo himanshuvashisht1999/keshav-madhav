@@ -47,6 +47,13 @@
                                 <label>Order Priority</label>
                                 <input type="number" name="order_priority" class="form-control" value="{{ $storeroom->order_priority }}" placeholder="Enter Priority Number (e.g., 1, 2, 3)" min="1">
                             </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Order Dispatch</label>
+                                <select name="order_dispatch" id="order_dispatch_edit" class="form-control">
+                                    <option value="Yes" {{ ($storeroom->order_dispatch ?? 'Yes') == 'Yes' ? 'selected' : '' }}>Yes</option>
+                                    <option value="No" {{ ($storeroom->order_dispatch ?? 'Yes') == 'No' ? 'selected' : '' }}>No</option>
+                                </select>
+                            </div>
                             <div class="col-md-12 mb-3">
                                 <label>Description</label>
                                 <textarea name="description" class="form-control">{{ $storeroom->description }}</textarea>

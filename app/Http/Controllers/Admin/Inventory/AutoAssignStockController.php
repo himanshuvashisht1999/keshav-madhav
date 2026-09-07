@@ -17,27 +17,29 @@ class AutoAssignStockController extends Controller
         try {
             DB::beginTransaction();
 
-            // 1. Get ADVANCE SAMPLE storeroom racks
-            $sampleStoreroom = Storeroom::where('name', 'ADVANCE SAMPLE')->with('racks')->first();
-            if (!$sampleStoreroom || $sampleStoreroom->racks->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'ADVANCE SAMPLE storeroom or racks not found.'
-                ]);
-            }
-            $sampleRackIds = $sampleStoreroom->racks->pluck('id')->toArray();
+            // 1. Get Non-Dispatchable storerooms (order_dispatch = 'No' or ADVANCE SAMPLE)
+            $nonDispatchStorerooms = Storeroom::where('order_dispatch', 'No')
+                ->orWhere('name', 'ADVANCE SAMPLE')
+                ->with('racks')
+                ->get();
+            $nonDispatchRackIds = $nonDispatchStorerooms->flatMap->racks->pluck('id')->toArray();
 
-            // 2. Find pending agent order items mapped to ADVANCE SAMPLE
+            // 2. Find pending agent order items mapped to non-dispatchable racks or unassigned
             $pendingOrderItems = AgentOrderItem::whereHas('order', function ($query) {
                 $query->where('status', 'pending');
             })
-            ->whereIn('rack_id', $sampleRackIds)
+            ->where(function($q) use ($nonDispatchRackIds) {
+                $q->whereNull('rack_id');
+                if (!empty($nonDispatchRackIds)) {
+                    $q->orWhereIn('rack_id', $nonDispatchRackIds);
+                }
+            })
             ->get();
 
             if ($pendingOrderItems->isEmpty()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'No pending order items found in ADVANCE SAMPLE.',
+                    'message' => 'No pending order items requiring reassignment from Advance Sample / Non-Dispatch rooms.',
                     'reassigned_count' => 0
                 ]);
             }
@@ -57,7 +59,7 @@ class AutoAssignStockController extends Controller
                 $cacheKey = $item->product_id . '_' . $item->size_set_id . '_' . $item->color_id;
 
                 if (!isset($stockCache[$cacheKey])) {
-                    // Fetch available stock in non-sample racks
+                    // Fetch available stock in dispatchable racks (order_dispatch != 'No')
                     // Calculate (Total Boxes - Already Allocated in Pending Orders)
                     
                     $availableInventory = DomesticInventory::select(
@@ -70,11 +72,10 @@ class AutoAssignStockController extends Controller
                         ->where('domestic_inventories.product_id', $item->product_id)
                         ->where('domestic_inventories.size_set_id', $item->size_set_id)
                         ->where('domestic_inventories.color_id', $item->color_id)
-                        ->whereNotIn('domestic_inventories.rack_id', $sampleRackIds)
-                        ->where('domestic_inventories.quantity', '>', 0)
+                        ->where('domestic_inventories.total_boxes', '>', 0)
                         ->where(function ($q) {
                             $q->whereNull('storerooms.id')
-                              ->orWhere('storerooms.order_taken', '=', 'Yes');
+                              ->orWhere('storerooms.order_dispatch', '!=', 'No');
                         })
                         ->groupBy('domestic_inventories.rack_id', 'storerooms.order_priority')
                         ->get();

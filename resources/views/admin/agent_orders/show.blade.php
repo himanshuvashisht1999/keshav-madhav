@@ -276,8 +276,13 @@
                     <!-- ITEM DETAILS -->
                     <div class="col-md-8">
                         <div class="card shadow-sm border-0">
-                            <div class="card-header bg-dark text-white">
-                                <h3 class="card-title"><i class="fas fa-list mr-2"></i>Ordered Items</h3>
+                            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                                <h3 class="card-title mb-0"><i class="fas fa-list mr-2"></i>Ordered Items</h3>
+                                @if(in_array($order->status, ['pending', 'delayed', 'partially_dispatched']))
+                                    <button type="button" class="btn btn-sm btn-info text-white font-weight-bold rounded-pill px-3 shadow-sm" id="syncStockBtn" title="Auto-Assign stock from dispatchable warehouses">
+                                        <i class="fas fa-magic mr-1"></i> Auto-Sync Stock
+                                    </button>
+                                @endif
                             </div>
                             <div class="card-body p-0 table-responsive">
                                 <table class="table table-striped table-hover mb-0 align-middle">
@@ -339,17 +344,25 @@
                                                     </td>
                                                     <td class="text-center align-middle text-nowrap">
                                                         @if(isset($item->available_locations) && count($item->available_locations) > 1)
-                                                            <select class="form-control form-control-sm location-select" data-item-id="{{ $item->id }}" style="min-width: 180px; display: inline-block;">
+                                                            <select class="form-control form-control-sm location-select shadow-sm" data-item-id="{{ $item->id }}" style="min-width: 200px; display: inline-block;">
                                                                 @foreach($item->available_locations as $loc)
+                                                                    @php $isDispatch = ($loc->order_dispatch ?? 'Yes') === 'Yes'; @endphp
                                                                     <option value="{{ $loc->rack_id }}" {{ $item->rack_name == $loc->rack_name && $item->warehouse_name == $loc->warehouse_name ? 'selected' : '' }}>
-                                                                        {{ $loc->warehouse_name }} - {{ $loc->rack_name }} ({{ $loc->rack_id }}) ({{ $loc->boxes }} Box)
+                                                                        {{ $loc->warehouse_name }} - {{ $loc->rack_name }} ({{ $loc->boxes }} Box) {{ $isDispatch ? '✓ [Dispatch]' : '⚠ [Sample/No Dispatch]' }}
                                                                     </option>
                                                                 @endforeach
                                                             </select>
                                                         @else
                                                             <div class="small text-left d-inline-block">
-                                                                <div class="text-muted mb-1"><i class="fas fa-warehouse mr-1"></i>{{ $item->warehouse_name }}</div>
-                                                                <div class="text-muted"><i class="fas fa-layer-group mr-1"></i>{{ $item->rack_name }} @if($item->rack_id) ({{ $item->rack_id }}) @endif</div>
+                                                                <div class="text-dark font-weight-bold mb-1"><i class="fas fa-warehouse text-secondary mr-1"></i>{{ $item->warehouse_name }}</div>
+                                                                <div class="text-muted"><i class="fas fa-layer-group text-secondary mr-1"></i>{{ $item->rack_name }} @if($item->rack_id) ({{ $item->rack_id }}) @endif</div>
+                                                                @if(($item->order_dispatch ?? 'Yes') === 'Yes' && $item->warehouse_name !== 'N/A')
+                                                                    <span class="badge badge-success mt-1" style="font-size: 10px;"><i class="fas fa-check mr-1"></i>Dispatch Ready</span>
+                                                                @elseif($item->warehouse_name !== 'N/A')
+                                                                    <span class="badge badge-warning text-dark mt-1" style="font-size: 10px;"><i class="fas fa-exclamation-triangle mr-1"></i>Advance Sample (No Dispatch)</span>
+                                                                @else
+                                                                    <span class="badge badge-secondary mt-1" style="font-size: 10px;">Unassigned</span>
+                                                                @endif
                                                             </div>
                                                         @endif
                                                     </td>
@@ -390,6 +403,40 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const syncBtn = document.getElementById('syncStockBtn');
+        if (syncBtn) {
+            syncBtn.addEventListener('click', function() {
+                syncBtn.disabled = true;
+                syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Syncing...';
+                
+                fetch("{{ route('admin.inventory.auto-assign-stock') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        alert(res.message);
+                        window.location.reload();
+                    } else {
+                        alert(res.message || "Failed to auto-assign stock.");
+                        syncBtn.disabled = false;
+                        syncBtn.innerHTML = '<i class="fas fa-magic mr-1"></i> Auto-Sync Stock';
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Error syncing stock.");
+                    syncBtn.disabled = false;
+                    syncBtn.innerHTML = '<i class="fas fa-magic mr-1"></i> Auto-Sync Stock';
+                });
+            });
+        }
+
         const selects = document.querySelectorAll('.location-select');
         selects.forEach(select => {
             select.addEventListener('change', function() {

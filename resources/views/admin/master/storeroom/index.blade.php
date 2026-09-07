@@ -67,6 +67,13 @@
                         <input type="number" name="order_priority" class="form-control" placeholder="Enter Priority Number (e.g., 1, 2, 3)" min="1">
                     </div>
                     <div class="mb-3">
+                        <label>Order Dispatch</label>
+                        <select name="order_dispatch" id="order_dispatch" class="form-control">
+                            <option value="Yes" selected>Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label>Description</label>
                         <textarea name="description" class="form-control"></textarea>
                     </div>
