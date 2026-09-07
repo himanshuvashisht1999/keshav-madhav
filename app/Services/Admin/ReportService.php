@@ -2173,6 +2173,9 @@ class ReportService
             $in1Sums = \App\Models\OrderStageTransaction::whereIn('lot_no', $lotNos)
                 ->selectRaw('lot_no, to_stage_id, sub_stage_id_to, SUM(quantity) as sum_qty')->groupBy('lot_no', 'to_stage_id', 'sub_stage_id_to')
                 ->get()->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->sub_stage_id_to => $i->sum_qty]; })->toArray();
+            $in1RemSums = \App\Models\OrderStageTransaction::whereIn('lot_no', $lotNos)
+                ->selectRaw('lot_no, to_stage_id, sub_stage_id_to, SUM(remaining_quantity) as sum_rem_qty')->groupBy('lot_no', 'to_stage_id', 'sub_stage_id_to')
+                ->get()->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->sub_stage_id_to => $i->sum_rem_qty]; })->toArray();
             $in2Sums = \App\Models\OrderGodamStageTransaction::whereIn('lot_no', $lotNos)
                 ->selectRaw('lot_no, to_stage_id, sub_stage_id_to, SUM(quantity) as sum_qty')->groupBy('lot_no', 'to_stage_id', 'sub_stage_id_to')
                 ->get()->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->sub_stage_id_to => $i->sum_qty]; })->toArray();
@@ -2293,6 +2296,9 @@ class ReportService
                 $outflowAll += $outflowInvQty;
                 
                 $pendingQty = max(0, $incomingAll - $outflowAll);
+                if (isset($in1RemSums[$inKey])) {
+                    $pendingQty = min($pendingQty, (float) $in1RemSums[$inKey]);
+                }
 
                 $isClosed = ($item->is_closed_for_unit == 1);
 
