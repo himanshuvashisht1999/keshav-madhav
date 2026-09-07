@@ -1804,6 +1804,37 @@ Route::prefix('/admin')->name('admin.')->middleware(['web', 'checkAdminLogin'])-
     });
 });
 
+Route::get('/run-fix-remaining-quantities', function (\Illuminate\Http\Request $request) {
+    try {
+        $lot = $request->query('lot');
+        $params = [];
+        if (!empty($lot)) {
+            $params['--lot'] = $lot;
+        }
+        
+        \Illuminate\Support\Facades\Artisan::call('fix:remaining-quantities', $params);
+        $cmdOutput = \Illuminate\Support\Facades\Artisan::output();
+        
+        \Illuminate\Support\Facades\Artisan::call('cache:clear');
+        \Illuminate\Support\Facades\Artisan::call('config:clear');
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Live database remaining quantities and cache synchronized successfully.',
+            'lot_filter' => $lot ?: 'ALL LOTS',
+            'output' => $cmdOutput
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ], 500);
+    }
+});
+
+
 
 
 

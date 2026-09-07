@@ -2797,40 +2797,65 @@ class OrderDigitalizationService
     private function closeIncomingAssignments($lot_no, $unit_id, $slip_file, $completeDate = null)
     {
         $finishTime = $completeDate ?: now();
-        $update = [
-            'image' => $slip_file,
-            'remaining_quantity' => 0,
-            'complete_date' => $finishTime,
-            'is_closed_for_unit' => 1
-        ];
 
-        // 1. Regular/Legacy stage transfers
+        // 1. Regular/Legacy stage transfers that are fully consumed
         \App\Models\OrderStageTransaction::where('lot_no', $lot_no)
             ->where('sub_stage_id_to', $unit_id)
+            ->where('remaining_quantity', '<=', 0)
             ->whereNull('image')
-            ->update($update);
+            ->update([
+                'image' => $slip_file,
+                'complete_date' => $finishTime,
+                'is_closed_for_unit' => 1
+            ]);
 
-        // 2. Transferred from Printing Stage
+        // 2. Transferred from Printing Stage that are fully consumed
         \App\Models\OrderPrintingStageTransaction::where('lot_no', $lot_no)
             ->where('sub_stage_id_to', $unit_id)
+            ->where('remaining_quantity', '<=', 0)
             ->whereNull('image')
-            ->update($update);
+            ->update([
+                'image' => $slip_file,
+                'complete_date' => $finishTime,
+                'is_closed_for_unit' => 1
+            ]);
 
-        // 3. Printing unit sending directly to Stitching
+        // 3. Printing unit sending directly to Stitching that are fully consumed
         \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lot_no)
             ->where('sub_stage_id_to', $unit_id)
+            ->where('remaining_quantity', '<=', 0)
             ->whereNull('image')
-            ->update($update);
+            ->update([
+                'image' => $slip_file,
+                'complete_date' => $finishTime,
+                'is_closed_for_unit' => 1
+            ]);
 
-        // ✅ Update Unified Timing
-        $unit = \App\Models\StageMasterUnit::find($unit_id);
-        if ($unit) {
-            \App\Models\OrderLotStageTiming::where('lot_no', $lot_no)
-                ->where('master_stage_id', $unit->master_stage_id)
-                ->update([
-                    'complete_date' => $finishTime,
-                    'status' => 2
-                ]);
+        // Check if any quantity is still pending at this unit
+        $hasPending = \App\Models\OrderStageTransaction::where('lot_no', $lot_no)
+            ->where('sub_stage_id_to', $unit_id)
+            ->where('remaining_quantity', '>', 0)
+            ->exists()
+            || \App\Models\OrderPrintingStageTransaction::where('lot_no', $lot_no)
+            ->where('sub_stage_id_to', $unit_id)
+            ->where('remaining_quantity', '>', 0)
+            ->exists()
+            || \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lot_no)
+            ->where('sub_stage_id_to', $unit_id)
+            ->where('remaining_quantity', '>', 0)
+            ->exists();
+
+        // ✅ Update Unified Timing only if no quantity remains pending at this unit
+        if (!$hasPending) {
+            $unit = \App\Models\StageMasterUnit::find($unit_id);
+            if ($unit) {
+                \App\Models\OrderLotStageTiming::where('lot_no', $lot_no)
+                    ->where('master_stage_id', $unit->master_stage_id)
+                    ->update([
+                        'complete_date' => $finishTime,
+                        'status' => 2
+                    ]);
+            }
         }
     }
 
