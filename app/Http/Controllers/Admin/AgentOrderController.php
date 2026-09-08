@@ -2568,37 +2568,41 @@ class AgentOrderController extends Controller
         $barcode = preg_replace('/[\x00-\x1F\x7F]/', '', $barcode);
         $barcode = parseCompactBarcode($barcode);
 
-        // 1. Find the summary inventory record for this barcode
+        // 1. Find the aggregate order item for this design in this order
+        $itemQuery = DB::table('agent_order_items')
+            ->where('agent_order_id', $id)
+            ->whereNull('dispatched_at')
+            ->where('scanned_box_qty', '>', 0);
+
         if (preg_match('/^D(\d+)S(\d+)C(\d+)/', $barcode, $matches)) {
-            $inventory = DB::table('domestic_inventories')
-                ->where('product_id', $matches[1])
+            $itemQuery->where('product_id', $matches[1])
                 ->where('size_set_id', $matches[2])
-                ->where('color_id', $matches[3])
-                ->where('order_main_id', 0)
-                ->first();
+                ->where('color_id', $matches[3]);
         } else {
-            $inventory = DB::table('domestic_inventories')
-                ->where('barcode', $barcode)
-                ->where('order_main_id', 0)
-                ->first();
+            $itemQuery->where('barcode', $barcode);
+        }
+        $item = $itemQuery->first();
+
+        if (!$item) {
+            return response()->json(['success' => false, 'message' => 'No active scan found for this barcode in this order.']);
+        }
+
+        // 2. Find the summary inventory record for this barcode (matching item rack if available)
+        $invQuery = DB::table('domestic_inventories')
+            ->where('product_id', $item->product_id)
+            ->where('size_set_id', $item->size_set_id)
+            ->where('color_id', $item->color_id)
+            ->where('order_main_id', 0);
+
+        if (!empty($item->rack_id)) {
+            $inventory = (clone $invQuery)->where('rack_id', $item->rack_id)->first();
+        }
+        if (empty($inventory)) {
+            $inventory = $invQuery->first();
         }
 
         if (!$inventory) {
             return response()->json(['success' => false, 'message' => 'Inventory record for this box not found.']);
-        }
-
-        // 2. Find the aggregate order item for this design in this order
-        $item = DB::table('agent_order_items')
-            ->where('agent_order_id', $id)
-            ->where('product_id', $inventory->product_id)
-            ->where('color_id', $inventory->color_id)
-            ->where('size_set_id', $inventory->size_set_id)
-            ->whereNull('dispatched_at')
-            ->where('scanned_box_qty', '>', 0)
-            ->first();
-
-        if (!$item) {
-            return response()->json(['success' => false, 'message' => 'No active scan found for this barcode in this order.']);
         }
 
         DB::beginTransaction();
@@ -2728,8 +2732,21 @@ class AgentOrderController extends Controller
                 } else {
                     $scannedBoxes = (int)$item->scanned_box_qty;
                     if ($scannedBoxes > 0) {
-                        if ($inventory) {
-                            DB::table('domestic_inventories')->where('id', $inventory->id)->increment('total_boxes', $scannedBoxes);
+                        $restoreInvQuery = DB::table('domestic_inventories')
+                            ->where('product_id', $productId)
+                            ->where('size_set_id', $sizeSetId)
+                            ->where('color_id', $colorId)
+                            ->where('order_main_id', 0);
+
+                        if (!empty($item->rack_id)) {
+                            $restoreInv = (clone $restoreInvQuery)->where('rack_id', $item->rack_id)->first();
+                        }
+                        if (empty($restoreInv)) {
+                            $restoreInv = $restoreInvQuery->first();
+                        }
+
+                        if ($restoreInv) {
+                            DB::table('domestic_inventories')->where('id', $restoreInv->id)->increment('total_boxes', $scannedBoxes);
                         }
 
                         DB::table('agent_order_items')->where('id', $item->id)->update([
@@ -2814,11 +2831,18 @@ class AgentOrderController extends Controller
                 foreach ($items as $item) {
                     $scannedBoxes = (int)$item->scanned_box_qty;
                     if ($scannedBoxes > 0) {
-                        $inventory = DB::table('domestic_inventories')
+                        $restoreInvQuery = DB::table('domestic_inventories')
                             ->where('product_id', $item->product_id)
                             ->where('size_set_id', $item->size_set_id)
                             ->where('color_id', $item->color_id)
-                            ->first();
+                            ->where('order_main_id', 0);
+
+                        if (!empty($item->rack_id)) {
+                            $inventory = (clone $restoreInvQuery)->where('rack_id', $item->rack_id)->first();
+                        }
+                        if (empty($inventory)) {
+                            $inventory = $restoreInvQuery->first();
+                        }
 
                         if ($inventory) {
                             DB::table('domestic_inventories')->where('id', $inventory->id)->increment('total_boxes', $scannedBoxes);

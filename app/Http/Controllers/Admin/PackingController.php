@@ -1611,6 +1611,7 @@ class PackingController extends Controller
                     'box_no' => $box_no,
                     'carton_no' => $nextCartonNo,
                     'barcode' => $barcode,
+                    'total_boxes' => 1,
                     'status' => 1
                 ]);
             }

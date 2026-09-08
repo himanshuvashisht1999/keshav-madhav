@@ -1147,6 +1147,8 @@ class PackingService
                         if ($space_available > 0) {
                             $to_add = min($remaining_to_return, $space_available);
                             $transaction->remaining_quantity += $to_add;
+                            $transaction->is_closed_for_unit = $transaction->remaining_quantity <= 0 ? 1 : 0;
+                            $transaction->status = $transaction->remaining_quantity <= 0 ? 2 : 1;
                             $transaction->save();
                             $remaining_to_return -= $to_add;
                         }
@@ -1155,6 +1157,8 @@ class PackingService
                     if ($remaining_to_return > 0 && $transactions->isNotEmpty()) {
                         $first = $transactions->first();
                         $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $remaining_to_return);
+                        $first->is_closed_for_unit = $first->remaining_quantity <= 0 ? 1 : 0;
+                        $first->status = $first->remaining_quantity <= 0 ? 2 : 1;
                         $first->save();
                     }
                 } else {
@@ -1175,6 +1179,8 @@ class PackingService
                         if ($space_available > 0) {
                             $to_add = min($remaining_to_return, $space_available);
                             $transaction->remaining_quantity += $to_add;
+                            $transaction->is_closed_for_unit = $transaction->remaining_quantity <= 0 ? 1 : 0;
+                            $transaction->status = $transaction->remaining_quantity <= 0 ? 2 : 1;
                             $transaction->save();
                             $remaining_to_return -= $to_add;
                         }
@@ -1183,6 +1189,8 @@ class PackingService
                     if ($remaining_to_return > 0 && $transactions->isNotEmpty()) {
                         $first = $transactions->first();
                         $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $remaining_to_return);
+                        $first->is_closed_for_unit = $first->remaining_quantity <= 0 ? 1 : 0;
+                        $first->status = $first->remaining_quantity <= 0 ? 2 : 1;
                         $first->save();
                     }
                 }
@@ -1470,14 +1478,12 @@ class PackingService
                           ->orWhereNull('sub_stage_id_to');
                     });
                 })
-                ->where('status', 1)
                 ->orderBy('id', 'desc')
                 ->get();
 
             if ($receivedTxs->isEmpty()) {
                 $receivedTxs = \App\Models\OrderStageTransaction::where('lot_no', $outflow->lot_no)
                     ->where('to_stage_id', 11)
-                    ->where('status', 1)
                     ->orderBy('id', 'desc')
                     ->get();
             }
@@ -1490,6 +1496,8 @@ class PackingService
                 if ($space_available > 0) {
                     $to_add = min($rem, $space_available);
                     $tx->remaining_quantity += $to_add;
+                    $tx->is_closed_for_unit = $tx->remaining_quantity <= 0 ? 1 : 0;
+                    $tx->status = $tx->remaining_quantity <= 0 ? 2 : 1;
                     $tx->save();
                     $rem -= $to_add;
                 }
@@ -1498,6 +1506,8 @@ class PackingService
             if ($rem > 0 && $receivedTxs->isNotEmpty()) {
                 $first = $receivedTxs->first();
                 $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $rem);
+                $first->is_closed_for_unit = $first->remaining_quantity <= 0 ? 1 : 0;
+                $first->status = $first->remaining_quantity <= 0 ? 2 : 1;
                 $first->save();
             }
 
@@ -1545,6 +1555,8 @@ class PackingService
                 if ($space_available > 0) {
                     $to_add = min($rem, $space_available);
                     $tx->remaining_quantity += $to_add;
+                    $tx->is_closed_for_unit = $tx->remaining_quantity <= 0 ? 1 : 0;
+                    $tx->status = $tx->remaining_quantity <= 0 ? 2 : 1;
                     $tx->save();
                     $rem -= $to_add;
                 }
@@ -1553,6 +1565,8 @@ class PackingService
             if ($rem > 0 && $sourceTxs->isNotEmpty()) {
                 $first = $sourceTxs->first();
                 $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $rem);
+                $first->is_closed_for_unit = $first->remaining_quantity <= 0 ? 1 : 0;
+                $first->status = $first->remaining_quantity <= 0 ? 2 : 1;
                 $first->save();
             }
 
@@ -1605,8 +1619,9 @@ class PackingService
             $orderLots = \App\Models\OrderLot::where('order_main_id', $main->order_main_id)->pluck('lot_no')->toArray();
             $reworks = \App\Models\OrderStageTransaction::whereIn('lot_no', $orderLots)
                 ->where('from_stage_id', 11)
-                ->where('status', 1)
-                ->where('type', 'rework')
+                ->where(function($q) {
+                    $q->where('type', 'rework')->orWhere('type', 0);
+                })
                 ->get();
             foreach ($reworks as $rework) {
                 $this->deleteRework($rework->id);
