@@ -272,6 +272,12 @@ function getLotDetails($lot_id, $master_stage)
         if ($master_stage == 11) {
             $packedQty = \App\Models\PackingItem::where('lot_no', $lot_id)->sum('quantity');
             $outflowAll += $packedQty;
+
+            // Add non-packing outflows (Debit, Dead, Sampling, Damage) for this lot
+            $outflowInv = (int) \App\Models\ProductionOutflowInventory::where('lot_no', $lot_id)
+                ->whereNotIn('type', ['packing', 'packing_divert'])
+                ->sum('quantity');
+            $outflowAll += $outflowInv;
         }
         
         $totalQuantity = max(0, $incomingType1 - $outflowType2);

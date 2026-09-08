@@ -273,7 +273,12 @@ class PackingController extends Controller
             $validOrderIds = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                 ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
                 ->where('order_stage_transactions.to_stage_id', 11) // Packing
-                ->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
+                ->when($slip->stage_master_unit_id, function($q) use ($slip) {
+                    $q->where(function($sq) use ($slip) {
+                        $sq->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
+                          ->orWhereNull('order_stage_transactions.sub_stage_id_to');
+                    });
+                })
                 ->where('order_stage_transactions.remaining_quantity', '>', 0)
                 ->pluck('order_lots.order_main_id')
                 ->unique()
@@ -326,7 +331,12 @@ class PackingController extends Controller
                 ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
                 ->leftJoin('master_size_measurements', 'order_products_sets.set_size', '=', 'master_size_measurements.id')
                 ->where('order_stage_transactions.to_stage_id', 11)
-                ->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
+                ->when($slip->stage_master_unit_id, function($q) use ($slip) {
+                    $q->where(function($sq) use ($slip) {
+                        $sq->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
+                          ->orWhereNull('order_stage_transactions.sub_stage_id_to');
+                    });
+                })
                 ->where('order_lots.order_main_id', $order->id)
                 ->groupBy(
                     'order_stage_transactions.lot_no',
@@ -966,6 +976,9 @@ class PackingController extends Controller
                 $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
                 $starting_lot_qty = $transactions->sum('remaining_quantity') + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
                 
+                $lotSizes = [];
+                $lotLiveTotal = 0;
+
                 foreach ($set_details[$lot->set_id] as $detail) {
                     $sizeName = trim(strtoupper($detail->size));
                     $incoming_qty = isset($incoming_sizes[$sizeName]) 
@@ -989,8 +1002,34 @@ class PackingController extends Controller
                     }
                     
                     $live = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
+                    $lotSizes[$sizeName] = $live;
+                    $lotLiveTotal += $live;
+                }
+
+                // Strictly reconcile with the lot's actual remaining quantity
+                if ($rem_qty <= 0) {
+                    foreach ($lotSizes as $sz => &$qty) {
+                        $qty = 0;
+                    }
+                } elseif ($lotLiveTotal > $rem_qty) {
+                    $diff = $lotLiveTotal - $rem_qty;
+                    foreach ($lotSizes as $sz => &$qty) {
+                        if ($diff <= 0) break;
+                        $deduct = min($diff, $qty);
+                        $qty -= $deduct;
+                        $diff -= $deduct;
+                    }
+                } elseif ($lotLiveTotal < $rem_qty && !empty($lotSizes)) {
+                    $diff = $rem_qty - $lotLiveTotal;
+                    arsort($lotSizes);
+                    $firstKey = array_key_first($lotSizes);
+                    if ($firstKey !== null) {
+                        $lotSizes[$firstKey] += $diff;
+                    }
+                }
+
+                foreach ($lotSizes as $sizeName => $live) {
                     $available_pieces += $live;
-                    
                     if (!isset($available_balances[$sizeName])) {
                         $available_balances[$sizeName] = 0;
                     }
@@ -1323,29 +1362,53 @@ class PackingController extends Controller
 
                     // Return to Unit Stock (Stage 11) using the lot_no stored in the item or fallback to transactions
                     $lotNo = $item->lot_no;
+                    $remToReturn = $item->quantity;
+                    $stockTxs = collect();
+                    
                     if ($lotNo) {
-                        $stockTx = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-                            ->where('sub_stage_id_to', $unitId)
+                        $stockTxs = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
+                            ->when($unitId, function($q) use ($unitId) {
+                                $q->where(function($sq) use ($unitId) {
+                                    $sq->where('sub_stage_id_to', $unitId)
+                                      ->orWhereNull('sub_stage_id_to');
+                                });
+                            })
                             ->where('lot_no', $lotNo)
                             ->orderBy('id', 'desc')
-                            ->first();
-                        if ($stockTx) {
-                            $stockTx->remaining_quantity += $item->quantity;
-                            $stockTx->save();
-                        }
-                    } else if ($unitId) {
+                            ->get();
+                    } else if ($orderId) {
                         $orderLots = \App\Models\OrderLot::where('order_main_id', $orderId)->pluck('lot_no')->toArray();
-                        $stockTx = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-                            ->where('sub_stage_id_to', $unitId)
+                        $stockTxs = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
+                            ->when($unitId, function($q) use ($unitId) {
+                                $q->where(function($sq) use ($unitId) {
+                                    $sq->where('sub_stage_id_to', $unitId)
+                                      ->orWhereNull('sub_stage_id_to');
+                                });
+                            })
                             ->whereIn('lot_no', $orderLots)
-                            ->where('status', 1)
                             ->orderBy('id', 'desc')
-                            ->first();
+                            ->get();
+                    }
 
-                        if ($stockTx) {
-                            $stockTx->remaining_quantity += $item->quantity;
-                            $stockTx->save();
+                    foreach ($stockTxs as $stx) {
+                        if ($remToReturn <= 0) break;
+                        $space = max(0, $stx->quantity - $stx->remaining_quantity);
+                        if ($space > 0) {
+                            $add = min($remToReturn, $space);
+                            $stx->remaining_quantity += $add;
+                            $stx->is_closed_for_unit = $stx->remaining_quantity <= 0 ? 1 : 0;
+                            $stx->status = $stx->remaining_quantity <= 0 ? 2 : 1;
+                            $stx->save();
+                            $remToReturn -= $add;
                         }
+                    }
+
+                    if ($remToReturn > 0 && $stockTxs->isNotEmpty()) {
+                        $firstStx = $stockTxs->first();
+                        $firstStx->remaining_quantity = min($firstStx->quantity, $firstStx->remaining_quantity + $remToReturn);
+                        $firstStx->is_closed_for_unit = $firstStx->remaining_quantity <= 0 ? 1 : 0;
+                        $firstStx->status = $firstStx->remaining_quantity <= 0 ? 2 : 1;
+                        $firstStx->save();
                     }
                 }
 
