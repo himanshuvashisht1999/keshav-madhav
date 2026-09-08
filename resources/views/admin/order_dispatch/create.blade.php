@@ -996,7 +996,11 @@
             isDocVisible = !isDocVisible;
         });
 
-
+        /* ================= PREVENT DOUBLE SUBMIT ================= */
+        $('form').on('submit', function () {
+            let btn = $('#submitDispatchBtn');
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Processing...');
+        });
 
     </script>
 

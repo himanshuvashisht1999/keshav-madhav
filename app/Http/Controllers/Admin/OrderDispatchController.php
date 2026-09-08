@@ -57,6 +57,17 @@ class OrderDispatchController extends Controller
         return view('admin.order_dispatch.view', $data);
     }
 
+    public function delete(Request $request)
+    {
+        $id = $request->id ?? $request->dispatch_id;
+        $result = $this->service->destroy($id);
+        if ($result['status_code'] == 1) {
+            return redirect()->route('admin.order-dispatch.index')->with('success', $result['message']);
+        } else {
+            return redirect()->back()->with('error', $result['message']);
+        }
+    }
+
     public function downloadPdf(Request $request)
     {
         $data = $this->service->view($request);

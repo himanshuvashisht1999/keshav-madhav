@@ -48,7 +48,33 @@ class OrderDispatchService
 
             //  Safety check
             if (empty($request->cartons) || !is_array($request->cartons)) {
-                return back()->with('error', 'No cartons selected for dispatch');
+                return [
+                    'status_code' => 0,
+                    'message' => 'No cartons selected for dispatch'
+                ];
+            }
+
+            // Guard against duplicate carton dispatch: Check if already in order_dispatch_details
+            $alreadyInDetails = OrderDispatchDetails::whereIn('carton_packing_id', $request->cartons)
+                ->pluck('carton_packing_id')
+                ->toArray();
+            if (!empty($alreadyInDetails)) {
+                return [
+                    'status_code' => 0,
+                    'message' => 'Carton(s) #' . implode(', #', $alreadyInDetails) . ' have already been dispatched. Duplicate dispatch prevented.'
+                ];
+            }
+
+            // Guard against duplicate carton dispatch: Check if already status = 2
+            $alreadyDispatched = PackingCarton::whereIn('id', $request->cartons)
+                ->where('status', 2)
+                ->pluck('id')
+                ->toArray();
+            if (!empty($alreadyDispatched)) {
+                return [
+                    'status_code' => 0,
+                    'message' => 'Carton(s) #' . implode(', #', $alreadyDispatched) . ' are already marked as dispatched.'
+                ];
             }
 
             // ================= MAIN DISPATCH =================
@@ -320,7 +346,10 @@ class OrderDispatchService
         $results = OrderMain::with([
             'customer',
             'dispatchCartons' => function ($q) {
-                $q->where('packing_cartons.status', 1);
+                $q->where('packing_cartons.status', 1)
+                  ->whereNotIn('packing_cartons.id', function ($sub) {
+                      $sub->select('carton_packing_id')->from('order_dispatch_details');
+                  });
                 // Filter to only include cartons that contain corporate boxes
             },
             'dispatchCartons.items.detail.orderProductSet.colors',
@@ -427,7 +456,10 @@ class OrderDispatchService
             ->where('order_type', 'corporate')
             ->whereIn('status', [1, 2])
             ->whereHas('dispatchCartons', function ($q) {
-                $q->where('packing_cartons.status', 1);
+                $q->where('packing_cartons.status', 1)
+                  ->whereNotIn('packing_cartons.id', function ($sub) {
+                      $sub->select('carton_packing_id')->from('order_dispatch_details');
+                  });
             })
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);
@@ -440,7 +472,10 @@ class OrderDispatchService
         $data = OrderMain::whereIn('status', [1, 2])
             ->where('order_type', 'corporate')
             ->whereHas('dispatchCartons', function ($q) {
-                $q->where('packing_cartons.status', 1);
+                $q->where('packing_cartons.status', 1)
+                  ->whereNotIn('packing_cartons.id', function ($sub) {
+                      $sub->select('carton_packing_id')->from('order_dispatch_details');
+                  });
             })
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);
@@ -474,6 +509,68 @@ class OrderDispatchService
             'packed' => (int) $packed,
             'remaining' => max(0, $total - $packed),
         ];
+    }
+
+    public function destroy($id)
+    {
+        DB::beginTransaction();
+        try {
+            $dispatch = OrderDispatch::find($id);
+            if (!$dispatch) {
+                return ['status_code' => 0, 'message' => 'Dispatch record not found.'];
+            }
+
+            $customerId = $dispatch->customer_id;
+            $orderMainId = $dispatch->main_order_id;
+            $amount = (float) $dispatch->total_amount;
+
+            // 1. Get all cartons in this dispatch
+            $cartonIds = OrderDispatchDetails::where('order_dispatch_id', $dispatch->id)
+                ->pluck('carton_packing_id')
+                ->toArray();
+
+            // 2. Restore customer balance
+            $customer = \App\Models\MasterCustomer::find($customerId);
+            if ($customer) {
+                $customer->balance += $amount;
+                $customer->save();
+            }
+
+            // 3. Delete dispatch details
+            OrderDispatchDetails::where('order_dispatch_id', $dispatch->id)->delete();
+
+            // 4. For cartons that are NOT in any other dispatch, reset status back to 1 (Ready for dispatch)
+            if (!empty($cartonIds)) {
+                $stillDispatchedCartonIds = OrderDispatchDetails::whereIn('carton_packing_id', $cartonIds)
+                    ->pluck('carton_packing_id')
+                    ->toArray();
+                $revertCartonIds = array_diff($cartonIds, $stillDispatchedCartonIds);
+                if (!empty($revertCartonIds)) {
+                    PackingCarton::whereIn('id', $revertCartonIds)->update(['status' => 1]);
+                }
+            }
+
+            // 5. Delete dispatch record
+            $dispatch->delete();
+
+            // 6. Recalculate order status
+            $pack_data = $this->getOrderDispatchData($orderMainId);
+            if (!empty($pack_data)) {
+                if ($pack_data['remaining'] == 0 && $pack_data['packed'] > 0) {
+                    OrderMain::where('id', $orderMainId)->update(['status' => 3]);
+                } elseif ($pack_data['packed'] > 0) {
+                    OrderMain::where('id', $orderMainId)->update(['status' => 2]);
+                } else {
+                    OrderMain::where('id', $orderMainId)->update(['status' => 1]);
+                }
+            }
+
+            DB::commit();
+            return ['status_code' => 1, 'message' => 'Dispatch deleted successfully and customer balance updated.'];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status_code' => 0, 'message' => 'Failed to delete dispatch: ' . $e->getMessage()];
+        }
     }
 
 }

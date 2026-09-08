@@ -71,9 +71,10 @@ class OrderDispatchDataTable  {
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
                 
-                $view = '<a href="' . route('admin.order-dispatch.view',['id' => $parameter]) . '" class="btn btn-sm btn-outline-primary" data-toggle="tooltip" title="View Details"><i class="fas fa-eye"></i> View</a>';
+                $view = '<a href="' . route('admin.order-dispatch.view',['id' => $parameter]) . '" class="btn btn-sm btn-outline-primary mr-1" data-toggle="tooltip" title="View Details"><i class="fas fa-eye"></i> View</a>';
+                $delete = '<a href="javascript:void(0)" onclick="deleteDispatch(' . $parameter . ')" class="btn btn-sm btn-outline-danger" data-toggle="tooltip" title="Delete Dispatch"><i class="fas fa-trash"></i> Delete</a>';
                 
-                return $view;
+                return $view . $delete;
             })
             
             ->rawColumns(['action','main_order_id', 'customer_id', 'status'])

@@ -547,6 +547,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/download-invoice', [AdminOrderDispatchController::class, 'downloadInvoice'])->name('download-invoice');
             Route::get('/download-packing-slip', [AdminOrderDispatchController::class, 'downloadPackingSlip'])->name('download-packing-slip');
             Route::post('/update-invoice', [AdminOrderDispatchController::class, 'updateInvoice'])->name('update-invoice');
+            Route::get('/delete', [AdminOrderDispatchController::class, 'delete'])->name('delete');
         });
         Route::prefix('master/vendors')->name('master.vendor.')->group(function () {
             Route::get('/index', [AdminVendorController::class, 'index'])->name('index');

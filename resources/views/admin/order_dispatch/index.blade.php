@@ -139,5 +139,11 @@
         });
 
     });
+
+    function deleteDispatch(id) {
+        if (confirm('Are you sure you want to delete this dispatch? This will refund the customer balance and revert cartons to ready for dispatch.')) {
+            window.location.href = "{{ route('admin.order-dispatch.delete') }}?id=" + id;
+        }
+    }
 </script>
 @endsection
