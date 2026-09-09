@@ -799,6 +799,13 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/warehouse-stock/racks/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'getRacksByStoreroom'])->name('warehouse_stock.racks');
             Route::get('/warehouse-stock/download-slip/{id}', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'downloadSlip'])->name('warehouse_stock.download_slip');
 
+            // Warehouse Stock Actual Routes (Physical Inventory without un-dispatched order deductions)
+            Route::get('/warehouse-stock-actual', [\App\Http\Controllers\Admin\WarehouseStockActualController::class, 'index'])->name('warehouse_stock_actual');
+            Route::get('/warehouse-stock-actual/show/{product_id}/{size_set_id}/{rack_id}', [\App\Http\Controllers\Admin\WarehouseStockActualController::class, 'show'])->name('warehouse_stock_actual.show');
+            Route::get('/warehouse-stock-actual/list', [\App\Http\Controllers\Admin\WarehouseStockActualController::class, 'indexList'])->name('warehouse_stock_actual.list');
+            Route::get('/warehouse-stock-actual/export', [\App\Http\Controllers\Admin\WarehouseStockActualController::class, 'export'])->name('warehouse_stock_actual.export');
+            Route::get('/warehouse-stock-actual/racks/{id}', [\App\Http\Controllers\Admin\WarehouseStockActualController::class, 'getRacksByStoreroom'])->name('warehouse_stock_actual.racks');
+
             // Stock Transfer Routes
             Route::prefix('/stock-transfer')->name('stock_transfer.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Admin\Inventory\StockTransferController::class, 'index'])->name('index');

@@ -262,10 +262,19 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
 
                                 <li class="nav-item">
                                     <a href="{{ route('admin.inventory.warehouse_stock') }}"
-                                        class="{{ str_contains($page_url, 'admin/inventory/warehouse-stock') ? 'nav-link active' : 'nav-link' }}"
+                                        class="{{ str_contains($page_url, 'admin/inventory/warehouse-stock') && !str_contains($page_url, 'admin/inventory/warehouse-stock-actual') ? 'nav-link active' : 'nav-link' }}"
                                         style="position:static;">
                                         <i class="far fa-circle nav-icon"></i>
-                                        <p>Warehouse Stock</p>
+                                        <p>Warehouse Stock After Order</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.inventory.warehouse_stock_actual') }}"
+                                        class="{{ str_contains($page_url, 'admin/inventory/warehouse-stock-actual') ? 'nav-link active' : 'nav-link' }}"
+                                        style="position:static;">
+                                        <i class="far fa-circle nav-icon text-info"></i>
+                                        <p>Warehouse Stock Actual</p>
                                     </a>
                                 </li>
 

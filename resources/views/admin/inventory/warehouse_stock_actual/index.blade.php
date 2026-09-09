@@ -7,8 +7,8 @@
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
                     <!-- Left: Title -->
                     <div>
-                        <h1 class="m-0 font-weight-bold text-dark">Warehouse Stock After Order</h1>
-                        <small class="text-muted">Manage inventory physical locations and transfers (Stock after active order deductions)</small>
+                        <h1 class="m-0 font-weight-bold text-dark">Warehouse Stock Actual</h1>
+                        <small class="text-muted">Real physical stock from domestic inventory (not dispatched, unreserved)</small>
                     </div>
 
                     <!-- Center: Totals -->
@@ -16,10 +16,10 @@
                         <div class="card shadow-sm border-0 bg-primary text-white mb-0" style="border-radius: 12px; min-width: 200px;">
                             <div class="card-body p-2 d-flex align-items-center">
                                 <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 40px; height: 40px;">
-                                    <i class="fas fa-box fa-lg"></i>
+                                    <i class="fas fa-boxes fa-lg"></i>
                                 </div>
                                 <div>
-                                    <h6 class="mb-0 text-white-50" style="font-size: 13px;">Total Boxes</h6>
+                                    <h6 class="mb-0 text-white-50" style="font-size: 13px;">Actual Total Boxes</h6>
                                     <h5 class="mb-0 font-weight-bold" id="header_total_boxes">0</h5>
                                 </div>
                             </div>
@@ -30,7 +30,7 @@
                                     <i class="fas fa-tshirt fa-lg"></i>
                                 </div>
                                 <div>
-                                    <h6 class="mb-0 text-white-50" style="font-size: 13px;">Total Pcs</h6>
+                                    <h6 class="mb-0 text-white-50" style="font-size: 13px;">Actual Total Pcs</h6>
                                     <h5 class="mb-0 font-weight-bold" id="header_total_pcs">0</h5>
                                 </div>
                             </div>
@@ -49,8 +49,8 @@
                                 <a class="dropdown-item" href="#" id="export_excel_price"><i class="fas fa-file-excel text-success mr-2"></i> Download Excel (With Price)</a>
                             </div>
                         </div>
-                        <a href="{{ route('admin.inventory.warehouse_stock.history') }}" class="btn btn-outline-primary shadow-sm">
-                            <i class="fas fa-history mr-1"></i> Transfer History
+                        <a href="{{ route('admin.inventory.warehouse_stock') }}" class="btn btn-outline-secondary shadow-sm" title="Go to Stock After Order">
+                            <i class="fas fa-exchange-alt mr-1"></i> Stock After Order
                         </a>
                     </div>
                 </div>
@@ -175,7 +175,7 @@
                             </div>
                             
                             <div class="col-md-1 mb-3">
-                                <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block">
+                                <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block" title="Reset Filters">
                                     <i class="fas fa-undo"></i>
                                 </button>
                             </div>
@@ -196,8 +196,8 @@
                                         <th class="py-3">Design No.</th>
                                         <th class="py-3">Size Set</th>
                                         <th class="py-3">Location (WH / Rack)</th>
-                                        <th class="py-3 text-center">Total Boxes</th>
-                                        <th class="py-3 text-center">Quantity</th>
+                                        <th class="py-3 text-center">Actual Boxes</th>
+                                        <th class="py-3 text-center">Total Pcs</th>
                                         <th class="py-3 text-center">Action</th>
                                     </tr>
                                 </thead>
@@ -219,28 +219,6 @@
     </div>
 
     <style>
-        .contrast-text th {
-            color: #444;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 0.5px;
-        }
-
-        .table tbody td {
-            vertical-align: middle;
-            padding: 1rem 0.75rem;
-        }
-
-        .badge {
-            padding: 0.5em 0.8em;
-            border-radius: 6px;
-        }
-
-        .form-control {
-            border-radius: 8px;
-        }
-
         /* Image Gallery Modal Styles */
         #main-gallery-image {
             width: 100%;
@@ -296,26 +274,23 @@
         </div>
       </div>
     </div>
+@endsection
 
+@section('scripts')
     <script>
-        $(function () {
-            // Initialize Select2
+        $(document).ready(function () {
+            // Initialize select2
             $('.select2').select2({
                 theme: 'bootstrap4',
                 width: '100%'
             });
 
-            const container = $('#inventoryTable tbody');
             let nextPage = 1;
             let loading = false;
+            let container = $('#inventoryTable tbody');
 
             function loadMore(reset = false) {
                 if (loading) return;
-                if (!nextPage && !reset) {
-                    $('#no-more-data').show();
-                    return;
-                }
-
                 loading = true;
                 $('#loading-spinner').show();
                 $('#no-more-data').hide();
@@ -326,7 +301,7 @@
                 }
 
                 $.ajax({
-                    url: "{{ route('admin.inventory.warehouse_stock.list') }}",
+                    url: "{{ route('admin.inventory.warehouse_stock_actual.list') }}",
                     type: "GET",
                     data: {
                         load_more: 1,
@@ -352,10 +327,10 @@
                         
                         // Update totals
                         if (res.total_boxes !== undefined) {
-                            $('#header_total_boxes').text(res.total_boxes.toLocaleString());
+                            $('#header_total_boxes').text(Number(res.total_boxes).toLocaleString());
                         }
                         if (res.total_pcs !== undefined) {
-                            $('#header_total_pcs').text(res.total_pcs.toLocaleString());
+                            $('#header_total_pcs').text(Number(res.total_pcs).toLocaleString());
                         }
 
                         container.append(res.html);
@@ -368,7 +343,7 @@
                         }
                         
                         if (container.is(':empty')) {
-                            container.append('<tr><td colspan="8" class="text-center py-5 text-muted">No inventory records found.</td></tr>');
+                            container.append('<tr><td colspan="9" class="text-center py-5 text-muted">No actual inventory records found.</td></tr>');
                             $('#no-more-data').hide();
                         }
                     },
@@ -376,7 +351,7 @@
                         loading = false;
                         $('#loading-spinner').hide();
                         container.css('opacity', '1');
-                        toastr.error('Failed to load inventory.');
+                        toastr.error('Failed to load actual inventory.');
                     }
                 });
             }
@@ -386,7 +361,7 @@
                 let wh_id = $('#storeroom_filter').val();
                 let rack_filter = $('#rack_filter');
                 rack_filter.html('<option value="">All Racks</option>');
-                $.get('{{ url("admin/inventory/warehouse-stock/racks") }}/' + wh_id, function(data) {
+                $.get('{{ url("admin/inventory/warehouse-stock-actual/racks") }}/' + wh_id, function(data) {
                     $.each(data, function(i, rack) {
                         rack_filter.append('<option value="'+rack.id+'">'+rack.name+'</option>');
                     });
@@ -418,66 +393,88 @@
             let filterTimer;
             $('#min_boxes_filter, #max_boxes_filter').on('input', function () {
                 clearTimeout(filterTimer);
-                filterTimer = setTimeout(function() {
+                filterTimer = setTimeout(() => {
                     loadMore(true);
-                }, 600);
+                }, 400);
             });
 
-            // Reset filter
+            // Populate racks on storeroom change
+            $('#storeroom_filter').on('change', function() {
+                let storeroom_id = $(this).val();
+                let rack_filter = $('#rack_filter');
+                rack_filter.html('<option value="">All Racks</option>');
+                if (storeroom_id) {
+                    $.get('{{ url("admin/inventory/warehouse-stock-actual/racks") }}/' + storeroom_id, function(data) {
+                        $.each(data, function(i, rack) {
+                            rack_filter.append('<option value="'+rack.id+'">'+rack.name+'</option>');
+                        });
+                        rack_filter.trigger('change');
+                    });
+                } else {
+                    rack_filter.trigger('change');
+                }
+            });
+
+            // Reset filters
             $('#reset_filters').on('click', function () {
-                $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter').val('').trigger('change');
+                $('#storeroom_filter').val('').trigger('change');
+                $('#rack_filter').val('').trigger('change');
+                $('#size_set_filter').val('').trigger('change');
+                $('#design_filter').val('').trigger('change');
+                $('#product_filter').val('').trigger('change');
+                $('#series_filter').val('').trigger('change');
+                $('#brand_filter').val('').trigger('change');
+                $('#fitting_filter').val('').trigger('change');
+                $('#pattern_filter').val('').trigger('change');
+                $('#nature_filter').val('').trigger('change');
+                $('#fabric_type_filter').val('').trigger('change');
                 $('#min_boxes_filter').val('1');
                 $('#max_boxes_filter').val('');
                 loadMore(true);
             });
 
-            // Filter Dynamic Racks
-            $('#storeroom_filter').on('change', function() {
-                let wh_id = $(this).val();
-                let rack_filter = $('#rack_filter');
-                rack_filter.html('<option value="">All Racks</option>');
-                if(wh_id) {
-                    $.get('{{ url("admin/inventory/warehouse-stock/racks") }}/' + wh_id, function(data) {
-                        $.each(data, function(i, rack) {
-                            rack_filter.append('<option value="'+rack.id+'">'+rack.name+'</option>');
-                        });
-                    });
-                }
-            });
-
-            // Export logic
-            function getExportUrl(type) {
-                let url = '{{ route("admin.inventory.warehouse_stock.export") }}?type=' + type;
-                url += '&storeroom_id=' + ($('#storeroom_filter').val() || '');
-                url += '&rack_id=' + ($('#rack_filter').val() || '');
-                url += '&size_set_id=' + ($('#size_set_filter').val() || '');
-                url += '&design_filter=' + ($('#design_filter').val() || '');
-                url += '&product_id=' + ($('#product_filter').val() || '');
-                url += '&series_id=' + ($('#series_filter').val() || '');
-                url += '&brand_id=' + ($('#brand_filter').val() || '');
-                url += '&fitting_id=' + ($('#fitting_filter').val() || '');
-                url += '&pattern_id=' + ($('#pattern_filter').val() || '');
-                url += '&nature_id=' + ($('#nature_filter').val() || '');
-                url += '&fabric_type_id=' + ($('#fabric_type_filter').val() || '');
-                url += '&min_boxes=' + ($('#min_boxes_filter').val() || '');
-                url += '&max_boxes=' + ($('#max_boxes_filter').val() || '');
-                return url;
+            // Helper to serialize all filter inputs
+            function getFilterData() {
+                return $.param({
+                    storeroom_id: $('#storeroom_filter').val(),
+                    rack_id: $('#rack_filter').val(),
+                    size_set_id: $('#size_set_filter').val(),
+                    design_filter: $('#design_filter').val(),
+                    product_id: $('#product_filter').val(),
+                    series_id: $('#series_filter').val(),
+                    brand_id: $('#brand_filter').val(),
+                    fitting_id: $('#fitting_filter').val(),
+                    pattern_id: $('#pattern_filter').val(),
+                    nature_id: $('#nature_filter').val(),
+                    fabric_type_id: $('#fabric_type_filter').val(),
+                    min_boxes: $('#min_boxes_filter').val(),
+                    max_boxes: $('#max_boxes_filter').val()
+                });
             }
 
-            $('#export_pdf').on('click', function(e) {
+            // Export Actions
+            function handleExport(type) {
+                let url = '{{ route("admin.inventory.warehouse_stock_actual.export") }}?type=' + type;
+                let filters = getFilterData();
+                if (filters) {
+                    url += '&' + filters;
+                }
+                window.location.href = url;
+            }
+
+            $('#export_pdf').on('click', function (e) {
                 e.preventDefault();
-                window.location.href = getExportUrl('pdf');
+                handleExport('pdf');
             });
 
-            $('#export_excel').on('click', function(e) {
+            $('#export_excel').on('click', function (e) {
                 e.preventDefault();
-                window.location.href = getExportUrl('excel');
+                handleExport('excel');
             });
 
-            // Handle Export Price
-            $('#export_excel_price').click(function(e) {
+            $('#export_excel_price').on('click', function (e) {
                 e.preventDefault();
-                let url = "{{ route('admin.inventory.warehouse_stock.export') }}?" + getFilterData() + '&type=excel_price';
+                let url = "{{ route('admin.inventory.warehouse_stock_actual.export') }}?" + getFilterData() + '&type=excel_price';
                 window.location.href = url;
             });
 
