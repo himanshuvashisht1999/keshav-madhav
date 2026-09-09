@@ -3278,14 +3278,11 @@ class AgentOrderController extends Controller
 
         $dispatches = $query->paginate(20);
         $shops = DB::table('master_customers')
-            ->where(function($q) {
-                $q->where('subtype', '!=', 'agent')
-                  ->orWhereNull('subtype');
-            })
             ->where('status', '!=', 3)
+            ->orderBy('name')
             ->select('id', 'name')->get();
-        $vendors = DB::table('vendors')->select('id', 'name')->get();
-        $agents = \App\Models\SalesAgent::select('id', 'name')->get();
+        $vendors = DB::table('vendors')->where('status', '!=', 3)->orderBy('name')->select('id', 'name')->get();
+        $agents = \App\Models\SalesAgent::where('status', 1)->orderBy('name')->select('id', 'name')->get();
 
         return view('admin.agent_orders.dispatches.index', compact('dispatches', 'shops', 'vendors', 'agents', 'totalGrandTotal'));
     }

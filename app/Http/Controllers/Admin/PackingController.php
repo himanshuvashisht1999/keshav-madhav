@@ -875,16 +875,6 @@ class PackingController extends Controller
         $mrp = $variant ? $variant->mrp : 0;
         $price = $variant ? ($variant->price ?? 0) : 0;
         
-        if ($request->strict_colors && $variant) {
-            $colors = \App\Models\ProductionGoodVariantItem::where('variant_id', $variant->id)
-                ->join('master_colors', 'production_goods_variant_colors.master_color_id', '=', 'master_colors.id')
-                ->where('master_colors.status', 1)
-                ->orderBy('master_colors.name')
-                ->get(['master_colors.id', 'master_colors.name']);
-        } else {
-            $colors = \App\Models\MasterColor::where('status', 1)->orderBy('name')->get(['id', 'name']);
-        }
-        
         // Calculate size-wise available balances from the selected lots (regardless of design number)
         $packing = \App\Models\PackingMain::where('slip_id', $slip_id)->first();
         $selected_lots = \App\Models\PackingSelectedLot::where('slip_id', $slip_id)->pluck('lot_no')->unique()->toArray();
@@ -1046,11 +1036,11 @@ class PackingController extends Controller
         
         $max_sets = $no_of_pcs > 0 ? floor($available_pieces / $no_of_pcs) : $available_pieces;
         
-        // Fetch variant details for color dropdown
+        // Fetch colors for color dropdown
         $colors_list = [];
         if ($request->for_sampling) {
             $colors_list = \App\Models\MasterColor::where('status', 1)->orderBy('name')->get(['id', 'name'])->toArray();
-        } else {
+        } elseif ($request->strict_colors) {
             $variant_first = null;
             if ($size_set_id) {
                 $variant_first = \App\Models\ProductionGoodVariant::where('production_goods_id', $product->id)
@@ -1072,6 +1062,8 @@ class PackingController extends Controller
             if (empty($colors_list)) {
                 $colors_list = \App\Models\MasterColor::where('status', 1)->orderBy('name')->get(['id', 'name'])->toArray();
             }
+        } else {
+            $colors_list = \App\Models\MasterColor::where('status', 1)->orderBy('name')->get(['id', 'name'])->toArray();
         }
         
         return response()->json([
