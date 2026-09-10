@@ -217,6 +217,25 @@
                             <i class="fas fa-trash-alt"></i> <span class="d-none d-xl-inline">Delete</span>
                         </a>
 
+                        @if(!$isFabric)
+                        <div class="btn-group">
+                            <a href="{{ route('admin.agent-orders.dispatches.generate-prn', $dispatch->id) }}" class="btn btn-action bg-soft-primary text-primary" style="border-top-right-radius: 0; border-bottom-right-radius: 0;" title="Download Barcode (PRN)">
+                                <i class="fas fa-barcode"></i> PRN
+                            </a>
+                            <button type="button" class="btn btn-action bg-soft-primary text-primary dropdown-toggle dropdown-toggle-split px-2" style="border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: 1px solid rgba(99, 102, 241, 0.2);" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Barcode Options">
+                                <span class="sr-only">Toggle Dropdown</span>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right shadow-sm" style="border-radius: 8px;">
+                                <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.dispatches.generate-prn', $dispatch->id) }}">
+                                    <i class="fas fa-barcode text-primary mr-2"></i> Download PRN (Thermal)
+                                </a>
+                                <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.dispatches.download-barcode-pdf', $dispatch->id) }}" target="_blank">
+                                    <i class="fas fa-file-pdf text-danger mr-2"></i> Download Barcodes (PDF)
+                                </a>
+                            </div>
+                        </div>
+                        @endif
+
                         <a href="{{ route('admin.agent-orders.dispatches.download-packing-slip', $dispatch->id) }}" id="packingSlipBtn" class="btn btn-action bg-soft-info text-info border-0">
                             <i class="fas fa-box-open"></i> Packing Slip
                         </a>

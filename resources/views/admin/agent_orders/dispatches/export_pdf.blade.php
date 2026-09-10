@@ -156,12 +156,22 @@
         </thead>
         <tbody>
             @forelse($dispatches as $i => $dispatch)
+                @php
+                    if ($dispatch->party_type === 'vendor') {
+                        $partyName = $dispatch->vendor_name ?? ($dispatch->vendor->name ?? 'N/A');
+                    } else {
+                        $partyName = $dispatch->customer_name ?? ($dispatch->shop->name ?? ($dispatch->vendor_name ?? 'N/A'));
+                    }
+                    $agentName = ($dispatch->source_type ?? '') === 'corporate' 
+                        ? 'Direct' 
+                        : ($dispatch->agent_name ?? ($dispatch->agent->name ?? 'Direct'));
+                @endphp
                 <tr>
                     <td>{{ $i + 1 }}</td>
                     <td><strong>#DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
-                    <td>{{ $dispatch->party_type === 'vendor' ? ($dispatch->vendor->name ?? 'N/A') : ($dispatch->shop->name ?? 'N/A') }}</td>
-                    <td>{{ ucfirst($dispatch->party_type ?? 'N/A') }}</td>
-                    <td>{{ $dispatch->agent->name ?? 'Direct' }}</td>
+                    <td>{{ $partyName }}</td>
+                    <td>{{ ucfirst($dispatch->party_type ?? 'Customer') }}</td>
+                    <td>{{ $agentName }}</td>
                     <td>{{ number_format($dispatch->grand_total, 2) }}</td>
                     <td>{{ $dispatch->bill_no ?? '-' }}</td>
                     <td>{{ $dispatch->dispatch_date ? \Carbon\Carbon::parse($dispatch->dispatch_date)->format('d M Y') : 'N/A' }}</td>

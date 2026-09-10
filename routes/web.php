@@ -589,6 +589,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/dispatches/export/pdf', [AdminAgentOrderController::class, 'exportDispatchesPdf'])->name('dispatches.export-pdf');
             Route::get('/dispatches/export/excel', [AdminAgentOrderController::class, 'exportDispatchesExcel'])->name('dispatches.export-excel');
             Route::get('/dispatches/{id}', [AdminAgentOrderController::class, 'dispatchShow'])->name('dispatches.show');
+            Route::get('/dispatches/{id}/generate-prn', [AdminAgentOrderController::class, 'generateDispatchPrn'])->name('dispatches.generate-prn');
+            Route::get('/dispatches/{id}/download-barcode-pdf', [AdminAgentOrderController::class, 'downloadDispatchBarcodePdf'])->name('dispatches.download-barcode-pdf');
             Route::get('/dispatches/{id}/invoice', [AdminAgentOrderController::class, 'downloadDispatchInvoice'])->name('dispatches.download-invoice');
             Route::get('/dispatches/{id}/retail-invoice', [AdminAgentOrderController::class, 'downloadDispatchRetailInvoice'])->name('dispatches.download-retail-invoice');
             Route::get('/dispatches/{id}/retail-invoice-excel', [AdminAgentOrderController::class, 'downloadDispatchRetailInvoiceExcel'])->name('dispatches.download-retail-invoice-excel');

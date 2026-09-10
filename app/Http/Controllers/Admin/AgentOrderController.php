@@ -3121,14 +3121,30 @@ class AgentOrderController extends Controller
 
         if ($request->filled('dispatch_type')) {
             $dispatchType = $request->dispatch_type;
-            $q1->whereExists(function($query) use ($dispatchType) {
-                $query->select(DB::raw(1))
-                      ->from('agent_orders')
-                      ->whereColumn('agent_orders.agent_order_dispatch_id', 'd.id')
-                      ->where(function($sub) use ($dispatchType) {
-                          $sub->where('sale_type', $dispatchType)
-                              ->orWhere('order_type', $dispatchType);
-                      });
+            $q1->where(function ($q) use ($dispatchType) {
+                $q->whereExists(function ($query) use ($dispatchType) {
+                    $query->select(DB::raw(1))
+                        ->from('agent_order_dispatch_items as di')
+                        ->join('agent_orders as o', 'di.agent_order_id', '=', 'o.id')
+                        ->whereColumn('di.agent_order_dispatch_id', 'd.id')
+                        ->where(function ($sub) use ($dispatchType) {
+                            $sub->where('o.sale_type', $dispatchType)
+                                ->orWhere('o.order_type', $dispatchType);
+                        });
+                });
+                if ($dispatchType === 'item') {
+                    $q->orWhereExists(function ($query) {
+                        $query->select(DB::raw(1))
+                            ->from('agent_order_items as oi')
+                            ->whereColumn('oi.agent_order_dispatch_id', 'd.id');
+                    });
+                } elseif ($dispatchType === 'fabric') {
+                    $q->orWhereExists(function ($query) {
+                        $query->select(DB::raw(1))
+                            ->from('agent_order_fabric_items as fi')
+                            ->whereColumn('fi.agent_order_dispatch_id', 'd.id');
+                    });
+                }
             });
         }
 
@@ -3235,15 +3251,21 @@ class AgentOrderController extends Controller
         // Data rows
         $row = 2;
         foreach ($dispatches as $i => $dispatch) {
-            $partyName = $dispatch->party_type === 'vendor' 
-                ? ($dispatch->vendor->name ?? 'N/A') 
-                : ($dispatch->shop->name ?? 'N/A');
+            if ($dispatch->party_type === 'vendor') {
+                $partyName = $dispatch->vendor_name ?? ($dispatch->vendor->name ?? 'N/A');
+            } else {
+                $partyName = $dispatch->customer_name ?? ($dispatch->shop->name ?? ($dispatch->vendor_name ?? 'N/A'));
+            }
+
+            $agentName = ($dispatch->source_type ?? '') === 'corporate'
+                ? 'Direct'
+                : ($dispatch->agent_name ?? ($dispatch->agent->name ?? 'Direct'));
                 
             $sheet->setCellValue('A' . $row, $i + 1);
             $sheet->setCellValue('B' . $row, '#DSP-' . str_pad($dispatch->id, 5, '0', STR_PAD_LEFT));
             $sheet->setCellValue('C' . $row, $partyName);
-            $sheet->setCellValue('D' . $row, ucfirst($dispatch->party_type ?? 'N/A'));
-            $sheet->setCellValue('E' . $row, $dispatch->agent->name ?? 'Direct');
+            $sheet->setCellValue('D' . $row, ucfirst($dispatch->party_type ?? 'Customer'));
+            $sheet->setCellValue('E' . $row, $agentName);
             $sheet->setCellValue('F' . $row, $dispatch->grand_total);
             $sheet->setCellValue('G' . $row, $dispatch->bill_no ?? '-');
             $sheet->setCellValue('H' . $row, $dispatch->dispatch_date ? \Carbon\Carbon::parse($dispatch->dispatch_date)->format('d M Y') : 'N/A');
@@ -3337,6 +3359,86 @@ class AgentOrderController extends Controller
         $companies = \App\Models\Company::where('status', 1)->get();
 
         return view('admin.agent_orders.dispatches.show', compact('dispatch', 'groupedItems', 'fabricItems', 'isFabric', 'companies'));
+    }
+
+    public function generateDispatchPrn($id)
+    {
+        $items = DB::table('agent_order_items')
+            ->where('agent_order_dispatch_id', $id)
+            ->get();
+            
+        $barcodeList = [];
+        foreach ($items as $item) {
+            $barcode = $item->barcode;
+            if (empty($barcode) && !empty($item->product_id) && !empty($item->size_set_id) && !empty($item->color_id)) {
+                $barcode = 'D' . $item->product_id . 'S' . $item->size_set_id . 'C' . $item->color_id;
+            }
+            $boxCount = (int)($item->box_qty > 0 ? $item->box_qty : ($item->scanned_box_qty > 0 ? $item->scanned_box_qty : 1));
+            if (!empty($barcode)) {
+                for ($i = 0; $i < $boxCount; $i++) {
+                    $barcodeList[] = $barcode;
+                }
+            }
+        }
+        
+        if (empty($barcodeList)) {
+            return back()->with('error', 'No barcodes found for this dispatch.');
+        }
+        
+        $tspl = generateBulkTsplByBarcodes($barcodeList);
+        if (empty($tspl)) {
+            return back()->with('error', 'Failed to generate PRN barcodes for this dispatch.');
+        }
+
+        $fileName = 'dispatch_' . $id . '_barcodes_' . time() . '.prn';
+        
+        return response($tspl, 200, [
+            'Content-Type' => 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+        ]);
+    }
+
+    public function downloadDispatchBarcodePdf($id)
+    {
+        $items = DB::table('agent_order_items')
+            ->leftJoin('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
+            ->where('agent_order_dispatch_id', $id)
+            ->select('agent_order_items.*', 'production_goods.design_number as pg_design_number', 'production_goods.name_of_garment')
+            ->get();
+
+        $labels = [];
+        foreach ($items as $item) {
+            $barcode = $item->barcode;
+            if (empty($barcode) && !empty($item->product_id) && !empty($item->size_set_id) && !empty($item->color_id)) {
+                $barcode = 'D' . $item->product_id . 'S' . $item->size_set_id . 'C' . $item->color_id;
+            }
+            $boxCount = (int)($item->box_qty > 0 ? $item->box_qty : ($item->scanned_box_qty > 0 ? $item->scanned_box_qty : 1));
+            for ($i = 0; $i < $boxCount; $i++) {
+                $labels[] = (object) [
+                    'product_name' => $item->product_name ?? ($item->name_of_garment ?? ''),
+                    'fitting_name' => $item->fitting_name ?? '',
+                    'pattern_name' => $item->pattern_name ?? '',
+                    'size_group' => $item->size_set_name ?? '',
+                    'no_of_pcs' => $item->quantity ?? 0,
+                    'color_name' => $item->color_name ?? '',
+                    'color_id' => $item->color_id ?? '',
+                    'design_number' => $item->design_number ?? ($item->pg_design_number ?? ''),
+                    'barcode' => $barcode,
+                    'qrcode' => $barcode,
+                ];
+            }
+        }
+
+        if (empty($labels)) {
+            return back()->with('error', 'No barcodes found for this dispatch.');
+        }
+
+        $chunks = array_chunk($labels, 2);
+        $html = view('admin.inventory.barcode_generator.pdf', compact('chunks'))->render();
+        $html = trim($html);
+
+        $pdf = Pdf::loadHTML($html)->setPaper([0, 0, 283.46, 255.12]);
+        return $pdf->stream('dispatch_' . $id . '_barcodes.pdf');
     }
 
     public function dispatchSelected(Request $request)

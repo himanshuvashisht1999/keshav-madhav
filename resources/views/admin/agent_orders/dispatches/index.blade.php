@@ -223,6 +223,19 @@
                                                         </a>
                                                     </div>
                                                 </div>
+                                                <div class="dropdown d-inline-block">
+                                                    <button class="btn btn-secondary btn-sm px-2 shadow-sm dropdown-toggle" type="button" id="barcodeDropdown{{ $dispatch->id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-radius: 6px;" title="Barcodes">
+                                                        <i class="fas fa-barcode"></i>
+                                                    </button>
+                                                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="barcodeDropdown{{ $dispatch->id }}">
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.dispatches.generate-prn', $dispatch->id) }}">
+                                                            <i class="fas fa-barcode text-primary mr-2"></i> Download PRN (Thermal)
+                                                        </a>
+                                                        <a class="dropdown-item" href="{{ route('admin.agent-orders.dispatches.download-barcode-pdf', $dispatch->id) }}" target="_blank">
+                                                            <i class="fas fa-file-pdf text-danger mr-2"></i> Download Barcodes (PDF)
+                                                        </a>
+                                                    </div>
+                                                </div>
                                             @endif
                                         </td>
                                     </tr>
