@@ -1619,7 +1619,7 @@ class PackingController extends Controller
                 'packing_main_id' => $main->id,
                 'carton_no' => $nextCartonNo,
                 'rack_id' => $data['rack_id'] ?? null,
-                'status' => 1
+                'status' => 3
             ]);
 
             $datePrefix = date('ymd');
@@ -1638,6 +1638,7 @@ class PackingController extends Controller
 
             // Calculate barcode BEFORE creating box to link them properly
             $barcode = 'D' . $data['product_id'] . 'S' . $data['size_set_id'] . 'C' . $data['color_id'];
+            $carton->update(['barcode' => $barcode]);
 
             \Log::channel('single')->info("Created Domestic Box: {$box_no} with Barcode: " . (string) $barcode);
 
@@ -1843,16 +1844,17 @@ class PackingController extends Controller
                     $currentBoxNoInt++;
                     $box_no = 'BX-' . $currentBoxNoInt;
 
+                    // 4. Barcode Calculation
+                    $barcode = 'D' . $box_plan['product_id'] . 'S' . $box_plan['size_set_id'] . 'C' . $box_plan['color_id'];
+
                     // 2. New Carton for EACH box (matching manual entry workflow)
                     $carton = \App\Models\PackingCarton::create([
                         'packing_main_id' => $main->id,
                         'carton_no' => $currentCartonNo,
                         'rack_id' => $box_plan['rack_id'] ?? null,
-                        'status' => 1
+                        'barcode' => $barcode,
+                        'status' => 3
                     ]);
-
-                    // 4. Barcode Calculation
-                    $barcode = 'D' . $box_plan['product_id'] . 'S' . $box_plan['size_set_id'] . 'C' . $box_plan['color_id'];
 
                     $currentRackId = $box_plan['rack_id'] ?? null;
 
@@ -2663,7 +2665,7 @@ class PackingController extends Controller
                         'carton_no' => $nextCartonNo,
                         'rack_id' => $data['rack_id'] ?? null,
                         'barcode' => $barcode,
-                        'status' => 1
+                        'status' => 3
                     ]);
 
                     $datePrefix = date('ymd');

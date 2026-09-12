@@ -334,16 +334,17 @@ function getOrderDispatchData($orderMainId)
         ->where('order_main_id', $orderMainId)
         ->sum('total_quantity');
 
-    $pack_items = PackingMain::with([
+    $pack_mains = PackingMain::with([
         'cartons' => function ($q) {
             $q->whereIn('status', [2, 3])
                 ->withSum('items', 'quantity');
         }
-    ])->where('order_main_id', $orderMainId)
-        ->first();
+    ])->where('order_main_id', $orderMainId)->get();
 
-    // safe check
-    $packed = $pack_items ? $pack_items->cartons->sum('items_sum_quantity') : 0;
+    $packed = 0;
+    foreach ($pack_mains as $session) {
+        $packed += $session->cartons->sum('items_sum_quantity');
+    }
 
     return [
         'total' => (int) $total,

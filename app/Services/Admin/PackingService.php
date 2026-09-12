@@ -1014,13 +1014,17 @@ class PackingService
                 }
             }
 
-            // Determine status for cartons
-            $carton_status = $is_domestic ? 3 : 1; // 3=Inventory, 1=Ready for Dispatch
-
-            // Update all non-dispatched cartons in this session (NEVER reset already dispatched cartons)
-            PackingCarton::where('packing_main_id', $main_id)
-                ->where('status', '!=', 2)
-                ->update(['status' => $carton_status]);
+            // Update non-dispatched cartons in this session (NEVER reset already dispatched cartons)
+            if ($is_domestic) {
+                PackingCarton::where('packing_main_id', $main_id)
+                    ->where('status', '!=', 2)
+                    ->update(['status' => 3]);
+            } else {
+                // For corporate order: Keep domestic/diverted cartons as status 3 (Inventory), update only pending cartons (status 0) to status 1 (Ready for Dispatch)
+                PackingCarton::where('packing_main_id', $main_id)
+                    ->whereNotIn('status', [2, 3])
+                    ->update(['status' => 1]);
+            }
 
             // If Domestic, Move to Inventory table (Consolidated)
             // Domestic inventory creation is already handled during box creation (saveDomesticBulk & saveMultiCartonPlan)

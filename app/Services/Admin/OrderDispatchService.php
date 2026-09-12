@@ -349,8 +349,26 @@ class OrderDispatchService
                 $q->where('packing_cartons.status', 1)
                   ->whereNotIn('packing_cartons.id', function ($sub) {
                       $sub->select('carton_packing_id')->from('order_dispatch_details');
+                  })
+                  ->whereNotIn('packing_cartons.id', function ($sub) {
+                      $sub->select('packing_carton_id')
+                          ->from('domestic_inventories')
+                          ->whereNotNull('packing_carton_id')
+                          ->where('packing_carton_id', '>', 0);
+                  })
+                  ->whereNotExists(function ($sub) {
+                      $sub->select(DB::raw(1))
+                          ->from('domestic_inventories')
+                          ->whereColumn('domestic_inventories.packing_main_id', 'packing_cartons.packing_main_id')
+                          ->where(function ($w) {
+                              $w->whereColumn('domestic_inventories.carton_no', 'packing_cartons.carton_no')
+                                ->orWhere(function ($bw) {
+                                    $bw->whereNotNull('packing_cartons.barcode')
+                                       ->where('packing_cartons.barcode', '!=', '')
+                                       ->whereColumn('domestic_inventories.barcode', 'packing_cartons.barcode');
+                                });
+                          });
                   });
-                // Filter to only include cartons that contain corporate boxes
             },
             'dispatchCartons.items.detail.orderProductSet.colors',
             'dispatchCartons.items.detail.orderProductSet.size_measurement', 
@@ -459,6 +477,12 @@ class OrderDispatchService
                 $q->where('packing_cartons.status', 1)
                   ->whereNotIn('packing_cartons.id', function ($sub) {
                       $sub->select('carton_packing_id')->from('order_dispatch_details');
+                  })
+                  ->whereNotIn('packing_cartons.id', function ($sub) {
+                      $sub->select('packing_carton_id')
+                          ->from('domestic_inventories')
+                          ->whereNotNull('packing_carton_id')
+                          ->where('packing_carton_id', '>', 0);
                   });
             })
             ->orderBy('id', 'DESC')
@@ -475,6 +499,12 @@ class OrderDispatchService
                 $q->where('packing_cartons.status', 1)
                   ->whereNotIn('packing_cartons.id', function ($sub) {
                       $sub->select('carton_packing_id')->from('order_dispatch_details');
+                  })
+                  ->whereNotIn('packing_cartons.id', function ($sub) {
+                      $sub->select('packing_carton_id')
+                          ->from('domestic_inventories')
+                          ->whereNotNull('packing_carton_id')
+                          ->where('packing_carton_id', '>', 0);
                   });
             })
             ->orderBy('id', 'DESC')
@@ -494,7 +524,7 @@ class OrderDispatchService
 
         $pack_mains = PackingMain::with([
             'cartons' => function ($q) {
-                $q->where('status', 2) // Dispatched
+                $q->whereIn('status', [2, 3]) // Dispatched (2) or Diverted to Domestic Inventory (3)
                     ->withSum('items', 'quantity');
             }
         ])->where('order_main_id', $orderMainId)->get();
