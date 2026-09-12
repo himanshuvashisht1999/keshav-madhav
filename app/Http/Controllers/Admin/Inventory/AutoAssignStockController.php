@@ -24,7 +24,7 @@ class AutoAssignStockController extends Controller
                 ->get();
             $nonDispatchRackIds = $nonDispatchStorerooms->flatMap->racks->pluck('id')->toArray();
 
-            // 2. Find pending agent order items mapped to non-dispatchable racks or unassigned
+            // 2. Find pending agent order items mapped to non-dispatchable racks, unassigned, or where assigned rack has 0 boxes
             $pendingOrderItems = AgentOrderItem::whereHas('order', function ($query) {
                 $query->where('status', 'pending');
             })
@@ -33,6 +33,15 @@ class AutoAssignStockController extends Controller
                 if (!empty($nonDispatchRackIds)) {
                     $q->orWhereIn('rack_id', $nonDispatchRackIds);
                 }
+                $q->orWhereNotExists(function($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('domestic_inventories')
+                        ->whereColumn('domestic_inventories.product_id', 'agent_order_items.product_id')
+                        ->whereColumn('domestic_inventories.color_id', 'agent_order_items.color_id')
+                        ->whereColumn('domestic_inventories.size_set_id', 'agent_order_items.size_set_id')
+                        ->whereColumn('domestic_inventories.rack_id', 'agent_order_items.rack_id')
+                        ->where('domestic_inventories.total_boxes', '>', 0);
+                });
             })
             ->get();
 

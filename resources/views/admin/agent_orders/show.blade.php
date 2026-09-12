@@ -343,7 +343,13 @@
                                                         </div>
                                                     </td>
                                                     <td class="text-center align-middle text-nowrap">
-                                                        @if(isset($item->available_locations) && count($item->available_locations) > 1)
+                                                        @if($item->status == 'Dispatched')
+                                                            <div class="small text-left d-inline-block">
+                                                                <div class="text-dark font-weight-bold mb-1"><i class="fas fa-warehouse text-secondary mr-1"></i>{{ $item->warehouse_name }}</div>
+                                                                <div class="text-muted"><i class="fas fa-layer-group text-secondary mr-1"></i>{{ $item->rack_name }} @if($item->rack_id) ({{ $item->rack_id }}) @endif</div>
+                                                                <span class="badge badge-success mt-1" style="font-size: 10px;"><i class="fas fa-truck mr-1"></i>Dispatched</span>
+                                                            </div>
+                                                        @elseif(isset($item->available_locations) && count($item->available_locations) > 1)
                                                             <select class="form-control form-control-sm location-select shadow-sm" data-item-id="{{ $item->id }}" style="min-width: 200px; display: inline-block;">
                                                                 @foreach($item->available_locations as $loc)
                                                                     @php $isDispatch = ($loc->order_dispatch ?? 'Yes') === 'Yes'; @endphp
@@ -352,7 +358,7 @@
                                                                     </option>
                                                                 @endforeach
                                                             </select>
-                                                        @else
+                                                        @elseif(!empty($item->has_stock))
                                                             <div class="small text-left d-inline-block">
                                                                 <div class="text-dark font-weight-bold mb-1"><i class="fas fa-warehouse text-secondary mr-1"></i>{{ $item->warehouse_name }}</div>
                                                                 <div class="text-muted"><i class="fas fa-layer-group text-secondary mr-1"></i>{{ $item->rack_name }} @if($item->rack_id) ({{ $item->rack_id }}) @endif</div>
@@ -363,6 +369,14 @@
                                                                 @else
                                                                     <span class="badge badge-secondary mt-1" style="font-size: 10px;">Unassigned</span>
                                                                 @endif
+                                                            </div>
+                                                        @else
+                                                            <div class="small text-left d-inline-block">
+                                                                @if($item->warehouse_name !== 'N/A')
+                                                                    <div class="text-muted mb-1"><i class="fas fa-warehouse text-secondary mr-1"></i>{{ $item->warehouse_name }}</div>
+                                                                    <div class="text-muted small"><i class="fas fa-layer-group text-secondary mr-1"></i>{{ $item->rack_name }} (0 Box)</div>
+                                                                @endif
+                                                                <span class="badge badge-warning text-dark mt-1" style="font-size: 10px;"><i class="fas fa-exclamation-triangle mr-1"></i>Advance Sample / Stock Depleted</span>
                                                             </div>
                                                         @endif
                                                     </td>

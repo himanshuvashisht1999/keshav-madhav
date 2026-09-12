@@ -1092,6 +1092,8 @@ class AgentOrderController extends Controller
                     'rack_id' => $inventoryInfo->rack_id ?? null,
                     'order_dispatch' => $inventoryInfo->order_dispatch ?? 'Yes',
                     'available_locations' => $allLocations,
+                    'has_stock' => $allLocations->isNotEmpty(),
+                    'current_rack_valid' => $currentRackValid,
                 ];
             });
         }

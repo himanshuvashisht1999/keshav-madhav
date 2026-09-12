@@ -747,25 +747,9 @@ class InventoryController extends Controller
             }
 
             foreach ($request->products as $item) {
-                // Handle Consumption Logic
+                $source = null;
                 if (isset($item['consume_source_id']) && !empty($item['consume_source_id'])) {
                     $source = $consumedSources[$item['consume_source_id']]['model'] ?? null;
-                    if ($source) {
-                        // Add history for consumption
-                        \App\Models\DomesticInventoryHistory::create([
-                            'user_id' => auth()->id(),
-                            'old_product_id' => $source->product_id,
-                            'old_size_set_id' => $source->size_set_id,
-                            'old_color_id' => $source->color_id,
-                            'old_rack_id' => $source->rack_id,
-                            'new_product_id' => $item['product_id'],
-                            'new_size_set_id' => $item['size_set_id'],
-                            'new_color_id' => $item['color_id'],
-                            'new_rack_id' => $item['rack_id'] ?? null,
-                            'box_quantity' => $item['total_boxes'],
-                            'type' => 'stock_consume'
-                        ]);
-                    }
                 }
 
                 // Consistent Barcode Format: D{id}S{id}C{id}
@@ -796,25 +780,26 @@ class InventoryController extends Controller
                     ]);
                 }
 
-                if ($source_type !== 'consume') {
-                    // Log History for stock addition
-                    \App\Models\DomesticInventoryHistory::create([
-                        'user_id' => auth()->id(),
-                        'purchase_id' => $purchase ? $purchase->id : null,
-                        'vendor_id' => ($source_type == 'vendor') ? $vendor_id : null,
-                        'customer_id' => ($source_type == 'customer') ? $customer_id : null,
-                        'new_product_id' => $item['product_id'],
-                        'new_size_set_id' => $item['size_set_id'],
-                        'new_color_id' => $item['color_id'],
-
-                        'new_rack_id' => $item['rack_id'] ?? null,
-                        'box_quantity' => $item['total_boxes'],
-                        'pieces_per_box' => $item['pieces_per_box'],
-                        'mrp' => $item['mrp'] ?? 0,
-                        'purchase_rate' => $item['purchase_rate'] ?? 0,
-                        'type' => ($source_type == 'sample' ? 'sample' : 'creation')
-                    ]);
-                }
+                // Log History for stock addition (creation, sample, or stock_consume)
+                \App\Models\DomesticInventoryHistory::create([
+                    'user_id' => auth()->id(),
+                    'purchase_id' => $purchase ? $purchase->id : null,
+                    'vendor_id' => ($source_type == 'vendor') ? $vendor_id : null,
+                    'customer_id' => ($source_type == 'customer') ? $customer_id : null,
+                    'old_product_id' => $source ? $source->product_id : null,
+                    'old_size_set_id' => $source ? $source->size_set_id : null,
+                    'old_color_id' => $source ? $source->color_id : null,
+                    'old_rack_id' => $source ? $source->rack_id : null,
+                    'new_product_id' => $item['product_id'],
+                    'new_size_set_id' => $item['size_set_id'],
+                    'new_color_id' => $item['color_id'],
+                    'new_rack_id' => $item['rack_id'] ?? null,
+                    'box_quantity' => $item['total_boxes'],
+                    'pieces_per_box' => $item['pieces_per_box'],
+                    'mrp' => $item['mrp'] ?? 0,
+                    'purchase_rate' => $item['purchase_rate'] ?? 0,
+                    'type' => ($source_type == 'sample' ? 'sample' : ($source_type == 'consume' ? 'stock_consume' : 'creation'))
+                ]);
 
                 $inventoryIds[] = $inventory->id;
                 $printData[] = [
@@ -1445,16 +1430,7 @@ class InventoryController extends Controller
             ->where('slip_id', 0)
             ->findOrFail($id);
             
-        $items = \App\Models\DomesticInventoryHistory::with([
-            'newProduct.series',
-            'newProduct.fitting',
-            'newProduct.pattern',
-            'newSizeSet',
-            'newColor',
-            'newRack.storeroom'
-        ])->where('created_at', $session->created_at)
-          ->whereIn('type', ['creation', 'sample'])
-          ->get();
+        $items = $session->getInboundItems();
 
         return view('admin.inventory.inbound_history.show', compact('session', 'items'));
     }

@@ -286,9 +286,7 @@ class BarcodeGeneratorController extends Controller
             ->where('slip_id', 0)
             ->findOrFail($id);
             
-        $items = \App\Models\DomesticInventoryHistory::where('created_at', $session->created_at)
-          ->whereIn('type', ['creation', 'sample'])
-          ->get();
+        $items = $session->getInboundItems();
 
         $barcodeList = [];
 
