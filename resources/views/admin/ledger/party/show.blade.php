@@ -154,6 +154,10 @@
                                         class="btn btn-danger px-3 ml-1" style="border-radius: 10px;">
                                         <i class="fas fa-file-pdf mr-1"></i> PDF
                                     </a>
+                                    <a href="{{ route('admin.ledger.party.export-excel', ['type' => $type, 'id' => $party->id, 'start_date' => request('start_date'), 'end_date' => request('end_date'), 'customer_id' => request('customer_id'), 'view_mode' => request('view_mode', 'mix')]) }}"
+                                        class="btn btn-success px-3 ml-1" style="border-radius: 10px;">
+                                        <i class="fas fa-file-excel mr-1"></i> Excel
+                                    </a>
                                 </div>
                             </div>
                         </form>

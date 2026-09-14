@@ -16,7 +16,9 @@
                     </div>
                     <div class="col-sm-6">
                         <div class="float-sm-right text-right text-end">
-                            <a href="{{ route('admin.ledger.lot.index') }}" class="btn btn-secondary btn-sm"><i class="mdi mdi-arrow-left"></i> Back to List</a>
+                            <a href="{{ route('admin.ledger.lot.export-pdf', $lot->lot_no) }}" class="btn btn-danger btn-sm mr-1"><i class="fas fa-file-pdf mr-1"></i> PDF</a>
+                            <a href="{{ route('admin.ledger.lot.export-excel', $lot->lot_no) }}" class="btn btn-success btn-sm mr-1"><i class="fas fa-file-excel mr-1"></i> Excel</a>
+                            <a href="{{ route('admin.ledger.lot.index') }}" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left mr-1"></i> Back to List</a>
                         </div>
                     </div>
                 </div>

@@ -220,7 +220,7 @@
                                             $itemData = $selected_quantities[$vKey] ?? null;
                                             $initialQty = $itemData ? $itemData['qty'] : 0;
                                         @endphp
-                                        @include('admin.agent_orders.partials.variation_row', ['variation' => $variation, 'image' => $image, 'initialQty' => $initialQty])
+                                        @include('admin.agent_orders.partials.variation_row', ['variation' => $variation, 'image' => $image, 'initialQty' => $initialQty, 'dispatchedQty' => $dispatched_quantities[$vKey] ?? 0])
                                     @endforeach
                                 </tbody>
                             </table>
@@ -307,6 +307,7 @@
                         <select id="orderStatus" class="form-control form-control-sm mt-1">
                             <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>PENDING</option>
                             <option value="delayed" {{ $order->status == 'delayed' ? 'selected' : '' }}>DELAYED</option>
+                            <option value="partially_dispatched" {{ $order->status == 'partially_dispatched' ? 'selected' : '' }}>PARTIALLY DISPATCHED</option>
                             <option value="dispatched" {{ $order->status == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
                         </select>
                     </div>
@@ -545,11 +546,16 @@
             $(document).on('change', '.box-qty-input', function () {
                 const row = $(this).closest('.variation-row');
                 const key = row.data('key');
+                const min = parseInt($(this).attr('min')) || 0;
                 let qty = parseInt($(this).val()) || 0;
                 const max = parseInt($(this).attr('max'));
 
-                if (qty < 0) qty = 0;
-                if (qty > max) {
+                if (qty < min) {
+                    Swal.fire('Locked Quantity', 'This item has ' + min + ' boxes already dispatched and cannot be reduced below that.', 'warning');
+                    qty = min;
+                    $(this).val(qty);
+                }
+                if (!isNaN(max) && qty > max) {
                     Swal.fire('Limit Exceeded', 'Only ' + max + ' boxes available.', 'warning');
                     qty = max;
                     $(this).val(qty);
@@ -604,7 +610,12 @@
             $(document).on('click', '.btn-minus', function () {
                 const input = $(this).closest('.quantity-control').find('.box-qty-input');
                 const current = parseInt(input.val()) || 0;
-                if (current > 0) input.val(current - 1).trigger('change');
+                const min = parseInt(input.attr('min')) || 0;
+                if (current > min) {
+                    input.val(current - 1).trigger('change');
+                } else if (min > 0 && current <= min) {
+                    Swal.fire('Locked Quantity', 'Cannot reduce below already dispatched quantity (' + min + ' boxes).', 'info');
+                }
             });
 
             updateUI();

@@ -16,8 +16,13 @@
                     </div>
                 </div>
 
-                <div>
-                    <!-- Blank for symmetry -->
+                <div class="d-flex align-items-center">
+                    <a href="{{ route('admin.ledger.purchase.export-pdf', request()->all()) }}" class="btn btn-danger btn-sm mr-2 shadow-sm font-weight-bold" style="border-radius: 6px;">
+                        <i class="fas fa-file-pdf mr-1"></i> PDF
+                    </a>
+                    <a href="{{ route('admin.ledger.purchase.export-excel', request()->all()) }}" class="btn btn-success btn-sm shadow-sm font-weight-bold" style="border-radius: 6px;">
+                        <i class="fas fa-file-excel mr-1"></i> Excel
+                    </a>
                 </div>
             </div>
         </div>
@@ -28,7 +33,7 @@
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body p-3">
                         <form action="{{ route('admin.ledger.purchase.index') }}" method="GET" class="row align-items-end">
-                            <div class="col-md-3 mb-2">
+                            <div class="col-md-2 mb-2">
                                 <label class="small text-muted font-weight-bold">Filter by Vendor</label>
                                 <select name="vendor_id" class="form-control select2" onchange="this.form.submit()">
                                     <option value="">All Vendors</option>
@@ -38,6 +43,10 @@
                                         </option>
                                     @endforeach
                                 </select>
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                <label class="small text-muted font-weight-bold">Bill No.</label>
+                                <input type="text" name="bill_no" class="form-control" placeholder="Search Bill No" value="{{ request('bill_no') }}">
                             </div>
                             <div class="col-md-2 mb-2">
                                 <label class="small text-muted font-weight-bold">Item Type</label>
@@ -51,14 +60,17 @@
                                 <label class="small text-muted font-weight-bold">From Date</label>
                                 <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}" onchange="this.form.submit()">
                             </div>
-                            <div class="col-md-3 mb-2">
+                            <div class="col-md-2 mb-2">
                                 <label class="small text-muted font-weight-bold">To Date</label>
                                 <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}" onchange="this.form.submit()">
                             </div>
-                            <div class="col-md-2 mb-2">
-                                <button type="submit" class="btn btn-primary btn-block">
+                            <div class="col-md-2 mb-2 d-flex">
+                                <button type="submit" class="btn btn-primary flex-fill mr-1 shadow-sm font-weight-bold">
                                     <i class="fas fa-filter mr-1"></i> APPLY
                                 </button>
+                                <a href="{{ route('admin.ledger.purchase.index') }}" class="btn btn-outline-secondary shadow-sm" title="Reset Filters">
+                                    <i class="fas fa-undo"></i>
+                                </a>
                             </div>
                         </form>
                     </div>
@@ -83,9 +95,9 @@
                                         <td>{{ $item->date ? date('d M Y', strtotime($item->date)) : 'N/A' }}</td>
                                         <td>
                                             @if($item->invoice_no)
-                                                <span class="badge badge-secondary">{{ $item->invoice_no }}</span>
+                                                <span class="badge px-2 py-1 font-weight-bold text-white shadow-sm" style="background-color: #4f46e5; color: #ffffff !important; font-size: 12.5px; border-radius: 4px;">{{ $item->invoice_no }}</span>
                                             @else
-                                                <span class="text-muted">N/A</span>
+                                                <span class="text-muted font-weight-bold">N/A</span>
                                             @endif
                                         </td>
                                         <td><strong>{{ $item->vendor_name }}</strong></td>

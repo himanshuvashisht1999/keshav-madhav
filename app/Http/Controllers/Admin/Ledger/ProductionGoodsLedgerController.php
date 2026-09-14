@@ -13,6 +13,104 @@ class ProductionGoodsLedgerController extends Controller
 {
     public function index(Request $request)
     {
+        $data = $this->getProductionGoodsListData($request, true);
+        return view('admin.ledger.production_goods.index', $data);
+    }
+
+    public function exportListPdf(Request $request)
+    {
+        ini_set('memory_limit', '1024M');
+        ini_set('max_execution_time', '300');
+        $data = $this->getProductionGoodsListData($request, false, 150);
+        $pdf = \PDF::loadView('admin.ledger.production_goods.list_pdf', $data)->setPaper('a4', 'portrait');
+        return $pdf->download('Production_Goods_Ledger_List_' . date('Y-m-d_His') . '.pdf');
+    }
+
+    public function exportListExcel(Request $request)
+    {
+        $data = $this->getProductionGoodsListData($request, false);
+        $goods = $data['goods'];
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Production Goods Summary');
+
+        // Header Title
+        $sheet->mergeCells('A1:G1');
+        $sheet->setCellValue('A1', 'SNAPKID - Production Goods Ledger Summary');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setARGB('FF1E3C72');
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Date
+        $sheet->mergeCells('A2:G2');
+        $sheet->setCellValue('A2', 'Generated on: ' . date('d M Y, h:i A'));
+        $sheet->getStyle('A2')->getFont()->setSize(10)->getColor()->setARGB('FF666666');
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Headers
+        $headers = ['Design No', 'Garment Name', 'Series', 'Size Set', 'Inward (Boxes)', 'Outward (Boxes)', 'Balance (Boxes)'];
+        $cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+        foreach ($headers as $idx => $h) {
+            $sheet->setCellValue($cols[$idx] . '4', $h);
+        }
+
+        $headerRange = 'A4:G4';
+        $sheet->getStyle($headerRange)->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+        $sheet->getStyle($headerRange)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF1E3C72');
+        $sheet->getStyle($headerRange)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $row = 5;
+        $totalIn = 0;
+        $totalOut = 0;
+        $totalBal = 0;
+
+        foreach ($goods as $good) {
+            foreach ($good->variants as $variant) {
+                $in = (float)($variant->total_inward ?? 0);
+                $out = (float)($variant->total_outward ?? 0);
+                $bal = (float)($variant->current_balance ?? 0);
+
+                $totalIn += $in;
+                $totalOut += $out;
+                $totalBal += $bal;
+
+                $sheet->setCellValue('A' . $row, $good->design_number ?? '-');
+                $sheet->setCellValue('B' . $row, $good->name_of_garment ?? '-');
+                $sheet->setCellValue('C' . $row, $good->series?->name ?? '-');
+                $sheet->setCellValue('D' . $row, $variant->sizeSet?->name ?? '-');
+                $sheet->setCellValue('E' . $row, $in);
+                $sheet->setCellValue('F' . $row, $out);
+                $sheet->setCellValue('G' . $row, $bal);
+
+                $row++;
+            }
+        }
+
+        // Summary Row
+        $sheet->setCellValue('A' . $row, 'Total');
+        $sheet->mergeCells('A' . $row . ':D' . $row);
+        $sheet->setCellValue('E' . $row, $totalIn);
+        $sheet->setCellValue('F' . $row, $totalOut);
+        $sheet->setCellValue('G' . $row, $totalBal);
+        $sheet->getStyle('A' . $row . ':F' . $row)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $row . ':F' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
+
+        $sheet->getStyle('E5:G' . $row)->getNumberFormat()->setFormatCode('#,##0');
+
+        foreach (range('A', 'G') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = 'Production_Goods_Ledger_List_' . date('Y-m-d_His') . '.xlsx';
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $tempPath = storage_path('app/public/' . $fileName);
+        $writer->save($tempPath);
+
+        return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
+    }
+
+    private function getProductionGoodsListData(Request $request, $paginate = true, $limit = null)
+    {
         $search = $request->query('search');
         $warehouseIds = $request->query('warehouse_ids', []);
         
@@ -21,19 +119,25 @@ class ProductionGoodsLedgerController extends Controller
 
         $warehouses = \App\Models\Storeroom::where('status', 1)->get();
 
-        $goods = ProductionGoods::with(['series', 'variants.sizeSet'])
+        $query = ProductionGoods::with(['series', 'variants.sizeSet'])
             ->where('status', 1)
             ->when($search, function ($q) use ($search) {
                 $q->where('name_of_garment', 'LIKE', "%$search%")
                   ->orWhere('design_number', 'LIKE', "%$search%");
             })
-            ->orderBy('id', 'desc')
-            ->paginate(15)
-            ->withQueryString();
+            ->orderBy('id', 'desc');
+
+        if ($paginate) {
+            $goods = $query->paginate(15)->withQueryString();
+        } else {
+            if ($limit) {
+                $query->limit($limit);
+            }
+            $goods = $query->get();
+        }
 
         foreach ($goods as $good) {
             foreach ($good->variants as $variant) {
-                // Inward: From DomesticInventoryHistory where new_product_id = good->id and new_size_set_id = variant size set
                 $inwardQuery = DB::table('domestic_inventory_histories')
                     ->where('new_product_id', $good->id)
                     ->where('new_size_set_id', $variant->master_size_measurement_id)
@@ -57,7 +161,6 @@ class ProductionGoodsLedgerController extends Controller
                 
                 $variant->total_inward = $inwardQuery->sum('box_quantity');
 
-                // Total Outward: From DomesticInventoryHistory where old_product_id = good->id (excluding transfer and stock_consume)
                 $outwardHistoryQuery = DB::table('domestic_inventory_histories')
                     ->where('old_product_id', $good->id)
                     ->where('old_size_set_id', $variant->master_size_measurement_id)
@@ -81,7 +184,6 @@ class ProductionGoodsLedgerController extends Controller
                 
                 $historyOutward = $outwardHistoryQuery->sum('box_quantity');
 
-                // Outward from orders (whether dispatched or not)
                 $orderQuery = DB::table('agent_order_items')
                     ->where('agent_order_items.product_id', $good->id)
                     ->where('agent_order_items.size_set_id', $variant->master_size_measurement_id);
@@ -101,13 +203,10 @@ class ProductionGoodsLedgerController extends Controller
                 $orderOutward = $orderQuery->sum('agent_order_items.box_qty');
 
                 $variant->total_outward = $historyOutward + $orderOutward;
-
-                // Current Balance mathematically based on Ledger
                 $variant->current_balance = $variant->total_inward - $variant->total_outward;
             }
         }
 
-        // --- Overall Totals Calculation ---
         $inwardTotalQuery = DB::table('domestic_inventory_histories')
             ->join('production_goods', 'domestic_inventory_histories.new_product_id', '=', 'production_goods.id')
             ->where('production_goods.status', 1)
@@ -193,10 +292,10 @@ class ProductionGoodsLedgerController extends Controller
         $totalOutwardOverall = $totalOutwardHistoryOverall + $totalOutwardOrderOverall;
         $totalBalanceOverall = $totalInwardOverall - $totalOutwardOverall;
 
-        return view('admin.ledger.production_goods.index', compact(
+        return compact(
             'goods', 'search', 'warehouses', 'warehouseIds',
             'totalInwardOverall', 'totalOutwardOverall', 'totalBalanceOverall'
-        ));
+        );
     }
 
     public function show(Request $request, $id, $size_set_id)
@@ -209,8 +308,111 @@ class ProductionGoodsLedgerController extends Controller
     {
         $data = $this->getLedgerData($request, $id, $size_set_id);
         $pdf = \PDF::loadView('admin.ledger.production_goods.pdf', $data);
-        $name = 'Production_Goods_Ledger_' . $data['good']->design_number . '_' . $data['sizeSet']->name . '_' . date('Y-m-d') . '.pdf';
+        $safeDesign = preg_replace('/[^A-Za-z0-9_\-]/', '_', $data['good']->design_number ?? 'Good');
+        $safeSize = preg_replace('/[^A-Za-z0-9_\-]/', '_', $data['sizeSet']->name ?? 'Size');
+        $name = 'Production_Goods_Ledger_' . $safeDesign . '_' . $safeSize . '_' . date('Y-m-d') . '.pdf';
         return $pdf->download($name);
+    }
+
+    public function exportExcel(Request $request, $id, $size_set_id)
+    {
+        $data = $this->getLedgerData($request, $id, $size_set_id);
+        $good = $data['good'];
+        $sizeSet = $data['sizeSet'];
+        $transactions = $data['transactions'];
+        $openingBalanceAmount = $data['openingBalanceAmount'];
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Goods Ledger');
+
+        // Header Title
+        $sheet->mergeCells('A1:F1');
+        $sheet->setCellValue('A1', 'SNAPKID - Production Goods Ledger');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setARGB('FF1E3C72');
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Subtitle
+        $sheet->mergeCells('A2:F2');
+        $periodText = 'All Dates';
+        if ($data['startDate'] && $data['endDate']) {
+            $periodText = $data['startDate'] . ' to ' . $data['endDate'];
+        } elseif ($data['startDate']) {
+            $periodText = 'From ' . $data['startDate'];
+        } elseif ($data['endDate']) {
+            $periodText = 'Up to ' . $data['endDate'];
+        }
+        $sheet->setCellValue('A2', 'Design: ' . ($good->design_number ?? '-') . ' | Garment: ' . ($good->name_of_garment ?? '-') . ' | Size: ' . ($sizeSet->name ?? '-') . ' | Period: ' . $periodText);
+        $sheet->getStyle('A2')->getFont()->setSize(10)->getColor()->setARGB('FF666666');
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Headers
+        $headers = ['Date', 'Type', 'Particulars', 'Inward (Boxes)', 'Outward (Boxes)', 'Balance (Boxes)'];
+        $cols = ['A', 'B', 'C', 'D', 'E', 'F'];
+        foreach ($headers as $idx => $h) {
+            $sheet->setCellValue($cols[$idx] . '4', $h);
+        }
+
+        $headerRange = 'A4:F4';
+        $sheet->getStyle($headerRange)->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+        $sheet->getStyle($headerRange)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF1E3C72');
+        $sheet->getStyle($headerRange)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $row = 5;
+        $totalInward = 0;
+        $totalOutward = 0;
+
+        // Opening balance row
+        $sheet->setCellValue('A' . $row, $data['startDate'] ? \Carbon\Carbon::parse($data['startDate'])->format('d M Y') : '-');
+        $sheet->setCellValue('B' . $row, 'Opening');
+        $sheet->setCellValue('C' . $row, 'Opening Stock B/F');
+        $sheet->setCellValue('D' . $row, 0);
+        $sheet->setCellValue('E' . $row, 0);
+        $sheet->setCellValue('F' . $row, $openingBalanceAmount);
+        $sheet->getStyle('A' . $row . ':F' . $row)->getFont()->setItalic(true);
+        $row++;
+
+        foreach ($transactions as $tx) {
+            $in = (float)($tx->inward ?? 0);
+            $out = (float)($tx->outward ?? 0);
+            $bal = (float)($tx->running_balance ?? 0);
+
+            $totalInward += $in;
+            $totalOutward += $out;
+
+            $sheet->setCellValue('A' . $row, $tx->date ? \Carbon\Carbon::parse($tx->date)->format('d M Y, h:i A') : '-');
+            $sheet->setCellValue('B' . $row, $tx->type ?? '-');
+            $sheet->setCellValue('C' . $row, $tx->particulars ?? '-');
+            $sheet->setCellValue('D' . $row, $in);
+            $sheet->setCellValue('E' . $row, $out);
+            $sheet->setCellValue('F' . $row, $bal);
+
+            $row++;
+        }
+
+        // Total Row
+        $sheet->setCellValue('A' . $row, 'Total');
+        $sheet->setCellValue('D' . $row, $totalInward);
+        $sheet->setCellValue('E' . $row, $totalOutward);
+        $finalBal = end($transactions) ? end($transactions)->running_balance : $openingBalanceAmount;
+        $sheet->setCellValue('F' . $row, $finalBal);
+        $sheet->getStyle('A' . $row . ':F' . $row)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $row . ':F' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
+
+        $sheet->getStyle('D5:F' . $row)->getNumberFormat()->setFormatCode('#,##0');
+
+        foreach (range('A', 'F') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $safeDesign = preg_replace('/[^A-Za-z0-9_\-]/', '_', $good->design_number ?? 'Good');
+        $safeSize = preg_replace('/[^A-Za-z0-9_\-]/', '_', $sizeSet->name ?? 'Size');
+        $fileName = 'Production_Goods_Ledger_' . $safeDesign . '_' . $safeSize . '_' . date('Y-m-d_His') . '.xlsx';
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $tempPath = storage_path('app/public/' . $fileName);
+        $writer->save($tempPath);
+
+        return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
     }
 
     private function getLedgerData(Request $request, $id, $size_set_id)

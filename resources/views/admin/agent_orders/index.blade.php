@@ -306,7 +306,7 @@
                                                     title="Delete Order">
                                                     <i class="fas fa-trash"></i>
                                                 </a>
-                                                @elseif(in_array($order->status, ['pending', 'delayed']))
+                                                @elseif(in_array($order->status, ['pending', 'delayed', 'partially_dispatched']))
                                                 <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
                                                     class="btn btn-info btn-sm shadow-sm rounded-pill" style="padding: 0.15rem 0.35rem;" title="Edit Order">
                                                     <i class="fas fa-edit"></i>

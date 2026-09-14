@@ -180,6 +180,7 @@
                                 <select id="orderStatus" class="form-control">
                                     <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>PENDING</option>
                                     <option value="delayed" {{ $order->status == 'delayed' ? 'selected' : '' }}>DELAYED</option>
+                                    <option value="partially_dispatched" {{ $order->status == 'partially_dispatched' ? 'selected' : '' }}>PARTIALLY DISPATCHED</option>
                                     <option value="dispatched" {{ $order->status == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
                                 </select>
                             </div>
@@ -257,7 +258,8 @@
                 batch: "{{ $item->batch_no }}",
                 avail_meter: parseFloat("{{ $item->avail_now }}") + parseFloat("{{ $item->meter }}"), // Total avail at time of selection
                 price: parseFloat("{{ $item->selling_price }}"),
-                order_meter: parseFloat("{{ $item->meter }}")
+                order_meter: parseFloat("{{ $item->meter }}"),
+                is_dispatched: {{ (!empty($item->dispatched_at) || $item->status === 'dispatched') ? 'true' : 'false' }}
             });
             addRollToTable("{{ $item->fabric_receipt_detail_id }}", allItems.get("{{ $item->fabric_receipt_detail_id }}"));
             
@@ -391,24 +393,32 @@
             if (item.order_meter !== undefined && item.order_meter !== null) {
                 order = parseFloat(item.order_meter);
             }
+            const isDisp = item.is_dispatched === true;
 
             const html = `
-                <tr id="row_${id}" class="roll-item" data-id="${id}" data-fabric-id="${item.fabric_id}">
-                    <td><div class="badge badge-fabric border px-2 py-1">${item.fabric_name}</div></td>
+                <tr id="row_${id}" class="roll-item" data-id="${id}" data-fabric-id="${item.fabric_id}" data-dispatched="${isDisp ? 1 : 0}">
+                    <td>
+                        <div class="badge badge-fabric border px-2 py-1">${item.fabric_name}</div>
+                        ${isDisp ? '<span class="badge badge-warning text-dark ml-1 font-weight-bold"><i class="fas fa-truck mr-1"></i>Dispatched</span>' : ''}
+                    </td>
                     <td><span class="font-weight-bold">#${item.roll_no}</span><br><small class="text-muted">${item.batch || 'No Batch'}</small></td>
                     <td class="text-center font-weight-bold">${avail.toFixed(2)}</td>
                     <td>
                         <div class="input-group input-group-sm">
-                            <input type="number" class="form-control order-meter" value="${order.toFixed(2)}" min="0" max="${avail}" step="0.01">
+                            <input type="number" class="form-control order-meter" value="${order.toFixed(2)}" min="${isDisp ? order.toFixed(2) : 0}" max="${avail}" step="0.01" ${isDisp ? 'readonly' : ''}>
                             <div class="input-group-append"><span class="input-group-text">m</span></div>
                         </div>
+                        ${isDisp ? '<small class="text-muted font-italic" style="font-size:10px;">Locked</small>' : ''}
                     </td>
                     <td class="text-right">
-                        <input type="number" class="form-control form-control-sm text-right roll-price" value="${(parseFloat(item.price) || 0).toFixed(2)}" step="0.01">
+                        <input type="number" class="form-control form-control-sm text-right roll-price" value="${(parseFloat(item.price) || 0).toFixed(2)}" step="0.01" ${isDisp ? 'readonly' : ''}>
                     </td>
                     <td class="text-right font-weight-bold text-dark">₹<span class="row-total">0.00</span></td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-xs btn-outline-danger remove-item" data-id="${id}"><i class="fas fa-trash-alt"></i></button>
+                        ${isDisp 
+                            ? '<button type="button" class="btn btn-xs btn-secondary" disabled title="Already dispatched roll cannot be removed"><i class="fas fa-lock"></i></button>' 
+                            : `<button type="button" class="btn btn-xs btn-outline-danger remove-item" data-id="${id}"><i class="fas fa-trash-alt"></i></button>`
+                        }
                     </td>
                 </tr>
             `;
@@ -417,6 +427,11 @@
 
         $(document).on('click', '.remove-item', function() {
             const id = $(this).data('id').toString();
+            const item = allItems.get(id);
+            if (item && item.is_dispatched) {
+                Swal.fire('Locked', 'This roll has already been dispatched and cannot be removed.', 'warning');
+                return;
+            }
             const fabricRow = $(`#row_${id}`);
             const fabricId = fabricRow.data('fabric-id')?.toString();
             const currentFabricId = $('#fabricSelector').val()?.toString();

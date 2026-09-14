@@ -1166,8 +1166,8 @@ class AgentOrderController extends Controller
     {
         $order = AgentOrder::where('id', $id)->firstOrFail();
 
-        if ($order->status != 'pending' && $order->status != 'delayed') {
-            return redirect()->back()->with('error', 'Only pending or delayed orders can be edited.');
+        if (!in_array($order->status, ['pending', 'delayed', 'partially_dispatched'])) {
+            return redirect()->back()->with('error', 'Only pending, delayed, or partially dispatched orders can be edited.');
         }
 
         $shop = $order->party_type === 'vendor' ? $order->vendor : $order->shop;
@@ -1363,6 +1363,8 @@ class AgentOrderController extends Controller
                 'master_size_measurements.name as size_set_name',
 
                 DB::raw('(SUM(domestic_inventories.total_boxes) - MAX(COALESCE(alloc.total_allocated, 0))) as available_boxes'),
+                DB::raw('SUM(domestic_inventories.total_boxes) as physical_boxes'),
+                DB::raw('MAX(COALESCE(alloc.total_allocated, 0)) as allocated_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
@@ -1384,7 +1386,7 @@ class AgentOrderController extends Controller
         $queryForSelected = $query->clone();
 
         $boxes = $query
-            ->havingRaw('(SUM(domestic_inventories.total_boxes) > MAX(COALESCE(alloc.total_allocated, 0)) OR MAX(COALESCE(current_items.current_order_qty, 0)) > 0) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)')
+            ->havingRaw('(SUM(domestic_inventories.total_boxes) > 0 OR MAX(COALESCE(current_items.current_order_qty, 0)) > 0) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)')
             ->orderByRaw('current_order_qty DESC')
             ->orderBy('production_goods.design_number')
             ->paginate(20)
@@ -1434,6 +1436,54 @@ class AgentOrderController extends Controller
             })
             ->toArray();
 
+        // Also ensure all existing order items are preserved in selected_quantities even if inventory stock is 0
+        $orderItems = DB::table('agent_order_items')
+            ->where('agent_order_id', $order->id)
+            ->select(
+                'product_id',
+                'color_id',
+                'size_set_id',
+                DB::raw('SUM(box_qty) as total_box_qty'),
+                DB::raw('MAX(quantity / NULLIF(box_qty, 0)) as pcs_per_box'),
+                DB::raw('MAX(selling_price) as unit_price')
+            )
+            ->groupBy('product_id', 'color_id', 'size_set_id')
+            ->get();
+
+        foreach ($orderItems as $oi) {
+            $oiKey = $oi->product_id . '_' . $oi->color_id . '_' . $oi->size_set_id;
+            if (!isset($selected_quantities[$oiKey])) {
+                $selected_quantities[$oiKey] = [
+                    'product_id' => $oi->product_id,
+                    'color_id' => $oi->color_id,
+                    'size_set_id' => $oi->size_set_id,
+                    'qty' => (int) $oi->total_box_qty,
+                    'pcs_per_box' => (float) ($oi->pcs_per_box ?? 1),
+                    'unit_price' => (float) ($oi->unit_price ?? 0)
+                ];
+            }
+        }
+
+        // Calculate dispatched box count per variation (these cannot be decreased or removed)
+        $dispatched_quantities = DB::table('agent_order_items')
+            ->where('agent_order_id', $order->id)
+            ->whereNotNull('dispatched_at')
+            ->select(
+                'product_id',
+                'color_id',
+                'size_set_id',
+                DB::raw('SUM(box_qty) as dispatched_qty')
+            )
+            ->groupBy('product_id', 'color_id', 'size_set_id')
+            ->get()
+            ->keyBy(function ($item) {
+                return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id;
+            })
+            ->map(function ($item) {
+                return (int) $item->dispatched_qty;
+            })
+            ->toArray();
+
         // Fetch GST setting
         $gst_percentage = DB::table('settings')->value('gst_order') ?? 5.00;
 
@@ -1443,7 +1493,8 @@ class AgentOrderController extends Controller
                 $variant_key = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
                 $image = $boxImages[$variant_key] ?? null;
                 $initialQty = $selected_quantities[$variant_key]['qty'] ?? 0;
-                $html .= view('admin.agent_orders.partials.variation_row', compact('variation', 'image', 'initialQty'))->render();
+                $dispatchedQty = $dispatched_quantities[$variant_key] ?? 0;
+                $html .= view('admin.agent_orders.partials.variation_row', compact('variation', 'image', 'initialQty', 'dispatchedQty'))->render();
             }
             return response()->json([
                 'html' => $html,
@@ -1457,15 +1508,15 @@ class AgentOrderController extends Controller
         $vendors = DB::table('vendors')->select('id', 'name')->where('status', 1)->get();
         $salesMen = \App\Models\SalesMan::where('status', 1)->get();
 
-        return view('admin.agent_orders.edit', compact('order', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'patterns', 'fittings', 'product_natures', 'fabric_types', 'boxes', 'boxImages', 'selected_quantities', 'gst_percentage', 'agents', 'shops', 'vendors', 'salesMen'));
+        return view('admin.agent_orders.edit', compact('order', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'patterns', 'fittings', 'product_natures', 'fabric_types', 'boxes', 'boxImages', 'selected_quantities', 'dispatched_quantities', 'gst_percentage', 'agents', 'shops', 'vendors', 'salesMen'));
     }
 
     public function update(Request $request, $id)
     {
         $order = AgentOrder::where('id', $id)->firstOrFail();
 
-        if ($order->status != 'pending' && $order->status != 'delayed') {
-            return response()->json(['success' => false, 'message' => 'Only pending or delayed orders can be edited.'], 403);
+        if (!in_array($order->status, ['pending', 'delayed', 'partially_dispatched'])) {
+            return response()->json(['success' => false, 'message' => 'Only pending, delayed, or partially dispatched orders can be edited.'], 403);
         }
 
         $sale_type = $request->sale_type ?: $order->sale_type;
@@ -1489,7 +1540,34 @@ class AgentOrderController extends Controller
         $fabric_items_to_create = [];
 
         if ($sale_type === 'fabric') {
+            // Keep all already-dispatched fabric items untouched
+            $dispatchedFabric = AgentOrderFabricItem::where('agent_order_id', $order->id)->whereNotNull('dispatched_at')->get();
+            $dispatchedRollIds = $dispatchedFabric->pluck('fabric_receipt_detail_id')->map(function($id) { return (string)$id; })->toArray();
+
+            // Validate that all dispatched rolls are still present
+            $submittedRollIds = array_map('strval', array_column($request->rolls, 'roll_id'));
+            foreach ($dispatchedRollIds as $dRollId) {
+                if (!in_array($dRollId, $submittedRollIds)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot remove fabric rolls that have already been dispatched.'
+                    ], 422);
+                }
+            }
+
+            // Include already-dispatched fabric items in total calculations
+            foreach ($dispatchedFabric as $df) {
+                $total_qty += $df->meter;
+                $total_amount += ($df->meter * $df->selling_price);
+            }
+
             foreach ($request->rolls as $rollData) {
+                $rollIdStr = (string)$rollData['roll_id'];
+                if (in_array($rollIdStr, $dispatchedRollIds)) {
+                    // Already dispatched: inventory and item record are already finalized
+                    continue;
+                }
+
                 $roll = DB::table('fabric_receipt_details')->where('id', $rollData['roll_id'])->first();
                 if (!$roll)
                     continue;
@@ -1505,11 +1583,47 @@ class AgentOrderController extends Controller
                     'fabric_receipt_detail_id' => $rollData['roll_id'],
                     'meter' => $meter,
                     'selling_price' => $price,
+                    'status' => 'pending',
+                    'dispatched_at' => null,
                     'created_at' => now(),
                     'updated_at' => now()
                 ];
             }
         } else {
+            // Load existing dispatched items for this order (these are LOCKED and must never be deleted/reduced)
+            $dispatchedItems = AgentOrderItem::where('agent_order_id', $order->id)->whereNotNull('dispatched_at')->get();
+            $dispatchedByVariant = [];
+            foreach ($dispatchedItems as $dItem) {
+                $vKey = $dItem->product_id . '_' . $dItem->color_id . '_' . $dItem->size_set_id;
+                $dispatchedByVariant[$vKey] = ($dispatchedByVariant[$vKey] ?? 0) + (int) $dItem->box_qty;
+                $total_qty += $dItem->quantity;
+                $total_amount += ($dItem->quantity * $dItem->selling_price);
+            }
+
+            // Ensure no dispatched variation was completely omitted or reduced below dispatched count
+            $submittedKeys = [];
+            foreach ($request->variations as $var) {
+                if (($var['qty'] ?? 0) > 0) {
+                    $submittedKeys[$var['product_id'] . '_' . $var['color_id'] . '_' . $var['size_set_id']] = (int) $var['qty'];
+                }
+            }
+            foreach ($dispatchedByVariant as $dKey => $dCount) {
+                if ($dCount > 0) {
+                    if (!isset($submittedKeys[$dKey])) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Cannot remove variations that have already been dispatched.'
+                        ], 422);
+                    }
+                    if ($submittedKeys[$dKey] < $dCount) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Cannot set box quantity below already dispatched ({$dCount}) boxes."
+                        ], 422);
+                    }
+                }
+            }
+
             foreach ($request->variations as $var) {
                 if ($var['qty'] <= 0)
                     continue;
@@ -1521,66 +1635,83 @@ class AgentOrderController extends Controller
                 if (!$product || !$color || !$sizeSet)
                     continue;
 
-                // Fetch Brand-based Discount
-                $brand_discount = 0;
-                if ($order->sales_agent_id === 'direct' || empty($order->sales_agent_id)) {
-                    $brand_discount = DB::table('customer_brand_discounts')
-                        ->where('customer_id', $order->master_customer_id)
-                        ->where('brand_id', $product->brand_id)
-                        ->value('discount_percentage') ?? 0;
-                } else {
-                    $brand_discount = DB::table('sales_agent_brand_discounts')
-                        ->where('sales_agent_id', $order->sales_agent_id)
-                        ->where('brand_id', $product->brand_id)
-                        ->value('discount_percentage') ?? 0;
+                $vKey = $var['product_id'] . '_' . $var['color_id'] . '_' . $var['size_set_id'];
+                $dispBoxes = $dispatchedByVariant[$vKey] ?? 0;
+
+                if ($var['qty'] < $dispBoxes) {
+                    $seriesName = ($product->series) ? $product->series->name : '';
+                    $pName = trim($seriesName . ' ' . $product->name_of_garment);
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Cannot set quantity for {$pName} below already dispatched ({$dispBoxes}) boxes."
+                    ], 422);
                 }
 
-                $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $var['product_id'])
-                    ->where('master_size_measurement_id', $var['size_set_id'])
-                    ->first();
+                $remaining_boxes = $var['qty'] - $dispBoxes;
+                if ($remaining_boxes > 0) {
+                    // Fetch Brand-based Discount
+                    $brand_discount = 0;
+                    if ($order->sales_agent_id === 'direct' || empty($order->sales_agent_id)) {
+                        $brand_discount = DB::table('customer_brand_discounts')
+                            ->where('customer_id', $order->master_customer_id)
+                            ->where('brand_id', $product->brand_id)
+                            ->value('discount_percentage') ?? 0;
+                    } else {
+                        $brand_discount = DB::table('sales_agent_brand_discounts')
+                            ->where('sales_agent_id', $order->sales_agent_id)
+                            ->where('brand_id', $product->brand_id)
+                            ->value('discount_percentage') ?? 0;
+                    }
 
-                $mrp = $variant->mrp ?? 0;
-                $selling_price = isset($var['unit_price']) ? (float) $var['unit_price'] : ($mrp - ($mrp * $brand_discount / 100));
-                $selling_price = ceil($selling_price);
-                $seriesName = ($product->series) ? $product->series->name : '';
-                $product_name = trim($seriesName . ' ' . $product->name_of_garment);
+                    $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $var['product_id'])
+                        ->where('master_size_measurement_id', $var['size_set_id'])
+                        ->first();
 
-                $fitting = $product->master_product_fitting_id ? \App\Models\MasterProductFitting::find($product->master_product_fitting_id) : null;
-                $pattern = $product->master_pattern_id ? \App\Models\MasterDesignPattern::find($product->master_pattern_id) : null;
+                    $mrp = $variant->mrp ?? 0;
+                    $selling_price = isset($var['unit_price']) ? (float) $var['unit_price'] : ($mrp - ($mrp * $brand_discount / 100));
+                    $selling_price = ceil($selling_price);
+                    $seriesName = ($product->series) ? $product->series->name : '';
+                    $product_name = trim($seriesName . ' ' . $product->name_of_garment);
 
-                // PCS per Box (Source of Truth: Front-end > Current Inventory > Master Config)
-                $pcs_per_box = (float) DomesticInventory::where('status', 1)->where('product_id', $var['product_id'])
-                    ->where('color_id', $var['color_id'])
-                    ->where('size_set_id', $var['size_set_id'])
-                    ->avg('quantity') ?? ($sizeSet->total_pieces ?? 0);
+                    $fitting = $product->master_product_fitting_id ? \App\Models\MasterProductFitting::find($product->master_product_fitting_id) : null;
+                    $pattern = $product->master_pattern_id ? \App\Models\MasterDesignPattern::find($product->master_pattern_id) : null;
 
-                $total_pcs = $var['qty'] * $pcs_per_box;
+                    // PCS per Box (Source of Truth: Front-end > Current Inventory > Master Config)
+                    $pcs_per_box = (float) DomesticInventory::where('status', 1)->where('product_id', $var['product_id'])
+                        ->where('color_id', $var['color_id'])
+                        ->where('size_set_id', $var['size_set_id'])
+                        ->avg('quantity') ?? ($sizeSet->total_pieces ?? 0);
 
-                $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'];
+                    $total_pcs = $remaining_boxes * $pcs_per_box;
 
-                $rack_id = $this->determineRackId($var['product_id'], $var['color_id'], $var['size_set_id'], $barcode, $order->id);
+                    $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'];
 
-                $items_to_create[] = [
-                    'rack_id' => $rack_id,
-                    'product_id' => $var['product_id'],
-                    'color_id' => $var['color_id'],
-                    'size_set_id' => $var['size_set_id'],
-                    'product_name' => $product_name ?: 'N/A',
-                    'design_number' => $product->design_number,
-                    'color_name' => $color->name,
-                    'size_set_name' => $sizeSet->name,
-                    'fitting_name' => $fitting->name ?? null,
-                    'pattern_name' => $pattern->name ?? null,
-                    'quantity' => $total_pcs,
-                    'box_qty' => $var['qty'],
-                    'mrp' => $mrp,
-                    'selling_price' => $selling_price,
-                    'barcode' => $barcode,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ];
-                $total_qty += $total_pcs;
-                $total_amount += ($total_pcs * $selling_price);
+                    $rack_id = $this->determineRackId($var['product_id'], $var['color_id'], $var['size_set_id'], $barcode, $order->id);
+
+                    $items_to_create[] = [
+                        'rack_id' => $rack_id,
+                        'product_id' => $var['product_id'],
+                        'color_id' => $var['color_id'],
+                        'size_set_id' => $var['size_set_id'],
+                        'product_name' => $product_name ?: 'N/A',
+                        'design_number' => $product->design_number,
+                        'color_name' => $color->name,
+                        'size_set_name' => $sizeSet->name,
+                        'fitting_name' => $fitting->name ?? null,
+                        'pattern_name' => $pattern->name ?? null,
+                        'quantity' => $total_pcs,
+                        'box_qty' => $remaining_boxes,
+                        'mrp' => $mrp,
+                        'selling_price' => $selling_price,
+                        'barcode' => $barcode,
+                        'dispatched_at' => null,
+                        'agent_order_dispatch_id' => null,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ];
+                    $total_qty += $total_pcs;
+                    $total_amount += ($total_pcs * $selling_price);
+                }
             }
         }
 
@@ -1653,15 +1784,15 @@ class AgentOrderController extends Controller
 
             $order->update($updateData);
 
-            // DELETE EXISTING ITEMS
+            // DELETE EXISTING ITEMS (ONLY UNDISPATCHED)
             if ($sale_type === 'fabric') {
-                // Restore inventory before deleting
-                $oldItems = AgentOrderFabricItem::where('agent_order_id', $order->id)->get();
-                foreach ($oldItems as $old) {
+                // Restore inventory before deleting ONLY for undispatched items
+                $oldUndispatched = AgentOrderFabricItem::where('agent_order_id', $order->id)->whereNull('dispatched_at')->get();
+                foreach ($oldUndispatched as $old) {
                     FabricReceiptDetail::where('id', $old->fabric_receipt_detail_id)->increment('remaining_quantity', $old->meter);
                 }
 
-                AgentOrderFabricItem::where('agent_order_id', $order->id)->delete();
+                AgentOrderFabricItem::where('agent_order_id', $order->id)->whereNull('dispatched_at')->delete();
 
                 foreach ($fabric_items_to_create as $item) {
                     AgentOrderFabricItem::create($item);
@@ -1669,7 +1800,8 @@ class AgentOrderController extends Controller
                     FabricReceiptDetail::where('id', $item['fabric_receipt_detail_id'])->decrement('remaining_quantity', $item['meter']);
                 }
             } else {
-                AgentOrderItem::where('agent_order_id', $order->id)->delete();
+                // Delete ONLY undispatched items so dispatched history is preserved
+                AgentOrderItem::where('agent_order_id', $order->id)->whereNull('dispatched_at')->delete();
                 foreach ($items_to_create as $item) {
                     $item['agent_order_id'] = $order->id;
                     AgentOrderItem::create($item);

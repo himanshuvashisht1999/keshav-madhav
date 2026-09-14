@@ -31,7 +31,13 @@
                         <h1>Fabric Ledger Details</h1>
                     </div>
                     <div class="col-sm-6 text-sm-right">
-                        <a href="{{ route('admin.ledger.fabric.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <a href="{{ route('admin.ledger.fabric.export-pdf', ['id' => $fabric->id] + request()->all()) }}" class="btn btn-danger btn-sm mr-2 shadow-sm font-weight-bold" style="border-radius: 6px;">
+                            <i class="fas fa-file-pdf mr-1"></i> PDF
+                        </a>
+                        <a href="{{ route('admin.ledger.fabric.export-excel', ['id' => $fabric->id] + request()->all()) }}" class="btn btn-success btn-sm mr-2 shadow-sm font-weight-bold" style="border-radius: 6px;">
+                            <i class="fas fa-file-excel mr-1"></i> Excel
+                        </a>
+                        <a href="{{ route('admin.ledger.fabric.index') }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 6px;">
                             <i class="fas fa-arrow-left"></i> Back to List
                         </a>
                     </div>

@@ -1300,32 +1300,53 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('/ledger')->name('ledger.')->group(function () {
             Route::prefix('/fabric')->name('fabric.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\FabricLedgerController::class, 'index'])->name('index');
+                Route::get('/export-list-pdf', [App\Http\Controllers\Admin\Ledger\FabricLedgerController::class, 'exportListPdf'])->name('export-list-pdf');
+                Route::get('/export-list-excel', [App\Http\Controllers\Admin\Ledger\FabricLedgerController::class, 'exportListExcel'])->name('export-list-excel');
                 Route::get('/show/{id}', [App\Http\Controllers\Admin\Ledger\FabricLedgerController::class, 'show'])->name('show');
+                Route::get('/export-pdf/{id}', [App\Http\Controllers\Admin\Ledger\FabricLedgerController::class, 'exportPdf'])->name('export-pdf');
+                Route::get('/export-excel/{id}', [App\Http\Controllers\Admin\Ledger\FabricLedgerController::class, 'exportExcel'])->name('export-excel');
             });
             Route::prefix('/production-goods')->name('production-goods.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\ProductionGoodsLedgerController::class, 'index'])->name('index');
+                Route::get('/export-list-pdf', [App\Http\Controllers\Admin\Ledger\ProductionGoodsLedgerController::class, 'exportListPdf'])->name('export-list-pdf');
+                Route::get('/export-list-excel', [App\Http\Controllers\Admin\Ledger\ProductionGoodsLedgerController::class, 'exportListExcel'])->name('export-list-excel');
                 Route::get('/show/{id}/{size_set_id}', [App\Http\Controllers\Admin\Ledger\ProductionGoodsLedgerController::class, 'show'])->name('show');
                 Route::get('/export-pdf/{id}/{size_set_id}', [App\Http\Controllers\Admin\Ledger\ProductionGoodsLedgerController::class, 'exportPdf'])->name('export-pdf');
+                Route::get('/export-excel/{id}/{size_set_id}', [App\Http\Controllers\Admin\Ledger\ProductionGoodsLedgerController::class, 'exportExcel'])->name('export-excel');
             });
             Route::prefix('/lot')->name('lot.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\LotLedgerController::class, 'index'])->name('index');
+                Route::get('/export-list-pdf', [App\Http\Controllers\Admin\Ledger\LotLedgerController::class, 'exportListPdf'])->name('export-list-pdf');
+                Route::get('/export-list-excel', [App\Http\Controllers\Admin\Ledger\LotLedgerController::class, 'exportListExcel'])->name('export-list-excel');
                 Route::get('/show/{lot_no}', [App\Http\Controllers\Admin\Ledger\LotLedgerController::class, 'show'])->name('show');
+                Route::get('/export-pdf/{lot_no}', [App\Http\Controllers\Admin\Ledger\LotLedgerController::class, 'exportPdf'])->name('export-pdf');
+                Route::get('/export-excel/{lot_no}', [App\Http\Controllers\Admin\Ledger\LotLedgerController::class, 'exportExcel'])->name('export-excel');
             });
             Route::prefix('/party')->name('party.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'index'])->name('index');
+                Route::get('/export-list-pdf', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'exportListPdf'])->name('export-list-pdf');
+                Route::get('/export-list-excel', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'exportListExcel'])->name('export-list-excel');
                 Route::get('/show/{type}/{id}', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'show'])->name('show');
                 Route::get('/download/{type}/{id}', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'download'])->name('download');
+                Route::get('/export-excel/{type}/{id}', [App\Http\Controllers\Admin\Ledger\PartyLedgerController::class, 'exportExcel'])->name('export-excel');
             });
             Route::prefix('/bank-cash-ledger')->name('bank-cash-ledger.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\BankCashLedgerController::class, 'index'])->name('index');
+                Route::get('/export-list-pdf', [App\Http\Controllers\Admin\Ledger\BankCashLedgerController::class, 'exportListPdf'])->name('export-list-pdf');
+                Route::get('/export-list-excel', [App\Http\Controllers\Admin\Ledger\BankCashLedgerController::class, 'exportListExcel'])->name('export-list-excel');
                 Route::get('/show/{type}/{id}', [App\Http\Controllers\Admin\Ledger\BankCashLedgerController::class, 'show'])->name('show');
                 Route::get('/download/{type}/{id}', [App\Http\Controllers\Admin\Ledger\BankCashLedgerController::class, 'download'])->name('download');
+                Route::get('/export-excel/{type}/{id}', [App\Http\Controllers\Admin\Ledger\BankCashLedgerController::class, 'exportExcel'])->name('export-excel');
             });
             Route::prefix('/sales')->name('sales.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\SalesLedgerController::class, 'index'])->name('index');
+                Route::get('/export-pdf', [App\Http\Controllers\Admin\Ledger\SalesLedgerController::class, 'exportPdf'])->name('export-pdf');
+                Route::get('/export-excel', [App\Http\Controllers\Admin\Ledger\SalesLedgerController::class, 'exportExcel'])->name('export-excel');
             });
             Route::prefix('/purchase')->name('purchase.')->group(function () {
                 Route::get('/', [App\Http\Controllers\Admin\Ledger\PurchaseLedgerController::class, 'index'])->name('index');
+                Route::get('/export-pdf', [App\Http\Controllers\Admin\Ledger\PurchaseLedgerController::class, 'exportPdf'])->name('export-pdf');
+                Route::get('/export-excel', [App\Http\Controllers\Admin\Ledger\PurchaseLedgerController::class, 'exportExcel'])->name('export-excel');
             });
         });
 

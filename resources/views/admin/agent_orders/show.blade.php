@@ -92,7 +92,7 @@
                                 </a>
                             @endif
 
-                            @if($order->status == 'pending')
+                            @if(in_array($order->status, ['pending', 'delayed', 'partially_dispatched']))
                                 <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
                                     class="btn btn-sm btn-warning rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
                                     <i class="fas fa-edit mr-1"></i> Edit

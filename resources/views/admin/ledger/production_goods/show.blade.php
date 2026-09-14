@@ -13,8 +13,9 @@
                     </div>
                     <div class="col-sm-6">
                         <div class="float-sm-right text-right text-end">
-                            <a href="{{ route('admin.ledger.production-goods.export-pdf', ['id' => $good->id, 'size_set_id' => $sizeSet->id] + request()->query()) }}" class="btn btn-primary btn-sm"><i class="mdi mdi-download"></i> Download PDF</a>
-                            <a href="{{ route('admin.ledger.production-goods.index') }}" class="btn btn-secondary btn-sm"><i class="mdi mdi-arrow-left"></i> Back to List</a>
+                            <a href="{{ route('admin.ledger.production-goods.export-pdf', ['id' => $good->id, 'size_set_id' => $sizeSet->id] + request()->query()) }}" class="btn btn-danger btn-sm mr-1"><i class="fas fa-file-pdf mr-1"></i> PDF</a>
+                            <a href="{{ route('admin.ledger.production-goods.export-excel', ['id' => $good->id, 'size_set_id' => $sizeSet->id] + request()->query()) }}" class="btn btn-success btn-sm mr-1"><i class="fas fa-file-excel mr-1"></i> Excel</a>
+                            <a href="{{ route('admin.ledger.production-goods.index') }}" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left mr-1"></i> Back to List</a>
                         </div>
                     </div>
                 </div>
