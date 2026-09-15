@@ -2275,7 +2275,14 @@
 
         // ---------------- DOMESTIC DIVERSION LOGIC ---------------- //
 
-        // 1. Design change -> set product id, fetch size sets
+        function checkDomesticModalBtn() {
+            let design = $('#domesticDesign').val();
+            let sizeSetId = $('#domesticSizeSet').val();
+            let colorId = $('#domesticColor').val();
+            $('#btnOpenDomesticModal').prop('disabled', !(design && sizeSetId && colorId));
+        }
+
+        // 1. Design change -> set product id, fetch size sets with for_domestic: 1
         $('#domesticDesign').change(function() {
             let productId = $(this).find('option:selected').data('product-id');
             $(this).data('product-id', productId);
@@ -2290,7 +2297,7 @@
             if (design) {
                 $.ajax({
                     url: "{{ route('admin.packing.apiGetSizeSets', $slip_id) }}",
-                    data: { design_number: design, for_sampling: 0, for_planner: 0 },
+                    data: { design_number: design, for_domestic: 1 },
                     success: function(res) {
                         if (res.status === 'success' && res.size_sets) {
                             res.size_sets.forEach(set => {
@@ -2305,7 +2312,7 @@
                     }
                 });
             }
-            updateDomesticMaxQty();
+            checkDomesticModalBtn();
         });
 
         // 2. Size Set change -> fetch colors
@@ -2330,124 +2337,26 @@
                     }
                 });
             }
-            updateDomesticMaxQty();
+            checkDomesticModalBtn();
         });
 
         $('#domesticColor').change(function() {
-            updateDomesticMaxQty();
+            checkDomesticModalBtn();
         });
 
-        function updateDomesticMaxQty() {
+        // 3. Open Size Allocation Modal
+        $('#btnOpenDomesticModal').click(function() {
             let design = $('#domesticDesign').val();
-            let sizeSetId = $('#domesticSizeSet').val();
-            let colorId = $('#domesticColor').val();
-            let $qty = $('#domesticQty');
-            let $qtyInfo = $('#domesticQtyInfo');
-
-            let queuedQty = 0;
-
-            $qty.val('').prop('disabled', true).removeAttr('max').removeClass('is-invalid is-valid');
-            $qtyInfo.text('Select Design, Size Set, and Color first').removeClass('text-success text-danger text-warning').addClass('text-muted');
-
-            if (!design || !sizeSetId || !colorId) return;
-
-            let requiredSizesStr = $('#domesticSizeSet option:selected').attr('data-sizes');
-            if (!requiredSizesStr) {
-                $qtyInfo.text('No size configuration found').addClass('text-danger');
-                return;
-            }
-            let requiredSizesArray = requiredSizesStr.split(',').map(s => s.trim().toUpperCase());
-
-            // Count occurrences of each size in the set
-            let sizeCounts = {};
-            requiredSizesArray.forEach(size => {
-                sizeCounts[size] = (sizeCounts[size] || 0) + 1;
-            });
-
-            // Calculate max sets based on expandedLots (Remaining Live stock)
-            let maxSets = null;
-            let sizeAvailabilityDetails = [];
-
-            for (let sizeName in sizeCounts) {
-                let requiredPerSet = sizeCounts[sizeName];
-                // Sum remaining_quantity for this size in expandedLots (matching planner fallback to any color/lot)
-                let availableForSize = expandedLots
-                    .filter(l => l.size === sizeName)
-                    .reduce((sum, l) => sum + l.remaining_quantity, 0);
-
-                let setsPossible = Math.floor(availableForSize / requiredPerSet);
-                if (maxSets === null || setsPossible < maxSets) {
-                    maxSets = setsPossible;
-                }
-                sizeAvailabilityDetails.push(`${sizeName}: ${availableForSize} pcs`);
-            }
-
-            maxSets = Math.max(0, (maxSets || 0) - queuedQty);
-
-            $qty.attr('max', maxSets).prop('disabled', maxSets <= 0);
-            if (maxSets > 0) {
-                $qtyInfo.text(`Available: ${maxSets} sets (${sizeAvailabilityDetails.join(', ')})`)
-                    .removeClass('text-danger text-muted text-warning').addClass('text-success');
-            } else {
-                $qtyInfo.text(`No complete sets available (${sizeAvailabilityDetails.join(', ')})`)
-                    .removeClass('text-success text-muted text-warning').addClass('text-danger');
-            }
-        }
-
-        // 2. Size Set change
-        $('#domesticSizeSet').change(function() {
-            updateDomesticMaxQty();
-        });
-
-        // Trigger max qty update on color selection change
-        $('#domesticColor').change(updateDomesticMaxQty);
-
-        // Real-time cap on qty input
-        $(document).on('input', '#domesticQty', function() {
-            let val = parseInt($(this).val()) || 0;
-            let max = parseInt($(this).attr('max')) || 0;
-            let $info = $('#domesticQtyInfo');
-
-            if (max <= 0) return;
-
-            if (val > max) {
-                $(this).val(max);
-                val = max;
-            }
-
-            let remaining = max - val;
-            let pct = (val / max) * 100;
-
-            if (val <= 0) {
-                $info.text(`Available: ${max} sets`).removeClass('text-danger text-warning').addClass('text-success');
-            } else if (pct >= 100) {
-                $info.text(`⚠ Max reached: ${max} sets`).removeClass('text-success text-warning').addClass('text-danger');
-            } else if (pct >= 75) {
-                $info.text(`${remaining} sets remaining`).removeClass('text-success text-danger').addClass('text-warning');
-            } else {
-                $info.text(`${remaining} sets remaining`).removeClass('text-danger text-warning').addClass('text-success');
-            }
-        });
-
-        // Save Directly
-        $('#btnSaveDomesticDirect').click(function() {
-            let design = $('#domesticDesign').val();
+            let productId = $('#domesticDesign').data('product-id');
             let sizeSetId = $('#domesticSizeSet').val();
             let sizeSetName = $('#domesticSizeSet option:selected').text();
             let colorId = $('#domesticColor').val();
             let colorName = $('#domesticColor option:selected').text();
-            let qty = parseInt($('#domesticQty').val());
             let rackId = $('#domesticRack').val();
-            let rackName = $('#domesticRack option:selected').text();
-            let productId = $('#domesticDesign').data('product-id');
+            let rackName = rackId ? $('#domesticRack option:selected').text() : 'None (Unallocated)';
 
-            if (!design || !sizeSetId || !colorId || !qty || qty < 1) {
-                alert('Please select Design, Size Set, Color, and enter a valid Quantity.');
-                return;
-            }
-
-            if (!productId) {
-                alert('Could not find product for the selected Design + Size Set. Please try again.');
+            if (!design || !sizeSetId || !colorId) {
+                alert('Please select Design, Size Set, and Color first.');
                 return;
             }
 
@@ -2456,51 +2365,237 @@
                 alert('No size configuration found for this size set.');
                 return;
             }
-            let requiredSizesArray = requiredSizesStr.split(',').map(s => s.trim().toUpperCase());
 
-            // Prepare list of size name counts in this size set
-            let sizeCounts = {};
-            requiredSizesArray.forEach(size => {
-                sizeCounts[size] = (sizeCounts[size] || 0) + 1;
+            // Fill summary badges
+            $('#mdlDomDesign').text(design);
+            $('#mdlDomSizeSet').text(sizeSetName);
+            $('#mdlDomColor').text(colorName);
+            $('#mdlDomRack').text(rackName);
+
+            // Compute available stock by size across expandedLots
+            let availStockBySize = {};
+            expandedLots.forEach(l => {
+                if (l.remaining_quantity > 0) {
+                    let sz = l.size.toString().trim().toUpperCase();
+                    availStockBySize[sz] = (availStockBySize[sz] || 0) + l.remaining_quantity;
+                }
             });
 
-            // We need to check if sufficient remaining live stock is available in expandedLots
-            let tempLots = JSON.parse(JSON.stringify(expandedLots));
-            let deductedItems = [];
-            let stockAvailable = true;
+            // Display Available Corporate Lot Stock badges
+            let badgesHtml = '';
+            let availLotSizes = Object.keys(availStockBySize);
+            availLotSizes.forEach(sz => {
+                badgesHtml += `<span class="badge badge-info px-2 py-1 mr-1 mb-1 font-weight-normal">${sz}: <strong>${availStockBySize[sz]} pcs</strong></span>`;
+            });
+            if (!badgesHtml) {
+                badgesHtml = '<span class="text-danger small font-weight-bold">No live remaining stock in this slip!</span>';
+            }
+            $('#mdlDomAvailableLotsBadges').html(badgesHtml);
 
-            for (let sizeName in sizeCounts) {
-                let neededPcs = sizeCounts[sizeName] * qty;
-                let remNeeded = neededPcs;
-
-                // Match exact color first
-                let matchedLots = tempLots.filter(l => l.size === sizeName && l.color_id == colorId && l.remaining_quantity > 0);
-                // Fallback to any lot if needed
-                if (matchedLots.length === 0) {
-                    matchedLots = tempLots.filter(l => l.size === sizeName && l.remaining_quantity > 0);
+            // Parse required sizes in the selected domestic size set
+            let requiredSizesArray = requiredSizesStr.split(',').map(s => s.trim().toUpperCase());
+            let sizeCounts = {};
+            let sizeOrder = [];
+            requiredSizesArray.forEach(sz => {
+                if (!sizeCounts[sz]) {
+                    sizeOrder.push(sz);
+                    sizeCounts[sz] = 1;
+                } else {
+                    sizeCounts[sz]++;
                 }
+            });
 
-                for (let j = 0; j < matchedLots.length; j++) {
-                    if (remNeeded <= 0) break;
-                    let lot = matchedLots[j];
-                    let deduct = Math.min(lot.remaining_quantity, remNeeded);
-                    lot.remaining_quantity -= deduct;
-                    remNeeded -= deduct;
-                    deductedItems.push({
-                        transaction_id: lot.transaction_id,
-                        size_name: sizeName,
-                        quantity: deduct
+            // Build rows
+            let rowsHtml = '';
+            sizeOrder.forEach((domSize, idx) => {
+                let pcs = sizeCounts[domSize];
+                rowsHtml += `<tr>`;
+                rowsHtml += `<td class="font-weight-bold text-primary">${domSize}</td>`;
+                rowsHtml += `<td><span class="badge badge-secondary">${pcs} pc${pcs > 1 ? 's' : ''}</span></td>`;
+                rowsHtml += `<td>`;
+                rowsHtml += `<select class="form-control form-control-sm dom-lot-select" data-dom-size="${domSize}" data-pcs="${pcs}">`;
+                rowsHtml += `<option value="">-- Select Corporate Lot Size --</option>`;
+
+                // Auto-match heuristic:
+                // 1. Direct match: lotSz === domSize
+                // 2. Normalized match: lotSz starts with domSize or contains domSize
+                // 3. Positional fallback: idx < availLotSizes.length ? availLotSizes[idx]
+                let matchedLotSz = '';
+                if (availStockBySize[domSize] !== undefined) {
+                    matchedLotSz = domSize;
+                } else {
+                    // Try stripping suffixes like (SB), (V2), etc.
+                    let cleanDom = domSize.replace(/\(.*?\)/g, '').trim();
+                    let candidate = availLotSizes.find(ls => {
+                        let cleanLs = ls.replace(/\(.*?\)/g, '').trim();
+                        return cleanLs === cleanDom || ls.includes(cleanDom) || cleanDom.includes(cleanLs);
                     });
+                    if (candidate) {
+                        matchedLotSz = candidate;
+                    } else if (idx < availLotSizes.length) {
+                        matchedLotSz = availLotSizes[idx];
+                    }
                 }
 
-                if (remNeeded > 0) {
-                    stockAvailable = false;
-                    alert(`Not enough stock for size: ${sizeName}. Missing ${remNeeded} pcs.`);
-                    break;
+                availLotSizes.forEach(lotSz => {
+                    let isSelected = (lotSz === matchedLotSz) ? 'selected' : '';
+                    rowsHtml += `<option value="${lotSz}" data-avail="${availStockBySize[lotSz]}" ${isSelected}>${lotSz} (${availStockBySize[lotSz]} pcs avail)</option>`;
+                });
+                rowsHtml += `</select>`;
+                rowsHtml += `</td>`;
+                rowsHtml += `<td class="dom-stock-status-cell"><span class="badge badge-light border">Checking...</span></td>`;
+                rowsHtml += `</tr>`;
+            });
+
+            $('#tbodyDomesticSizeMapping').html(rowsHtml);
+            $('#mdlDomesticBoxQty').val(1);
+
+            recalculateDomesticModal(availStockBySize);
+            $('#modalDomesticSizeMapping').modal('show');
+        });
+
+        function recalculateDomesticModal(availStockBySize) {
+            if (!availStockBySize) {
+                availStockBySize = {};
+                expandedLots.forEach(l => {
+                    if (l.remaining_quantity > 0) {
+                        let sz = l.size.toString().trim().toUpperCase();
+                        availStockBySize[sz] = (availStockBySize[sz] || 0) + l.remaining_quantity;
+                    }
+                });
+            }
+
+            let boxQty = parseInt($('#mdlDomesticBoxQty').val()) || 0;
+            let usagePerLotSz = {};
+            let isAllSelected = true;
+            let minPossibleBoxes = null;
+
+            $('#tbodyDomesticSizeMapping tr').each(function() {
+                let $row = $(this);
+                let $select = $row.find('.dom-lot-select');
+                let domSize = $select.data('dom-size');
+                let pcsPerBox = parseInt($select.data('pcs')) || 1;
+                let selectedLotSz = $select.val();
+                let $statusCell = $row.find('.dom-stock-status-cell');
+
+                if (!selectedLotSz) {
+                    isAllSelected = false;
+                    $statusCell.html('<span class="badge badge-warning">Select lot size</span>');
+                    return;
+                }
+
+                let avail = availStockBySize[selectedLotSz] || 0;
+                usagePerLotSz[selectedLotSz] = (usagePerLotSz[selectedLotSz] || 0) + pcsPerBox;
+
+                let possibleForThisRow = Math.floor(avail / pcsPerBox);
+                if (minPossibleBoxes === null || possibleForThisRow < minPossibleBoxes) {
+                    minPossibleBoxes = possibleForThisRow;
+                }
+            });
+
+            // Check if multiple rows shared the same corporate lot size
+            for (let lotSz in usagePerLotSz) {
+                let totalPcsNeededPerBox = usagePerLotSz[lotSz];
+                let avail = availStockBySize[lotSz] || 0;
+                let possible = Math.floor(avail / totalPcsNeededPerBox);
+                if (minPossibleBoxes === null || possible < minPossibleBoxes) {
+                    minPossibleBoxes = possible;
                 }
             }
 
-            if (!stockAvailable) {
+            let maxBoxes = Math.max(0, minPossibleBoxes !== null ? minPossibleBoxes : 0);
+            $('#mdlDomesticMaxBadge').text(`Max: ${maxBoxes} Box${maxBoxes === 1 ? '' : 'es'}`)
+                .removeClass('badge-success badge-danger badge-warning')
+                .addClass(maxBoxes > 0 ? 'badge-success' : 'badge-danger');
+
+            $('#mdlDomesticBoxQty').attr('max', maxBoxes);
+
+            // Update row status cells based on boxQty
+            let hasStockShortage = false;
+            let shortageMsg = '';
+
+            $('#tbodyDomesticSizeMapping tr').each(function() {
+                let $row = $(this);
+                let $select = $row.find('.dom-lot-select');
+                let selectedLotSz = $select.val();
+                let $statusCell = $row.find('.dom-stock-status-cell');
+
+                if (!selectedLotSz) return;
+
+                let avail = availStockBySize[selectedLotSz] || 0;
+                let totalNeededForLotSz = (usagePerLotSz[selectedLotSz] || 0) * boxQty;
+
+                if (boxQty > 0 && totalNeededForLotSz > avail) {
+                    hasStockShortage = true;
+                    shortageMsg = `Insufficient stock for ${selectedLotSz}: need ${totalNeededForLotSz} pcs, only ${avail} available.`;
+                    $statusCell.html(`<span class="badge badge-danger">Need ${totalNeededForLotSz} / Avail ${avail}</span>`);
+                } else if (boxQty > 0) {
+                    $statusCell.html(`<span class="badge badge-success">OK (${totalNeededForLotSz} / ${avail} pcs)</span>`);
+                } else {
+                    $statusCell.html(`<span class="badge badge-info">${avail} pcs avail</span>`);
+                }
+            });
+
+            let $error = $('#mdlDomesticError');
+            let $saveBtn = $('#btnConfirmDomesticSave');
+
+            if (!isAllSelected) {
+                $error.text('Please map all domestic sizes to corporate lot sizes.').show();
+                $saveBtn.prop('disabled', true);
+            } else if (maxBoxes <= 0) {
+                $error.text('No complete boxes can be formed from the mapped lot stock.').show();
+                $saveBtn.prop('disabled', true);
+            } else if (boxQty < 1) {
+                $error.text('Please enter at least 1 box.').show();
+                $saveBtn.prop('disabled', true);
+            } else if (hasStockShortage || boxQty > maxBoxes) {
+                $error.text(shortageMsg || `Quantity exceeds maximum available (${maxBoxes} boxes).`).show();
+                $saveBtn.prop('disabled', true);
+            } else {
+                $error.hide();
+                $saveBtn.prop('disabled', false);
+            }
+        }
+
+        $(document).on('change', '.dom-lot-select', function() {
+            recalculateDomesticModal();
+        });
+
+        $(document).on('input', '#mdlDomesticBoxQty', function() {
+            recalculateDomesticModal();
+        });
+
+        // 4. Confirm and Save from Modal
+        $('#btnConfirmDomesticSave').click(function() {
+            let design = $('#domesticDesign').val();
+            let productId = $('#domesticDesign').data('product-id');
+            let sizeSetId = $('#domesticSizeSet').val();
+            let sizeSetName = $('#domesticSizeSet option:selected').text();
+            let colorId = $('#domesticColor').val();
+            let colorName = $('#domesticColor option:selected').text();
+            let rackId = $('#domesticRack').val();
+            let rackName = $('#domesticRack option:selected').text();
+            let boxQty = parseInt($('#mdlDomesticBoxQty').val()) || 0;
+
+            if (!design || !sizeSetId || !colorId || boxQty < 1) {
+                alert('Please verify all fields.');
+                return;
+            }
+
+            let sizeMapping = {};
+            let isComplete = true;
+            $('#tbodyDomesticSizeMapping tr').each(function() {
+                let $select = $(this).find('.dom-lot-select');
+                let domSize = $select.data('dom-size');
+                let lotSz = $select.val();
+                if (!lotSz) {
+                    isComplete = false;
+                }
+                sizeMapping[domSize] = lotSz;
+            });
+
+            if (!isComplete) {
+                alert('Please map all domestic sizes to a corporate lot size.');
                 return;
             }
 
@@ -2510,15 +2605,15 @@
                 size_set_name: sizeSetName,
                 color_id: colorId,
                 color_name: colorName,
-                quantity: qty,
+                quantity: boxQty,
                 rack_id: rackId,
                 rack_name: rackId ? rackName : '',
                 product_id: productId,
-                items: deductedItems
+                size_mapping: sizeMapping
             }];
 
             let $btn = $(this);
-            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving & Deducting...');
 
             $.ajax({
                 url: "{{ route('admin.packing.saveDomesticBulk') }}",
@@ -2531,16 +2626,21 @@
                 },
                 success: function(response) {
                     if (response.status === 'success') {
-                        alert('Domestic diversion saved successfully.');
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success('Domestic diversion saved successfully.');
+                        } else {
+                            alert('Domestic diversion saved successfully.');
+                        }
                         window.location.reload();
                     } else {
                         alert('Error: ' + response.message);
-                        $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save');
+                        $btn.prop('disabled', false).html('<i class="fas fa-check-circle mr-1"></i> Confirm & Pack to Domestic');
                     }
                 },
                 error: function(err) {
-                    alert('An error occurred while submitting.');
-                    $btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Save');
+                    let errMsg = err.responseJSON && err.responseJSON.message ? err.responseJSON.message : 'An error occurred while submitting.';
+                    alert('Error: ' + errMsg);
+                    $btn.prop('disabled', false).html('<i class="fas fa-check-circle mr-1"></i> Confirm & Pack to Domestic');
                 }
             });
         });

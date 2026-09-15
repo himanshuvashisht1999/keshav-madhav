@@ -783,12 +783,25 @@ class PackingController extends Controller
             ]);
         }
 
+        if ($request->for_domestic) {
+            $allSizeMeasurements = \App\Models\MasterSizeMeasurement::where('status', 1)->orderBy('name')->get();
+            foreach ($allSizeMeasurements as $sm) {
+                if (empty($sm->size_group)) continue;
+                $sizes = array_map('trim', explode(',', $sm->size_group));
+                $size_sets[] = [
+                    'id' => $sm->id,
+                    'name' => $sm->name,
+                    'required_sizes' => $sizes,
+                    'no_of_pcs' => $sm->no_of_pcs
+                ];
+            }
+        }
+
         $products = \App\Models\ProductionGoods::with(['variants.sizeSet'])
             ->where('design_number', $design)
             ->where('status', 1)
             ->get();
 
-        $size_sets = [];
         foreach ($products as $product) {
             foreach ($product->variants as $variant) {
                 if ($variant->sizeSet) {
@@ -2015,18 +2028,16 @@ class PackingController extends Controller
             $unitId = $slip ? $slip->stage_master_unit_id : null;
 
             // Find all cartons in this session for this barcode+rack (new entries have barcode set)
+            $cartonsQuery = \App\Models\PackingCarton::where('packing_main_id', $domesticInv->packing_main_id);
             if (!empty($domesticInv->barcode)) {
-                $cartons = \App\Models\PackingCarton::where('packing_main_id', $domesticInv->packing_main_id)
-                    ->where('rack_id', $domesticInv->rack_id)
-                    ->where('barcode', $domesticInv->barcode)
-                    ->get();
+                $cartonsQuery->where('barcode', $domesticInv->barcode);
             } else {
-                // Older entries: match by packing_main_id + rack_id + no barcode
-                $cartons = \App\Models\PackingCarton::where('packing_main_id', $domesticInv->packing_main_id)
-                    ->where('rack_id', $domesticInv->rack_id)
-                    ->where(function ($q) { $q->whereNull('barcode')->orWhere('barcode', ''); })
-                    ->get();
+                $cartonsQuery->where(function ($q) { $q->whereNull('barcode')->orWhere('barcode', ''); });
             }
+            if (!empty($domesticInv->rack_id)) {
+                $cartonsQuery->where('rack_id', $domesticInv->rack_id);
+            }
+            $cartons = $cartonsQuery->get();
 
             if ($cartons->isEmpty()) {
                 throw new \Exception('No cartons found for deletion.');
@@ -2046,12 +2057,13 @@ class PackingController extends Controller
                     }
 
                     // Restore OrderStageTransaction remaining quantity
-                    if ($unitId && $item->lot_no) {
-                        $stockTx = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-                            ->where('sub_stage_id_to', $unitId)
-                            ->where('lot_no', $item->lot_no)
-                            ->orderBy('id', 'desc')
-                            ->first();
+                    if ($item->lot_no) {
+                        $stockTxQuery = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
+                            ->where('lot_no', $item->lot_no);
+                        if ($unitId) {
+                            $stockTxQuery->where('sub_stage_id_to', $unitId);
+                        }
+                        $stockTx = $stockTxQuery->orderBy('id', 'desc')->first();
                         if ($stockTx) {
                             $stockTx->remaining_quantity = min($stockTx->quantity, $stockTx->remaining_quantity + $item->quantity);
                             $stockTx->save();
@@ -2106,17 +2118,16 @@ class PackingController extends Controller
                 $unitId = $slip ? $slip->stage_master_unit_id : null;
 
                 // Find all cartons for this domestic inventory entry
+                $cartonsQuery = \App\Models\PackingCarton::where('packing_main_id', $domesticInv->packing_main_id);
                 if (!empty($domesticInv->barcode)) {
-                    $cartons = \App\Models\PackingCarton::where('packing_main_id', $domesticInv->packing_main_id)
-                        ->where('rack_id', $domesticInv->rack_id)
-                        ->where('barcode', $domesticInv->barcode)
-                        ->get();
+                    $cartonsQuery->where('barcode', $domesticInv->barcode);
                 } else {
-                    $cartons = \App\Models\PackingCarton::where('packing_main_id', $domesticInv->packing_main_id)
-                        ->where('rack_id', $domesticInv->rack_id)
-                        ->where(function ($q) { $q->whereNull('barcode')->orWhere('barcode', ''); })
-                        ->get();
+                    $cartonsQuery->where(function ($q) { $q->whereNull('barcode')->orWhere('barcode', ''); });
                 }
+                if (!empty($domesticInv->rack_id)) {
+                    $cartonsQuery->where('rack_id', $domesticInv->rack_id);
+                }
+                $cartons = $cartonsQuery->get();
 
                 $totalCartonsToDelete = $cartons->count();
 
@@ -2131,12 +2142,13 @@ class PackingController extends Controller
                         }
 
                         // Restore OrderStageTransaction remaining quantity
-                        if ($unitId && $item->lot_no) {
-                            $stockTx = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-                                ->where('sub_stage_id_to', $unitId)
-                                ->where('lot_no', $item->lot_no)
-                                ->orderBy('id', 'desc')
-                                ->first();
+                        if ($item->lot_no) {
+                            $stockTxQuery = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
+                                ->where('lot_no', $item->lot_no);
+                            if ($unitId) {
+                                $stockTxQuery->where('sub_stage_id_to', $unitId);
+                            }
+                            $stockTx = $stockTxQuery->orderBy('id', 'desc')->first();
                             if ($stockTx) {
                                 $stockTx->remaining_quantity = min($stockTx->quantity, $stockTx->remaining_quantity + $item->quantity);
                                 $stockTx->save();
@@ -2653,6 +2665,7 @@ class PackingController extends Controller
 
                 $existingInv = \App\Models\DomesticInventory::where('barcode', $barcode)
                     ->where('rack_id', $data['rack_id'])
+                    ->where('packing_main_id', $main->id)
                     ->first();
 
                 for ($set_i = 1; $set_i <= $total_sets; $set_i++) {
@@ -2685,20 +2698,27 @@ class PackingController extends Controller
                     if (!empty($sizeSetMaster->size_group)) {
                         $sizesInSet = array_map('trim', explode(',', $sizeSetMaster->size_group));
                         $sizeCounts = array_count_values($sizesInSet);
+                        $sizeMapping = $data['size_mapping'] ?? [];
 
                         foreach ($sizeCounts as $sizeName => $pcsPerSet) {
                             $remToDeduct = $pcsPerSet * 1; // 1 set per box
                             $sizePiecesDeducted = 0;
 
+                            $targetSize = $sizeMapping[$sizeName] ?? $sizeName;
+
                             // 1. Get Stage Transactions for this size from selected lots and process deductions
-                            $stockTransactions = \App\Models\OrderStageTransaction::where('order_stage_transactions.to_stage_id', 11)
-                                ->where('order_stage_transactions.sub_stage_id_to', $slip_details->stage_master_unit_id)
+                            $stockTransactionsQuery = \App\Models\OrderStageTransaction::where('order_stage_transactions.to_stage_id', 11)
                                 ->where('order_stage_transactions.remaining_quantity', '>', 0)
                                 ->whereIn('order_stage_transactions.lot_no', $selected_lots)
                                 ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
                                 ->join('order_products_set_details', 'order_lots.order_products_set_id', '=', 'order_products_set_details.order_products_set_id')
-                                ->where('order_products_set_details.size', (string) $sizeName)
-                                ->select('order_stage_transactions.*', 'order_products_set_details.id as matching_size_detail_id')
+                                ->where('order_products_set_details.size', (string) $targetSize);
+
+                            if ($slip_details && $slip_details->stage_master_unit_id) {
+                                $stockTransactionsQuery->where('order_stage_transactions.sub_stage_id_to', $slip_details->stage_master_unit_id);
+                            }
+
+                            $stockTransactions = $stockTransactionsQuery->select('order_stage_transactions.*', 'order_products_set_details.id as matching_size_detail_id')
                                 ->orderBy('order_stage_transactions.id')
                                 ->get();
 
@@ -2738,6 +2758,10 @@ class PackingController extends Controller
                                         'mrp' => 0
                                     ]);
                                 }
+                            }
+
+                            if ($remTrans > 0) {
+                                throw new \Exception("Insufficient stock in lot for size '{$targetSize}'. Missing {$remTrans} pcs.");
                             }
 
                             $actualPiecesInBox += $sizePiecesDeducted;
