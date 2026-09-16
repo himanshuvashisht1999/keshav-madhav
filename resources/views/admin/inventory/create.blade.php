@@ -5,467 +5,480 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         :root {
-            --primary-color: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #eef2ff;
-            --secondary-color: #94a3b8;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --bg-main: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --erp-primary: #4f46e5;
+            --erp-primary-hover: #4338ca;
+            --erp-primary-light: #eef2ff;
+            --erp-success: #059669;
+            --erp-success-light: #ecfdf5;
+            --erp-danger: #dc2626;
+            --erp-danger-light: #fef2f2;
+            --erp-warning: #d97706;
+            --erp-border: #cbd5e1;
+            --erp-bg-header: #f1f5f9;
+            --erp-text: #0f172a;
+            --erp-muted: #64748b;
         }
 
         .content-wrapper {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-main);
-            padding-bottom: 150px;
+            background-color: #f8fafc;
+            padding-bottom: 90px;
         }
 
-        .premium-page-header {
-            padding: 0.75rem 0;
-        }
-
-        .page-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text-main);
-            letter-spacing: -0.015em;
-            margin-bottom: 0.25rem;
-        }
-
-        .page-subtitle {
-            color: var(--text-muted);
-            font-size: 0.875rem;
-            margin-bottom: 0;
-        }
-
-        /* ITEM CARD STYLING */
-        .inventory-item-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow);
-            margin-bottom: 16px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: visible;
-        }
-
-        .inventory-item-card:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
-        }
-
-        .card-header-premium {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid var(--border-color);
+        /* STICKY ERP TOP HUD BAR */
+        .sticky-erp-hud {
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom: 2px solid #e2e8f0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            padding: 8px 16px;
+            margin: -0.5rem -0.5rem 12px -0.5rem;
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            background: #fcfdfe;
-            border-radius: 12px 12px 0 0;
+            gap: 12px;
+            flex-wrap: nowrap;
         }
 
-        .item-number {
+        .hud-stat-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 12px;
+            border-radius: 8px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+        }
+
+        .hud-source-box {
+            border-left: 4px solid var(--erp-primary);
+            background: #fafbff;
+            min-width: 220px;
+        }
+
+        .hud-target-box {
+            border-left: 4px solid var(--erp-success);
+            background: #fbfdfb;
+            min-width: 320px;
+        }
+
+        .hud-label {
+            font-size: 10px;
             font-weight: 700;
-            color: var(--primary-dark);
-            font-size: 0.875rem;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .card-body-premium {
-            padding: 1rem;
-        }
-
-        .input-group-premium {
-            margin-bottom: 1.25rem;
-        }
-
-        .label-premium {
             display: block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-            margin-bottom: 0.5rem;
+            margin-bottom: 2px;
         }
 
-        .form-control-premium {
-            /* height: 44px; */
-            width: 100%;
-            font-size: 0.9375rem;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            background-color: #fff;
-            transition: all 0.2s;
-            padding: 0 12px;
-        }
-
-        .form-control-premium:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-            outline: none;
-        }
-
-        /* SELECT2 CUSTOMIZATION */
-        .select2-container--bootstrap4 .select2-selection {
-            /* height: 44px !important; */
-            border-radius: 10px !important;
-            border: 1px solid var(--border-color) !important;
+        .hud-numbers {
+            font-size: 1.1rem;
+            font-weight: 800;
+            line-height: 1.2;
             display: flex;
-            align-items: center;
+            align-items: baseline;
+            gap: 4px;
         }
 
-        .select2-container--bootstrap4 .select2-selection__rendered {
-            line-height: 42px !important;
-            font-size: 0.9375rem !important;
-            padding-left: 12px !important;
+        .hud-pills-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            max-height: 42px;
+            overflow-y: auto;
+            max-width: 320px;
         }
 
-        .select2-dropdown {
-            border-radius: 12px !important;
-            box-shadow: var(--shadow-lg) !important;
-            border-color: var(--border-color) !important;
-            z-index: 10000 !important;
-            /* Ensure it stays on top of everything including sticky footer */
+        /* ERP CARDS & TABLES */
+        .erp-card {
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            margin-bottom: 12px;
             overflow: hidden;
         }
 
-        .select2-results__options {
-            max-height: 500px !important;
-        }
-
-        /* BUTTONS */
-        .btn-add-item {
-            background: #fff;
-            color: var(--primary-color);
-            border: 2px dashed var(--primary-color);
-            border-radius: 12px;
-            padding: 1rem;
-            width: 100%;
-            font-weight: 700;
-            font-size: 1rem;
-            transition: all 0.2s;
+        .erp-card-header {
+            padding: 7px 12px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            margin-top: 1rem;
-            cursor: pointer;
         }
 
-        .btn-add-item:hover {
-            background: var(--primary-light);
-            color: var(--primary-dark);
-            border-style: solid;
-        }
-
-        .btn-remove-item {
-            background: #fee2e2;
-            color: var(--danger-color);
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-size: 0.75rem;
+        .erp-card-title {
+            font-size: 12.5px;
             font-weight: 700;
             text-transform: uppercase;
-            transition: all 0.2s;
+            letter-spacing: 0.3px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .erp-table {
+            width: 100%;
+            margin-bottom: 0;
+            font-size: 11.5px;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .erp-table thead th {
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 5px 6px;
+            border-bottom: 2px solid #cbd5e1;
+            border-top: none;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .erp-table tbody td {
+            padding: 4px 5px;
+            vertical-align: middle;
+            border-top: 1px solid #edf2f7;
+            border-bottom: none;
+        }
+
+        .erp-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* COMPACT CONTROLS IN ERP TABLE */
+        .erp-input {
+            height: 29px !important;
+            padding: 2px 6px !important;
+            font-size: 11.5px !important;
+            font-weight: 600;
+            border-radius: 5px !important;
+            border: 1px solid #cbd5e1 !important;
+            background-color: #ffffff;
+            line-height: 1.2;
+        }
+
+        .erp-input:focus {
+            border-color: var(--erp-primary) !important;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15) !important;
+            outline: none;
+        }
+
+        .erp-input[readonly] {
+            background-color: #f1f5f9 !important;
+            color: #475569;
+        }
+
+        /* SELECT2 IN ERP TABLE */
+        .erp-table .select2-container--bootstrap4 .select2-selection {
+            height: 29px !important;
+            min-height: 29px !important;
+            border-radius: 5px !important;
+            border: 1px solid #cbd5e1 !important;
+            padding: 0 !important;
+            display: flex;
+            align-items: center;
+        }
+
+        .erp-table .select2-container--bootstrap4 .select2-selection__rendered {
+            line-height: 27px !important;
+            font-size: 11.5px !important;
+            padding-left: 6px !important;
+            padding-right: 18px !important;
+            color: var(--erp-text);
+        }
+
+        .erp-table .select2-container--bootstrap4 .select2-selection__arrow {
+            height: 27px !important;
+            right: 3px !important;
+            width: 14px !important;
+        }
+
+        .select2-dropdown {
+            border-radius: 8px !important;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12) !important;
+            border: 1px solid #cbd5e1 !important;
+            font-size: 12px !important;
+            z-index: 10050 !important;
+        }
+
+        /* PILLS & BADGES */
+        .erp-pill-gen {
+            display: inline-block;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1.3;
+            white-space: nowrap;
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .erp-badge-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 5px;
+            border-radius: 4px;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ACTION BUTTONS */
+        .btn-erp-add {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 6px;
+            line-height: 1.4;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
             cursor: pointer;
         }
 
-        .btn-remove-item:hover {
-            background: var(--danger-color);
+        .btn-erp-icon {
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            font-size: 11px;
+            border: none;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+
+        .btn-erp-del {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+        .btn-erp-del:hover {
+            background: #ef4444;
             color: #fff;
         }
 
-        .sticky-actions {
+        .btn-erp-copy {
+            background: #ecfdf5;
+            color: #059669;
+        }
+        .btn-erp-copy:hover {
+            background: #059669;
+            color: #fff;
+        }
+
+        /* SUBMIT BUTTON */
+        .btn-hud-confirm {
+            background: linear-gradient(135deg, var(--erp-primary) 0%, var(--erp-primary-hover) 100%);
+            color: #ffffff !important;
+            font-weight: 700;
+            font-size: 12.5px;
+            border-radius: 7px;
+            padding: 7px 18px;
+            border: none;
+            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+            white-space: nowrap;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-hud-confirm:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-hud-confirm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* STICKY BOTTOM ACTIONS BAR */
+        .sticky-bottom-bar {
             position: fixed;
             bottom: 0;
             left: 250px;
             right: 0;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(16px);
-            padding: 1.25rem 2.5rem;
-            border-top: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 8px 24px;
+            border-top: 1px solid #cbd5e1;
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
-            gap: 2rem;
             z-index: 1000;
-            box-shadow: 0 -8px 20px -5px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
         }
 
         @media (max-width: 991.98px) {
-            .sticky-actions {
+            .sticky-bottom-bar {
                 left: 0;
             }
-        }
-
-        .btn-confirm {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-            color: #fff !important;
-            border: none;
-            border-radius: 12px;
-            padding: 0.875rem 2.5rem;
-            font-weight: 700;
-            font-size: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .btn-confirm:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 25px -5px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn-cancel {
-            color: var(--text-muted);
-            font-weight: 600;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .btn-cancel:hover {
-            color: var(--text-main);
-        }
-
-        .animate-in {
-            animation: fadeIn 0.4s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            .sticky-erp-hud {
+                flex-wrap: wrap;
             }
         }
     </style>
 
     <div class="content-wrapper">
-        <section class="content-header">
-            <div class="container-fluid">
-                <header class="premium-page-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="page-title">Self & Sample Stock</h1>
-                        <p class="page-subtitle">Add self and sample production goods to your warehouse stock.</p>
-                    </div>
-                    <div class="header-actions">
-                        <a href="{{ route('admin.inventory.create') }}" class="btn btn-primary shadow-sm"><i class="fas fa-plus mr-1"></i> Create New</a>
-                        <a href="javascript:window.location.reload();" class="btn btn-secondary shadow-sm ml-2"><i class="fas fa-sync-alt mr-1"></i> Refresh</a>
-                    </div>
-                </header>
-            </div>
-        </section>
-
-        <section class="content">
-            <div class="container-fluid">
+        <section class="content pt-2">
+            <div class="container-fluid px-2">
                 <form action="{{ route('admin.inventory.store') }}" method="POST" id="addStockForm">
                     @csrf
 
-                    <div class="row mb-4">
-                        <div class="col-md-4">
-                            <label class="label-premium">Source Type</label>
-                            <select name="source_type" id="sourceType" class="form-control select2">
-                                <option value="production">Self Production</option>
-                                <option value="sample">Sample Production</option>
-                            </select>
+                    <!-- ========================================================= -->
+                    <!-- 1. STICKY ERP HUD HEADER BAR (ALWAYS VISIBLE WITH ZERO SCROLL) -->
+                    <!-- ========================================================= -->
+                    <div class="sticky-erp-hud">
+                        <!-- Source Type Selector -->
+                        <div class="hud-stat-box hud-source-box">
+                            <div>
+                                <span class="hud-label text-primary"><i class="fas fa-layer-group mr-1"></i> SOURCE TYPE</span>
+                                <select name="source_type" id="sourceType" class="form-control erp-input font-weight-bold text-primary" style="height: 28px !important; min-width: 170px;">
+                                    <option value="production">Self Production</option>
+                                    <option value="sample">Sample Production</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
 
-                    <div id="itemsContainer">
-                        <!-- Initial Item Card -->
-                        <div class="inventory-item-card animate-in" data-index="0">
-                            <div class="card-header-premium">
-                                <span class="item-number">
-                                    <i class="fas fa-barcode"></i> Stock Generate #1
-                                </span>
-                                <div class="header-actions">
-                                    <button type="button" class="btn btn-outline-primary btn-sm btn-duplicate-item mr-2"
-                                        data-card-index="0">
-                                        <i class="fas fa-copy mr-1"></i> Duplicate
-                                    </button>
-
+                        <!-- Live Stock Totals Box -->
+                        <div class="hud-stat-box hud-target-box">
+                            <div>
+                                <span class="hud-label text-success"><i class="fas fa-cubes mr-1"></i> TOTAL STOCK TO UPLOAD</span>
+                                <div class="hud-numbers">
+                                    <span id="hudTotalBoxes" class="text-dark">0</span> <small class="text-muted" style="font-size:10px;">Bx</small>
+                                    <span class="text-muted mx-1" style="font-size:12px;">|</span>
+                                    <span id="hudTotalPieces" class="text-success font-weight-bold">0</span> <small class="text-muted" style="font-size:10px;">Pcs</small>
                                 </div>
                             </div>
-                            <div class="card-body-premium">
-                                <div class="targets-container">
-                                    <div class="target-row-wrapper pb-3 mb-3 border-bottom" data-target-idx="0">
-                                <!-- Row 1: Primary Details -->
-                                <div class="row">
-                                    <div class="col-md-3 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-    <label class="label-premium mb-0">Design No *</label>
-    <div class="action-links">
-        <a href="{{ route('admin.master.production-goods.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="design" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-    </div>
-</div>
-                                        <select name="products[0][product_id]" class="form-control select2 design-select"
-                                            required>
-                                            <option value="">Select Design</option>
-                                            @foreach($products as $product)
-                                                <option value="{{ $product->id }}" data-name="{{ $product->name_of_garment }}">
-                                                    {{ $product->design_number }} ({{ $product->series->name ?? '' }}
-                                                    {{ $product->name_of_garment }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-    <label class="label-premium mb-0">Pattern *</label>
-    <div class="action-links">
-        <a href="{{ route('admin.master.design-pattern.index') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="pattern" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-    </div>
-</div>
-                                        <select name="products[0][pattern_id]" class="form-control select2 pattern-select"
-                                            required>
-                                            <option value="">Pattern</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-    <label class="label-premium mb-0">Fitting *</label>
-    <div class="action-links">
-        <a href="{{ route('admin.master.fitting.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="fitting" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-    </div>
-</div>
-                                        <select name="products[0][fitting_id]" class="form-control select2 fitting-select"
-                                            required>
-                                            <option value="">Fitting</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-    <label class="label-premium mb-0">Warehouse *</label>
-    <div class="action-links">
-        <a href="{{ route('admin.master.storeroom.index') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="warehouse" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-    </div>
-</div>
-                                        <select name="products[0][warehouse_id]"
-                                            class="form-control select2 warehouse-select" required>
-                                            <option value="">Warehouse</option>
-                                            @foreach($storerooms as $room)
-                                                <option value="{{ $room->id }}">{{ $room->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <label class="label-premium mb-0">Rack</label>
-                                            <div class="action-links">
-                                                <a href="javascript:void(0)" class="text-primary btn-add-new-rack" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-                                                <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="rack" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-                                            </div>
-                                        </div>
-                                        <select name="products[0][rack_id]" class="form-control select2 rack-select"
-                                            required>
-                                            <option value="">Rack</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- Row 2: Secondary Details -->
-                                <div class="row">
-                                    <div class="col-md-2 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-    <label class="label-premium mb-0">Size Set *</label>
-    <div class="action-links">
-        <a href="{{ route('admin.master.size-measurement.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="size" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-    </div>
-</div>
-                                        <select name="products[0][size_set_id]" class="form-control select2 size-set-select"
-                                            required>
-                                            <option value="">Select Size Set</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 input-group-premium">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-    <label class="label-premium mb-0">Color *</label>
-    <div class="action-links">
-        <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="color" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-    </div>
-</div>
-                                        <select name="products[0][color_id]" class="form-control select2 color-select"
-                                            required>
-                                            <option value="">Color</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 input-group-premium">
-                                        <label class="label-premium">Total Boxes *</label>
-                                        <input type="number" name="products[0][total_boxes]"
-                                            class="form-control form-control-premium total-boxes-input" placeholder="Qty"
-                                            min="1" required>
-                                    </div>
-                                    <div class="col-md-2 input-group-premium">
-                                        <label class="label-premium">Pcs / Box</label>
-                                        <input type="number" name="products[0][pieces_per_box]"
-                                            class="form-control form-control-premium bg-light pcs-per-box-input"
-                                            placeholder="Pcs/Box" readonly required>
-                                    </div>
-                                    <div class="col-md-2 input-group-premium">
-                                        <label class="label-premium">Total Pieces</label>
-                                        <input type="number" class="form-control form-control-premium bg-light total-pieces-input" placeholder="Total Pcs" readonly>
-                                    </div>
-                                    <div class="col-md-2 input-group-premium">
-                                        <label class="label-premium">MRP *</label>
-                                        <input type="number" name="products[0][mrp]"
-                                            class="form-control form-control-premium mrp-input bg-light" placeholder="Price"
-                                            step="0.01" min="0" readonly required>
-                                    </div>
-                                </div>
-                                <div class="text-right mt-1 mb-2">
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-target" style="display: none;">
-                                        <i class="fas fa-trash"></i> Remove Target
-                                    </button>
+                            <div class="border-left pl-2 ml-auto">
+                                <span class="text-muted d-block" style="font-size:9.5px; font-weight:700;">SIZES BREAKDOWN:</span>
+                                <div id="hudSizePills" class="hud-pills-row">
+                                    <span class="text-muted small font-italic" style="font-size:10px;">None</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="text-right mt-2 mb-3 pr-3">
-                            <button type="button" class="btn btn-sm btn-outline-primary btn-add-target" style="display: none;">
-                                <i class="fas fa-plus"></i> Add More Target
+
+                        <!-- Instant Action Button in HUD -->
+                        <div>
+                            <button type="submit" class="btn-hud-confirm" id="btnHudSubmit" disabled>
+                                <i class="fas fa-check-double mr-1"></i> Confirm & Upload Stock
                             </button>
                         </div>
                     </div>
-                </div>
+
+                    <!-- ========================================================= -->
+                    <!-- 2. PRODUCTION STOCK TABLE (COMPACT ERP TABLE) -->
+                    <!-- ========================================================= -->
+                    <div class="erp-card">
+                        <div class="erp-card-header">
+                            <div class="erp-card-title text-success">
+                                <i class="fas fa-barcode"></i> Self & Sample Production Stock Entry
+                                <span class="badge badge-light border text-muted ml-2 font-weight-normal" style="font-size:11px;">Add goods directly to warehouse inventory</span>
+                            </div>
+                            <button type="button" class="btn btn-outline-success btn-erp-add" id="btnAddItem">
+                                <i class="fas fa-plus"></i> Add Stock Row
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="erp-table table table-sm table-hover" id="productionTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 3%; text-align: center;">#</th>
+                                        <th style="width: 20%;">
+                                            Design No *
+                                            <a href="{{ route('admin.master.production-goods.create') }}" target="_blank" class="text-primary ml-1" title="Create New Design" style="font-size:10px;"><i class="fas fa-plus"></i></a>
+                                            <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="design" title="Refresh Designs" style="font-size:10px;"><i class="fas fa-sync-alt"></i></a>
+                                        </th>
+                                        <th style="width: 11%;">Pattern & Fit</th>
+                                        <th style="width: 11%;">
+                                            Warehouse *
+                                            <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="warehouse" title="Refresh Warehouses" style="font-size:10px;"><i class="fas fa-sync-alt"></i></a>
+                                        </th>
+                                        <th style="width: 11%;">
+                                            Rack *
+                                            <a href="javascript:void(0)" class="text-primary ml-1 btn-add-new-rack" title="Quick Add Rack" style="font-size:10px;"><i class="fas fa-plus"></i></a>
+                                            <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="rack" title="Refresh Racks" style="font-size:10px;"><i class="fas fa-sync-alt"></i></a>
+                                        </th>
+                                        <th style="width: 12%;">
+                                            Size Set *
+                                            <a href="{{ route('admin.master.size-measurement.index') }}" target="_blank" class="text-primary ml-1" title="Size Master" style="font-size:10px;"><i class="fas fa-plus"></i></a>
+                                        </th>
+                                        <th style="width: 10%;">
+                                            Color *
+                                            <a href="{{ route('admin.master.colors.index') }}" target="_blank" class="text-primary ml-1" title="Color Master" style="font-size:10px;"><i class="fas fa-plus"></i></a>
+                                        </th>
+                                        <th style="width: 5%; text-align: center;">Boxes *</th>
+                                        <th style="width: 4%; text-align: center;">Pcs/Bx</th>
+                                        <th style="width: 4%; text-align: right;">Total Pcs</th>
+                                        <th style="width: 5%; text-align: right;">MRP</th>
+                                        <th style="width: 4%; text-align: center;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productionTableBody">
+                                    <!-- Dynamic rows inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
+                    <!-- ========================================================= -->
+                    <!-- 3. COLLAPSIBLE DETAILED SIZE BREAKDOWN ACCORDION -->
+                    <!-- ========================================================= -->
+                    <div class="erp-card mb-4">
+                        <div class="erp-card-header" style="cursor: pointer;" data-toggle="collapse" data-target="#auditCollapse">
+                            <div class="erp-card-title text-dark font-weight-bold" style="font-size:11.5px;">
+                                <i class="fas fa-list-check text-info"></i> Detailed Per-Size Breakdown Summary
+                                <span class="text-muted font-weight-normal ml-2" style="font-size:10.5px;">(Click to view full breakdown by individual size)</span>
+                            </div>
+                            <span class="text-muted"><i class="fas fa-chevron-down"></i></span>
+                        </div>
+                        <div class="collapse" id="auditCollapse">
+                            <div class="p-3 bg-white border-top">
+                                <ul class="list-unstyled mb-0 d-flex flex-wrap gap-3" id="detailedSizesList" style="font-size:12px;">
+                                    <li class="text-muted font-italic">No stock rows added yet</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
 
-
-                    <button type="button" class="btn btn-add-item mt-3" id="addNewItem">
-                        <i class="fas fa-plus-circle"></i> Add Stock Generate
-                    </button>
-
-                    <div class="sticky-actions">
-                        <a href="{{ route('admin.inventory.index') }}" class="btn-cancel">Cancel and Exit</a>
-                        <button type="submit" class="btn btn-confirm">
-                            <i class="fas fa-check-double mr-2"></i> Confirm and Upload Stock
-                        </button>
+                    <!-- ========================================================= -->
+                    <!-- 4. STICKY BOTTOM ACTIONS BAR -->
+                    <!-- ========================================================= -->
+                    <div class="sticky-bottom-bar">
+                        <div>
+                            <a href="{{ route('admin.inventory.index') }}" class="text-secondary font-weight-bold mr-3" style="font-size:12px;">
+                                <i class="fas fa-arrow-left mr-1"></i> Cancel and Exit
+                            </a>
+                            <span class="text-muted small">All stock items are verified before uploading to warehouse inventory.</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <button type="submit" class="btn-hud-confirm" id="btnSubmitStock" disabled>
+                                <i class="fas fa-check-double mr-1"></i> Confirm and Upload Stock
+                            </button>
+                        </div>
                     </div>
                 </form>
-            </div>
             </div>
         </section>
     </div>
@@ -473,1252 +486,638 @@
     <!-- Quick Add Rack Modal -->
     <div class="modal fade" id="quickRackModal" tabindex="-1">
         <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Rack</h5>
-                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            <div class="modal-content" style="border-radius: 10px;">
+                <div class="modal-header py-2">
+                    <h6 class="modal-title font-weight-bold"><i class="fas fa-plus-circle mr-1 text-primary"></i> Quick Add Rack</h6>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
-                <div class="modal-body">
-                    <input type="hidden" id="quick_rack_warehouse_id">
-                    <div class="mb-3">
-                        <label>Rack Name *</label>
-                        <input type="text" id="quick_rack_name" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>Capacity (Optional)</label>
-                        <input type="number" id="quick_rack_capacity" class="form-control">
-                    </div>
+                <div class="modal-body py-3">
+                    <form id="quickRackForm">
+                        @csrf
+                        <input type="hidden" id="quickRackWarehouseId" name="storeroom_id">
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">Warehouse</label>
+                            <input type="text" class="form-control form-control-sm" id="quickRackWarehouseName" readonly>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">Rack Name / Number *</label>
+                            <input type="text" class="form-control form-control-sm" id="quickRackName" name="name" required placeholder="e.g. R-101">
+                        </div>
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted mb-1">Capacity (Boxes)</label>
+                            <input type="number" class="form-control form-control-sm" id="quickRackCapacity" name="capacity" placeholder="Optional capacity">
+                        </div>
+                    </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="btnSubmitQuickRack">Save Rack</button>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm font-weight-bold" id="btnSaveQuickRack">Save Rack</button>
                 </div>
             </div>
         </div>
     </div>
+@endsection
 
+@push('scripts')
     <script>
-        const allSizeSets = {!! json_encode(\App\Models\MasterSizeMeasurement::select('id', 'name', 'set_size', 'no_of_pcs', 'size_group')->get()) !!};
+        const productsMaster = @json($products);
+        const storeroomsMaster = @json($storerooms);
+        const sizeSetsMaster = @json($size_sets);
+        const colorsMaster = @json($colors);
+        const fittingsMaster = @json($fittings);
+        const patternsMaster = @json($patterns);
+
+        // Pre-build map of size set details: { id => { sizes: ['22','24',...], pcs: 1, name: '...' } }
         const sizeSetsMap = {};
-        allSizeSets.forEach(s => {
+        sizeSetsMaster.forEach(function (s) {
             if (s.size_group) {
-                const sizes = s.size_group.split(',').map(x => x.trim());
-                const count = sizes.length;
-                const pcs = count > 0 ? (s.no_of_pcs / count) : 0;
-                sizeSetsMap[s.id] = { sizes: sizes, pcs: pcs };
+                let sizes = s.size_group.split(',').map(item => item.trim()).filter(Boolean);
+                let pcs = (sizes.length > 0 && s.no_of_pcs) ? (s.no_of_pcs / sizes.length) : 1;
+                sizeSetsMap[s.id] = { sizes: sizes, pcs: pcs, name: s.name, total_pcs: s.no_of_pcs };
             }
         });
 
-        $(function () {
-            let itemCount = 0;
+        let itemCounter = 0;
 
-            function initSelect2(container) {
-                container.find('.select2').each(function () {
-                    $(this).select2({
-                        theme: 'bootstrap4',
-                        width: '100%',
-                        dropdownAutoWidth: true,
-                        dropdownParent: $('body')
-                    });
-                });
-            }
-
-            initSelect2($('.content-wrapper'));
-
-            // Handle Source Type change
-            $('#sourceType').on('change', function () {
-                let type = $(this).val();
-
-                if (type === 'consume') {
-                    $('.consume-selection-row').show();
-                    $('.consume-selection-row').find('select').attr('required', true);
-                    $('.consume-transfer-boxes-input').attr('required', true);
-                    $('.btn-add-target').show();
-                } else {
-                    $('.consume-selection-row').hide();
-                    $('.consume-selection-row').find('select').removeAttr('required');
-                    $('.consume-transfer-boxes-input').removeAttr('required');
-                    $('.btn-add-target').hide();
+        function initSelect2(container) {
+            container.find('.select2').each(function () {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
                 }
-                $('.consume-source-id').val('');
-            });
-
-            const itemLabel = "Stock Generate";
-
-            function addItem(values = null) {
-                itemCount++;
-                let idx = itemCount;
-                let newItem = `
-                                    <div class="inventory-item-card animate-in" data-index="${idx}">
-                                        <div class="card-header-premium">
-                                            <span class="item-number">
-                                                <i class="fas fa-barcode"></i> ${itemLabel} #${idx + 1}
-                                            </span>
-                                            <div class="header-actions">
-                                                <button type="button" class="btn btn-outline-primary btn-sm btn-duplicate-item mr-2" data-card-index="${idx}">
-                                                    <i class="fas fa-copy mr-1"></i> Duplicate
-                                                </button>
-
-                                                <button type="button" class="btn btn-danger btn-sm btn-remove-item ml-2">
-                                                    <i class="fas fa-trash-alt mr-1"></i> Remove
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="card-body-premium">
-                                            <div class="targets-container">
-                                                <div class="target-row-wrapper pb-3 mb-3 border-bottom" data-target-idx="${idx}">
-                                            <div class="row">
-                                                <div class="col-md-3 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-    <label class="label-premium mb-0">Design No *</label>
-    <div class="action-links">
-        <a href="{{ route('admin.master.production-goods.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="design" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-    </div>
-</div>
-                                                    <select name="products[${idx}][product_id]" class="form-control select2 design-select" required>
-                                                        <option value="">Select Design</option>
-                                                        @foreach($products as $product)
-                                                            <option value="{{ $product->id }}" data-name="{{ $product->name_of_garment }}">{{ $product->design_number }} ({{ $product->series->name ?? '' }} {{ $product->name_of_garment }})</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-    <label class="label-premium mb-0">Pattern *</label>
-    <div class="action-links">
-        <a href="{{ route('admin.master.design-pattern.index') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="pattern" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-    </div>
-</div>
-                                                    <select name="products[${idx}][pattern_id]" class="form-control select2 pattern-select" required>
-                                                        <option value="">Pattern</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-    <label class="label-premium mb-0">Fitting *</label>
-    <div class="action-links">
-        <a href="{{ route('admin.master.fitting.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="fitting" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-    </div>
-</div>
-                                                    <select name="products[${idx}][fitting_id]" class="form-control select2 fitting-select" required>
-                                                        <option value="">Fitting</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-3 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-    <label class="label-premium mb-0">Warehouse *</label>
-    <div class="action-links">
-        <a href="{{ route('admin.master.storeroom.index') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="warehouse" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-    </div>
-</div>
-                                                    <select name="products[${idx}][warehouse_id]" class="form-control select2 warehouse-select" required>
-                                                        <option value="">Warehouse</option>
-                                                        @foreach($storerooms as $room)
-                                                            <option value="{{ $room->id }}">{{ $room->name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                                        <label class="label-premium mb-0">Rack</label>
-                                                        <div class="action-links">
-                                                            <a href="javascript:void(0)" class="text-primary btn-add-new-rack" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-                                                            <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="rack" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-                                                        </div>
-                                                    </div>
-                                                    <select name="products[${idx}][rack_id]" class="form-control select2 rack-select" required>
-                                                        <option value="">Rack</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="row">
-                                                <div class="col-md-2 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-    <label class="label-premium mb-0">Size Set *</label>
-    <div class="action-links">
-        <a href="{{ route('admin.master.size-measurement.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="size" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-    </div>
-</div>
-                                                    <select name="products[${idx}][size_set_id]" class="form-control select2 size-set-select" required>
-                                                        <option value="">Select Size Set</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-    <label class="label-premium mb-0">Color *</label>
-    <div class="action-links">
-        <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary" title="Create New" style="font-size:12px;"><i class="fas fa-plus"></i></a>
-        <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="color" title="Refresh" style="font-size:12px;"><i class="fas fa-sync-alt"></i></a>
-    </div>
-</div>
-                                                    <select name="products[${idx}][color_id]" class="form-control select2 color-select" required>
-                                                        <option value="">Color</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">Total Boxes *</label>
-                                                    <input type="number" name="products[${idx}][total_boxes]" class="form-control form-control-premium total-boxes-input" placeholder="Qty" min="1" required>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">Pcs / Box</label>
-                                                    <input type="number" name="products[${idx}][pieces_per_box]" class="form-control form-control-premium bg-light pcs-per-box-input" placeholder="Pcs/Box" readonly required>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">Total Pieces</label>
-                                                    <input type="number" class="form-control form-control-premium bg-light total-pieces-input" placeholder="Total Pcs" readonly>
-                                                </div>
-                                                <div class="col-md-2 input-group-premium">
-                                                    <label class="label-premium">MRP *</label>
-                                                    <input type="number" name="products[${idx}][mrp]" class="form-control form-control-premium mrp-input bg-light" placeholder="Price" step="0.01" min="0" readonly required>
-                                                </div>
-                                            </div>
-                                            <div class="text-right mt-1 mb-2">
-                                                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-target" style="display: none;">
-                                                    <i class="fas fa-trash"></i> Remove Target
-                                                </button>
-                                            </div>
-                                            </div>
-                                            </div>
-                                            <div class="text-right mt-2 mb-3 pr-3">
-                                                <button type="button" class="btn btn-sm btn-outline-primary btn-add-target" style="display: none;">
-                                                    <i class="fas fa-plus"></i> Add More Target
-                                                </button>
-                                            </div>
-
-                                        </div>
-                                    </div>`;
-
-                $('#itemsContainer').append(newItem);
-                let newCard = $('#itemsContainer').find(`.inventory-item-card[data-index="${idx}"]`);
-                initSelect2(newCard);
-
-                if (values) {
-                    populateCard(newCard, values);
-                } else {
-                    // Auto-select first warehouse for new items
-                    let warehouseSelect = newCard.find('.warehouse-select');
-                    if (warehouseSelect.find('option').length > 1) {
-                        warehouseSelect.val(warehouseSelect.find('option:eq(1)').val()).trigger('change');
-                    }
-
-                    // Also auto-select first warehouse for consume part if active
-                    if ($('#sourceType').val() === 'consume') {
-                        let consumeWarehouse = newCard.find('.consume-warehouse-select');
-                        if (consumeWarehouse.find('option').length > 1) {
-                            consumeWarehouse.val(consumeWarehouse.find('option:eq(1)').val()).trigger('change');
-                        }
-                    }
-                }
-
-                updateItemNumbers();
-
-                // apply source type check
-                $('#sourceType').trigger('change');
-            }
-
-            let isPopulating = false;
-
-            function populateCard(card, values) {
-                if (!values.product_id) return;
-
-                isPopulating = true;
-
-                // 0. Set Consume Fields if they exist
-                if (values.consume_product_id) {
-                    card.find('.consume-design-select').val(values.consume_product_id).trigger('change.select2');
-                    if (values.consume_pattern_id) {
-                        card.find('.consume-pattern-select').empty().append(`<option value="${values.consume_pattern_id}" selected>${values.consume_pattern_name}</option>`).trigger('change.select2');
-                    }
-                    if (values.consume_variants) {
-                        card.data('consume_variants', values.consume_variants);
-                        let cSizeSelect = card.find('.consume-size-set-select');
-                        cSizeSelect.empty().append('<option value="">Select Size Set</option>');
-                        let uniqueSizeSets = [];
-                        values.consume_variants.forEach(function (v) {
-                            if (!uniqueSizeSets.includes(v.size_set_id)) {
-                                cSizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
-                                uniqueSizeSets.push(v.size_set_id);
-                            }
-                        });
-                        cSizeSelect.val(values.consume_size_set_id).trigger('change.select2');
-
-                        let cColorSelect = card.find('.consume-color-select');
-                        cColorSelect.empty().append('<option value="">Select Color</option>');
-                        let variant = values.consume_variants.find(v => v.size_set_id == values.consume_size_set_id);
-                        if (variant) {
-                            variant.colors.forEach(function (c) {
-                                cColorSelect.append(`<option value="${c.id}">${c.name}</option>`);
-                            });
-                        }
-                        cColorSelect.val(values.consume_color_id).trigger('change.select2');
-                    } else {
-                        if (values.consume_size_set_id) {
-                            card.find('.consume-size-set-select').empty().append(`<option value="${values.consume_size_set_id}" selected>${values.consume_size_set_name}</option>`).trigger('change.select2');
-                        }
-                        if (values.consume_color_id) {
-                            card.find('.consume-color-select').empty().append(`<option value="${values.consume_color_id}" selected>${values.consume_color_name}</option>`).trigger('change.select2');
-                        }
-                    }
-                    card.find('.consume-source-id').val(values.consume_source_id || '');
-                    card.find('.consume-available-display').text(values.consume_available || '-');
-                    card.find('.consume-available-pieces-display').text(values.consume_available_pieces || '-');
-                    card.find('.consume-transfer-boxes-input').val(values.consume_transfer_boxes || '');
-                    card.find('.consume-source-pieces-display').text(values.consume_source_pieces || '-');
-                    card.find('.consume-source-pcs-hidden').val(values.consume_source_pcs || '');
-                    if (values.consume_available) {
-                        card.find('.consume-transfer-boxes-input').attr('max', values.consume_available);
-                    }
-                }
-
-                // 1. Set variants data immediately if available
-                if (values.variants) {
-                    card.data('variants', values.variants);
-                }
-
-                // 2. Set Product
-                card.find('.design-select').val(values.product_id).trigger('change.select2');
-
-                // 3. Set Pattern & Fitting
-                if (values.pattern_id) {
-                    card.find('.pattern-select').empty().append(`<option value="${values.pattern_id}" selected>${values.pattern_name || 'Pattern'}</option>`).trigger('change.select2');
-                }
-                if (values.fitting_id) {
-                    card.find('.fitting-select').empty().append(`<option value="${values.fitting_id}" selected>${values.fitting_name || 'Fitting'}</option>`).trigger('change.select2');
-                }
-
-                // 4. Set Warehouse
-                if (values.warehouse_id) {
-                    card.find('.warehouse-select').val(values.warehouse_id).trigger('change.select2');
-                }
-
-                // 5. Populate dropdowns and set values
-                if (values.variants) {
-                    let sourceSizes = values.consume_source_size_group ? values.consume_source_size_group.split(',').map(s => s.trim()) : [];
-                    let sizeSelect = card.find('.size-set-select');
-                    sizeSelect.empty().append('<option value="">Select Size Set</option>');
-                    values.variants.forEach(function (v) {
-                        let variantSizes = v.size_group ? v.size_group.split(',').map(s => s.trim()) : [];
-                        let isSubset = true;
-                        if (sourceSizes.length > 0 && variantSizes.length > 0) {
-                            isSubset = variantSizes.every(size => sourceSizes.includes(size));
-                        }
-                        if (isSubset || $('#sourceType').val() !== 'consume') {
-                            sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
-                        }
-                    });
-                    sizeSelect.val(values.size_set_id).trigger('change.select2');
-
-                    let colorSelect = card.find('.color-select');
-                    colorSelect.empty().append('<option value="">Color</option>');
-                    let variant = values.variants.find(v => v.size_set_id == values.size_set_id);
-                    if (variant) {
-                        variant.colors.forEach(function (c) {
-                            colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
-                        });
-                    }
-                    colorSelect.val(values.color_id).trigger('change.select2');
-                } else {
-                    // Fallback: Always ensure the selected options exist in the DOM
-                    if (values.size_set_id) {
-                        let select = card.find('.size-set-select');
-                        if (select.find(`option[value="${values.size_set_id}"]`).length === 0) {
-                            select.append(`<option value="${values.size_set_id}" selected>${values.size_set_name || 'Size Set'}</option>`);
-                        }
-                        select.val(values.size_set_id).trigger('change.select2');
-                    }
-                    if (values.color_id) {
-                        let select = card.find('.color-select');
-                        if (select.find(`option[value="${values.color_id}"]`).length === 0) {
-                            select.append(`<option value="${values.color_id}" selected>${values.color_name || 'Color'}</option>`);
-                        }
-                        select.val(values.color_id).trigger('change.select2');
-                    }
-                }
-
-                // Set Rack
-                if (values.rack_id) {
-                    let select = card.find('.rack-select');
-                    if (select.find(`option[value="${values.rack_id}"]`).length === 0) {
-                        select.append(`<option value="${values.rack_id}" selected>${values.rack_name || 'Rack'}</option>`);
-                    }
-                    select.val(values.rack_id).trigger('change.select2');
-                }
-
-                // Set Numeric Inputs
-                if (values.total_boxes) card.find('.total-boxes-input').val(values.total_boxes);
-                if (values.pieces_per_box) card.find('input[name*="pieces_per_box"]').val(values.pieces_per_box);
-                if (values.total_pieces) card.find('.total-pieces-input').val(values.total_pieces);
-                if (values.mrp) card.find('.mrp-input').val(values.mrp);
-
-                isPopulating = false;
-            }
-
-            $('#addNewItem').on('click', function () {
-                addItem();
-            });
-
-            $(document).on('click', '.btn-duplicate-item', function () {
-                let sourceCard = $(this).closest('.inventory-item-card');
-                let values = {
-                    product_id: sourceCard.find('.design-select').val(),
-                    pattern_id: sourceCard.find('.pattern-select').val(),
-                    pattern_name: sourceCard.find('.pattern-select option:selected').text(),
-                    fitting_id: sourceCard.find('.fitting-select').val(),
-                    fitting_name: sourceCard.find('.fitting-select option:selected').text(),
-                    warehouse_id: sourceCard.find('.warehouse-select').val(),
-                    rack_id: sourceCard.find('.rack-select').val(),
-                    rack_name: sourceCard.find('.rack-select option:selected').text(),
-                    size_set_id: sourceCard.find('.size-set-select').val(),
-                    size_set_name: sourceCard.find('.size-set-select option:selected').text(),
-                    color_id: sourceCard.find('.color-select').val(),
-                    color_name: sourceCard.find('.color-select option:selected').text(),
-                    total_boxes: sourceCard.find('.total-boxes-input').val(),
-                    pieces_per_box: sourceCard.find('input[name*="pieces_per_box"]').val(),
-                    total_pieces: sourceCard.find('.total-pieces-input').val(),
-                    mrp: sourceCard.find('.mrp-input').val(),
-                    variants: sourceCard.data('variants'),
-
-                    // Consume fields
-                    consume_product_id: sourceCard.find('.consume-design-select').val(),
-                    consume_variants: sourceCard.data('consume_variants'),
-                    consume_pattern_id: sourceCard.find('.consume-pattern-select').val(),
-                    consume_pattern_name: sourceCard.find('.consume-pattern-select option:selected').text(),
-                    consume_fitting_id: sourceCard.find('.consume-fitting-select').val(),
-                    consume_fitting_name: sourceCard.find('.consume-fitting-select option:selected').text(),
-                    consume_warehouse_id: sourceCard.find('.consume-warehouse-select').val(),
-                    consume_rack_id: sourceCard.find('.consume-rack-select').val(),
-                    consume_rack_name: sourceCard.find('.consume-rack-select option:selected').text(),
-                    consume_size_set_id: sourceCard.find('.consume-size-set-select').val(),
-                    consume_size_set_name: sourceCard.find('.consume-size-set-select option:selected').text(),
-                    consume_color_id: sourceCard.find('.consume-color-select').val(),
-                    consume_color_name: sourceCard.find('.consume-color-select option:selected').text(),
-                    consume_source_id: sourceCard.find('.consume-source-id').val(),
-                    consume_available: sourceCard.find('.consume-available-display').text(),
-                    consume_available_pieces: sourceCard.find('.consume-available-pieces-display').text(),
-                    consume_source_size_group: sourceCard.data('source_size_group'),
-                    consume_transfer_boxes: sourceCard.find('.consume-transfer-boxes-input').val(),
-                    consume_source_pieces: sourceCard.find('.consume-source-pieces-display').text(),
-                    consume_source_pcs: sourceCard.find('.consume-source-pcs-hidden').val()
-                };
-                addItem(values);
-                toastr.info('Item duplicated. You can now modify specific fields.');
-
-                // Validate duplication usage
-                let lastCard = $('.inventory-item-card').last();
-                validateStockAvailability(lastCard);
-            });
-
-            $(document).on('click', '.btn-remove-item', function () {
-                $(this).closest('.inventory-item-card').fadeOut(300, function () {
-                    $(this).remove();
-                    updateItemNumbers();
+                $(this).select2({
+                    theme: 'bootstrap4',
+                    width: '100%',
+                    dropdownParent: $('body')
                 });
             });
+        }
 
-            function updateItemNumbers() {
-                $('.inventory-item-card').each(function (index) {
-                    $(this).find('.item-number').html(`<i class="fas fa-barcode"></i> Stock Generate #${index + 1}`);
-                });
-            }
+        // Pre-rendered master options
+        let designOptionsHtml = '<option value="">Select Design</option>';
+        productsMaster.forEach(p => {
+            let sName = p.series ? p.series.name : '';
+            designOptionsHtml += `<option value="${p.id}" data-name="${p.name_of_garment}">${p.design_number} (${sName} ${p.name_of_garment})</option>`;
+        });
 
-            $(document).on('change', '.design-select', function () {
-                if (isPopulating) return;
-                let productId = $(this).val();
-                let card = $(this).closest('.inventory-item-card');
-                let wrapper = $(this).closest('.target-row-wrapper');
-                let patternSelect = wrapper.find('.pattern-select');
-                let fittingSelect = wrapper.find('.fitting-select');
-                let sizeSelect = wrapper.find('.size-set-select');
-                let colorSelect = wrapper.find('.color-select');
+        let warehouseOptionsHtml = '<option value="">Warehouse</option>';
+        storeroomsMaster.forEach(w => {
+            warehouseOptionsHtml += `<option value="${w.id}">${w.name}</option>`;
+        });
 
-                // Clear subsequent dropdowns
-                patternSelect.empty().append('<option value="">Pattern</option>').trigger('change.select2');
-                fittingSelect.empty().append('<option value="">Fitting</option>').trigger('change.select2');
-                sizeSelect.empty().append('<option value="">Select Size Set</option>').trigger('change.select2');
-                colorSelect.empty().append('<option value="">Color</option>').trigger('change.select2');
-                wrapper.find('input[name*="pieces_per_box"]').val('');
-                wrapper.find('.mrp-input').val('');
+        // =========================================================================
+        // ADD PRODUCTION STOCK ROW
+        // =========================================================================
+        function addItem(values = null) {
+            itemCounter++;
+            let idx = itemCounter;
 
-                if (productId) {
-                    $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function (data) {
-                        if (data.success) {
-                            if (data.pattern_id) {
-                                patternSelect.empty().append(`<option value="${data.pattern_id}" selected>${data.pattern_name}</option>`).trigger('change.select2');
-                            }
+            let rowHtml = `
+                <tr class="stock-table-row" data-idx="${idx}">
+                    <td class="text-center font-weight-bold text-muted">
+                        <span class="row-badge badge badge-success">${idx}</span>
+                        <input type="hidden" name="products[${idx}][pattern_id]" class="pattern-val">
+                        <input type="hidden" name="products[${idx}][fitting_id]" class="fitting-val">
+                    </td>
+                    <td>
+                        <select name="products[${idx}][product_id]" class="form-control select2 design-select" required>
+                            ${designOptionsHtml}
+                        </select>
+                    </td>
+                    <td>
+                        <div class="pattern-fit-badges text-truncate">
+                            <span class="text-muted small font-italic">-</span>
+                        </div>
+                    </td>
+                    <td>
+                        <select name="products[${idx}][warehouse_id]" class="form-control select2 warehouse-select" required>
+                            ${warehouseOptionsHtml}
+                        </select>
+                    </td>
+                    <td>
+                        <select name="products[${idx}][rack_id]" class="form-control select2 rack-select" required>
+                            <option value="">Select Rack</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="products[${idx}][size_set_id]" class="form-control select2 size-set-select" required>
+                            <option value="">Select Size Set</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="products[${idx}][color_id]" class="form-control select2 color-select" required>
+                            <option value="">Select Color</option>
+                        </select>
+                    </td>
+                    <td class="text-center">
+                        <input type="number" name="products[${idx}][total_boxes]"
+                            class="form-control erp-input boxes-input font-weight-bold text-center"
+                            style="min-width: 65px;" min="1" placeholder="Qty" required>
+                    </td>
+                    <td class="text-center">
+                        <input type="number" name="products[${idx}][pieces_per_box]"
+                            class="form-control erp-input pcs-input text-center"
+                            style="min-width: 55px;" readonly required>
+                    </td>
+                    <td class="text-right font-weight-bold text-success">
+                        <span class="total-pcs-display">-</span>
+                    </td>
+                    <td class="text-right">
+                        <input type="number" name="products[${idx}][mrp]"
+                            class="form-control erp-input mrp-input text-right"
+                            style="min-width: 70px;" step="0.01" min="0" readonly required>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-inline-flex gap-1">
+                            <button type="button" class="btn-erp-icon btn-erp-copy btn-duplicate mr-1" title="Duplicate row">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button type="button" class="btn-erp-icon btn-erp-del btn-remove" title="Remove row">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
 
-                            if (data.fitting_id) {
-                                fittingSelect.empty().append(`<option value="${data.fitting_id}" selected>${data.fitting_name}</option>`).trigger('change.select2');
-                            }
+            $('#productionTableBody').append(rowHtml);
+            let newRow = $('#productionTableBody').find(`.stock-table-row[data-idx="${idx}"]`);
+            initSelect2(newRow);
 
-                            card.data('variants', data.variants);
-                            let sourceSizeGroup = card.data('source_size_group');
-                            let sourceSizes = sourceSizeGroup ? sourceSizeGroup.split(',').map(s => s.trim()) : [];
-
-                            sizeSelect.empty().append('<option value="">Select Size Set</option>');
-                            data.variants.forEach(function (v) {
-                                let variantSizes = v.size_group ? v.size_group.split(',').map(s => s.trim()) : [];
-                                let isSubset = true;
-                                if (sourceSizes.length > 0 && variantSizes.length > 0) {
-                                    isSubset = variantSizes.every(size => sourceSizes.includes(size));
-                                }
-                                if (isSubset || $('#sourceType').val() !== 'consume') {
-                                    sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
-                                }
-                            });
-                            sizeSelect.trigger('change.select2');
-                        }
-                    });
-                }
-            });
-
-            $(document).on('change', '.size-set-select', function () {
-                if (isPopulating) return;
-                let sizeSetId = $(this).val();
-                let card = $(this).closest('.inventory-item-card');
-                let wrapper = $(this).closest('.target-row-wrapper');
-                let variants = card.data('variants') || [];
-                let colorSelect = wrapper.find('.color-select');
-
-                // Clear color when size changes
-                colorSelect.empty().append('<option value="">Color</option>').trigger('change.select2');
-                wrapper.find('input[name*="pieces_per_box"]').val('');
-                wrapper.find('.mrp-input').val('');
-
-                if (sizeSetId) {
-                    $.get("{{ url('admin/inventory/get-size-set-info') }}/" + sizeSetId, function (data) {
-                        wrapper.find('.pcs-per-box-input').val(data.no_of_pcs);
-                        let boxes = parseInt(wrapper.find('.total-boxes-input').val()) || 0;
-                        let pcs = parseInt(data.no_of_pcs) || 0;
-                        wrapper.find('.total-pieces-input').val(boxes * pcs);
-                        validateStockAvailability(card);
-                    });
-
-                    let variant = variants.find(v => v.size_set_id == sizeSetId);
-                    if (variant) {
-                        wrapper.find('.mrp-input').val(variant.mrp);
-                        variant.colors.forEach(function (c) {
-                            colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
-                        });
-                        colorSelect.trigger('change.select2');
-                    }
-                }
-            });
-
-            $(document).on('change', '.warehouse-select', function () {
-                if (isPopulating) return;
-                let warehouseId = $(this).val();
-                let wrapper = $(this).closest('.target-row-wrapper');
-                let rackSelect = wrapper.find('.rack-select');
-
-                rackSelect.empty().append('<option value="">Rack</option>');
-                if (warehouseId) {
-                    $.get("{{ url('admin/inventory/warehouse-stock/racks') }}/" + warehouseId, function (data) {
-                        data.forEach(function (rack) {
-                            rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
-                        });
-                        rackSelect.trigger('change.select2');
-
-                        // Auto-select first rack if any
-                        if (data.length > 0) {
-                            rackSelect.val(data[0].id).trigger('change.select2');
-                        }
-                    });
-                }
-            });
-
-
-
-            $(document).on('input', '.total-boxes-input, .pcs-per-box-input', function () {
-                let wrapper = $(this).closest('.target-row-wrapper');
-                let boxes = parseInt(wrapper.find('.total-boxes-input').val()) || 0;
-                let pcs = parseInt(wrapper.find('.pcs-per-box-input').val()) || 0;
-                wrapper.find('.total-pieces-input').val(boxes * pcs);
-
-                let card = $(this).closest('.inventory-item-card');
-                validateStockAvailability(card);
-            });
-
-            $(document).on('input', '.consume-transfer-boxes-input', function () {
-                let card = $(this).closest('.inventory-item-card');
-                let val = $(this).val();
-                let sourceId = card.find('.consume-source-id').val();
-                
-                // Sync to all cards with same sourceId
-                if (sourceId) {
-                    $('.inventory-item-card').each(function() {
-                        if ($(this).find('.consume-source-id').val() === sourceId) {
-                            $(this).find('.consume-transfer-boxes-input').val(val);
-                            let pcs = parseInt($(this).find('.consume-source-pcs-hidden').val()) || 0;
-                            let b = parseInt(val) || 0;
-                            $(this).find('.consume-source-pieces-display').text(b * pcs);
-                        }
-                    });
-                }
-                validateStockAvailability(card);
-            });
-
-            function validateStockAvailability(currentCard) {
-                if ($('#sourceType').val() !== 'consume') return;
-
-                let sourceId = currentCard.find('.consume-source-id').val();
-                if (!sourceId) return;
-
-                let availablePieces = parseInt(currentCard.find('.consume-available-pieces-display').text()) || 0;
-                let availableBoxes = parseInt(currentCard.find('.consume-available-display').text()) || 0;
-                let transferBoxes = parseInt(currentCard.find('.consume-transfer-boxes-input').val()) || 0;
-                
-                if (transferBoxes > availableBoxes) {
-                    toastr.error(`Transfer boxes (${transferBoxes}) exceeds available boxes (${availableBoxes})`);
-                    transferBoxes = availableBoxes;
-                    $('.inventory-item-card').each(function() {
-                        if ($(this).find('.consume-source-id').val() === sourceId) {
-                            $(this).find('.consume-transfer-boxes-input').val(transferBoxes);
-                            let pcs = parseInt($(this).find('.consume-source-pcs-hidden').val()) || 0;
-                            $(this).find('.consume-source-pieces-display').text(transferBoxes * pcs);
-                        }
-                    });
-                }
-
-                let totalConsumedPieces = 0;
-                let genSizeTally = {};
-
-                // Sum up all cards using this same source
-                $('.inventory-item-card').each(function () {
-                    if ($(this).find('.consume-source-id').val() === sourceId) {
-                        $(this).find('.target-row-wrapper').each(function() {
-                            let b = parseInt($(this).find('.total-boxes-input').val()) || 0;
-                            let p = parseInt($(this).find('.pcs-per-box-input').val()) || 0;
-                            totalConsumedPieces += (b * p);
-
-                            // Calculate generated sizes tally
-                            let sizeSetId = $(this).find('.size-set-select').val();
-                            if (sizeSetId && sizeSetsMap[sizeSetId]) {
-                                let setInfo = sizeSetsMap[sizeSetId];
-                                setInfo.sizes.forEach(size => {
-                                    genSizeTally[size] = (genSizeTally[size] || 0) + (b * setInfo.pcs);
-                                });
-                            }
-                        });
-                    }
-                });
-
-                // Update Generated Pieces display across all synced cards
-                let sourceSizeSetId = null;
-                $('.inventory-item-card').each(function () {
-                    if ($(this).find('.consume-source-id').val() === sourceId) {
-                        $(this).find('.consume-transfer-pieces-display').text(totalConsumedPieces);
-                        if (!sourceSizeSetId) {
-                            sourceSizeSetId = $(this).find('.consume-size-set-select').val();
-                        }
-                    }
-                });
-
-                // Calculate source sizes tally
-                let sourceSizeTally = {};
-                if (sourceSizeSetId && sizeSetsMap[sourceSizeSetId] && transferBoxes > 0) {
-                    let setInfo = sizeSetsMap[sourceSizeSetId];
-                    setInfo.sizes.forEach(size => {
-                        sourceSizeTally[size] = (sourceSizeTally[size] || 0) + (transferBoxes * setInfo.pcs);
-                    });
-                }
-
-                // Render Size Breakdown
-                let hasMismatch = false;
-                let breakdownContainer = currentCard.find('.size-breakdown-container');
-                let sourceList = breakdownContainer.find('.source-size-list');
-                let genList = breakdownContainer.find('.generated-size-list');
-                
-                sourceList.empty();
-                genList.empty();
-
-                if (transferBoxes > 0 || totalConsumedPieces > 0) {
-                    breakdownContainer.show();
-                    
-                    // Render Source Sizes
-                    for (let size in sourceSizeTally) {
-                        sourceList.append(`<li>Size ${size}: ${sourceSizeTally[size]} pcs</li>`);
-                    }
-
-                    // Render Generated Sizes & Check Mismatches
-                    for (let size in sourceSizeTally) {
-                        let reqQty = sourceSizeTally[size] || 0;
-                        let genQty = genSizeTally[size] || 0;
-                        let colorClass = (reqQty === genQty) ? 'text-success' : 'text-danger font-weight-bold';
-                        if (reqQty !== genQty) hasMismatch = true;
-                        
-                        genList.append(`<li class="${colorClass}">Size ${size}: ${genQty} pcs</li>`);
-                        delete genSizeTally[size];
-                    }
-
-                    // Check for extra sizes generated not in source
-                    for (let size in genSizeTally) {
-                        if (genSizeTally[size] > 0) {
-                            hasMismatch = true;
-                            genList.append(`<li class="text-danger font-weight-bold">Size ${size}: ${genSizeTally[size]} pcs (Extra)</li>`);
-                        }
-                    }
-
-                    let statusBadge = breakdownContainer.find('.size-match-status');
-                    if (hasMismatch) {
-                        statusBadge.removeClass('badge-success').addClass('badge-danger').text('Mismatch Detected');
-                        $('.btn-confirm').prop('disabled', true);
-                    } else {
-                        statusBadge.removeClass('badge-danger').addClass('badge-success').text('Sizes Match Perfectly');
-                        $('.btn-confirm').prop('disabled', false);
-                    }
-                } else {
-                    breakdownContainer.hide();
+            if (values) {
+                populateRow(newRow, values);
+            } else {
+                let wSelect = newRow.find('.warehouse-select');
+                if (wSelect.find('option').length > 1) {
+                    wSelect.val(wSelect.find('option:eq(1)').val()).trigger('change');
                 }
             }
 
-            $(document).on('change', '.consume-warehouse-select', function () {
-                if (isPopulating) return;
-                let warehouseId = $(this).val();
-                let card = $(this).closest('.inventory-item-card');
-                let rackSelect = card.find('.consume-rack-select');
+            updateRowCounters();
+            recalculateAll();
+        }
+
+        function updateRowCounters() {
+            let rows = $('.stock-table-row');
+            rows.each(function (i) {
+                $(this).find('.row-badge').text(i + 1);
+            });
+            if (rows.length <= 1) {
+                $('.btn-remove').hide();
+            } else {
+                $('.btn-remove').show();
+            }
+        }
+
+        function populateRow(row, values) {
+            if (!values.product_id) return;
+            row.find('.design-select').val(values.product_id).trigger('change');
+
+            if (values.pattern_id) {
+                row.find('.pattern-val').val(values.pattern_id);
+            }
+            if (values.fitting_id) {
+                row.find('.fitting-val').val(values.fitting_id);
+            }
+            if (values.pattern_name || values.fitting_name) {
+                row.find('.pattern-fit-badges').html(`
+                    <span class="erp-badge-info font-weight-bold text-dark" title="Pattern: ${values.pattern_name || ''}">${values.pattern_name || ''}</span>
+                    <span class="erp-badge-info text-muted" title="Fitting: ${values.fitting_name || ''}">${values.fitting_name || ''}</span>
+                `);
+            }
+
+            if (values.variants) {
+                row.data('variants', values.variants);
+                let sizeSelect = row.find('.size-set-select');
+                sizeSelect.empty().append('<option value="">Select Size Set</option>');
+                let uniqueSizeSets = [];
+                values.variants.forEach(function (v) {
+                    if (!uniqueSizeSets.includes(v.size_set_id)) {
+                        sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                        uniqueSizeSets.push(v.size_set_id);
+                    }
+                });
+                sizeSelect.val(values.size_set_id).trigger('change');
+
+                let colorSelect = row.find('.color-select');
+                colorSelect.empty().append('<option value="">Select Color</option>');
+                let variant = values.variants.find(v => v.size_set_id == values.size_set_id);
+                if (variant) {
+                    variant.colors.forEach(function (c) {
+                        colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
+                    });
+                }
+                colorSelect.val(values.color_id).trigger('change');
+            }
+
+            if (values.warehouse_id) {
+                row.find('.warehouse-select').val(values.warehouse_id).trigger('change');
+                let rackSelect = row.find('.rack-select');
                 rackSelect.empty().append('<option value="">Select Rack</option>');
-                if (warehouseId) {
-                    $.get("{{ url('admin/inventory/warehouse-stock/racks') }}/" + warehouseId, function (data) {
-                        data.forEach(function (rack) {
-                            rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
-                        });
-                        rackSelect.trigger('change.select2');
-
-                        // Auto-select first rack if any
-                        if (data.length > 0) {
-                            rackSelect.val(data[0].id).trigger('change.select2');
-                        }
+                if (values.racks) {
+                    values.racks.forEach(function (r) {
+                        rackSelect.append(`<option value="${r.id}" ${r.id == values.rack_id ? 'selected' : ''}>${r.name}</option>`);
                     });
+                    rackSelect.trigger('change');
                 }
-            });
-
-            $(document).on('change', '.consume-design-select', function () {
-                if (isPopulating) return;
-                let productId = $(this).val();
-                let card = $(this).closest('.inventory-item-card');
-                let sizeSelect = card.find('.consume-size-set-select');
-                let patternSelect = card.find('.consume-pattern-select');
-                let fittingSelect = card.find('.consume-fitting-select');
-
-                sizeSelect.empty().append('<option value="">Select Size Set</option>').trigger('change.select2');
-                card.find('.consume-color-select').empty().append('<option value="">Select Color</option>').trigger('change.select2');
-                patternSelect.empty().append('<option value="">Pattern</option>').trigger('change.select2');
-                fittingSelect.empty().append('<option value="">Fitting</option>').trigger('change.select2');
-
-                if (productId) {
-                    $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function (data) {
-                        if (data.success) {
-                            card.data('consume_variants', data.variants);
-                            if (data.pattern_id) {
-                                patternSelect.empty().append(`<option value="${data.pattern_id}" selected>${data.pattern_name}</option>`).trigger('change.select2');
-                            }
-                            if (data.fitting_id) {
-                                fittingSelect.empty().append(`<option value="${data.fitting_id}" selected>${data.fitting_name}</option>`).trigger('change.select2');
-                            }
-                            if (data.variants) {
-                                let uniqueSizeSets = [];
-                                data.variants.forEach(function (v) {
-                                    if (!uniqueSizeSets.includes(v.size_set_id)) {
-                                        sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
-                                        uniqueSizeSets.push(v.size_set_id);
-                                    }
-                                });
-                            }
-                            sizeSelect.trigger('change.select2');
-                        }
-                    });
-                }
-            });
-
-            $(document).on('change', '.consume-size-set-select', function () {
-                if (isPopulating) return;
-                let sizeSetId = $(this).val();
-                let card = $(this).closest('.inventory-item-card');
-                let productId = card.find('.consume-design-select').val();
-                let colorSelect = card.find('.consume-color-select');
-                colorSelect.empty().append('<option value="">Select Color</option>').trigger('change.select2');
-
-                if (sizeSetId && productId) {
-                    $.get("{{ url('admin/inventory/get-colors-by-product-size') }}/" + productId + "/" + sizeSetId, function (data) {
-                        if (data.status === 'success') {
-                            data.colors.forEach(function (c) {
-                                colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
-                            });
-                            colorSelect.trigger('change.select2');
-                        }
-                    });
-                }
-            });
-
-            $(document).on('change', '.consume-design-select, .consume-warehouse-select, .consume-rack-select, .consume-size-set-select, .consume-color-select, .consume-pattern-select, .consume-fitting-select', function () {
-                if (isPopulating) return;
-                let card = $(this).closest('.inventory-item-card');
-                let productId = card.find('.consume-design-select').val();
-                let warehouseId = card.find('.consume-warehouse-select').val();
-                let rackId = card.find('.consume-rack-select').val();
-                let sizeSetId = card.find('.consume-size-set-select').val();
-                let colorId = card.find('.consume-color-select').val();
-                let patternId = card.find('.consume-pattern-select').val();
-                let fittingId = card.find('.consume-fitting-select').val();
-
-                if (productId && warehouseId && rackId && sizeSetId && colorId) {
-                    $.get("{{ route('admin.inventory.get_domestic_inventory_for_consume') }}", {
-                        product_id: productId,
-                        warehouse_id: warehouseId,
-                        rack_id: rackId,
-                        size_set_id: sizeSetId,
-                        color_id: colorId,
-                        pattern_id: patternId,
-                        fitting_id: fittingId
-                    }, function (data) {
-                        if (data.success) {
-                            card.find('.consume-source-id').val(data.inventory_id);
-                            card.find('.consume-available-display').text(data.total_boxes);
-                            card.find('.consume-available-pieces-display').text(data.total_pieces);
-                            card.find('.consume-source-pcs-hidden').val(data.pieces_per_box);
-                            card.find('.consume-transfer-boxes-input').attr('max', data.total_boxes);
-
-                            // Auto-fill primary card fields with immediate option injection to avoid race conditions
-                            card.find('.design-select').val(productId).trigger('change.select2');
-                            card.find('.warehouse-select').val(warehouseId).trigger('change.select2');
-
-                            // Manually inject options into primary selects to ensure they are selected immediately
-                            let patternSelect = card.find('.pattern-select');
-                            let fittingSelect = card.find('.fitting-select');
-                            let rackSelect = card.find('.rack-select');
-                            let sizeSelect = card.find('.size-set-select');
-                            let colorSelect = card.find('.color-select');
-
-                            let patternName = card.find('.consume-pattern-select option:selected').text();
-                            let fittingName = card.find('.consume-fitting-select option:selected').text();
-                            let rackName = card.find('.consume-rack-select option:selected').text();
-                            let sizeName = card.find('.consume-size-set-select option:selected').text();
-                            let colorName = card.find('.consume-color-select option:selected').text();
-
-                            if (patternId && patternSelect.find(`option[value="${patternId}"]`).length === 0) {
-                                patternSelect.append(`<option value="${patternId}" selected>${patternName}</option>`);
-                            }
-                            patternSelect.val(patternId || '').trigger('change.select2');
-
-                            if (fittingId && fittingSelect.find(`option[value="${fittingId}"]`).length === 0) {
-                                fittingSelect.append(`<option value="${fittingId}" selected>${fittingName}</option>`);
-                            }
-                            fittingSelect.val(fittingId || '').trigger('change.select2');
-
-                            if (rackSelect.find(`option[value="${rackId}"]`).length === 0) {
-                                rackSelect.append(`<option value="${rackId}" selected>${rackName}</option>`);
-                            }
-                            rackSelect.val(rackId).trigger('change.select2');
-
-                            // Store variants data for the primary card
-                            card.data('variants', data.variants);
-                            card.data('source_size_group', data.source_size_group);
-
-                            // Filter variants based on source size group if we are consuming
-                            let sourceSizes = data.source_size_group ? data.source_size_group.split(',').map(s => s.trim()) : [];
-
-                            // Populate all available size sets first if not already there
-                            if (sizeSelect.find('option').length <= 1) {
-                                sizeSelect.empty().append('<option value="">Select Size Set</option>');
-                                data.variants.forEach(function (v) {
-                                    let variantSizes = v.size_group ? v.size_group.split(',').map(s => s.trim()) : [];
-                                    let isSubset = true;
-                                    if (sourceSizes.length > 0 && variantSizes.length > 0) {
-                                        isSubset = variantSizes.every(size => sourceSizes.includes(size));
-                                    }
-                                    if (isSubset || $('#sourceType').val() !== 'consume') {
-                                        sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
-                                    }
-                                });
-                            }
-                            sizeSelect.val(sizeSetId).trigger('change.select2');
-
-                            // Populate ALL available colors for this size set, not just the one being consumed
-                            colorSelect.empty().append('<option value="">Color</option>');
-                            if (data.all_colors && data.all_colors.length > 0) {
-                                data.all_colors.forEach(function (c) {
-                                    colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
-                                });
-                            } else {
-                                // Fallback if no colors returned (shouldn't happen with updated backend)
-                                colorSelect.append(`<option value="${colorId}" selected>${colorName}</option>`);
-                            }
-                            colorSelect.val(colorId).trigger('change.select2');
-
-                            let boxesVal = data.total_boxes;
-                            let pcsPerBox = data.pieces_per_box;
-                            card.find('input[name*="total_boxes"]').val(boxesVal);
-                            card.find('input[name*="pieces_per_box"]').val(pcsPerBox);
-                            card.find('.total-pieces-input').val(boxesVal * pcsPerBox);
-                            
-                            card.find('.mrp-input').val(data.mrp);
-
-                            toastr.success('Existing stock details applied.');
-
-                            // Trigger validation after auto-fill
-                            validateStockAvailability(card);
-                        } else {
-                            toastr.warning(data.message);
-                        }
-                    });
-                } else {
-                    card.find('.consume-available-display').text('-');
-                    card.find('.consume-available-pieces-display').text('-');
-                    card.find('.consume-transfer-pieces-display').text('-');
-                    card.find('.consume-source-pieces-display').text('-');
-                    card.find('.consume-transfer-boxes-input').val('');
-                    card.find('.consume-source-pcs-hidden').val('');
-                    card.find('.consume-transfer-boxes-input').removeAttr('max');
-                    card.find('.total-pieces-input').val('');
-                    card.find('.consume-source-id').val('');
-                }
-            });
-
-            $(document).on('input', '.total-boxes-input, .purchase-rate-input, #global_gst_value, #global_other_amount, #global_discount', function () {
-                calculateGlobalTotal();
-            });
-
-            $(document).on('change', '#global_gst_type', function () {
-                calculateGlobalTotal();
-            });
-
-            function calculateGlobalTotal() {
-                let subTotal = 0;
-
-                $('.inventory-item-card').each(function () {
-                    $(this).find('.target-row-wrapper').each(function() {
-                        let totalBoxes = parseFloat($(this).find('.total-boxes-input').val()) || 0;
-                        let pcsPerBox = parseFloat($(this).find('.pcs-per-box-input').val()) || 0;
-                        let rate = parseFloat($(this).find('.purchase-rate-input').val()) || 0;
-
-                        subTotal += (totalBoxes * pcsPerBox * rate);
-                    });
-                });
-
-                $('#global_sub_total').val(subTotal.toFixed(2));
-
-                let gstValue = parseFloat($('#global_gst_value').val()) || 0;
-                let gstType = $('#global_gst_type').val();
-                let other = parseFloat($('#global_other_amount').val()) || 0;
-                let discount = parseFloat($('#global_discount').val()) || 0;
-
-                let gstAmount = 0;
-                if (gstType === 'percentage') {
-                    gstAmount = (subTotal * gstValue) / 100;
-                } else {
-                    gstAmount = gstValue;
-                }
-
-                $('#global_gst_amount').val(gstAmount.toFixed(2));
-                let grandTotal = subTotal + gstAmount + other - discount;
-
-                $('#global_total_amount').val(grandTotal.toFixed(2));
             }
 
-            $('#addStockForm').on('submit', function (e) {
-                e.preventDefault();
-                
-                // Ensure all targets inherit their card's consume_source_id
-                $('.inventory-item-card').each(function() {
-                    let sourceId = $(this).find('.consume-source-id').first().val();
-                    if(sourceId) {
-                        $(this).find('.target-row-wrapper').each(function() {
-                            let tIdx = $(this).attr('data-target-idx');
-                            if($(this).find('.hidden-injected-source').length === 0) {
-                                $(this).append(`<input type="hidden" name="products[${tIdx}][consume_source_id]" value="${sourceId}" class="hidden-injected-source">`);
-                            } else {
-                                $(this).find('.hidden-injected-source').val(sourceId).attr('name', `products[${tIdx}][consume_source_id]`);
-                            }
+            row.find('.boxes-input').val(values.total_boxes || '');
+            row.find('.pcs-input').val(values.pieces_per_box || '');
+            let total = (parseInt(values.total_boxes) || 0) * (parseInt(values.pieces_per_box) || 0);
+            row.find('.total-pcs-display').text(total > 0 ? total : '-');
+            row.find('.mrp-input').val(values.mrp || '');
+        }
+
+        // =========================================================================
+        // RECALCULATE TOTALS & SIZE BREAKDOWN
+        // =========================================================================
+        function recalculateAll() {
+            let totalBoxes = 0;
+            let totalPieces = 0;
+            let sizeTally = {};
+
+            $('.stock-table-row').each(function () {
+                let sizeSetId = $(this).find('.size-set-select').val();
+                let boxes = parseInt($(this).find('.boxes-input').val()) || 0;
+                let pcsPerBox = parseInt($(this).find('.pcs-input').val()) || 0;
+
+                if (boxes > 0 && pcsPerBox > 0) {
+                    totalBoxes += boxes;
+                    totalPieces += (boxes * pcsPerBox);
+
+                    if (sizeSetId && sizeSetsMap[sizeSetId]) {
+                        let sInfo = sizeSetsMap[sizeSetId];
+                        sInfo.sizes.forEach(size => {
+                            sizeTally[size] = (sizeTally[size] || 0) + (boxes * sInfo.pcs);
                         });
                     }
-                });
-                
-                if ($('#sourceType').val() === 'consume') {
-                    let hasMismatch = false;
-                    let processedSources = [];
-                    
-                    $('.inventory-item-card').each(function() {
-                        let sourceId = $(this).find('.consume-source-id').val();
-                        if (sourceId && !processedSources.includes(sourceId)) {
-                            processedSources.push(sourceId);
-                            let targetPieces = parseInt($(this).find('.consume-source-pieces-display').text()) || 0;
-                            let generatedPieces = parseInt($(this).find('.consume-transfer-pieces-display').text()) || 0;
-                            
-                            if (targetPieces !== generatedPieces || targetPieces === 0) {
-                                hasMismatch = true;
-                                toastr.error(`Mismatch for source! Source pieces to transfer is ${targetPieces}, but generated pieces is ${generatedPieces}. They must perfectly match.`);
-                            }
-                        }
-                    });
-                    
-                    if (hasMismatch) {
-                        return false; // Stop submission
-                    }
                 }
-
-                let form = $(this);
-                let btn = form.find('button[type="submit"]');
-                let originalHtml = btn.html();
-
-                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Saving...');
-
-                $.ajax({
-                    url: form.attr('action'),
-                    method: 'POST',
-                    data: form.serialize(),
-                    success: function (response) {
-                        if (response.success) {
-                            toastr.success(response.message);
-
-                            let pdfForm = $('<form>', {
-                                action: "{{ route('admin.inventory.barcode-generator.generate-bulk-tspl') }}",
-                                method: 'POST',
-                                target: '_blank'
-                            }).append($('<input>', {
-                                type: 'hidden',
-                                name: '_token',
-                                value: "{{ csrf_token() }}"
-                            }));
-
-                            if (response.print_data) {
-                                response.print_data.forEach(data => {
-                                    pdfForm.append($('<input>', {
-                                        type: 'hidden',
-                                        name: 'print_data[' + data.id + ']',
-                                        value: data.qty
-                                    }));
-                                });
-                            } else if (response.ids) {
-                                response.ids.forEach(id => {
-                                    pdfForm.append($('<input>', {
-                                        type: 'hidden',
-                                        name: 'ids[]',
-                                        value: id
-                                    }));
-                                });
-                            }
-
-                            $('body').append(pdfForm);
-                            pdfForm.submit();
-                            pdfForm.remove();
-
-                            setTimeout(() => {
-                                window.location.href = "{{ route('admin.inventory.index') }}";
-                            }, 1000);
-                        }
-                    },
-                    error: function (xhr) {
-                        btn.prop('disabled', false).html(originalHtml);
-                        let error = xhr.responseJSON ? xhr.responseJSON.message : 'Error adding stock';
-                        toastr.error(error);
-                    }
-                });
             });
 
-            // Initial auto-select for the first card on page load
-            (function () {
-                let firstWarehouse = $('.warehouse-select').first();
-                if (firstWarehouse.length && firstWarehouse.find('option').length > 1 && !firstWarehouse.val()) {
-                    firstWarehouse.val(firstWarehouse.find('option:eq(1)').val()).trigger('change');
-                }
-            })();
+            $('#hudTotalBoxes').text(totalBoxes);
+            $('#hudTotalPieces').text(totalPieces);
 
-            // Handle Master Refresh
-            $(document).on('click', '.btn-refresh-master', function(e) {
-                e.preventDefault();
-                var btn = $(this);
-                var type = btn.data('type');
-                var card = btn.closest('.inventory-item-card');
-                if(!card.length) {
-                    card = btn.closest('form'); // fallback
+            // Render Size Pills in HUD
+            let pillsHtml = '';
+            let detailedListHtml = '';
+            let hasSizes = Object.keys(sizeTally).length > 0;
+
+            if (hasSizes) {
+                for (let size in sizeTally) {
+                    pillsHtml += `<span class="erp-pill-gen">${size}: ${sizeTally[size]}</span>`;
+                    detailedListHtml += `<li class="mr-4"><strong>Size ${size}:</strong> ${sizeTally[size]} pcs</li>`;
                 }
-                
-                var icon = btn.find('i');
-                icon.addClass('fa-spin');
-                
-                if (type === 'design' || type === 'warehouse') {
-                    $.getJSON("{{ route('admin.inventory.master_data') }}", function(data) {
-                        icon.removeClass('fa-spin');
-                        if(data.success !== false) {
-                            var allDesignSelects = $('.design-select');
-                            allDesignSelects.each(function() {
-                                var sel = $(this);
-                                var currentVal = sel.val();
-                                sel.empty().append('<option value="">Select Design</option>');
-                                $.each(data.products, function(i, p) {
-                                    var seriesName = p.series ? p.series.name : '';
-                                    var txt = p.design_number + ' (' + seriesName + ' ' + p.name_of_garment + ')';
-                                    sel.append($('<option>', {
-                                        value: p.id,
-                                        text: txt,
-                                        'data-name': p.name_of_garment
-                                    }));
-                                });
-                                sel.val(currentVal).trigger('change.select2');
-                            });
-                            
-                            var allWarehouseSelects = $('.warehouse-select');
-                            allWarehouseSelects.each(function() {
-                                var sel = $(this);
-                                var currentVal = sel.val();
-                                sel.empty().append('<option value="">Warehouse</option>');
-                                $.each(data.storerooms, function(i, s) {
-                                    sel.append($('<option>', {
-                                        value: s.id,
-                                        text: s.name
-                                    }));
-                                });
-                                sel.val(currentVal).trigger('change.select2');
-                            });
-                            toastr.success('Master data refreshed successfully');
-                        }
-                    }).fail(function() {
-                        icon.removeClass('fa-spin');
-                        toastr.error('Failed to refresh data');
+            } else {
+                pillsHtml = '<span class="text-muted small font-italic" style="font-size:10px;">None</span>';
+                detailedListHtml = '<li class="text-muted font-italic">No stock rows added yet</li>';
+            }
+
+            $('#hudSizePills').html(pillsHtml);
+            $('#detailedSizesList').html(detailedListHtml);
+
+            let canSubmit = totalBoxes > 0 && totalPieces > 0;
+            $('#btnHudSubmit').prop('disabled', !canSubmit);
+            $('#btnSubmitStock').prop('disabled', !canSubmit);
+        }
+
+        // =========================================================================
+        // DOM EVENTS
+        // =========================================================================
+        $(document).on('click', '#btnAddItem', function () {
+            addItem();
+        });
+
+        $(document).on('click', '.btn-remove', function () {
+            $(this).closest('.stock-table-row').remove();
+            updateRowCounters();
+            recalculateAll();
+        });
+
+        $(document).on('click', '.btn-duplicate', function () {
+            let row = $(this).closest('.stock-table-row');
+            let values = {
+                product_id: row.find('.design-select').val(),
+                pattern_id: row.find('.pattern-val').val(),
+                fitting_id: row.find('.fitting-val').val(),
+                pattern_name: row.find('.pattern-fit-badges .font-weight-bold').text(),
+                fitting_name: row.find('.pattern-fit-badges .text-muted').text(),
+                size_set_id: row.find('.size-set-select').val(),
+                color_id: row.find('.color-select').val(),
+                warehouse_id: row.find('.warehouse-select').val(),
+                rack_id: row.find('.rack-select').val(),
+                total_boxes: row.find('.boxes-input').val(),
+                pieces_per_box: row.find('.pcs-input').val(),
+                mrp: row.find('.mrp-input').val(),
+                variants: row.data('variants')
+            };
+
+            let racks = [];
+            row.find('.rack-select option').each(function () {
+                if ($(this).val()) racks.push({ id: $(this).val(), name: $(this).text() });
+            });
+            values.racks = racks;
+
+            addItem(values);
+        });
+
+        $(document).on('change', '.warehouse-select', function () {
+            let warehouseId = $(this).val();
+            let row = $(this).closest('.stock-table-row');
+            let rackSelect = row.find('.rack-select');
+            rackSelect.empty().append('<option value="">Select Rack</option>');
+
+            if (warehouseId) {
+                $.get("{{ url('admin/inventory/warehouse-stock/racks') }}/" + warehouseId, function (data) {
+                    data.forEach(function (rack) {
+                        rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
                     });
-                } else if (type === 'rack') {
-                    var warehouseSelect = card.find('.warehouse-select');
-                    if (warehouseSelect.length && warehouseSelect.val()) {
-                        warehouseSelect.trigger('change');
-                        setTimeout(function() {
-                            icon.removeClass('fa-spin');
-                            toastr.success('Racks refreshed for selected warehouse');
-                        }, 500);
-                    } else {
-                        icon.removeClass('fa-spin');
-                        toastr.info('Please select a warehouse first to load its racks');
+                    rackSelect.trigger('change');
+                    if (data.length > 0) {
+                        rackSelect.val(data[0].id).trigger('change');
                     }
+                });
+            }
+        });
+
+        $(document).on('change', '.design-select', function () {
+            let productId = $(this).val();
+            let row = $(this).closest('.stock-table-row');
+
+            let sizeSelect = row.find('.size-set-select');
+            let colorSelect = row.find('.color-select');
+            let patternFitContainer = row.find('.pattern-fit-badges');
+
+            sizeSelect.empty().append('<option value="">Select Size Set</option>').trigger('change');
+            colorSelect.empty().append('<option value="">Select Color</option>').trigger('change');
+            row.find('.pcs-input').val('');
+            row.find('.mrp-input').val('');
+            row.find('.total-pcs-display').text('-');
+            patternFitContainer.html('<span class="text-muted small font-italic">-</span>');
+
+            if (productId) {
+                $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function (data) {
+                    let pName = data.pattern_name || '';
+                    let fName = data.fitting_name || '';
+                    row.find('.pattern-val').val(data.pattern_id || '');
+                    row.find('.fitting-val').val(data.fitting_id || '');
+
+                    patternFitContainer.html(`
+                        <span class="erp-badge-info font-weight-bold text-dark" title="Pattern: ${pName}">${pName}</span>
+                        <span class="erp-badge-info text-muted" title="Fitting: ${fName}">${fName}</span>
+                    `);
+
+                    row.data('variants', data.variants);
+                    let uniqueSizeSets = [];
+                    data.variants.forEach(function (v) {
+                        if (!uniqueSizeSets.includes(v.size_set_id)) {
+                            sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                            uniqueSizeSets.push(v.size_set_id);
+                        }
+                    });
+                    sizeSelect.trigger('change');
+                    if (uniqueSizeSets.length === 1) {
+                        sizeSelect.val(uniqueSizeSets[0]).trigger('change');
+                    }
+                });
+            }
+        });
+
+        $(document).on('change', '.size-set-select', function () {
+            let row = $(this).closest('.stock-table-row');
+            let sizeSetId = $(this).val();
+            let colorSelect = row.find('.color-select');
+            colorSelect.empty().append('<option value="">Select Color</option>');
+
+            let variants = row.data('variants') || [];
+            let variant = variants.find(v => v.size_set_id == sizeSetId);
+            if (variant) {
+                variant.colors.forEach(function (c) {
+                    colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
+                });
+                row.find('.mrp-input').val(variant.mrp);
+            }
+            colorSelect.trigger('change');
+            if (variant && variant.colors.length === 1) {
+                colorSelect.val(variant.colors[0].id).trigger('change');
+            }
+
+            if (sizeSetId) {
+                $.get("{{ url('admin/inventory/get-size-set-info') }}/" + sizeSetId, function (data) {
+                    if (data && data.no_of_pcs) {
+                        row.find('.pcs-input').val(data.no_of_pcs);
+                        let boxes = parseInt(row.find('.boxes-input').val()) || 0;
+                        let total = boxes * data.no_of_pcs;
+                        row.find('.total-pcs-display').text(total > 0 ? total : '-');
+                        recalculateAll();
+                    }
+                });
+            } else {
+                row.find('.pcs-input').val('');
+                row.find('.total-pcs-display').text('-');
+                recalculateAll();
+            }
+        });
+
+        $(document).on('input change', '.boxes-input', function () {
+            let row = $(this).closest('.stock-table-row');
+            let boxes = parseInt($(this).val()) || 0;
+            let pcs = parseInt(row.find('.pcs-input').val()) || 0;
+            let total = boxes * pcs;
+            row.find('.total-pcs-display').text(total > 0 ? total : '-');
+            recalculateAll();
+        });
+
+        // Master Refresh Buttons
+        $(document).on('click', '.btn-refresh-master', function (e) {
+            e.preventDefault();
+            let btn = $(this);
+            let type = btn.data('type');
+            let row = btn.closest('.stock-table-row');
+            let icon = btn.find('i');
+            icon.addClass('fa-spin');
+
+            if (type === 'design') {
+                $.getJSON("{{ route('admin.inventory.master_data') }}", function (data) {
+                    icon.removeClass('fa-spin');
+                    if (data && data.products) {
+                        let html = '<option value="">Select Design</option>';
+                        data.products.forEach(function (p) {
+                            let sName = p.series ? p.series.name : '';
+                            html += `<option value="${p.id}" data-name="${p.name_of_garment}">${p.design_number} (${sName} ${p.name_of_garment})</option>`;
+                        });
+                        designOptionsHtml = html;
+                        $('.design-select').each(function() {
+                            let cur = $(this).val();
+                            $(this).html(html).val(cur).trigger('change.select2');
+                        });
+                        toastr.success('Designs refreshed');
+                    }
+                }).fail(() => icon.removeClass('fa-spin'));
+            } else if (type === 'warehouse') {
+                $.getJSON("{{ route('admin.inventory.master_data') }}", function (data) {
+                    icon.removeClass('fa-spin');
+                    if (data && data.storerooms) {
+                        let html = '<option value="">Warehouse</option>';
+                        data.storerooms.forEach(function (s) {
+                            html += `<option value="${s.id}">${s.name}</option>`;
+                        });
+                        warehouseOptionsHtml = html;
+                        $('.warehouse-select').each(function() {
+                            let cur = $(this).val();
+                            $(this).html(html).val(cur).trigger('change.select2');
+                        });
+                        toastr.success('Warehouses refreshed');
+                    }
+                }).fail(() => icon.removeClass('fa-spin'));
+            } else if (type === 'rack') {
+                let wId = row.find('.warehouse-select').val();
+                if (wId) {
+                    $.get("{{ url('admin/inventory/warehouse-stock/racks') }}/" + wId, function (data) {
+                        icon.removeClass('fa-spin');
+                        let select = row.find('.rack-select');
+                        let currentVal = select.val();
+                        let html = '<option value="">Select Rack</option>';
+                        data.forEach(function (r) {
+                            html += `<option value="${r.id}">${r.name}</option>`;
+                        });
+                        select.html(html).val(currentVal).trigger('change');
+                        toastr.success('Racks refreshed');
+                    }).fail(() => icon.removeClass('fa-spin'));
                 } else {
-                    // pattern, fitting, size, color are dependent on design.
-                    var designSelect = card.find('.design-select');
-                    if (designSelect.length && designSelect.val()) {
-                        designSelect.trigger('change');
-                        setTimeout(function() {
-                            icon.removeClass('fa-spin');
-                            toastr.success('Refreshed based on selected design');
-                        }, 800);
-                    } else {
-                        icon.removeClass('fa-spin');
-                        toastr.info('Please select a design first to load its variants');
-                    }
+                    icon.removeClass('fa-spin');
                 }
-            });
+            } else {
+                icon.removeClass('fa-spin');
+            }
+        });
 
-            // Quick Rack Add Handlers
-            $(document).on('click', '.btn-add-new-rack', function(e) {
-                e.preventDefault();
-                let card = $(this).closest('.inventory-item-card');
-                let warehouseId = card.find('.warehouse-select').val();
-                if (!warehouseId) {
-                    toastr.warning('Please select a warehouse first.');
-                    return;
+        // Quick Add Rack Modal
+        let currentTargetRackSelect = null;
+        $(document).on('click', '.btn-add-new-rack', function () {
+            let row = $(this).closest('.stock-table-row');
+            let warehouseSelect = row.find('.warehouse-select');
+            let warehouseId = warehouseSelect.val();
+            let warehouseName = warehouseSelect.find('option:selected').text();
+
+            if (!warehouseId) {
+                toastr.warning('Please select a Warehouse first.');
+                return;
+            }
+
+            currentTargetRackSelect = row.find('.rack-select');
+            $('#quickRackWarehouseId').val(warehouseId);
+            $('#quickRackWarehouseName').val(warehouseName);
+            $('#quickRackName').val('');
+            $('#quickRackCapacity').val('');
+            $('#quickRackModal').modal('show');
+        });
+
+        $('#btnSaveQuickRack').on('click', function () {
+            let form = $('#quickRackForm');
+            let name = $('#quickRackName').val();
+            if (!name) {
+                toastr.warning('Please enter a rack name.');
+                return;
+            }
+
+            let btn = $(this);
+            btn.prop('disabled', true).text('Saving...');
+
+            $.post("{{ route('admin.master.storeroom.rack.store') }}", form.serialize(), function (response) {
+                btn.prop('disabled', false).text('Save Rack');
+                $('#quickRackModal').modal('hide');
+                toastr.success('Rack created successfully.');
+
+                if (currentTargetRackSelect) {
+                    let newOption = new Option(response.name || name, response.id || response.rack?.id, true, true);
+                    currentTargetRackSelect.append(newOption).trigger('change');
                 }
-                $('#quick_rack_warehouse_id').val(warehouseId);
-                $('#quick_rack_name').val('');
-                $('#quick_rack_capacity').val('');
-                // Store reference to the card to refresh its rack dropdown after
-                $('#quickRackModal').data('targetCard', card);
-                $('#quickRackModal').modal('show');
+            }).fail(function (xhr) {
+                btn.prop('disabled', false).text('Save Rack');
+                toastr.error(xhr.responseJSON?.message || 'Error creating rack.');
             });
+        });
 
-            $('#btnSubmitQuickRack').on('click', function() {
-                let wId = $('#quick_rack_warehouse_id').val();
-                let name = $('#quick_rack_name').val();
-                let cap = $('#quick_rack_capacity').val();
-                let btn = $(this);
+        // =========================================================================
+        // FORM SUBMISSION & BULK BARCODE PRINTING
+        // =========================================================================
+        $('#addStockForm').on('submit', function (e) {
+            e.preventDefault();
 
-                if (!name) { toastr.error('Name is required'); return; }
+            let totalBoxes = parseInt($('#hudTotalBoxes').text()) || 0;
+            let totalPieces = parseInt($('#hudTotalPieces').text()) || 0;
 
-                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+            if (totalBoxes <= 0 || totalPieces <= 0) {
+                toastr.error('Please enter at least one valid stock row.');
+                return;
+            }
 
-                $.post("{{ route('admin.master.storeroom.rack.store') }}", {
-                    _token: "{{ csrf_token() }}",
-                    storeroom_id: wId,
-                    name: name,
-                    capacity: cap
-                }, function(res) {
-                    btn.prop('disabled', false).text('Save Rack');
-                    if (res.status === 'success') {
-                        toastr.success('Rack added successfully');
-                        $('#quickRackModal').modal('hide');
-                        let card = $('#quickRackModal').data('targetCard');
-                        if (card) {
-                            card.find('.warehouse-select').trigger('change');
-                            setTimeout(() => {
-                                card.find('.rack-select').val(res.rack.id).trigger('change.select2');
-                            }, 500);
+            let form = $(this);
+            let btnHud = $('#btnHudSubmit');
+            let btnBottom = $('#btnSubmitStock');
+            let origHudText = btnHud.html();
+            let origBottomText = btnBottom.html();
+
+            btnHud.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Uploading...');
+            btnBottom.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Uploading...');
+
+            $.ajax({
+                url: form.attr('action'),
+                method: 'POST',
+                data: form.serialize(),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                success: function (response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+
+                        let pdfForm = $('<form>', {
+                            action: "{{ route('admin.inventory.barcode-generator.generate-bulk-tspl') }}",
+                            method: 'POST',
+                            target: '_blank'
+                        }).append($('<input>', {
+                            type: 'hidden',
+                            name: '_token',
+                            value: "{{ csrf_token() }}"
+                        }));
+
+                        if (response.print_data) {
+                            response.print_data.forEach(data => {
+                                pdfForm.append($('<input>', {
+                                    type: 'hidden',
+                                    name: 'print_data[' + data.id + ']',
+                                    value: data.qty
+                                }));
+                            });
+                        } else if (response.ids) {
+                            response.ids.forEach(id => {
+                                pdfForm.append($('<input>', {
+                                    type: 'hidden',
+                                    name: 'ids[]',
+                                    value: id
+                                }));
+                            });
                         }
-                    } else {
-                        toastr.error(res.message || 'Error adding rack');
-                    }
-                }).fail(function(xhr) {
-                    btn.prop('disabled', false).text('Save Rack');
-                    let error = xhr.responseJSON ? (xhr.responseJSON.message || 'Failed to add rack') : 'Failed to add rack';
-                    toastr.error(error);
-                });
-            });
-            
 
-            // Handle + Add More Target within a card
-            $(document).on('click', '.btn-add-target', function() {
-                let card = $(this).closest('.inventory-item-card');
-                let container = card.find('.targets-container');
-                let firstWrapper = container.find('.target-row-wrapper').first();
-                
-                // Clone the first wrapper
-                let clone = firstWrapper.clone();
-                
-                // Increment global item count to ensure unique input names
-                itemCount++;
-                let newIdx = itemCount;
-                clone.attr('data-target-idx', newIdx);
-                
-                // Update names of all inputs/selects inside the clone to use the new index
-                clone.find('[name]').each(function() {
-                    let name = $(this).attr('name');
-                    // Replace products[0][field] or products[idx][field] with products[newIdx][field]
-                    if (name) {
-                        let newName = name.replace(/products\[\d+\]/, 'products[' + newIdx + ']');
-                        $(this).attr('name', newName);
+                        $('body').append(pdfForm);
+                        pdfForm.submit();
+                        pdfForm.remove();
+
+                        setTimeout(() => {
+                            window.location.href = "{{ route('admin.inventory.create') }}";
+                        }, 1200);
                     }
-                });
-                
-                // Remove existing select2 containers in clone and reset classes
-                clone.find('.select2-container').remove();
-                clone.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').removeAttr('aria-hidden').removeAttr('tabindex');
-                clone.find('option').removeAttr('data-select2-id');
-                
-                // Clear input values
-                clone.find('input').val('');
-                clone.find('select').val('');
-                
-                // Initialize Select2 on the clone
-                initSelect2(clone);
-                
-                // Show the remove button on the clone
-                clone.find('.btn-remove-target').show();
-                
-                // Append clone to container
-                container.append(clone);
-                
-                // Re-validate stock on change (if the new inputs change, we want to recalculate)
-                // But wait, they are just added, so we don't need to recalculate yet since total pieces is 0.
+                },
+                error: function (xhr) {
+                    btnHud.prop('disabled', false).html(origHudText);
+                    btnBottom.prop('disabled', false).html(origBottomText);
+                    let error = xhr.responseJSON ? xhr.responseJSON.message : 'Error adding stock.';
+                    toastr.error(error);
+                }
             });
-            
-            // Handle Remove Target within a card
-            $(document).on('click', '.btn-remove-target', function() {
-                let wrapper = $(this).closest('.target-row-wrapper');
-                let card = wrapper.closest('.inventory-item-card');
-                wrapper.remove();
-                validateStockAvailability(card);
-                calculateGlobalTotal();
-            });
-            
+        });
+
+        // Initialize with 1 Stock Row
+        $(document).ready(function () {
+            addItem();
         });
     </script>
-@endsection
+@endpush
