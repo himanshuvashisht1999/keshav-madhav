@@ -234,7 +234,6 @@ class AgentOrderController extends Controller
 
             DB::raw($discount_col)
         )
-            ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0')
             ->havingRaw('(SUM(domestic_inventories.total_boxes) > MAX(COALESCE(alloc.total_allocated, 0))) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)')
             ->orderBy('production_goods.design_number')
             ->paginate(20)
