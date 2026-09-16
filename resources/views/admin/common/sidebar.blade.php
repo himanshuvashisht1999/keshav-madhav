@@ -283,6 +283,15 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                         class="{{ str_contains($page_url, 'admin/inventory/create') ? 'nav-link active' : 'nav-link' }}"
                                         style="position:static;">
                                         <i class="far fa-circle nav-icon"></i>
+                                        <p>Self & Sample Stock</p>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.inventory.consume') }}"
+                                        class="{{ str_contains($page_url, 'admin/inventory/consume') ? 'nav-link active' : 'nav-link' }}"
+                                        style="position:static;">
+                                        <i class="far fa-circle nav-icon text-warning"></i>
                                         <p>Stock Consume</p>
                                     </a>
                                 </li>

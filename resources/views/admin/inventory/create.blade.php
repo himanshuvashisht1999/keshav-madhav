@@ -263,8 +263,8 @@
             <div class="container-fluid">
                 <header class="premium-page-header d-flex justify-content-between align-items-center">
                     <div>
-                        <h1 class="page-title">Inventory Stock Entry</h1>
-                        <p class="page-subtitle">Add new production goods to your warehouse stock.</p>
+                        <h1 class="page-title">Self & Sample Stock</h1>
+                        <p class="page-subtitle">Add self and sample production goods to your warehouse stock.</p>
                     </div>
                     <div class="header-actions">
                         <a href="{{ route('admin.inventory.create') }}" class="btn btn-primary shadow-sm"><i class="fas fa-plus mr-1"></i> Create New</a>
@@ -285,7 +285,6 @@
                             <select name="source_type" id="sourceType" class="form-control select2">
                                 <option value="production">Self Production</option>
                                 <option value="sample">Sample Production</option>
-                                <option value="consume">Stock Consume</option>
                             </select>
                         </div>
                     </div>
@@ -306,116 +305,6 @@
                                 </div>
                             </div>
                             <div class="card-body-premium">
-                                <!-- Hidden Consume Selection Row -->
-                                <div class="consume-selection-row mb-4 p-3 bg-light rounded"
-                                    style="display: none; border: 1px dashed var(--primary-color);">
-                                    <h6 class="font-weight-bold text-primary mb-2"><i class="fas fa-search mr-1"></i> Search
-                                        Domestic Inventory</h6>
-                                    <p class="small text-muted mb-3">Selecting from here will <b>subtract</b> from this
-                                        source
-                                        and <b>add</b> to your new entry below.</p>
-                                    <input type="hidden" name="products[0][consume_source_id]" class="consume-source-id">
-                                    <div class="row">
-                                        <div class="col-md-3">
-                                            <label class="label-premium text-primary">Design No</label>
-                                            <select class="form-control select2 consume-design-select">
-                                                <option value="">Select Design</option>
-                                                @foreach($products as $product)
-                                                    <option value="{{ $product->id }}">
-                                                        {{ $product->design_number }} ({{ $product->series->name ?? '' }}
-                                                        {{ $product->name_of_garment }})
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="label-premium text-primary">Pattern</label>
-                                            <select class="form-control select2 consume-pattern-select">
-                                                <option value="">Pattern</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="label-premium text-primary">Fitting</label>
-                                            <select class="form-control select2 consume-fitting-select">
-                                                <option value="">Fitting</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="label-premium text-primary">Warehouse</label>
-                                            <select class="form-control select2 consume-warehouse-select">
-                                                <option value="">Warehouse</option>
-                                                @foreach($storerooms as $room)
-                                                    <option value="{{ $room->id }}">{{ $room->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="label-premium text-primary">Rack</label>
-                                            <select class="form-control select2 consume-rack-select">
-                                                <option value="">Rack</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="row mt-3">
-                                        <div class="col-md-3">
-                                            <label class="label-premium text-primary">Size Set</label>
-                                            <select class="form-control select2 consume-size-set-select">
-                                                <option value="">Size Set</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="label-premium text-primary">Color</label>
-                                            <select class="form-control select2 consume-color-select">
-                                                <option value="">Color</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6 d-flex align-items-end justify-content-end">
-                                            <div class="mr-4 text-right">
-                                                <label class="label-premium text-success d-block mb-0">TOTAL AVAILABLE PIECES</label>
-                                                <div class="consume-available-pieces-display font-weight-bold text-success"
-                                                    style="font-size: 1.5rem; line-height: 1;">-</div>
-                                            </div>
-                                            <div class="mr-4 text-right">
-                                                <label class="label-premium text-success d-block mb-0">AVAILABLE BOXES</label>
-                                                <div class="consume-available-display font-weight-bold text-success"
-                                                    style="font-size: 1.5rem; line-height: 1;">-</div>
-                                            </div>
-                                            <div class="mr-4 text-right">
-                                                <label class="label-premium text-primary d-block mb-0">BOXES TO TRANSFER</label>
-                                                <input type="number" class="form-control form-control-premium text-primary font-weight-bold consume-transfer-boxes-input text-right" style="font-size: 1.3rem; height: auto; padding: 2px 5px; width: 100px; margin-left: auto;" min="1" placeholder="Boxes">
-                                            </div>
-                                            <div class="mr-4 text-right">
-                                                <label class="label-premium text-primary d-block mb-0">SOURCE PIECES</label>
-                                                <div class="consume-source-pieces-display font-weight-bold text-primary"
-                                                    style="font-size: 1.5rem; line-height: 1;">-</div>
-                                                <input type="hidden" class="consume-source-pcs-hidden">
-                                            </div>
-                                            <div class="mr-2 text-right">
-                                                <label class="label-premium text-info d-block mb-0">GENERATED PIECES</label>
-                                                <div class="consume-transfer-pieces-display font-weight-bold text-info"
-                                                    style="font-size: 1.5rem; line-height: 1;">-</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <!-- Size Breakdown Summary -->
-                                    <div class="size-breakdown-container mt-3 px-3 py-2 bg-light border rounded" style="display: none;">
-                                        <h6 class="text-primary font-weight-bold mb-2 border-bottom pb-1">Size Breakdown Comparison</h6>
-                                        <div class="row">
-                                            <div class="col-md-5">
-                                                <strong class="text-secondary">Source Sizes</strong>
-                                                <ul class="list-unstyled mb-0 source-size-list" style="font-size: 0.9rem;"></ul>
-                                            </div>
-                                            <div class="col-md-5">
-                                                <strong class="text-secondary">Generated Sizes</strong>
-                                                <ul class="list-unstyled mb-0 generated-size-list" style="font-size: 0.9rem;"></ul>
-                                            </div>
-                                            <div class="col-md-2 d-flex align-items-center">
-                                                <span class="size-match-status badge badge-pill w-100 py-2"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <div class="targets-container">
                                     <div class="target-row-wrapper pb-3 mb-3 border-bottom" data-target-idx="0">
                                 <!-- Row 1: Primary Details -->
@@ -676,89 +565,6 @@
                                             </div>
                                         </div>
                                         <div class="card-body-premium">
-                                            <div class="consume-selection-row mb-4 p-3 bg-light rounded" style="display: none; border: 1px dashed var(--primary-color);">
-                                                <h6 class="font-weight-bold text-primary mb-2"><i class="fas fa-search mr-1"></i> Search Domestic Inventory</h6>
-                                                <p class="small text-muted mb-3">Selecting from here will <b>subtract</b> from this source and <b>add</b> to your new entry below.</p>
-                                                <input type="hidden" name="products[${idx}][consume_source_id]" class="consume-source-id">
-                                                <div class="row">
-                                                    <div class="col-md-3">
-                                                        <label class="label-premium text-primary">Design No</label>
-                                                        <select class="form-control select2 consume-design-select">
-                                                            <option value="">Select Design</option>
-                                                            @foreach($products as $product)
-                                                                <option value="{{ $product->id }}">
-                                                                    {{ $product->design_number }} ({{ $product->series->name ?? '' }} {{ $product->name_of_garment }})
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-2">
-                                                        <label class="label-premium text-primary">Pattern</label>
-                                                        <select class="form-control select2 consume-pattern-select">
-                                                            <option value="">Pattern</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-2">
-                                                        <label class="label-premium text-primary">Fitting</label>
-                                                        <select class="form-control select2 consume-fitting-select">
-                                                            <option value="">Fitting</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-2">
-                                                        <label class="label-premium text-primary">Warehouse</label>
-                                                        <select class="form-control select2 consume-warehouse-select">
-                                                            <option value="">Warehouse</option>
-                                                            @foreach($storerooms as $room)
-                                                                <option value="{{ $room->id }}">{{ $room->name }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-3">
-                                                        <label class="label-premium text-primary">Rack</label>
-                                                        <select class="form-control select2 consume-rack-select">
-                                                            <option value="">Rack</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div class="row mt-3">
-                                                    <div class="col-md-3">
-                                                        <label class="label-premium text-primary">Size Set</label>
-                                                        <select class="form-control select2 consume-size-set-select">
-                                                            <option value="">Size Set</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-3">
-                                                        <label class="label-premium text-primary">Color</label>
-                                                        <select class="form-control select2 consume-color-select">
-                                                            <option value="">Color</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-6 d-flex align-items-end justify-content-end">
-                                                        <div class="mr-4 text-right">
-                                                            <label class="label-premium text-success d-block mb-0">TOTAL AVAILABLE PIECES</label>
-                                                            <div class="consume-available-pieces-display font-weight-bold text-success" style="font-size: 1.5rem; line-height: 1;">-</div>
-                                                        </div>
-                                                        <div class="mr-4 text-right">
-                                                            <label class="label-premium text-success d-block mb-0">AVAILABLE BOXES</label>
-                                                            <div class="consume-available-display font-weight-bold text-success" style="font-size: 1.5rem; line-height: 1;">-</div>
-                                                        </div>
-                                                        <div class="mr-4 text-right">
-                                                            <label class="label-premium text-primary d-block mb-0">BOXES TO TRANSFER</label>
-                                                            <input type="number" class="form-control form-control-premium text-primary font-weight-bold consume-transfer-boxes-input text-right" style="font-size: 1.3rem; height: auto; padding: 2px 5px; width: 100px; margin-left: auto;" min="1" placeholder="Boxes">
-                                                        </div>
-                                                        <div class="mr-4 text-right">
-                                                            <label class="label-premium text-primary d-block mb-0">SOURCE PIECES</label>
-                                                            <div class="consume-source-pieces-display font-weight-bold text-primary" style="font-size: 1.5rem; line-height: 1;">-</div>
-                                                            <input type="hidden" class="consume-source-pcs-hidden">
-                                                        </div>
-                                                        <div class="mr-2 text-right">
-                                                            <label class="label-premium text-info d-block mb-0">GENERATED PIECES</label>
-                                                            <div class="consume-transfer-pieces-display font-weight-bold text-info" style="font-size: 1.5rem; line-height: 1;">-</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
                                             <div class="targets-container">
                                                 <div class="target-row-wrapper pb-3 mb-3 border-bottom" data-target-idx="${idx}">
                                             <div class="row">

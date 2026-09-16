@@ -780,6 +780,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/delete-boxes', [AdminInventoryController::class, 'deleteBoxes'])->name('delete_boxes');
             Route::get('/show', [AdminInventoryController::class, 'show'])->name('show');
             Route::get('/create', [AdminInventoryController::class, 'create'])->name('create');
+            Route::get('/consume', [AdminInventoryController::class, 'consume'])->name('consume');
             Route::get('/purchase', [AdminInventoryController::class, 'purchase'])->name('purchase');
             Route::get('/get-po-items/{id}', [AdminInventoryController::class, 'getProductionPOItems'])->name('get_po_items');
             Route::get('/purchase-list', [AdminInventoryController::class, 'purchaseList'])->name('purchase_list');

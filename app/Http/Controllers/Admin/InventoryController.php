@@ -551,6 +551,21 @@ class InventoryController extends Controller
         return view('admin.inventory.create', compact('products', 'colors', 'fittings', 'patterns', 'size_sets', 'storerooms', 'vendors', 'customers'));
     }
 
+    public function consume()
+    {
+        $products = \App\Models\ProductionGoods::with('series')->get();
+        $colors = \App\Models\MasterColor::all();
+        $fittings = \App\Models\MasterProductFitting::all();
+        $patterns = \App\Models\MasterDesignPattern::all();
+        $size_sets = \App\Models\MasterSizeMeasurement::all();
+        $storerooms = \App\Models\Storeroom::where('status', '1')->get();
+
+        $vendors = \App\Models\Vendor::where('status', '1')->get();
+        $customers = \App\Models\MasterCustomer::where('status', '1')->get();
+
+        return view('admin.inventory.consume', compact('products', 'colors', 'fittings', 'patterns', 'size_sets', 'storerooms', 'vendors', 'customers'));
+    }
+
     public function getMasterData()
     {
         $products = \App\Models\ProductionGoods::with('series')->get();
@@ -651,22 +666,50 @@ class InventoryController extends Controller
 
             // Pre-calculate and deduct consumed sources
             $consumedSources = [];
-            foreach ($request->products as $item) {
-                if (isset($item['consume_source_id']) && !empty($item['consume_source_id'])) {
-                    $sourceId = $item['consume_source_id'];
-                    if (!isset($consumedSources[$sourceId])) {
-                        $consumedSources[$sourceId] = [
-                            'model' => DomesticInventory::find($sourceId),
-                            'total_pieces_consumed' => 0,
-                            'generated_items' => []
-                        ];
+
+            if ($request->has('consumed_sources') && is_array($request->consumed_sources)) {
+                foreach ($request->consumed_sources as $cs) {
+                    $sourceId = $cs['source_id'] ?? null;
+                    $boxes = (int) ($cs['boxes'] ?? 0);
+                    if ($sourceId && $boxes > 0) {
+                        $model = DomesticInventory::find($sourceId);
+                        if ($model) {
+                            $sourceQuantity = $model->quantity > 0 ? $model->quantity : 1;
+                            $consumedSources[$sourceId] = [
+                                'model' => $model,
+                                'boxes_to_deduct' => $boxes,
+                                'total_pieces_consumed' => $boxes * $sourceQuantity,
+                                'generated_items' => []
+                            ];
+                        }
                     }
-                    $consumedSources[$sourceId]['total_pieces_consumed'] += ($item['total_boxes'] * $item['pieces_per_box']);
-                    $consumedSources[$sourceId]['generated_items'][] = $item;
+                }
+            } elseif ($request->has('products') && is_array($request->products)) {
+                foreach ($request->products as $item) {
+                    if (isset($item['consume_source_id']) && !empty($item['consume_source_id'])) {
+                        $sourceId = $item['consume_source_id'];
+                        if (!isset($consumedSources[$sourceId])) {
+                            $model = DomesticInventory::find($sourceId);
+                            $consumedSources[$sourceId] = [
+                                'model' => $model,
+                                'boxes_to_deduct' => 0,
+                                'total_pieces_consumed' => 0,
+                                'generated_items' => []
+                            ];
+                        }
+                        $consumedSources[$sourceId]['total_pieces_consumed'] += ($item['total_boxes'] * $item['pieces_per_box']);
+                        $sourceQuantity = $consumedSources[$sourceId]['model'] ? ($consumedSources[$sourceId]['model']->quantity > 0 ? $consumedSources[$sourceId]['model']->quantity : 1) : 1;
+                        $consumedSources[$sourceId]['boxes_to_deduct'] = ceil($consumedSources[$sourceId]['total_pieces_consumed'] / $sourceQuantity);
+                        $consumedSources[$sourceId]['generated_items'][] = $item;
+                    }
                 }
             }
 
             if ($source_type === 'consume') {
+                if (empty($consumedSources)) {
+                    throw new \Exception("Please select at least one source box to consume.");
+                }
+
                 $sizeSetCache = [];
                 $getSizeSetSizes = function ($sizeSetId) use (&$sizeSetCache) {
                     if (!isset($sizeSetCache[$sizeSetId])) {
@@ -682,46 +725,51 @@ class InventoryController extends Controller
                     return $sizeSetCache[$sizeSetId];
                 };
 
-                // Validate Exact Size Matching
+                // Validate Exact Size Matching across all sources & all generated targets
+                $sourceTally = [];
+                $totalSourcePieces = 0;
                 foreach ($consumedSources as $sourceId => $data) {
                     $source = $data['model'];
                     if (!$source) continue;
 
-                    $sourceQuantity = $source->quantity > 0 ? $source->quantity : 1;
-                    $boxesToDeduct = ceil($data['total_pieces_consumed'] / $sourceQuantity);
-
-                    // Tally Source Sizes
-                    $sourceTally = [];
+                    $boxesToDeduct = $data['boxes_to_deduct'];
                     $sourceSizeData = $getSizeSetSizes($source->size_set_id);
                     foreach ($sourceSizeData['sizes'] as $sizeName) {
                         $sizeName = trim($sizeName);
                         $sourceTally[$sizeName] = ($sourceTally[$sizeName] ?? 0) + ($boxesToDeduct * $sourceSizeData['pieces_per_size']);
                     }
+                    $totalSourcePieces += $data['total_pieces_consumed'];
+                }
 
-                    // Tally Generated Sizes
-                    $genTally = [];
-                    foreach ($data['generated_items'] as $item) {
-                        $genSizeData = $getSizeSetSizes($item['size_set_id']);
-                        foreach ($genSizeData['sizes'] as $sizeName) {
-                            $sizeName = trim($sizeName);
-                            $genTally[$sizeName] = ($genTally[$sizeName] ?? 0) + ($item['total_boxes'] * $genSizeData['pieces_per_size']);
-                        }
+                // Tally Generated Sizes across all targets
+                $genTally = [];
+                $totalGenPieces = 0;
+                foreach ($request->products as $item) {
+                    $genSizeData = $getSizeSetSizes($item['size_set_id']);
+                    foreach ($genSizeData['sizes'] as $sizeName) {
+                        $sizeName = trim($sizeName);
+                        $genTally[$sizeName] = ($genTally[$sizeName] ?? 0) + ($item['total_boxes'] * $genSizeData['pieces_per_size']);
                     }
+                    $totalGenPieces += ($item['total_boxes'] * $item['pieces_per_box']);
+                }
 
-                    // Compare tallies
-                    foreach ($sourceTally as $sizeName => $reqQty) {
-                        $genQty = $genTally[$sizeName] ?? 0;
-                        if ($reqQty != $genQty) {
-                            throw new \Exception("Size mismatch! For consumed Design " . $source->barcode . ", size '$sizeName' requires $reqQty pieces, but you generated $genQty pieces.");
-                        }
-                        unset($genTally[$sizeName]); // Mark as checked
+                if ($totalSourcePieces != $totalGenPieces) {
+                    throw new \Exception("Total piece mismatch! Consumed pieces: $totalSourcePieces, Generated pieces: $totalGenPieces. They must perfectly match.");
+                }
+
+                // Compare tallies
+                foreach ($sourceTally as $sizeName => $reqQty) {
+                    $genQty = $genTally[$sizeName] ?? 0;
+                    if ($reqQty != $genQty) {
+                        throw new \Exception("Size mismatch! For size '$sizeName', consumed sources require $reqQty pieces, but generated products have $genQty pieces.");
                     }
+                    unset($genTally[$sizeName]); // Mark as checked
+                }
 
-                    // Check for any extra sizes generated that weren't in source
-                    foreach ($genTally as $sizeName => $genQty) {
-                        if ($genQty > 0) {
-                            throw new \Exception("Size mismatch! For consumed Design " . $source->barcode . ", you generated $genQty extra pieces of size '$sizeName' which did not exist in the source boxes.");
-                        }
+                // Check for any extra sizes generated that weren't in source
+                foreach ($genTally as $sizeName => $genQty) {
+                    if ($genQty > 0) {
+                        throw new \Exception("Size mismatch! You generated $genQty extra pieces of size '$sizeName' which did not exist in the consumed sources.");
                     }
                 }
             }
@@ -730,8 +778,7 @@ class InventoryController extends Controller
             foreach ($consumedSources as $sourceId => $data) {
                 $source = $data['model'];
                 if ($source) {
-                    $sourceQuantity = $source->quantity > 0 ? $source->quantity : 1;
-                    $boxesToDeduct = ceil($data['total_pieces_consumed'] / $sourceQuantity);
+                    $boxesToDeduct = $data['boxes_to_deduct'];
                     
                     if ($source->total_boxes < $boxesToDeduct) {
                         throw new \Exception("Insufficient stock in source for Design: " . $source->barcode . " (Needed: $boxesToDeduct, Available: {$source->total_boxes})");
@@ -746,10 +793,14 @@ class InventoryController extends Controller
                 }
             }
 
+            $firstConsumedSource = !empty($consumedSources) ? reset($consumedSources)['model'] : null;
+
             foreach ($request->products as $item) {
                 $source = null;
                 if (isset($item['consume_source_id']) && !empty($item['consume_source_id'])) {
                     $source = $consumedSources[$item['consume_source_id']]['model'] ?? null;
+                } else {
+                    $source = $firstConsumedSource;
                 }
 
                 // Consistent Barcode Format: D{id}S{id}C{id}
@@ -846,6 +897,12 @@ class InventoryController extends Controller
             return redirect()->route('admin.inventory.index')->with('success', 'Stock added successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error adding stock: ' . $e->getMessage()
+                ], 422);
+            }
             return redirect()->back()->with('error', 'Error adding stock: ' . $e->getMessage())->withInput();
         }
     }
