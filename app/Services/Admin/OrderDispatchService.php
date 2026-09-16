@@ -5,6 +5,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Auth;
 use App\Models\OrderDispatch;
+use App\Models\OrderDispatchPurchase;
+use App\Models\DomesticInventoryPurchase;
+use App\Models\DomesticInventoryHistory;
+use App\Models\DomesticInventory;
 use App\Models\PackingCarton;
 use App\Models\PackingCartonsDetails;
 use App\Models\OrderDispatchDetails;
@@ -41,40 +45,68 @@ class OrderDispatchService
 
     public function store(Request $request)
     {
-
         DB::beginTransaction();
         try {
-            //    dd($request->all());
+            $selectedCartons = !empty($request->cartons) && is_array($request->cartons) ? $request->cartons : [];
+            $selectedPurchaseItems = !empty($request->purchase_items) && is_array($request->purchase_items) ? $request->purchase_items : [];
 
-            //  Safety check
-            if (empty($request->cartons) || !is_array($request->cartons)) {
+            // Safety check: at least one carton or purchase item
+            if (empty($selectedCartons) && empty($selectedPurchaseItems)) {
                 return [
                     'status_code' => 0,
-                    'message' => 'No cartons selected for dispatch'
+                    'message' => 'No cartons or purchase items selected for dispatch'
                 ];
             }
 
             // Guard against duplicate carton dispatch: Check if already in order_dispatch_details
-            $alreadyInDetails = OrderDispatchDetails::whereIn('carton_packing_id', $request->cartons)
-                ->pluck('carton_packing_id')
-                ->toArray();
-            if (!empty($alreadyInDetails)) {
-                return [
-                    'status_code' => 0,
-                    'message' => 'Carton(s) #' . implode(', #', $alreadyInDetails) . ' have already been dispatched. Duplicate dispatch prevented.'
-                ];
+            if (!empty($selectedCartons)) {
+                $alreadyInDetails = OrderDispatchDetails::whereIn('carton_packing_id', $selectedCartons)
+                    ->pluck('carton_packing_id')
+                    ->toArray();
+                if (!empty($alreadyInDetails)) {
+                    return [
+                        'status_code' => 0,
+                        'message' => 'Carton(s) #' . implode(', #', $alreadyInDetails) . ' have already been dispatched. Duplicate dispatch prevented.'
+                    ];
+                }
+
+                $alreadyDispatched = PackingCarton::whereIn('id', $selectedCartons)
+                    ->where('status', 2)
+                    ->pluck('id')
+                    ->toArray();
+                if (!empty($alreadyDispatched)) {
+                    return [
+                        'status_code' => 0,
+                        'message' => 'Carton(s) #' . implode(', #', $alreadyDispatched) . ' are already marked as dispatched.'
+                    ];
+                }
             }
 
-            // Guard against duplicate carton dispatch: Check if already status = 2
-            $alreadyDispatched = PackingCarton::whereIn('id', $request->cartons)
-                ->where('status', 2)
-                ->pluck('id')
-                ->toArray();
-            if (!empty($alreadyDispatched)) {
-                return [
-                    'status_code' => 0,
-                    'message' => 'Carton(s) #' . implode(', #', $alreadyDispatched) . ' are already marked as dispatched.'
-                ];
+            // Guard against duplicate purchase items
+            if (!empty($selectedPurchaseItems)) {
+                $historyIds = [];
+                foreach ($selectedPurchaseItems as $pi) {
+                    if (!empty($pi['history_id'])) {
+                        $historyIds[] = $pi['history_id'];
+                    }
+                }
+                if (!empty($historyIds)) {
+                    $alreadyDispatchedPur = OrderDispatchPurchase::whereIn('purchase_history_id', $historyIds)
+                        ->pluck('purchase_history_id')
+                        ->toArray();
+                    if (!empty($alreadyDispatchedPur)) {
+                        return [
+                            'status_code' => 0,
+                            'message' => 'Some selected purchase items have already been dispatched.'
+                        ];
+                    }
+                }
+            }
+
+            // Count total units
+            $totalPurchaseBoxes = 0;
+            foreach ($selectedPurchaseItems as $pi) {
+                $totalPurchaseBoxes += intval($pi['boxes'] ?? 0);
             }
 
             // ================= MAIN DISPATCH =================
@@ -84,7 +116,7 @@ class OrderDispatchService
             $data_save->dispatch_date = $request->dispatch_date ?? now();
             $data_save->bill_number = $request->bill_number;
             $data_save->company_id = $request->company_id;
-            $data_save->total_quantity = count($request->cartons);
+            $data_save->total_quantity = count($selectedCartons) + $totalPurchaseBoxes;
             $data_save->gst_percentage = $request->gst_percentage ?? 0.00;
             $data_save->gst_amount = $request->gst_amount ?? 0.00;
             $data_save->discount_percentage = $request->discount_percentage ?? 0.00;
@@ -105,49 +137,98 @@ class OrderDispatchService
                 $customer->save();
             }
 
-            // ================= UPDATE ITEM PRICES (GLOBAL SET-WISE) =================
-            if (!empty($request->global_prices) || !empty($request->global_mrps)) {
-                foreach ($request->global_prices ?? [] as $setId => $newPrice) {
-                    $newMrp = $request->global_mrps[$setId] ?? null;
-                    $detailIds = \App\Models\OrderProductSetDetail::where('order_products_set_id', $setId)->pluck('id');
-                    
-                    $updateData = ['selling_price' => (float)$newPrice];
-                    if ($newMrp !== null && $newMrp !== '') {
-                        $updateData['mrp'] = (float)$newMrp;
+            // ================= UPDATE CARTONS (IF ANY) =================
+            if (!empty($selectedCartons)) {
+                if (!empty($request->global_prices) || !empty($request->global_mrps)) {
+                    foreach ($request->global_prices ?? [] as $setId => $newPrice) {
+                        $newMrp = $request->global_mrps[$setId] ?? null;
+                        $detailIds = \App\Models\OrderProductSetDetail::where('order_products_set_id', $setId)->pluck('id');
+                        
+                        $updateData = ['selling_price' => (float)$newPrice];
+                        if ($newMrp !== null && $newMrp !== '') {
+                            $updateData['mrp'] = (float)$newMrp;
+                        }
+                        
+                        PackingItem::whereIn('packing_carton_id', $selectedCartons)
+                            ->whereIn('size_id', $detailIds)
+                            ->update($updateData);
                     }
-                    
-                    \App\Models\PackingItem::whereIn('packing_carton_id', $request->cartons)
-                        ->whereIn('size_id', $detailIds)
-                        ->update($updateData);
+                }
+
+                $detailsData = [];
+                foreach ($selectedCartons as $cartonId) {
+                    $detailsData[] = [
+                        'order_dispatch_id' => $data_save->id,
+                        'carton_packing_id' => $cartonId,
+                        'status' => 1,
+                    ];
+                }
+                OrderDispatchDetails::insert($detailsData);
+
+                PackingCarton::whereIn('id', $selectedCartons)
+                    ->update([
+                        'status' => 2
+                    ]);
+            }
+
+            // ================= SAVE PURCHASE ITEMS (IF ANY) =================
+            if (!empty($selectedPurchaseItems)) {
+                foreach ($selectedPurchaseItems as $pi) {
+                    $historyId = $pi['history_id'] ?? null;
+                    if (!$historyId) continue;
+                    $history = DomesticInventoryHistory::find($historyId);
+                    if (!$history) continue;
+
+                    $boxes = intval($pi['boxes'] ?? $history->box_quantity);
+                    $piecesPerBox = intval($history->pieces_per_box > 0 ? $history->pieces_per_box : 1);
+                    $totalPieces = $boxes * $piecesPerBox;
+                    $sellingPrice = floatval($pi['price'] ?? 0);
+                    $mrp = floatval($pi['mrp'] ?? $history->mrp ?? 0);
+                    $totalAmount = round($sellingPrice * $totalPieces, 2);
+
+                    OrderDispatchPurchase::create([
+                        'order_dispatch_id' => $data_save->id,
+                        'domestic_inventory_purchase_id' => $history->purchase_id,
+                        'purchase_history_id' => $history->id,
+                        'product_id' => $history->new_product_id,
+                        'color_id' => $history->new_color_id,
+                        'size_set_id' => $history->new_size_set_id,
+                        'rack_id' => $history->new_rack_id,
+                        'boxes_count' => $boxes,
+                        'pieces_per_box' => $piecesPerBox,
+                        'total_pieces' => $totalPieces,
+                        'mrp' => $mrp,
+                        'selling_price' => $sellingPrice,
+                        'total_amount' => $totalAmount,
+                        'status' => 1
+                    ]);
+
+                    // Deduct from DomesticInventory
+                    $inv = DomesticInventory::where('product_id', $history->new_product_id)
+                        ->where('color_id', $history->new_color_id)
+                        ->where('size_set_id', $history->new_size_set_id)
+                        ->where(function($q) use ($history) {
+                            if ($history->new_rack_id) {
+                                $q->where('rack_id', $history->new_rack_id);
+                            }
+                        })
+                        ->where('total_boxes', '>', 0)
+                        ->first();
+
+                    if ($inv) {
+                        $inv->total_boxes = max(0, $inv->total_boxes - $boxes);
+                        $inv->save();
+                    }
                 }
             }
 
-            // ================= DETAILS =================
-            $detailsData = [];
-
-            foreach ($request->cartons as $cartonId) {
-                $detailsData[] = [
-                    'order_dispatch_id' => $data_save->id,
-                    'carton_packing_id' => $cartonId,
-                    'status' => 1,
-                ];
-            }
-
-            OrderDispatchDetails::insert($detailsData);
-
-            // ================= UPDATE CARTON STATUS =================
-            PackingCarton::whereIn('id', $request->cartons)
-                ->update([
-                    'status' => 2
-                ]);
-
-            $pack_data = getOrderDispatchData($data_save->main_order_id);
+            $pack_data = $this->getOrderDispatchData($data_save->main_order_id);
             if (!empty($pack_data) && $pack_data['remaining'] == 0) {
                 OrderMain::where('id', $data_save->main_order_id)
                     ->update([
                         'status' => 3
                     ]);
-            } elseif (!empty($pack_data) && ($pack_data['remaining'] != 0 && $pack_data['packed'] > 0)) {
+            } elseif (!empty($pack_data) && ($pack_data['packed'] > 0 || !empty($selectedPurchaseItems))) {
                 OrderMain::where('id', $data_save->main_order_id)
                     ->update([
                         'status' => 2   // partial
@@ -177,6 +258,12 @@ class OrderDispatchService
 
         $order_dispatch_model = OrderDispatch::with([
             'dispatchDetails:id,order_dispatch_id,carton_packing_id',
+            'orderDispatchPurchases.product',
+            'orderDispatchPurchases.color',
+            'orderDispatchPurchases.sizeSet',
+            'orderDispatchPurchases.rack.storeroom',
+            'orderDispatchPurchases.purchase.productionPO',
+            'orderDispatchPurchases.purchase.vendor',
             'orderMain.customer',
         ])->where('id', $request->id)->first();
 
@@ -312,7 +399,60 @@ class OrderDispatchService
              $consolidatedGroupedItems[$k]['box_count'] = count(array_unique($group['carton_ids']));
         }
 
-        $order_dispatch_data['total_cartons'] = count($cartons_data);
+        // Process outside vendor purchase items
+        if ($order_dispatch_model->orderDispatchPurchases && count($order_dispatch_model->orderDispatchPurchases) > 0) {
+            foreach ($order_dispatch_model->orderDispatchPurchases as $odp) {
+                $qty = $odp->total_pieces;
+                $price = (float)$odp->selling_price;
+                $design = $odp->product ? ($odp->product->series_name ?? $odp->product->design_number ?? 'PO Product') : 'PO Product';
+                $color = $odp->color ? $odp->color->name : 'N/A';
+                $sizeSet = $odp->sizeSet ? $odp->sizeSet->name : 'N/A';
+                $vendorName = $odp->purchase && $odp->purchase->vendor ? ($odp->purchase->vendor->company_name ?? $odp->purchase->vendor->name) : 'Vendor';
+                $poNumber = $odp->purchase && $odp->purchase->productionPO ? $odp->purchase->productionPO->po_number : 'PO';
+
+                $total_items_dispatch += $qty;
+                $total_dispatch_amount += ($qty * $price);
+
+                $groupId = $design . '_' . $color . '_' . $sizeSet . '_' . $price;
+                if (!isset($consolidatedGroupedItems[$groupId])) {
+                    $consolidatedGroupedItems[$groupId] = [
+                        'product_name' => $design,
+                        'color_name' => $color,
+                        'size_set_name' => $sizeSet,
+                        'selling_price' => $price,
+                        'total_qty' => 0,
+                        'box_count' => 0,
+                        'carton_count' => 0,
+                        'carton_ids' => [],
+                        'box_ids' => []
+                    ];
+                }
+                $consolidatedGroupedItems[$groupId]['total_qty'] += $qty;
+                $consolidatedGroupedItems[$groupId]['box_count'] += $odp->boxes_count;
+                $consolidatedGroupedItems[$groupId]['carton_count'] += $odp->boxes_count;
+
+                $finalCartonData[] = [
+                    'id' => 'PO-' . $odp->id,
+                    'carton_no' => 'Box (' . $vendorName . ')',
+                    'storeroom' => $odp->rack && $odp->rack->storeroom ? $odp->rack->storeroom->name : 'Vendor Stock',
+                    'rack' => $odp->rack ? $odp->rack->name : 'Outside Purchase',
+                    'status' => 2,
+                    'total_items' => $qty,
+                    'sets' => [
+                        [
+                            'design' => $design,
+                            'color' => $color,
+                            'size_set' => $sizeSet,
+                            'price' => $price,
+                            'total_qty' => $qty,
+                            'sizes_text' => [$odp->boxes_count . " Boxes x " . $odp->pieces_per_box . " pcs"]
+                        ]
+                    ]
+                ];
+            }
+        }
+
+        $order_dispatch_data['total_cartons'] = count($finalCartonData);
         $order_dispatch_data['total_items_dispatch'] = $total_items_dispatch;
         $order_dispatch_data['total_dispatch_amount'] = $total_dispatch_amount;
 
@@ -373,7 +513,10 @@ class OrderDispatchService
             'dispatchCartons.items.detail.orderProductSet.colors',
             'dispatchCartons.items.detail.orderProductSet.size_measurement', 
         ])
-            ->where('sku', $search_order_no)
+            ->where(function($q) use ($search_order_no) {
+                $q->where('sku', $search_order_no)
+                  ->orWhere('id', $search_order_no);
+            })
             ->where('order_type', 'corporate')
             ->whereIn('status', [1, 2])
             ->orderBy('id', 'asc')
@@ -453,14 +596,96 @@ class OrderDispatchService
                 ];
             }
 
+            // Fetch outside vendor purchases received for this order
+            $poPurchases = DomesticInventoryPurchase::whereHas('productionPO', function ($q) use ($val) {
+                $q->where('order_main_id', $val->id);
+            })->with([
+                'productionPO',
+                'vendor',
+                'items' => function ($q) {
+                    $q->whereNotIn('id', function ($sub) {
+                        $sub->select('purchase_history_id')
+                            ->from('order_dispatch_purchases')
+                            ->whereNotNull('purchase_history_id');
+                    })->with(['newProduct', 'newColor', 'newSizeSet', 'newRack.storeroom']);
+                }
+            ])->get();
+
+            $purchasesData = [];
+            foreach ($poPurchases as $poPur) {
+                foreach ($poPur->items as $hItem) {
+                    $prodName = $hItem->newProduct ? ($hItem->newProduct->series_name ?? $hItem->newProduct->name ?? 'N/A') : 'N/A';
+                    $designNo = $hItem->newProduct ? ($hItem->newProduct->design_number ?? 'N/A') : 'N/A';
+                    $colorName = $hItem->newColor ? $hItem->newColor->name : 'N/A';
+                    $sizeSetName = $hItem->newSizeSet ? $hItem->newSizeSet->name : 'N/A';
+                    $storeroomName = $hItem->newRack && $hItem->newRack->storeroom ? $hItem->newRack->storeroom->name : 'N/A';
+                    $rackName = $hItem->newRack ? $hItem->newRack->name : 'N/A';
+
+                    // Fallback to matching order set selling price if possible
+                    $matchingSet = OrderProductSet::where('order_main_id', $val->id)
+                        ->where('production_goods_id', $hItem->new_product_id)
+                        ->where('color_id', $hItem->new_color_id)
+                        ->first();
+
+                    $suggestedPrice = 0;
+                    if ($matchingSet && $matchingSet->total_quantity > 0) {
+                        $suggestedPrice = round($matchingSet->basic_amount / $matchingSet->total_quantity, 2);
+                    }
+                    if ($suggestedPrice == 0) {
+                        $suggestedPrice = (float)($hItem->mrp ?? 0);
+                    }
+
+                    $totalPcs = $hItem->box_quantity * ($hItem->pieces_per_box > 0 ? $hItem->pieces_per_box : 1);
+
+                    // Check physical availability in DomesticInventory
+                    $currentStock = DomesticInventory::where('product_id', $hItem->new_product_id)
+                        ->where('color_id', $hItem->new_color_id)
+                        ->where('size_set_id', $hItem->new_size_set_id)
+                        ->where(function($q) use ($hItem) {
+                            if ($hItem->new_rack_id) {
+                                $q->where('rack_id', $hItem->new_rack_id);
+                            }
+                        })
+                        ->sum('total_boxes');
+
+                    $availableBoxes = min($hItem->box_quantity, (int)$currentStock);
+
+                    $purchasesData[] = [
+                        'history_id' => $hItem->id,
+                        'purchase_id' => $poPur->id,
+                        'po_number' => $poPur->productionPO ? $poPur->productionPO->po_number : 'N/A',
+                        'vendor_name' => $poPur->vendor ? ($poPur->vendor->company_name ?? $poPur->vendor->name) : 'N/A',
+                        'purchase_date' => $poPur->purchase_date ? date('d-m-Y', strtotime($poPur->purchase_date)) : '',
+                        'product_id' => $hItem->new_product_id,
+                        'design_number' => $designNo,
+                        'product_name' => $prodName,
+                        'color_id' => $hItem->new_color_id,
+                        'color_name' => $colorName,
+                        'size_set_id' => $hItem->new_size_set_id,
+                        'size_set_name' => $sizeSetName,
+                        'rack_id' => $hItem->new_rack_id,
+                        'rack_name' => $rackName,
+                        'storeroom_name' => $storeroomName,
+                        'box_quantity' => $hItem->box_quantity,
+                        'available_boxes' => $availableBoxes,
+                        'pieces_per_box' => $hItem->pieces_per_box,
+                        'total_pieces' => $totalPcs,
+                        'mrp' => (float)($hItem->mrp ?? 0),
+                        'suggested_price' => $suggestedPrice,
+                        'total_amount' => round($suggestedPrice * $totalPcs, 2)
+                    ];
+                }
+            }
+
             $data[] = [
                 'id' => $val->id,
                 'sku' => $val->sku ?? '',
                 'master_customer_id' => $val->master_customer_id,
                 'customer' => $val->customer->name ?? 'N/A',
                 'address' => $val->customer->address ?? '',
-                'total_quantity' => $val->dispatchCartons->count(),
+                'total_quantity' => $val->dispatchCartons->count() + count($purchasesData),
                 'cartons' => $cartons,
+                'purchases' => $purchasesData,
                 'unique_sets' => array_values($all_unique_sets)
             ];
         }
@@ -473,17 +698,24 @@ class OrderDispatchService
         $data = OrderMain::where('master_customer_id', $customer_id)
             ->where('order_type', 'corporate')
             ->whereIn('status', [1, 2])
-            ->whereHas('dispatchCartons', function ($q) {
-                $q->where('packing_cartons.status', 1)
-                  ->whereNotIn('packing_cartons.id', function ($sub) {
-                      $sub->select('carton_packing_id')->from('order_dispatch_details');
-                  })
-                  ->whereNotIn('packing_cartons.id', function ($sub) {
-                      $sub->select('packing_carton_id')
-                          ->from('domestic_inventories')
-                          ->whereNotNull('packing_carton_id')
-                          ->where('packing_carton_id', '>', 0);
-                  });
+            ->where(function ($query) {
+                $query->whereHas('dispatchCartons', function ($q) {
+                    $q->where('packing_cartons.status', 1)
+                      ->whereNotIn('packing_cartons.id', function ($sub) {
+                          $sub->select('carton_packing_id')->from('order_dispatch_details');
+                      })
+                      ->whereNotIn('packing_cartons.id', function ($sub) {
+                          $sub->select('packing_carton_id')
+                              ->from('domestic_inventories')
+                              ->whereNotNull('packing_carton_id')
+                              ->where('packing_carton_id', '>', 0);
+                      });
+                })
+                ->orWhereHas('productionPOs.inventoryPurchases.items', function ($q) {
+                    $q->whereNotIn('domestic_inventory_histories.id', function ($sub) {
+                        $sub->select('purchase_history_id')->from('order_dispatch_purchases');
+                    });
+                });
             })
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);
@@ -495,17 +727,24 @@ class OrderDispatchService
     {
         $data = OrderMain::whereIn('status', [1, 2])
             ->where('order_type', 'corporate')
-            ->whereHas('dispatchCartons', function ($q) {
-                $q->where('packing_cartons.status', 1)
-                  ->whereNotIn('packing_cartons.id', function ($sub) {
-                      $sub->select('carton_packing_id')->from('order_dispatch_details');
-                  })
-                  ->whereNotIn('packing_cartons.id', function ($sub) {
-                      $sub->select('packing_carton_id')
-                          ->from('domestic_inventories')
-                          ->whereNotNull('packing_carton_id')
-                          ->where('packing_carton_id', '>', 0);
-                  });
+            ->where(function ($query) {
+                $query->whereHas('dispatchCartons', function ($q) {
+                    $q->where('packing_cartons.status', 1)
+                      ->whereNotIn('packing_cartons.id', function ($sub) {
+                          $sub->select('carton_packing_id')->from('order_dispatch_details');
+                      })
+                      ->whereNotIn('packing_cartons.id', function ($sub) {
+                          $sub->select('packing_carton_id')
+                              ->from('domestic_inventories')
+                              ->whereNotNull('packing_carton_id')
+                              ->where('packing_carton_id', '>', 0);
+                      });
+                })
+                ->orWhereHas('productionPOs.inventoryPurchases.items', function ($q) {
+                    $q->whereNotIn('domestic_inventory_histories.id', function ($sub) {
+                        $sub->select('purchase_history_id')->from('order_dispatch_purchases');
+                    });
+                });
             })
             ->orderBy('id', 'DESC')
             ->get(['id', 'sku as order_no']);
@@ -579,6 +818,25 @@ class OrderDispatchService
                     PackingCarton::whereIn('id', $revertCartonIds)->update(['status' => 1]);
                 }
             }
+
+            // 4b. Restore stock for any dispatched purchase items
+            $dispatchPurchases = OrderDispatchPurchase::where('order_dispatch_id', $dispatch->id)->get();
+            foreach ($dispatchPurchases as $dp) {
+                $inv = DomesticInventory::where('product_id', $dp->product_id)
+                    ->where('color_id', $dp->color_id)
+                    ->where('size_set_id', $dp->size_set_id)
+                    ->where(function($q) use ($dp) {
+                        if ($dp->rack_id) {
+                            $q->where('rack_id', $dp->rack_id);
+                        }
+                    })
+                    ->first();
+                if ($inv) {
+                    $inv->total_boxes += $dp->boxes_count;
+                    $inv->save();
+                }
+            }
+            OrderDispatchPurchase::where('order_dispatch_id', $dispatch->id)->delete();
 
             // 5. Delete dispatch record
             $dispatch->delete();

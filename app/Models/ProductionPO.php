@@ -40,4 +40,9 @@ class ProductionPO extends Model
     {
         return $this->hasMany(OrderCuttingStage::class, 'production_po_id');
     }
+
+    public function inventoryPurchases()
+    {
+        return $this->hasMany(DomesticInventoryPurchase::class, 'production_po_id');
+    }
 }

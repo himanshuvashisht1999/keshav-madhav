@@ -62,6 +62,11 @@ class OrderMain extends Model
         return $this->hasMany('App\Models\OrderCuttingStage', 'order_main_id', 'id');
     }
 
+    public function productionPOs()
+    {
+        return $this->hasMany(\App\Models\ProductionPO::class, 'order_main_id', 'id');
+    }
+
     public function orderLots()
     {
         return $this->hasMany('App\Models\OrderLot', 'order_main_id', 'id');

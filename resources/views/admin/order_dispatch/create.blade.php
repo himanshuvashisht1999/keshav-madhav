@@ -457,8 +457,9 @@
         }
 
         function toggleSubmitButton() {
-            let checkedCount = $('.carton-checkbox:checked').length;
-            $('#submitDispatchBtn').prop('disabled', checkedCount === 0);
+            let checkedCartons = $('.carton-checkbox:checked').length;
+            let checkedPurchases = $('.purchase-item-checkbox:checked').length;
+            $('#submitDispatchBtn').prop('disabled', (checkedCartons === 0 && checkedPurchases === 0));
         }
 
         function resetDocumentUI() {
@@ -525,6 +526,16 @@
                     }
                     subtotal += (price * qty);
                 });
+            });
+
+            // Use purchase summaries
+            $('.purchase-item-checkbox:checked').each(function () {
+                let row = $(this).closest('tr');
+                let pcs = parseFloat(row.find('.pur-input-pcs').val()) || 0;
+                let price = parseFloat(row.find('.purchase-price-input').val()) || 0;
+                let itemTotal = pcs * price;
+                row.find('.pur-amount-display').text('₹' + itemTotal.toFixed(2));
+                subtotal += itemTotal;
             });
 
             $('#calc_subtotal').val(subtotal.toFixed(2));
@@ -795,6 +806,114 @@
                                     </div>
                                 </div>
                                 `;
+
+                // OUTSOURCED PURCHASES (VENDOR PO RECEIPTS)
+                if (order.purchases && order.purchases.length > 0) {
+                    let totalPurPcs = 0;
+                    let totalPurBoxes = 0;
+                    let purRowsHtml = '';
+
+                    order.purchases.forEach((pur, idx) => {
+                        totalPurPcs += Number(pur.total_pieces);
+                        totalPurBoxes += Number(pur.box_quantity);
+
+                        purRowsHtml += `
+                            <tr class="purchase-row" data-history-id="${pur.history_id}">
+                                <td class="text-center align-middle">
+                                    <input type="checkbox"
+                                           class="purchase-item-checkbox"
+                                           data-idx="${idx}"
+                                           checked>
+                                    <input type="hidden" name="purchase_items[${idx}][history_id]" value="${pur.history_id}" class="pur-input-history">
+                                    <input type="hidden" name="purchase_items[${idx}][boxes]" value="${pur.box_quantity}" class="pur-input-boxes">
+                                    <input type="hidden" name="purchase_items[${idx}][pieces_per_box]" value="${pur.pieces_per_box}" class="pur-input-ppb">
+                                    <input type="hidden" name="purchase_items[${idx}][total_pieces]" value="${pur.total_pieces}" class="pur-input-pcs">
+                                </td>
+                                <td class="align-middle">
+                                    <div class="font-weight-bold text-primary"><i class="fas fa-file-invoice mr-1"></i>${pur.po_number}</div>
+                                    <div class="small font-weight-bold text-dark"><i class="fas fa-user-tie text-muted mr-1"></i>${pur.vendor_name}</div>
+                                    <small class="text-muted"><i class="fas fa-calendar-alt mr-1"></i>${pur.purchase_date}</small>
+                                </td>
+                                <td class="align-middle">
+                                    <div class="font-weight-bold">${pur.design_number} <span class="text-secondary">| ${pur.color_name}</span></div>
+                                    <span class="badge badge-info">${pur.size_set_name}</span>
+                                    <div class="small text-muted mt-1"><i class="fas fa-warehouse mr-1"></i>${pur.storeroom_name} / ${pur.rack_name}</div>
+                                </td>
+                                <td class="text-center align-middle font-weight-bold text-dark">
+                                    <span class="badge badge-secondary p-1.5" style="font-size: 0.85rem;">${pur.box_quantity} Box</span>
+                                </td>
+                                <td class="text-center align-middle font-weight-bold text-primary pur-pcs-display" style="font-size: 0.95rem;">
+                                    ${pur.total_pieces} pcs
+                                </td>
+                                <td class="align-middle">
+                                    <div class="input-group input-group-sm">
+                                        <div class="input-group-prepend"><span class="input-group-text font-weight-bold">₹</span></div>
+                                        <input type="number" step="0.01" min="0" 
+                                               name="purchase_items[${idx}][mrp]" 
+                                               class="form-control font-weight-bold purchase-mrp-input" 
+                                               value="${pur.mrp}">
+                                    </div>
+                                </td>
+                                <td class="align-middle">
+                                    <div class="input-group input-group-sm">
+                                        <div class="input-group-prepend"><span class="input-group-text font-weight-bold">₹</span></div>
+                                        <input type="number" step="0.01" min="0" 
+                                               name="purchase_items[${idx}][price]" 
+                                               class="form-control font-weight-bold purchase-price-input" 
+                                               value="${pur.suggested_price}" required>
+                                    </div>
+                                </td>
+                                <td class="text-right align-middle font-weight-bold text-success pur-amount-display" style="font-size: 0.95rem;">
+                                    ₹${(pur.suggested_price * pur.total_pieces).toFixed(2)}
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                        <div class="card shadow-sm mb-4" style="border-left: 4px solid #17a2b8;">
+                            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-0 font-weight-bold text-info">
+                                        <i class="fas fa-truck-loading mr-2"></i> Outsourced Purchases (Vendor PO Receipts for this Order)
+                                    </h5>
+                                    <small class="text-muted">Outside goods received from vendors for this order. Check items to dispatch them with this order.</small>
+                                </div>
+                                <span class="badge badge-info px-3 py-2" style="font-size: 0.85rem;">
+                                    ${order.purchases.length} Purchase Item(s)
+                                </span>
+                            </div>
+
+                            <div class="card-body p-0">
+                                <table class="table table-bordered mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th width="50" class="text-center">
+                                                <input type="checkbox" class="select-all-purchases" checked>
+                                            </th>
+                                            <th>PO & Vendor</th>
+                                            <th>Design / Details</th>
+                                            <th class="text-center" width="90">Boxes</th>
+                                            <th class="text-center" width="100">Total Pcs</th>
+                                            <th width="130">MRP (₹)</th>
+                                            <th width="140">Sales Price (₹)</th>
+                                            <th class="text-right" width="120">Amount (₹)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${purRowsHtml}
+                                        <tr class="bg-light font-weight-bold">
+                                            <td colspan="3" class="text-right">Total Outsourced PO:</td>
+                                            <td class="text-center"><span class="badge badge-secondary p-1">${totalPurBoxes} Box</span></td>
+                                            <td class="text-center text-primary font-weight-bold">${totalPurPcs} pcs</td>
+                                            <td colspan="3"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                }
             });
 
             $('#orderContainer').html(html);
@@ -977,6 +1096,30 @@
                 .prop('checked', allChecked);
 
             toggleSubmitButton();
+        });
+
+        /* ================= PURCHASE CHECKBOXES & INPUTS ================= */
+
+        $(document).on('change', '.select-all-purchases', function () {
+            let table = $(this).closest('table');
+            let isChecked = $(this).is(':checked');
+            table.find('.purchase-item-checkbox').prop('checked', isChecked).trigger('change');
+        });
+
+        $(document).on('change', '.purchase-item-checkbox', function () {
+            let table = $(this).closest('table');
+            let allChecked = table.find('.purchase-item-checkbox').length === table.find('.purchase-item-checkbox:checked').length;
+            table.find('.select-all-purchases').prop('checked', allChecked);
+
+            let row = $(this).closest('tr');
+            row.find('input').not('.purchase-item-checkbox').prop('disabled', !$(this).is(':checked'));
+
+            calculateDispatchTotals('default');
+            toggleSubmitButton();
+        });
+
+        $(document).on('input', '.purchase-price-input, .purchase-mrp-input', function () {
+            calculateDispatchTotals('default');
         });
 
         /* ================= DOCUMENT TOGGLE ================= */

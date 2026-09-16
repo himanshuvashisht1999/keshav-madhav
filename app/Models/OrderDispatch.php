@@ -42,6 +42,11 @@ class OrderDispatch extends Model
         return $this->hasMany('App\Models\OrderDispatchDetails', 'order_dispatch_id', 'id');
     }
 
+    public function orderDispatchPurchases()
+    {
+        return $this->hasMany('App\Models\OrderDispatchPurchase', 'order_dispatch_id', 'id');
+    }
+
     public function orderMain()
     {
         return $this->belongsTo(OrderMain::class, 'main_order_id', 'id');
