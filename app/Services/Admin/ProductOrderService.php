@@ -42,6 +42,9 @@ use Illuminate\Support\Facades\DB;
 
 class ProductOrderService
 {
+    protected $datatable;
+    protected $order;
+
     public function __construct(
         DataTable $datatable,
         Order $order
@@ -832,7 +835,8 @@ class ProductOrderService
                     $cuttingSku = $data->sku . "/C" . $cuttingCount;
 
                     // Support multiple fabrics
-                    $fabricId = is_array($request->fabric_id) ? implode(',', $request->fabric_id) : $request->fabric_id;
+                    $fabricId = is_array($request->fabric_id) ? implode(',', array_filter($request->fabric_id)) : $request->fabric_id;
+                    $fabricId = !empty($fabricId) ? $fabricId : null;
 
                     $cuttingStage = new OrderCuttingStage();
                     $cuttingStage->sku = $cuttingSku;
@@ -1423,7 +1427,8 @@ class ProductOrderService
             }
 
             $firstThree = strtoupper(substr($customer->name, 0, 3));
-            $fabricId = is_array($request->fabric_id) ? implode(',', $request->fabric_id) : $request->fabric_id;
+            $fabricId = is_array($request->fabric_id) ? implode(',', array_filter($request->fabric_id)) : $request->fabric_id;
+            $fabricId = !empty($fabricId) ? $fabricId : null;
 
             $createdCount = 0;
 
@@ -1560,6 +1565,161 @@ class ProductOrderService
         } catch (\Exception $e) {
             DB::rollBack();
             return ['status_code' => 0, 'message' => $e->getMessage()];
+        }
+    }
+
+    public function getCuttingSlipFabrics(Request $request)
+    {
+        $id = $request->id;
+        $orderProductSet = OrderProductSet::with([
+            'orderCuttingStages',
+            'stage_master_unit.masterFabricWarehouse'
+        ])->findOrFail($id);
+
+        // 1. Current assigned fabric IDs
+        $assignedFabricIds = [];
+        if (!empty($orderProductSet->fabric_id)) {
+            $assignedFabricIds = array_filter(array_map('trim', explode(',', $orderProductSet->fabric_id)));
+        } elseif ($orderProductSet->orderCuttingStages()->exists()) {
+            foreach ($orderProductSet->orderCuttingStages as $osc) {
+                if ($osc->fabric_id) {
+                    $assignedFabricIds = array_merge($assignedFabricIds, array_filter(array_map('trim', explode(',', $osc->fabric_id))));
+                }
+            }
+            $assignedFabricIds = array_unique($assignedFabricIds);
+        }
+        $assignedFabricIds = array_values(array_map('intval', $assignedFabricIds));
+
+        // 2. Used fabrics in lots (via FabricRollAssigning -> fabricReceiptDetail -> fabric_id)
+        $usedRows = \App\Models\FabricRollAssigning::where('order_products_set_id', $orderProductSet->id)
+            ->whereNotNull('fabric_receipt_detail_id')
+            ->join('fabric_receipt_details', 'production_fabric_roll_assigning.fabric_receipt_detail_id', '=', 'fabric_receipt_details.id')
+            ->select('fabric_receipt_details.fabric_id', 'production_fabric_roll_assigning.lot_no')
+            ->get();
+
+        $usedLotsByFabric = [];
+        foreach ($usedRows as $row) {
+            $fid = (int) $row->fabric_id;
+            if (!isset($usedLotsByFabric[$fid])) {
+                $usedLotsByFabric[$fid] = [];
+            }
+            if (!empty($row->lot_no) && !in_array($row->lot_no, $usedLotsByFabric[$fid])) {
+                $usedLotsByFabric[$fid][] = $row->lot_no;
+            }
+        }
+        $usedFabricIds = array_keys($usedLotsByFabric);
+
+        // 3. Details of currently assigned fabrics
+        $assignedFabrics = Fabric::whereIn('id', $assignedFabricIds)->get()->map(function ($fab) use ($usedLotsByFabric) {
+            $isUsed = isset($usedLotsByFabric[$fab->id]);
+            return [
+                'id' => $fab->id,
+                'name' => $fab->name,
+                'is_used' => $isUsed,
+                'lot_nos' => $isUsed ? implode(', ', $usedLotsByFabric[$fab->id]) : null,
+            ];
+        });
+
+        // 4. Warehouse ID for available fabric stock
+        $warehouseId = $orderProductSet->orderCuttingStages->first()?->warehouse_id 
+            ?? $orderProductSet->stage_master_unit?->master_fabric_warehouse_id;
+
+        $availableFabricsQuery = Fabric::where('status', 1);
+        if ($warehouseId) {
+            $availableFabricsQuery->withSum(['receiptDetails' => function($q) use ($warehouseId) {
+                $q->where('master_fabric_warehouse_id', $warehouseId);
+            }], 'remaining_quantity');
+        } else {
+            $availableFabricsQuery->withSum('receiptDetails', 'remaining_quantity');
+        }
+        $availableFabrics = $availableFabricsQuery->orderBy('name')->get(['id', 'name'])->map(function($fab) {
+            $rem = $fab->receipt_details_sum_remaining_quantity ? number_format($fab->receipt_details_sum_remaining_quantity, 2) : '0.00';
+            return [
+                'id' => $fab->id,
+                'name' => $fab->name,
+                'remaining' => $rem,
+            ];
+        });
+
+        return [
+            'status' => true,
+            'order_set_id' => $orderProductSet->id,
+            'assigned_fabrics' => $assignedFabrics,
+            'used_fabric_ids' => $usedFabricIds,
+            'available_fabrics' => $availableFabrics,
+        ];
+    }
+
+    public function updateAssignedFabrics(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $id = $request->id;
+            $orderProductSet = OrderProductSet::findOrFail($id);
+
+            // Requested fabrics
+            $newFabricIds = array_filter(array_map('intval', (array)$request->fabric_ids));
+            if (empty($newFabricIds)) {
+                return [
+                    'status' => false,
+                    'message' => 'At least one fabric must be assigned.'
+                ];
+            }
+
+            // Find used fabrics for this order set
+            $usedRows = \App\Models\FabricRollAssigning::where('order_products_set_id', $orderProductSet->id)
+                ->whereNotNull('fabric_receipt_detail_id')
+                ->join('fabric_receipt_details', 'production_fabric_roll_assigning.fabric_receipt_detail_id', '=', 'fabric_receipt_details.id')
+                ->select('fabric_receipt_details.fabric_id', 'production_fabric_roll_assigning.lot_no')
+                ->get();
+
+            $usedLotsByFabric = [];
+            foreach ($usedRows as $row) {
+                $fid = (int) $row->fabric_id;
+                if (!isset($usedLotsByFabric[$fid])) {
+                    $usedLotsByFabric[$fid] = [];
+                }
+                if (!empty($row->lot_no) && !in_array($row->lot_no, $usedLotsByFabric[$fid])) {
+                    $usedLotsByFabric[$fid][] = $row->lot_no;
+                }
+            }
+
+            // Check if any used fabric was removed
+            foreach ($usedLotsByFabric as $usedFid => $lots) {
+                if (!in_array($usedFid, $newFabricIds)) {
+                    $fab = Fabric::find($usedFid);
+                    $fabName = $fab ? $fab->name : "ID: $usedFid";
+                    $lotsStr = !empty($lots) ? implode(', ', $lots) : 'existing lot';
+                    DB::rollBack();
+                    return [
+                        'status' => false,
+                        'message' => "Fabric '{$fabName}' cannot be removed because it has already been used in Lot(s): {$lotsStr}."
+                    ];
+                }
+            }
+
+            // Save new fabric IDs as comma-separated string
+            $fabricIdStr = implode(',', $newFabricIds);
+            $orderProductSet->fabric_id = $fabricIdStr;
+            $orderProductSet->save();
+
+            // Update all cutting stages for this set
+            OrderCuttingStage::where('set_product_id', $orderProductSet->id)
+                ->update(['fabric_id' => $fabricIdStr]);
+
+            DB::commit();
+
+            return [
+                'status' => true,
+                'message' => 'Fabrics updated successfully.',
+                'fabric_names' => $orderProductSet->fabric_names,
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'status' => false,
+                'message' => 'Failed to update fabrics: ' . $e->getMessage()
+            ];
         }
     }
 

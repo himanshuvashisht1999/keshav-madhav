@@ -113,7 +113,7 @@
                                         <div class="col-md-6">
                                             <div class="form-group mb-3">
                                                 <label>Warehouse</label>
-                                                <select id="warehouse_id" class="form-control select2"
+                                                <select id="warehouse_id" name="warehouse_id" class="form-control select2"
                                                     onchange="warehouseChange(this.value)">
                                                     <option value="">Select Warehouse</option>
                                                     @foreach($cutting_units as $w)
@@ -137,8 +137,7 @@
                                         <div class="col-md-6">
                                             <div class="form-group mb-3">
                                                 <label>Fabric</label>
-                                                <select name="fabric_id" id="fabric_id" class="form-control select2">
-                                                    <option value="">Select Fabric</option>
+                                                <select name="fabric_id[]" id="fabric_id" class="form-control select2" multiple data-placeholder="Select Fabric(s)">
                                                 </select>
                                             </div>
                                         </div>
@@ -231,6 +230,7 @@
         $(document).ready(function () {
             $('.select2').select2({ width: '100%' });
             
+            warehouseChange($('#warehouse_id').val());
             printingWarehouseChange();
 
             // Show/Hide Update Ratio button
@@ -492,8 +492,7 @@
 
             // Fetch fabrics based on warehouse
             let fabricSelect = $('#fabric_id');
-            fabricSelect.empty().append('<option value="">Loading Fabrics...</option>');
-            fabricSelect.trigger('change.select2');
+            let prevSelected = fabricSelect.val() || [];
             
             $.ajax({
                 url: "{{ route('admin.product_order.getFabricsByWarehouse') }}",
@@ -503,17 +502,20 @@
                     warehouse_id: warehouse_id
                 },
                 success: function (res) {
-                    fabricSelect.empty().append('<option value="">Select Fabric</option>');
+                    fabricSelect.empty();
                     res.forEach(fabric => {
                         let remaining = fabric.receipt_details_sum_remaining_quantity ? parseFloat(fabric.receipt_details_sum_remaining_quantity).toFixed(2) : '0.00';
                         fabricSelect.append(
                             `<option value="${fabric.id}">${fabric.name} (${remaining} meter)</option>`
                         );
                     });
+                    if (prevSelected.length > 0) {
+                        fabricSelect.val(prevSelected);
+                    }
                     fabricSelect.trigger('change.select2');
                 },
                 error: function () {
-                    fabricSelect.empty().append('<option value="">Select Fabric</option>');
+                    fabricSelect.empty();
                     fabricSelect.trigger('change.select2');
                 }
             });

@@ -444,6 +444,18 @@ class ProductOrderController extends Controller
         $response = $this->service->deleteAssignment($request);
         return response()->json($response);
     }
+
+    public function getCuttingSlipFabrics(Request $request)
+    {
+        $response = $this->service->getCuttingSlipFabrics($request);
+        return response()->json($response);
+    }
+
+    public function updateAssignedFabrics(Request $request)
+    {
+        $response = $this->service->updateAssignedFabrics($request);
+        return response()->json($response);
+    }
     public function createPO(Request $request)
     {
         $response = $this->service->createPO($request);

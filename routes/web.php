@@ -380,6 +380,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/bulk-cmpo-download', [AdminProductOrderController::class, 'bulkCmpoDownload'])->name('bulkCmpoDownload');
             Route::get('/index-order-set-download', [AdminProductOrderController::class, 'indexOrderSetDownload'])->name('indexOrderSetDownload');
             Route::get('/view-cutting-slip', [AdminProductOrderController::class, 'viewCuttingSlip'])->name('viewCuttingSlip');
+            Route::get('/get-cutting-slip-fabrics', [AdminProductOrderController::class, 'getCuttingSlipFabrics'])->name('getCuttingSlipFabrics');
+            Route::post('/update-assigned-fabrics', [AdminProductOrderController::class, 'updateAssignedFabrics'])->name('updateAssignedFabrics');
 
             Route::get('/index', [AdminProductOrderController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminProductOrderController::class, 'indexList'])->name('indexList');
