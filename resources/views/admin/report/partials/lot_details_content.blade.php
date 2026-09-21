@@ -271,7 +271,7 @@
                         </div>
                         <div class="summary-card">
                             <label>Production Unit</label>
-                            <div>{{ $lot->productionSlipDigitization->getUnitMaster->name ?? '-' }}</div>
+                            <div>{{ $lot->productionSlipDigitization?->getUnitMaster?->name ?? ($lot->cutting_master?->name ?? ($lot->orderProductSet?->stage_master_unit?->name ?? '-')) }}</div>
                         </div>
                     </div>
                 </div>
@@ -394,8 +394,12 @@
                             $cutting_unit = '-';
                             if(isset($data['lots_data']) && count($data['lots_data']) > 0) {
                                 $first_lot = $data['lots_data']->first();
-                                if($first_lot && $first_lot->productionSlipDigitization && $first_lot->productionSlipDigitization->getUnitMaster) {
+                                if(!empty($first_lot->productionSlipDigitization?->getUnitMaster?->name)) {
                                     $cutting_unit = $first_lot->productionSlipDigitization->getUnitMaster->name;
+                                } elseif(!empty($first_lot->cutting_master?->name)) {
+                                    $cutting_unit = $first_lot->cutting_master->name;
+                                } elseif(!empty($first_lot->orderProductSet?->stage_master_unit?->name)) {
+                                    $cutting_unit = $first_lot->orderProductSet->stage_master_unit->name;
                                 }
                             }
 

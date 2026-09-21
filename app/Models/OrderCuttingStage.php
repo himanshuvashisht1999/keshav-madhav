@@ -85,6 +85,11 @@ class OrderCuttingStage extends Model
         return $this->belongsTo('App\Models\OrderProductSet', 'set_product_id');
     }
 
+    public function orderProductSet()
+    {
+        return $this->belongsTo('App\Models\OrderProductSet', 'set_product_id');
+    }
+
     public function orderMain()
     {
         return $this->belongsTo('App\Models\OrderMain', 'order_main_id');

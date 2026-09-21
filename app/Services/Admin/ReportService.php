@@ -1652,7 +1652,8 @@ class ReportService
                 'orderProductSet.colors',
                 'orderProductSet.master_product_fitting',
                 'orderProductSet.master_design_pattern',
-                'orderProductSet.fabric'
+                'orderProductSet.fabric',
+                'cutting_master'
             ])->where('lot_no', $lot_no)->first();
             
             if ($cuttingStage && $cuttingStage->orderProductSet) {
@@ -1661,6 +1662,8 @@ class ReportService
                         'lot_no' => $lot_no,
                         'order_products_set_id' => $cuttingStage->set_product_id,
                         'production_slip_digitization_id' => null,
+                        'productionSlipDigitization' => null,
+                        'cutting_master' => $cuttingStage->cutting_master,
                         'orderProductSet' => $cuttingStage->orderProductSet
                     ]
                 ]);

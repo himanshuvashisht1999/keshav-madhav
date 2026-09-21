@@ -116,41 +116,66 @@
                                     <td>{{ $slip->getUnitMaster->name ?? '-' }}</td>
                                     <td>
                                         @php
-                                            $allLots = collect();
-                                            if($slip->lot_no) $allLots->push($slip->lot_no);
+                                            $lotMap = [];
                                             
-                                            // Gather lots from all linked sessions
-                                            if($slip->orderLots->isNotEmpty()) $allLots = $allLots->merge($slip->orderLots->pluck('lot_no'));
-                                            if($slip->orderPrintingStageTransaction->isNotEmpty()) $allLots = $allLots->merge($slip->orderPrintingStageTransaction->pluck('lot_no'));
-                                            if($slip->orderStageTransaction->isNotEmpty()) $allLots = $allLots->merge($slip->orderStageTransaction->pluck('lot_no'));
-                                            if($slip->orderPrintingToStichingTransaction->isNotEmpty()) $allLots = $allLots->merge($slip->orderPrintingToStichingTransaction->pluck('lot_no'));
-                                            if($slip->orderGodamStageTransaction->isNotEmpty()) $allLots = $allLots->merge($slip->orderGodamStageTransaction->pluck('lot_no'));
-                                            
-                                            $distinctLots = $allLots->unique()->filter();
-                                        @endphp
-
-                                        @php $totalSlipQty = 0; @endphp
-                                        @if($distinctLots->isNotEmpty())
-                                            @foreach($distinctLots as $lot)
-                                                @php
-                                                    $lotQty = 0;
-                                                    
-                                                    // Gather quantities from various transactions
-                                                    $lotQty += $slip->orderPrintingStageTransaction->where('lot_no', $lot)->sum('quantity');
-                                                    $lotQty += $slip->orderStageTransaction->where('lot_no', $lot)->sum('quantity');
-                                                    $lotQty += $slip->orderPrintingToStichingTransaction->where('lot_no', $lot)->sum('quantity');
-                                                    $lotQty += $slip->orderGodamStageTransaction->where('lot_no', $lot)->sum('quantity');
-                                                    
-                                                    // Calculate from rolls if no transaction quantity (i.e. Cutting stage)
-                                                    if ($lotQty == 0 && $slip->fabricRollAssignings) {
-                                                        foreach($slip->fabricRollAssignings->where('lot_no', $lot) as $roll) {
+                                            // 1. Cutting lots (Type 1)
+                                            if ($slip->orderLots && $slip->orderLots->isNotEmpty()) {
+                                                foreach ($slip->orderLots as $ol) {
+                                                    $qty = 0;
+                                                    if ($slip->fabricRollAssignings) {
+                                                        foreach ($slip->fabricRollAssignings->where('order_lot_id', $ol->id) as $roll) {
                                                             if ($roll->fabricRollAssigningsDetail) {
-                                                                $lotQty += $roll->fabricRollAssigningsDetail->sum('quantity');
+                                                                $qty += $roll->fabricRollAssigningsDetail->sum('quantity');
                                                             }
                                                         }
                                                     }
-                                                    $totalSlipQty += $lotQty;
-                                                @endphp
+                                                    $lNo = (string)$ol->lot_no;
+                                                    $lotMap[$lNo] = ($lotMap[$lNo] ?? 0) + $qty;
+                                                }
+                                            }
+
+                                            // 2. Printing stage transactions (Type 2)
+                                            if ($slip->orderPrintingStageTransaction && $slip->orderPrintingStageTransaction->isNotEmpty()) {
+                                                foreach ($slip->orderPrintingStageTransaction as $pt) {
+                                                    $lNo = (string)$pt->lot_no;
+                                                    $lotMap[$lNo] = ($lotMap[$lNo] ?? 0) + ($pt->quantity ?? 0);
+                                                }
+                                            }
+
+                                            // 3. Stage transactions (Type 3: Stitching / Transfers / etc.)
+                                            if ($slip->orderStageTransaction && $slip->orderStageTransaction->isNotEmpty()) {
+                                                foreach ($slip->orderStageTransaction as $st) {
+                                                    $lNo = (string)$st->lot_no;
+                                                    $lotMap[$lNo] = ($lotMap[$lNo] ?? 0) + ($st->quantity ?? 0);
+                                                }
+                                            }
+
+                                            // 4. Printing to Stitching transactions
+                                            if ($slip->orderPrintingToStichingTransaction && $slip->orderPrintingToStichingTransaction->isNotEmpty()) {
+                                                foreach ($slip->orderPrintingToStichingTransaction as $pst) {
+                                                    $lNo = (string)$pst->lot_no;
+                                                    $lotMap[$lNo] = ($lotMap[$lNo] ?? 0) + ($pst->quantity ?? 0);
+                                                }
+                                            }
+
+                                            // 5. Godam stage transactions
+                                            if ($slip->orderGodamStageTransaction && $slip->orderGodamStageTransaction->isNotEmpty()) {
+                                                foreach ($slip->orderGodamStageTransaction as $gt) {
+                                                    $lNo = (string)$gt->lot_no;
+                                                    $lotMap[$lNo] = ($lotMap[$lNo] ?? 0) + ($gt->quantity ?? 0);
+                                                }
+                                            }
+
+                                            // Fallback: If no linked sessions exist, but slip has lot_no
+                                            if (empty($lotMap) && !empty($slip->lot_no)) {
+                                                $lotMap[(string)$slip->lot_no] = 0;
+                                            }
+
+                                            $totalSlipQty = array_sum($lotMap);
+                                        @endphp
+
+                                        @if(!empty($lotMap))
+                                            @foreach($lotMap as $lot => $lotQty)
                                                 <span class="badge badge-info shadow-sm mb-1">#{{ $lot }} @if($lotQty > 0) ({{ $lotQty }}) @endif</span><br>
                                             @endforeach
                                         @else
