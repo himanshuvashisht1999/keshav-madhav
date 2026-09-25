@@ -239,11 +239,12 @@ class PartyLedgerController extends Controller
                     $desc = ($p->party->name ?? 'Customer') . ' - Adjustment (' . $p->payment_mode . ')';
                 }
 
+                $txType = $isCredit ? 'Receipt' : ($isDebit ? 'Payment' : 'Adjustment');
                 $transactions->push((object) [
                     'customer_id' => $p->party_id,
                     'date' => $p->payment_date,
                     'created_at' => $p->created_at,
-                    'type' => 'Payment',
+                    'type' => $txType,
                     'ref' => $p->reference_id ?? ('Pay #' . $p->id),
                     'debit' => $debit,
                     'credit' => $credit,
@@ -379,9 +380,12 @@ class PartyLedgerController extends Controller
                 }
             }
             
+            $availableTypes = $finalTransactions->pluck('type')->filter()->unique()->values()->all();
+            $filteredTransactions = $this->applyLedgerFilters($finalTransactions, $request);
+
             if ($viewMode === 'party_wise') {
                 foreach ($shops as $shop) {
-                    $shopTx = $finalTransactions->where('customer_id', $shop->id)->values();
+                    $shopTx = $filteredTransactions->where('customer_id', $shop->id)->values();
                     $shopOpeningAmt = $shopPreBalances[$shop->id];
                     $shopBal = $shopOpeningAmt;
                     
@@ -399,12 +403,12 @@ class PartyLedgerController extends Controller
                 }
             }
 
-            $transactions = $finalTransactions;
+            $transactions = $filteredTransactions;
             if (isset($party)) {
                 $party->balance = $balance;
             }
 
-            return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'shops', 'viewMode', 'groupedLedgers');
+            return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'shops', 'viewMode', 'groupedLedgers', 'availableTypes');
         }
 
         // Resolve Master
@@ -528,10 +532,11 @@ class PartyLedgerController extends Controller
                 $desc = 'Adjustment (' . $p->payment_mode . ')';
             }
 
+            $txType = $isCredit ? 'Receipt' : ($isDebit ? 'Payment' : 'Adjustment');
             $transactions->push((object) [
                 'date' => $p->payment_date,
                 'created_at' => $p->created_at,
-                'type' => 'Payment',
+                'type' => $txType,
                 'ref' => $p->reference_id ?? ('Pay #' . $p->id),
                 'debit' => $debit,
                 'credit' => $credit,
@@ -656,10 +661,11 @@ class PartyLedgerController extends Controller
                     $desc = 'Adjustment (' . $p->payment_mode . ')';
                 }
 
+                $txType = $isCredit ? 'Receipt' : ($isDebit ? 'Payment' : 'Adjustment');
                 $transactions->push((object) [
                     'date' => $p->payment_date,
                     'created_at' => $p->created_at,
-                    'type' => 'Payment',
+                    'type' => $txType,
                     'ref' => $p->reference_id ?? ('Pay #' . $p->id),
                     'debit' => $debit,
                     'credit' => $credit,
@@ -805,9 +811,80 @@ class PartyLedgerController extends Controller
             }
         }
         
-        $transactions = $finalTransactions;
+        $availableTypes = $finalTransactions->pluck('type')->filter()->unique()->values()->all();
+        $transactions = $this->applyLedgerFilters($finalTransactions, $request);
         $party->balance = $balance;
 
-        return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'viewMode', 'groupedLedgers');
+        return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'viewMode', 'groupedLedgers', 'availableTypes');
+    }
+
+    private function applyLedgerFilters($transactions, Request $request)
+    {
+        $transactionType = $request->query('transaction_type');
+        $adjustmentType = $request->query('adjustment_type');
+        $refNo = $request->query('ref_no');
+        $debitValue = $request->query('debit_value');
+        $creditValue = $request->query('credit_value');
+
+        if (!$transactionType && !$adjustmentType && !$refNo && $debitValue === null && $creditValue === null) {
+            return $transactions;
+        }
+
+        return $transactions->filter(function ($tx) use ($transactionType, $adjustmentType, $refNo, $debitValue, $creditValue) {
+            // 1. Transaction Type filter
+            if ($transactionType && $transactionType !== 'all') {
+                $matchType = false;
+                if (strcasecmp($tx->type, $transactionType) === 0) {
+                    $matchType = true;
+                } elseif (strcasecmp($transactionType, 'payment') === 0 && (strcasecmp($tx->type, 'payment') === 0 || $tx->debit > 0)) {
+                    $matchType = true;
+                } elseif (strcasecmp($transactionType, 'receipt') === 0 && (strcasecmp($tx->type, 'receipt') === 0 || $tx->credit > 0)) {
+                    $matchType = true;
+                } elseif (strcasecmp($transactionType, 'adjustment') === 0 && (stripos($tx->type, 'adjustment') !== false || stripos($tx->ref ?? '', 'adj') !== false || stripos($tx->description ?? '', 'adjustment') !== false)) {
+                    $matchType = true;
+                }
+                if (!$matchType) return false;
+            }
+
+            // 2. Adjustment filter: 1. Payment (Debit / Paid), 2. Receipt (Credit / Received)
+            if ($adjustmentType && $adjustmentType !== 'all') {
+                if ($adjustmentType === 'payment') {
+                    if (!($tx->debit > 0)) return false;
+                } elseif ($adjustmentType === 'receipt') {
+                    if (!($tx->credit > 0)) return false;
+                }
+            }
+
+            // 3. Ref No filter
+            if ($refNo && trim($refNo) !== '') {
+                $refSearch = trim($refNo);
+                $txRef = (string)($tx->ref ?? '');
+                if (stripos($txRef, $refSearch) === false && stripos((string)($tx->description ?? ''), $refSearch) === false) {
+                    return false;
+                }
+            }
+
+            // 4. Debit Value filter
+            if ($debitValue !== null && trim($debitValue) !== '') {
+                $val = floatval(preg_replace('/[^0-9.]/', '', $debitValue));
+                if ($val > 0) {
+                    $exact = abs($tx->debit - $val) < 0.01;
+                    $partial = str_contains((string)$tx->debit, trim($debitValue));
+                    if (!$exact && !$partial) return false;
+                }
+            }
+
+            // 5. Credit Value filter
+            if ($creditValue !== null && trim($creditValue) !== '') {
+                $val = floatval(preg_replace('/[^0-9.]/', '', $creditValue));
+                if ($val > 0) {
+                    $exact = abs($tx->credit - $val) < 0.01;
+                    $partial = str_contains((string)$tx->credit, trim($creditValue));
+                    if (!$exact && !$partial) return false;
+                }
+            }
+
+            return true;
+        })->values();
     }
 }

@@ -107,25 +107,70 @@
                 </div>
 
                 {{-- FILTERS --}}
-                <div class="card card-detail mb-4">
+                <div class="card card-detail mb-4 shadow-sm">
                     <div class="card-body">
-                        <form action="{{ route('admin.ledger.party.show', ['type' => $type, 'id' => $party->id]) }}"
-                            method="GET">
-                            <div class="row align-items-end">
-                                <div class="col-md-3">
+                        <form action="{{ route('admin.ledger.party.show', ['type' => $type, 'id' => $party->id]) }}" method="GET">
+                            <div class="row">
+                                <div class="col-md-3 col-sm-6 mb-3">
                                     <label class="small font-weight-bold text-muted">Start Date</label>
                                     <input type="date" name="start_date" value="{{ request('start_date') }}"
-                                        class="form-control" style="border-radius: 10px;">
+                                        class="form-control" style="border-radius: 8px;">
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-3 col-sm-6 mb-3">
                                     <label class="small font-weight-bold text-muted">End Date</label>
                                     <input type="date" name="end_date" value="{{ request('end_date') }}"
-                                        class="form-control" style="border-radius: 10px;">
+                                        class="form-control" style="border-radius: 8px;">
                                 </div>
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <label class="small font-weight-bold text-muted">Type</label>
+                                    <select name="transaction_type" class="form-control" style="border-radius: 8px;">
+                                        <option value="">All Types</option>
+                                        @if(isset($availableTypes) && count($availableTypes) > 0)
+                                            @foreach($availableTypes as $t)
+                                                <option value="{{ $t }}" {{ strcasecmp(request('transaction_type'), $t) === 0 ? 'selected' : '' }}>
+                                                    {{ $t }}
+                                                </option>
+                                            @endforeach
+                                        @else
+                                            <option value="Sale" {{ strcasecmp(request('transaction_type'), 'Sale') === 0 ? 'selected' : '' }}>Sale</option>
+                                            <option value="Order Dispatch" {{ strcasecmp(request('transaction_type'), 'Order Dispatch') === 0 ? 'selected' : '' }}>Order Dispatch</option>
+                                            <option value="Payment" {{ strcasecmp(request('transaction_type'), 'Payment') === 0 ? 'selected' : '' }}>Payment</option>
+                                            <option value="Receipt" {{ strcasecmp(request('transaction_type'), 'Receipt') === 0 ? 'selected' : '' }}>Receipt</option>
+                                            <option value="Sale Return" {{ strcasecmp(request('transaction_type'), 'Sale Return') === 0 ? 'selected' : '' }}>Sale Return</option>
+                                            <option value="Adjustment" {{ strcasecmp(request('transaction_type'), 'Adjustment') === 0 ? 'selected' : '' }}>Adjustment</option>
+                                            <option value="Journal Voucher" {{ strcasecmp(request('transaction_type'), 'Journal Voucher') === 0 ? 'selected' : '' }}>Journal Voucher</option>
+                                        @endif
+                                    </select>
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <label class="small font-weight-bold text-muted">Adjustment</label>
+                                    <select name="adjustment_type" class="form-control" style="border-radius: 8px;">
+                                        <option value="">All Adjustments</option>
+                                        <option value="payment" {{ request('adjustment_type') === 'payment' ? 'selected' : '' }}>1. Payment (Debit / Paid)</option>
+                                        <option value="receipt" {{ request('adjustment_type') === 'receipt' ? 'selected' : '' }}>2. Receipt (Credit / Received)</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <label class="small font-weight-bold text-muted">2. Ref No.</label>
+                                    <input type="text" name="ref_no" value="{{ request('ref_no') }}" placeholder="Search Ref / Voucher / Batch..."
+                                        class="form-control" style="border-radius: 8px;">
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <label class="small font-weight-bold text-muted">Debit Value (₹)</label>
+                                    <input type="text" name="debit_value" value="{{ request('debit_value') }}" placeholder="Enter Debit Value"
+                                        class="form-control" style="border-radius: 8px;">
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <label class="small font-weight-bold text-muted">Credit Value (₹)</label>
+                                    <input type="text" name="credit_value" value="{{ request('credit_value') }}" placeholder="Enter Credit Value"
+                                        class="form-control" style="border-radius: 8px;">
+                                </div>
+
                                 @if($type === 'sales_agent')
-                                    <div class="col-md-3">
+                                    <div class="col-md-3 col-sm-6 mb-3">
                                         <label class="small font-weight-bold text-muted">Filter by Customer</label>
-                                        <select name="customer_id" class="form-control" style="border-radius: 10px;" onchange="this.form.submit()">
+                                        <select name="customer_id" class="form-control" style="border-radius: 8px;" onchange="this.form.submit()">
                                             <option value="">All Customers (Mix Parties)</option>
                                             @foreach($shops as $shop)
                                                 <option value="{{ $shop->id }}" {{ request('customer_id') == $shop->id ? 'selected' : '' }}>
@@ -135,27 +180,28 @@
                                         </select>
                                     </div>
                                     @if(!request('customer_id'))
-                                    <div class="col-md-3 mt-2 mt-md-0">
+                                    <div class="col-md-3 col-sm-6 mb-3">
                                         <label class="small font-weight-bold text-muted">View Mode</label>
-                                        <select name="view_mode" class="form-control" style="border-radius: 10px;" onchange="this.form.submit()">
+                                        <select name="view_mode" class="form-control" style="border-radius: 8px;" onchange="this.form.submit()">
                                             <option value="mix" {{ request('view_mode', 'mix') === 'mix' ? 'selected' : '' }}>Mix (Consolidated)</option>
                                             <option value="party_wise" {{ request('view_mode') === 'party_wise' ? 'selected' : '' }}>Party-wise (Grouped)</option>
                                         </select>
                                     </div>
                                     @endif
                                 @endif
-                                <div class="col-md-{{ $type === 'sales_agent' ? '12 mt-3 text-right' : '6 mt-2 mt-md-0' }}">
-                                    <button type="submit" class="btn btn-primary px-3" style="border-radius: 10px;">
+
+                                <div class="col-md-3 col-sm-12 mb-3 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary px-3 mr-1" style="border-radius: 8px;">
                                         <i class="fas fa-filter mr-1"></i> Filter
                                     </button>
                                     <a href="{{ route('admin.ledger.party.show', ['type' => $type, 'id' => $party->id]) }}"
-                                        class="btn btn-outline-secondary ml-1" style="border-radius: 10px;">Clear</a>
-                                    <a href="{{ route('admin.ledger.party.download', ['type' => $type, 'id' => $party->id, 'start_date' => request('start_date'), 'end_date' => request('end_date'), 'customer_id' => request('customer_id'), 'view_mode' => request('view_mode', 'mix')]) }}"
-                                        class="btn btn-danger px-3 ml-1" style="border-radius: 10px;">
+                                        class="btn btn-outline-secondary mr-1" style="border-radius: 8px;">Reset</a>
+                                    <a href="{{ route('admin.ledger.party.download', array_merge(request()->query(), ['type' => $type, 'id' => $party->id])) }}"
+                                        class="btn btn-danger px-3 mr-1" style="border-radius: 8px;" title="Download PDF">
                                         <i class="fas fa-file-pdf mr-1"></i> PDF
                                     </a>
-                                    <a href="{{ route('admin.ledger.party.export-excel', ['type' => $type, 'id' => $party->id, 'start_date' => request('start_date'), 'end_date' => request('end_date'), 'customer_id' => request('customer_id'), 'view_mode' => request('view_mode', 'mix')]) }}"
-                                        class="btn btn-success px-3 ml-1" style="border-radius: 10px;">
+                                    <a href="{{ route('admin.ledger.party.export-excel', array_merge(request()->query(), ['type' => $type, 'id' => $party->id])) }}"
+                                        class="btn btn-success px-3" style="border-radius: 8px;" title="Export Excel">
                                         <i class="fas fa-file-excel mr-1"></i> Excel
                                     </a>
                                 </div>
