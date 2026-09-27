@@ -488,7 +488,7 @@
                                             Stage: <strong class="text-dark">{{ $printing->from_stage?->name ?? 'Cutting' }} <i class="fas fa-arrow-right mx-1 text-muted" style="font-size:9px;"></i> {{ $printing->to_stage?->name ?? '-' }}</strong>
                                         </div>
                                         <div class="text-muted" style="font-size: 11px;">
-                                            Unit: <strong class="text-dark">{{ $cutting_unit }} <i class="fas fa-arrow-right mx-1 text-muted" style="font-size:9px;"></i> {{ $printing->getToUnitMaster?->name ?? '-' }}</strong>
+                                            Unit: <strong class="text-dark">{{ $printing->from_stage_id == 3 ? $cutting_unit : ($printing->getFromUnitMaster?->name ?? $cutting_unit) }} <i class="fas fa-arrow-right mx-1 text-muted" style="font-size:9px;"></i> {{ $printing->getToUnitMaster?->name ?? '-' }}</strong>
                                         </div>
                                     </div>
                                     

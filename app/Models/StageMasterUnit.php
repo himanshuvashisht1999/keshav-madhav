@@ -38,4 +38,20 @@ class StageMasterUnit extends Model
         return $this->belongsTo('App\Models\MasterFabricWarehouse', 'master_fabric_warehouse_id', 'id');
     }
 
+    public function getNameAttribute($value)
+    {
+        if (!empty($value)) {
+            return $value;
+        }
+        if ($this->master_fabric_warehouse_id) {
+            $wh = $this->relationLoaded('masterFabricWarehouse')
+                ? $this->masterFabricWarehouse
+                : \App\Models\MasterFabricWarehouse::find($this->master_fabric_warehouse_id);
+            return $wh->cutting_master_name ?? $wh->name ?? 'Godam';
+        }
+        if ($this->master_stage_id == 13) {
+            return 'Godam';
+        }
+        return $value;
+    }
 }

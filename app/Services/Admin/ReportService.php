@@ -1691,6 +1691,7 @@ class ReportService
             ->with([
                 'from_stage',
                 'to_stage',
+                'getFromUnitMaster',
                 'getToUnitMaster',
                 'orderProduct.orderProductSet.fabric',
                 'orderProduct.orderProductSet.colors',
@@ -1746,7 +1747,10 @@ class ReportService
             $tx->details = $tx->godamDetails;
         });
 
-        $stage_transactions = $stage_tx->concat($printing_to_stitching_tx)->concat($godam_tx);
+        $stage_transactions = $stage_tx->concat($printing_to_stitching_tx)->concat($godam_tx)
+            ->sortBy(function($tx) {
+                return $tx->production_datetime ?? $tx->created_at;
+            })->values();
         
         $rolls = \App\Models\FabricRollAssigning::with(['fabricRollAssigningsDetail', 'stageMasterUnit.masterFabricWarehouse'])
             ->where('lot_no', $lot_no)
