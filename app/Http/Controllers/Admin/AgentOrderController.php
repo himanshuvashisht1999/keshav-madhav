@@ -5034,16 +5034,38 @@ class AgentOrderController extends Controller
             // 1. Restore Item Inventory
             $items = DB::table('agent_order_items')->where('agent_order_dispatch_id', $id)->get();
             foreach ($items as $item) {
-                // Find or create inventory record to restore
-                $inventory = \App\Models\DomesticInventory::where('barcode', $item->barcode)->first();
+                // Find inventory record to restore in the specific rack it came from
+                $inventory = null;
+                if (!empty($item->rack_id)) {
+                    $inventory = \App\Models\DomesticInventory::where('barcode', $item->barcode)
+                        ->where('rack_id', $item->rack_id)
+                        ->first();
+                }
+
+                // If not found in assigned rack, search in dispatchable storerooms first
+                if (!$inventory) {
+                    $inventory = \App\Models\DomesticInventory::join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                        ->join('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                        ->where('domestic_inventories.barcode', $item->barcode)
+                        ->where('storerooms.order_dispatch', '!=', 'No')
+                        ->select('domestic_inventories.*')
+                        ->first();
+                }
+
+                // Fallback to any inventory record with this barcode
+                if (!$inventory) {
+                    $inventory = \App\Models\DomesticInventory::where('barcode', $item->barcode)->first();
+                }
+
                 if ($inventory) {
                     $inventory->increment('total_boxes', $item->box_qty);
                 } else {
-                    // If deleted, recreate it
+                    // If deleted, recreate it in the item's rack
                     \App\Models\DomesticInventory::create([
                         'product_id' => $item->product_id,
                         'color_id' => $item->color_id,
                         'size_set_id' => $item->size_set_id,
+                        'rack_id' => $item->rack_id,
                         'total_boxes' => $item->box_qty,
                         'quantity' => ($item->box_qty > 0) ? ($item->quantity / $item->box_qty) : 0,
                         'box_no' => $item->box_no,
@@ -5148,8 +5170,10 @@ class AgentOrderController extends Controller
             ->where('domestic_inventories.total_boxes', '>', 0)
             ->where(function ($q) {
                 $q->whereNull('storerooms.id')
-                  ->orWhere('storerooms.order_taken', '=', 'Yes');
+                  ->orWhere('storerooms.order_taken', '=', 'Yes')
+                  ->orWhere('storerooms.order_dispatch', '=', 'Yes');
             })
+            ->orderByRaw("CASE WHEN storerooms.order_dispatch = 'No' THEN 1 ELSE 0 END ASC")
             ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
             ->orderBy('domestic_inventories.total_boxes', 'desc')
             ->get();
@@ -5171,8 +5195,10 @@ class AgentOrderController extends Controller
                 ->where('domestic_inventories.total_boxes', '>', 0)
                 ->where(function ($q) {
                     $q->whereNull('storerooms.id')
-                      ->orWhere('storerooms.order_taken', '=', 'Yes');
+                      ->orWhere('storerooms.order_taken', '=', 'Yes')
+                      ->orWhere('storerooms.order_dispatch', '=', 'Yes');
                 })
+                ->orderByRaw("CASE WHEN storerooms.order_dispatch = 'No' THEN 1 ELSE 0 END ASC")
                 ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
                 ->orderBy('domestic_inventories.total_boxes', 'desc')
                 ->first();
@@ -5184,8 +5210,10 @@ class AgentOrderController extends Controller
                     ->where('domestic_inventories.barcode', $barcode)
                     ->where(function ($q) {
                         $q->whereNull('storerooms.id')
-                          ->orWhere('storerooms.order_taken', '=', 'Yes');
+                          ->orWhere('storerooms.order_taken', '=', 'Yes')
+                          ->orWhere('storerooms.order_dispatch', '=', 'Yes');
                     })
+                    ->orderByRaw("CASE WHEN storerooms.order_dispatch = 'No' THEN 1 ELSE 0 END ASC")
                     ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
                     ->orderBy('domestic_inventories.total_boxes', 'desc')
                     ->first();
@@ -5197,8 +5225,10 @@ class AgentOrderController extends Controller
                     ->where('domestic_inventories.product_id', $product_id)
                     ->where(function ($q) {
                         $q->whereNull('storerooms.id')
-                          ->orWhere('storerooms.order_taken', '=', 'Yes');
+                          ->orWhere('storerooms.order_taken', '=', 'Yes')
+                          ->orWhere('storerooms.order_dispatch', '=', 'Yes');
                     })
+                    ->orderByRaw("CASE WHEN storerooms.order_dispatch = 'No' THEN 1 ELSE 0 END ASC")
                     ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
                     ->orderBy('domestic_inventories.total_boxes', 'desc')
                     ->first();

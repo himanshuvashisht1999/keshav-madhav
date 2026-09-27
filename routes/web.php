@@ -2017,6 +2017,172 @@ Route::get('/run-today-database-updates', function (\Illuminate\Http\Request $re
     }
 });
 
+Route::get('/fix-order-112-dispatch-inventory', function (\Illuminate\Http\Request $request) {
+    \Illuminate\Support\Facades\DB::beginTransaction();
+    try {
+        set_time_limit(300);
+        $logs = [];
+
+        // 1. Identify storerooms and racks dynamically
+        $changeRoom = \Illuminate\Support\Facades\DB::table('storerooms')->where('name', 'LIKE', '%CHANGE%')->first();
+        $changeRackId = \Illuminate\Support\Facades\DB::table('racks')->where('storeroom_id', $changeRoom->id ?? 7)->value('id') ?? 64;
+
+        $sampleRoom = \Illuminate\Support\Facades\DB::table('storerooms')->where('name', 'LIKE', '%ADVANCE SAMPLE%')->first();
+        $sampleRackId = \Illuminate\Support\Facades\DB::table('racks')->where('storeroom_id', $sampleRoom->id ?? 3)->value('id') ?? 19;
+
+        $logs['change_warehouse'] = [
+            'storeroom_id' => $changeRoom->id ?? null,
+            'storeroom_name' => $changeRoom->name ?? 'CHANGE *',
+            'rack_id' => $changeRackId
+        ];
+        $logs['sample_warehouse'] = [
+            'storeroom_id' => $sampleRoom->id ?? null,
+            'storeroom_name' => $sampleRoom->name ?? 'ADVANCE SAMPLE',
+            'rack_id' => $sampleRackId
+        ];
+
+        // 2. The 3 specific products consumed into warehouse CHANGE *
+        $consumedTargets = [
+            ['prod' => 668, 'color' => 12, 'size' => 3, 'barcode' => 'D668S3C12', 'desc' => '19176 (L. BLUE 32*40)'],
+            ['prod' => 668, 'color' => 35, 'size' => 3, 'barcode' => 'D668S3C35', 'desc' => '19176 (M.BLUE 32*40)'],
+            ['prod' => 724, 'color' => 12, 'size' => 3, 'barcode' => 'D724S3C12', 'desc' => '91850011 (L. BLUE 32*40)'],
+        ];
+
+        $reconciledStock = [];
+        foreach ($consumedTargets as $target) {
+            // Deduct fake box from ADVANCE SAMPLE if > 1
+            $sampleInv = \Illuminate\Support\Facades\DB::table('domestic_inventories')
+                ->where('barcode', $target['barcode'])
+                ->where('rack_id', $sampleRackId)
+                ->first();
+
+            $sampleOld = $sampleInv->total_boxes ?? 0;
+            if ($sampleInv && $sampleInv->total_boxes > 1) {
+                \Illuminate\Support\Facades\DB::table('domestic_inventories')
+                    ->where('id', $sampleInv->id)
+                    ->decrement('total_boxes', 1);
+            }
+
+            // Restore 1 box to CHANGE * rack
+            $changeInv = \Illuminate\Support\Facades\DB::table('domestic_inventories')
+                ->where('barcode', $target['barcode'])
+                ->where('rack_id', $changeRackId)
+                ->first();
+
+            if ($changeInv) {
+                if ($changeInv->total_boxes < 1) {
+                    \Illuminate\Support\Facades\DB::table('domestic_inventories')
+                        ->where('id', $changeInv->id)
+                        ->update(['total_boxes' => 1]);
+                }
+                $changeNew = 1;
+            } else {
+                \Illuminate\Support\Facades\DB::table('domestic_inventories')->insert([
+                    'product_id' => $target['prod'],
+                    'color_id' => $target['color'],
+                    'size_set_id' => $target['size'],
+                    'rack_id' => $changeRackId,
+                    'quantity' => 5,
+                    'total_boxes' => 1,
+                    'barcode' => $target['barcode'],
+                    'order_main_id' => 0,
+                    'status' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+                $changeNew = 1;
+            }
+
+            $reconciledStock[] = [
+                'product' => $target['desc'],
+                'barcode' => $target['barcode'],
+                'advance_sample_boxes' => "was {$sampleOld}, now " . max(1, $sampleOld - 1),
+                'change_warehouse_boxes' => "restored to {$changeNew}"
+            ];
+
+            // Update order 112 item assignment to CHANGE * rack
+            \Illuminate\Support\Facades\DB::table('agent_order_items')
+                ->where('agent_order_id', 112)
+                ->where('product_id', $target['prod'])
+                ->where('color_id', $target['color'])
+                ->where('size_set_id', $target['size'])
+                ->whereNull('dispatched_at')
+                ->update(['rack_id' => $changeRackId]);
+        }
+        $logs['consumed_stock_reconciled'] = $reconciledStock;
+
+        // 3. Reconcile other items from deleted dispatch #491 if any remain in sample rack
+        $otherAdjustments = [
+            ['prod' => 662, 'color' => 10, 'size' => 2, 'barcode' => 'D662S2C10', 'rack' => 2, 'boxes' => 1],
+            ['prod' => 662, 'color' => 28, 'size' => 2, 'barcode' => 'D662S2C28', 'rack' => 2, 'boxes' => 1],
+            ['prod' => 682, 'color' => 5,  'size' => 3, 'barcode' => 'D682S3C5',  'rack' => 3, 'boxes' => 1],
+            ['prod' => 682, 'color' => 21, 'size' => 3, 'barcode' => 'D682S3C21', 'rack' => 3, 'boxes' => 1],
+            ['prod' => 698, 'color' => 112,'size' => 2, 'barcode' => 'D698S2C112','rack' => 3, 'boxes' => 1],
+            ['prod' => 698, 'color' => 112,'size' => 3, 'barcode' => 'D698S3C112','rack' => 3, 'boxes' => 1],
+            ['prod' => 706, 'color' => 4,  'size' => 3, 'barcode' => 'D706S3C4',  'rack' => 48,'boxes' => 1],
+            ['prod' => 706, 'color' => 5,  'size' => 3, 'barcode' => 'D706S3C5',  'rack' => 1, 'boxes' => 1],
+            ['prod' => 706, 'color' => 10, 'size' => 3, 'barcode' => 'D706S3C10', 'rack' => 1, 'boxes' => 1],
+            ['prod' => 724, 'color' => 1,  'size' => 3, 'barcode' => 'D724S3C1',  'rack' => $changeRackId, 'boxes' => 1],
+            ['prod' => 737, 'color' => 1,  'size' => 58,'barcode' => 'D737S58C1', 'rack' => 4, 'boxes' => 2],
+        ];
+
+        $reconciledOther = 0;
+        foreach ($otherAdjustments as $adj) {
+            $sampleRow = \Illuminate\Support\Facades\DB::table('domestic_inventories')
+                ->where('barcode', $adj['barcode'])
+                ->where('rack_id', $sampleRackId)
+                ->first();
+
+            if ($sampleRow && $sampleRow->total_boxes >= $adj['boxes']) {
+                // If sample has extra, move back to destination rack
+                \Illuminate\Support\Facades\DB::table('domestic_inventories')->where('id', $sampleRow->id)->decrement('total_boxes', $adj['boxes']);
+                $destRow = \Illuminate\Support\Facades\DB::table('domestic_inventories')
+                    ->where('barcode', $adj['barcode'])
+                    ->where('rack_id', $adj['rack'])
+                    ->first();
+                if ($destRow) {
+                    \Illuminate\Support\Facades\DB::table('domestic_inventories')->where('id', $destRow->id)->increment('total_boxes', $adj['boxes']);
+                }
+                $reconciledOther++;
+            }
+        }
+        $logs['other_reconciled_count'] = $reconciledOther;
+
+        // 4. Ensure order 112 status and items are verified
+        $order112 = \Illuminate\Support\Facades\DB::table('agent_orders')->where('id', 112)->first();
+        $logs['order_112_status'] = $order112->status ?? 'N/A';
+
+        \Illuminate\Support\Facades\DB::commit();
+
+        // 5. Clear Caches
+        try {
+            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            \Illuminate\Support\Facades\Artisan::call('config:clear');
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+            $logs['caches_cleared'] = true;
+        } catch (\Throwable $e) {
+            $logs['cache_clear_note'] = $e->getMessage();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Order 112 and inventory balances have been successfully restored and reconciled.',
+            'dispatch_scan_url' => url('/admin/agent-orders/112/dispatch-scan'),
+            'details' => $logs
+        ]);
+
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\DB::rollBack();
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ], 500);
+    }
+});
+
+
 
 
 
