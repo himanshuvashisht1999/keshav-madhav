@@ -54,10 +54,17 @@
                                 <label class="small text-muted font-weight-bold mb-1">Status</label>
                                 <select name="status" class="form-control select2 form-control-sm">
                                     <option value="">Any Status</option>
-                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>PENDING</option>
-                                    <option value="delayed" {{ request('status') == 'delayed' ? 'selected' : '' }}>DELAYED</option>
-                                    <option value="partially_dispatched" {{ request('status') == 'partially_dispatched' ? 'selected' : '' }}>PARTIALLY DISPATCHED</option>
-                                    <option value="dispatched" {{ request('status') == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
+                                    <optgroup label="1. PENDING">
+                                        <option value="all_pending" {{ request('status') == 'all_pending' ? 'selected' : '' }}>ALL PENDING</option>
+                                        <option value="fully_pending" {{ in_array(request('status'), ['fully_pending', 'pending']) ? 'selected' : '' }}>FULLY PENDING</option>
+                                        <option value="part_pending" {{ request('status') == 'part_pending' ? 'selected' : '' }}>PART PENDING</option>
+                                        <option value="delayed" {{ request('status') == 'delayed' ? 'selected' : '' }}>DELAYED</option>
+                                    </optgroup>
+                                    <optgroup label="2. DISPATCH">
+                                        <option value="all_dispatch" {{ in_array(request('status'), ['all_dispatch', 'dispatch']) ? 'selected' : '' }}>ALL DISPATCH</option>
+                                        <option value="fully_dispatch" {{ in_array(request('status'), ['fully_dispatch', 'dispatched']) ? 'selected' : '' }}>FULLY DISPATCH</option>
+                                        <option value="part_dispatch" {{ in_array(request('status'), ['part_dispatch', 'partially_dispatched']) ? 'selected' : '' }}>PART DISPATCH</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="col-md mb-2">
@@ -110,8 +117,16 @@
                                     <i class="fas fa-box-open" style="color:#10b981;font-size:1.1rem;"></i>
                                 </div>
                                 <div>
-                                    <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Total Pieces</div>
-                                    <div class="font-weight-bold" style="font-size:1.4rem;line-height:1.2;color:#064e3b;">{{ number_format($totals->total_pieces) }}</div>
+                                    <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">
+                                        @if(in_array(request('status'), ['all_dispatch', 'fully_dispatch', 'part_dispatch']))
+                                            Total Dispatched Pieces
+                                        @elseif(in_array(request('status'), ['all_pending', 'fully_pending', 'part_pending', 'delayed']))
+                                            Total Pending Pieces
+                                        @else
+                                            Total Pieces
+                                        @endif
+                                    </div>
+                                    <div class="font-weight-bold" style="font-size:1.4rem;line-height:1.2;color:#064e3b;">{{ number_format($totals->total_pieces, request('sale_type') == 'fabric' ? 2 : 0) }}</div>
                                 </div>
                             </div>
                         </div>
@@ -123,7 +138,15 @@
                                     <i class="fas fa-rupee-sign" style="color:#f59e0b;font-size:1.1rem;"></i>
                                 </div>
                                 <div>
-                                    <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">Total Grand Total</div>
+                                    <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;">
+                                        @if(in_array(request('status'), ['all_dispatch', 'fully_dispatch', 'part_dispatch']))
+                                            Total Dispatched Grand Total
+                                        @elseif(in_array(request('status'), ['all_pending', 'fully_pending', 'part_pending', 'delayed']))
+                                            Total Pending Grand Total
+                                        @else
+                                            Total Grand Total
+                                        @endif
+                                    </div>
                                     <div class="font-weight-bold" style="font-size:1.4rem;line-height:1.2;color:#78350f;">₹ {{ number_format($totals->total_grand_total, 2) }}</div>
                                 </div>
                             </div>
@@ -218,7 +241,33 @@
                                                 </a>
                                             </div>
                                         </td>
-                                        <td class="text-nowrap">{{ number_format($order->total_qty, $order->sale_type == 'fabric' ? 2 : 0) }} {{ $order->sale_type == 'fabric' ? 'm' : 'Pcs' }}</td>
+                                        <td class="text-nowrap">
+                                            @php
+                                                $baseSubtotal = ($order->total_amount > 0) ? $order->total_amount : (($order->dispatched_amount + $order->pending_amount) ?: 1);
+                                                $dispGt = ($baseSubtotal > 0) ? round($order->grand_total * ($order->dispatched_amount / $baseSubtotal), 2) : 0;
+                                                $pendGt = round($order->grand_total - $dispGt, 2);
+                                                $isDispFilter = in_array(request('status'), ['part_dispatch', 'all_dispatch', 'fully_dispatch']);
+                                                $isPendFilter = in_array(request('status'), ['part_pending', 'all_pending', 'fully_pending', 'delayed']);
+                                            @endphp
+
+                                            @if($order->status == 'partially_dispatched')
+                                                @if($isDispFilter)
+                                                    <span class="font-weight-bold text-success">{{ number_format($order->dispatched_qty, $order->sale_type == 'fabric' ? 2 : 0) }} {{ $order->sale_type == 'fabric' ? 'm' : 'Pcs' }}</span>
+                                                    <small class="text-muted d-block" style="font-size:0.72rem;">of {{ number_format($order->total_qty, $order->sale_type == 'fabric' ? 2 : 0) }} Total</small>
+                                                @elseif($isPendFilter)
+                                                    <span class="font-weight-bold text-warning" style="color:#d97706 !important;">{{ number_format($order->pending_qty, $order->sale_type == 'fabric' ? 2 : 0) }} {{ $order->sale_type == 'fabric' ? 'm' : 'Pcs' }}</span>
+                                                    <small class="text-muted d-block" style="font-size:0.72rem;">of {{ number_format($order->total_qty, $order->sale_type == 'fabric' ? 2 : 0) }} Total</small>
+                                                @else
+                                                    <span class="font-weight-bold">{{ number_format($order->total_qty, $order->sale_type == 'fabric' ? 2 : 0) }} {{ $order->sale_type == 'fabric' ? 'm' : 'Pcs' }}</span>
+                                                    <small class="d-block" style="font-size:0.72rem;">
+                                                        <span class="text-success font-weight-bold">{{ number_format($order->dispatched_qty, $order->sale_type == 'fabric' ? 2 : 0) }} disp.</span> /
+                                                        <span class="text-warning font-weight-bold" style="color:#d97706 !important;">{{ number_format($order->pending_qty, $order->sale_type == 'fabric' ? 2 : 0) }} pend.</span>
+                                                    </small>
+                                                @endif
+                                            @else
+                                                <span class="font-weight-bold">{{ number_format($order->total_qty, $order->sale_type == 'fabric' ? 2 : 0) }} {{ $order->sale_type == 'fabric' ? 'm' : 'Pcs' }}</span>
+                                            @endif
+                                        </td>
                                         <td class="text-center">
                                             @if($order->sale_type == 'fabric')
                                                 <span class="badge badge-secondary px-2 py-1">
@@ -230,8 +279,23 @@
                                                 </span>
                                             @endif
                                         </td>
-                                        <td><span
-                                                class="text-primary font-weight-bold">₹{{ number_format($order->grand_total, 2) }}</span>
+                                        <td>
+                                            @if($order->status == 'partially_dispatched')
+                                                @if($isDispFilter)
+                                                    <span class="text-success font-weight-bold">₹{{ number_format($dispGt, 2) }}</span>
+                                                    <small class="text-muted d-block" style="font-size:0.72rem;">of ₹{{ number_format($order->grand_total, 2) }}</small>
+                                                @elseif($isPendFilter)
+                                                    <span class="text-warning font-weight-bold" style="color:#d97706 !important;">₹{{ number_format($pendGt, 2) }}</span>
+                                                    <small class="text-muted d-block" style="font-size:0.72rem;">of ₹{{ number_format($order->grand_total, 2) }}</small>
+                                                @else
+                                                    <span class="text-primary font-weight-bold">₹{{ number_format($order->grand_total, 2) }}</span>
+                                                    <small class="d-block" style="font-size:0.72rem;">
+                                                        <span class="text-success">₹{{ number_format($dispGt, 2) }} disp.</span>
+                                                    </small>
+                                                @endif
+                                            @else
+                                                <span class="text-primary font-weight-bold">₹{{ number_format($order->grand_total, 2) }}</span>
+                                            @endif
                                         </td>
                                         <td>
                                             @php

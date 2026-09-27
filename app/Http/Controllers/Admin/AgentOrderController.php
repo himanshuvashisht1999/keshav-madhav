@@ -684,7 +684,11 @@ class AgentOrderController extends Controller
                 DB::raw('(SELECT COALESCE(SUM(box_qty), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id) + (SELECT COALESCE(COUNT(id), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id) as total_boxes'),
                 DB::raw('(SELECT COALESCE(SUM(scanned_box_qty), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) as scanned_count'),
                 DB::raw('(SELECT COALESCE(SUM(scanned_quantity * selling_price), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) as scanned_amount'),
-                DB::raw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE paymentable_id = agent_orders.id AND paymentable_type = "App\\\\Models\\\\AgentOrder") as total_paid')
+                DB::raw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE paymentable_id = agent_orders.id AND paymentable_type = "App\\\\Models\\\\AgentOrder") as total_paid'),
+                DB::raw('(SELECT COALESCE(SUM(quantity), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NOT NULL) + (SELECT COALESCE(SUM(meter), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NOT NULL) as dispatched_qty'),
+                DB::raw('(SELECT COALESCE(SUM(quantity), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) + (SELECT COALESCE(SUM(meter), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) as pending_qty'),
+                DB::raw('(SELECT COALESCE(SUM(quantity * selling_price), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NOT NULL) + (SELECT COALESCE(SUM(meter * selling_price), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NOT NULL) as dispatched_amount'),
+                DB::raw('(SELECT COALESCE(SUM(quantity * selling_price), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) + (SELECT COALESCE(SUM(meter * selling_price), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) as pending_amount')
             );
 
         if ($request->filled('agent_id')) {
@@ -717,7 +721,18 @@ class AgentOrderController extends Controller
             $query->where('agent_orders.master_vendor_id', $request->vendor_id);
         }
         if ($request->filled('status')) {
-            if ($request->status === 'delayed') {
+            $status = $request->status;
+            if ($status === 'all_pending') {
+                $query->whereIn('agent_orders.status', ['pending', 'partially_dispatched', 'delayed']);
+            } elseif (in_array($status, ['fully_pending', 'pending'])) {
+                $query->where('agent_orders.status', 'pending')
+                      ->where(function ($q) {
+                          $q->whereNull('agent_orders.expected_dispatch_date')
+                            ->orWhere('agent_orders.expected_dispatch_date', '>=', date('Y-m-d'));
+                      });
+            } elseif (in_array($status, ['part_pending', 'part_dispatch', 'partially_dispatched'])) {
+                $query->where('agent_orders.status', 'partially_dispatched');
+            } elseif ($status === 'delayed') {
                 $query->where(function ($q) {
                     $q->where('agent_orders.status', 'delayed')
                       ->orWhere(function ($q2) {
@@ -726,14 +741,12 @@ class AgentOrderController extends Controller
                              ->where('agent_orders.expected_dispatch_date', '<', date('Y-m-d'));
                       });
                 });
-            } elseif ($request->status === 'pending') {
-                $query->where('agent_orders.status', 'pending')
-                      ->where(function ($q) {
-                          $q->whereNull('agent_orders.expected_dispatch_date')
-                            ->orWhere('agent_orders.expected_dispatch_date', '>=', date('Y-m-d'));
-                      });
+            } elseif (in_array($status, ['all_dispatch', 'dispatch'])) {
+                $query->whereIn('agent_orders.status', ['dispatched', 'partially_dispatched']);
+            } elseif (in_array($status, ['fully_dispatch', 'dispatched'])) {
+                $query->where('agent_orders.status', 'dispatched');
             } else {
-                $query->where('agent_orders.status', $request->status);
+                $query->where('agent_orders.status', $status);
             }
         }
         if ($request->filled('sale_type')) {
@@ -755,13 +768,8 @@ class AgentOrderController extends Controller
             $query->whereDate('agent_orders.created_at', '<=', $request->to_date);
         }
 
-        // ── Aggregate totals (across ALL filtered rows, not just current page) ──
-        $totalsQuery = clone $query;
-        $totals = $totalsQuery->select(
-            DB::raw('COALESCE(SUM(agent_orders.grand_total), 0) as total_grand_total'),
-            DB::raw('COALESCE(SUM(agent_orders.total_qty), 0)   as total_pieces'),
-            DB::raw('COUNT(agent_orders.id)                      as total_orders')
-        )->first();
+        // ── Aggregate totals (across ALL filtered rows, calculated according to status filter) ──
+        $totals = $this->calculateOrdersTotals($query, $request->status);
 
         $orders = $query->orderBy('agent_orders.id', 'desc')
             ->paginate(20)
@@ -800,11 +808,16 @@ class AgentOrderController extends Controller
                 'agent_orders.sale_type',
                 'agent_orders.order_type',
                 'agent_orders.grand_total',
+                'agent_orders.total_amount',
                 'agent_orders.total_qty',
                 'agent_orders.order_date',
                 'agent_orders.expected_dispatch_date',
                 DB::raw('COALESCE(sales_agents.name, "Direct (No Agent)") as agent_name'),
-                DB::raw('COALESCE(master_customers.name, vendors.name)    as shop_name')
+                DB::raw('COALESCE(master_customers.name, vendors.name)    as shop_name'),
+                DB::raw('(SELECT COALESCE(SUM(quantity), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NOT NULL) + (SELECT COALESCE(SUM(meter), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NOT NULL) as dispatched_qty'),
+                DB::raw('(SELECT COALESCE(SUM(quantity), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) + (SELECT COALESCE(SUM(meter), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) as pending_qty'),
+                DB::raw('(SELECT COALESCE(SUM(quantity * selling_price), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NOT NULL) + (SELECT COALESCE(SUM(meter * selling_price), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NOT NULL) as dispatched_subtotal'),
+                DB::raw('(SELECT COALESCE(SUM(quantity * selling_price), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) + (SELECT COALESCE(SUM(meter * selling_price), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) as pending_subtotal')
             );
 
         if ($request->filled('agent_id')) {
@@ -826,7 +839,18 @@ class AgentOrderController extends Controller
             }
         }
         if ($request->filled('status')) {
-            if ($request->status === 'delayed') {
+            $status = $request->status;
+            if ($status === 'all_pending') {
+                $query->whereIn('agent_orders.status', ['pending', 'partially_dispatched', 'delayed']);
+            } elseif (in_array($status, ['fully_pending', 'pending'])) {
+                $query->where('agent_orders.status', 'pending')
+                      ->where(function ($q) {
+                          $q->whereNull('agent_orders.expected_dispatch_date')
+                            ->orWhere('agent_orders.expected_dispatch_date', '>=', date('Y-m-d'));
+                      });
+            } elseif (in_array($status, ['part_pending', 'part_dispatch', 'partially_dispatched'])) {
+                $query->where('agent_orders.status', 'partially_dispatched');
+            } elseif ($status === 'delayed') {
                 $query->where(function ($q) {
                     $q->where('agent_orders.status', 'delayed')
                       ->orWhere(function ($q2) {
@@ -835,14 +859,12 @@ class AgentOrderController extends Controller
                              ->where('agent_orders.expected_dispatch_date', '<', date('Y-m-d'));
                       });
                 });
-            } elseif ($request->status === 'pending') {
-                $query->where('agent_orders.status', 'pending')
-                      ->where(function ($q) {
-                          $q->whereNull('agent_orders.expected_dispatch_date')
-                            ->orWhere('agent_orders.expected_dispatch_date', '>=', date('Y-m-d'));
-                      });
+            } elseif (in_array($status, ['all_dispatch', 'dispatch'])) {
+                $query->whereIn('agent_orders.status', ['dispatched', 'partially_dispatched']);
+            } elseif (in_array($status, ['fully_dispatch', 'dispatched'])) {
+                $query->where('agent_orders.status', 'dispatched');
             } else {
-                $query->where('agent_orders.status', $request->status);
+                $query->where('agent_orders.status', $status);
             }
         }
         if ($request->filled('sale_type')) $query->where('agent_orders.sale_type', $request->sale_type);
@@ -865,11 +887,7 @@ class AgentOrderController extends Controller
     public function exportPdf(Request $request)
     {
         $rows   = $this->buildOrdersQuery($request)->get();
-        $totals = (object) [
-            'total_orders'      => $rows->count(),
-            'total_pieces'      => $rows->sum('total_qty'),
-            'total_grand_total' => $rows->sum('grand_total'),
-        ];
+        $totals = $this->calculateOrdersTotals($this->buildOrdersQuery($request), $request->status);
         $filters = array_filter($request->only(['agent_id','party_id','status','sale_type','payment_status','from_date','to_date']));
 
         $pdf = Pdf::loadView('admin.agent_orders.export_pdf', compact('rows', 'totals', 'filters'))
@@ -905,6 +923,9 @@ class AgentOrderController extends Controller
 
         // ── Data rows ──
         $row = 2;
+        $isDispFilter = in_array($request->status, ['part_dispatch', 'all_dispatch', 'fully_dispatch']);
+        $isPendFilter = in_array($request->status, ['part_pending', 'all_pending', 'fully_pending', 'delayed']);
+
         foreach ($rows as $i => $o) {
             $sheet->setCellValue('A' . $row, $i + 1);
             $sheet->setCellValue('B' . $row, '#ORD-' . str_pad($o->id, 5, '0', STR_PAD_LEFT));
@@ -913,8 +934,24 @@ class AgentOrderController extends Controller
             $sheet->setCellValue('E' . $row, $o->shop_name);
             $sheet->setCellValue('F' . $row, strtoupper($o->order_type ?? 'normal'));
             $sheet->setCellValue('G' . $row, ucfirst($o->sale_type ?? 'item'));
-            $sheet->setCellValue('H' . $row, $o->total_qty);
-            $sheet->setCellValue('I' . $row, $o->grand_total);
+
+            $rowQty = $o->total_qty;
+            $rowAmt = $o->grand_total;
+            if ($o->status === 'partially_dispatched') {
+                $base = ($o->total_amount > 0) ? $o->total_amount : (($o->dispatched_subtotal + $o->pending_subtotal) ?: 1);
+                $dispAmt = ($base > 0) ? ($o->grand_total * ($o->dispatched_subtotal / $base)) : 0;
+                $pendAmt = $o->grand_total - $dispAmt;
+                if ($isDispFilter) {
+                    $rowQty = $o->dispatched_qty;
+                    $rowAmt = round($dispAmt, 2);
+                } elseif ($isPendFilter) {
+                    $rowQty = $o->pending_qty;
+                    $rowAmt = round($pendAmt, 2);
+                }
+            }
+
+            $sheet->setCellValue('H' . $row, $rowQty);
+            $sheet->setCellValue('I' . $row, $rowAmt);
             
             $isDelayed = ($o->status == 'delayed') || ($o->status == 'pending' && $o->expected_dispatch_date && $o->expected_dispatch_date < date('Y-m-d'));
             $sheet->setCellValue('J' . $row, $isDelayed ? 'DELAYED' : strtoupper($o->status ?? ''));
@@ -930,9 +967,10 @@ class AgentOrderController extends Controller
         }
 
         // ── Totals row ──
+        $exportTotals = $this->calculateOrdersTotals($this->buildOrdersQuery($request), $request->status);
         $sheet->setCellValue('A' . $row, 'TOTAL');
-        $sheet->setCellValue('H' . $row, $rows->sum('total_qty'));
-        $sheet->setCellValue('I' . $row, $rows->sum('grand_total'));
+        $sheet->setCellValue('H' . $row, $exportTotals->total_pieces);
+        $sheet->setCellValue('I' . $row, $exportTotals->total_grand_total);
         $sheet->getStyle("A{$row}:K{$row}")->getFont()->setBold(true);
         $sheet->getStyle("A{$row}:K{$row}")->getFill()->setFillType(Fill::FILL_SOLID)
               ->getStartColor()->setRGB('fef9c3');
@@ -949,6 +987,64 @@ class AgentOrderController extends Controller
         (new Xlsx($spreadsheet))->save($path);
 
         return response()->download($path)->deleteFileAfterSend(true);
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+     * Helper: calculate orders totals dynamically based on status filter
+     * ───────────────────────────────────────────────────────────── */
+    private function calculateOrdersTotals($ordersQuery, $statusFilter = null)
+    {
+        $isDispatchFilter = in_array($statusFilter, ['part_dispatch', 'all_dispatch', 'fully_dispatch', 'dispatched']);
+        $isPendingFilter  = in_array($statusFilter, ['part_pending', 'all_pending', 'fully_pending', 'pending', 'delayed']);
+
+        $rows = (clone $ordersQuery)->select(
+            'agent_orders.id',
+            'agent_orders.status',
+            'agent_orders.total_qty',
+            'agent_orders.total_amount',
+            'agent_orders.grand_total',
+            DB::raw('(SELECT COALESCE(SUM(quantity), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NOT NULL) + (SELECT COALESCE(SUM(meter), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NOT NULL) as dispatched_qty'),
+            DB::raw('(SELECT COALESCE(SUM(quantity), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) + (SELECT COALESCE(SUM(meter), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) as pending_qty'),
+            DB::raw('(SELECT COALESCE(SUM(quantity * selling_price), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NOT NULL) + (SELECT COALESCE(SUM(meter * selling_price), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NOT NULL) as dispatched_subtotal'),
+            DB::raw('(SELECT COALESCE(SUM(quantity * selling_price), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) + (SELECT COALESCE(SUM(meter * selling_price), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) as pending_subtotal')
+        )->get();
+
+        $totalOrders = $rows->count();
+        $totalPieces = 0;
+        $totalGrandTotal = 0;
+
+        foreach ($rows as $ord) {
+            $base = ($ord->total_amount > 0) ? $ord->total_amount : (($ord->dispatched_subtotal + $ord->pending_subtotal) ?: 1);
+            $dispGt = ($base > 0) ? ($ord->grand_total * ($ord->dispatched_subtotal / $base)) : 0;
+            $pendGt = $ord->grand_total - $dispGt;
+
+            if ($isDispatchFilter) {
+                if ($statusFilter === 'fully_dispatch' || $ord->status === 'dispatched') {
+                    $totalPieces += $ord->total_qty;
+                    $totalGrandTotal += $ord->grand_total;
+                } else {
+                    $totalPieces += $ord->dispatched_qty;
+                    $totalGrandTotal += $dispGt;
+                }
+            } elseif ($isPendingFilter) {
+                if ($statusFilter === 'fully_pending' || ($ord->status === 'pending' && $ord->dispatched_qty == 0)) {
+                    $totalPieces += $ord->total_qty;
+                    $totalGrandTotal += $ord->grand_total;
+                } else {
+                    $totalPieces += $ord->pending_qty;
+                    $totalGrandTotal += $pendGt;
+                }
+            } else {
+                $totalPieces += $ord->total_qty;
+                $totalGrandTotal += $ord->grand_total;
+            }
+        }
+
+        return (object) [
+            'total_orders'      => $totalOrders,
+            'total_pieces'      => $totalPieces,
+            'total_grand_total' => round($totalGrandTotal, 2),
+        ];
     }
 
     public function show($id)

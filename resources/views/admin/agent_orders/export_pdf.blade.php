@@ -166,6 +166,24 @@
         </thead>
         <tbody>
             @forelse($rows as $i => $o)
+                @php
+                    $isDispFilter = in_array(request('status'), ['part_dispatch', 'all_dispatch', 'fully_dispatch']);
+                    $isPendFilter = in_array(request('status'), ['part_pending', 'all_pending', 'fully_pending', 'delayed']);
+                    $rowQty = $o->total_qty;
+                    $rowAmt = $o->grand_total;
+                    if ($o->status === 'partially_dispatched') {
+                        $base = ($o->total_amount > 0) ? $o->total_amount : (($o->dispatched_amount + $o->pending_amount) ?: 1);
+                        $dispAmt = ($base > 0) ? ($o->grand_total * ($o->dispatched_amount / $base)) : 0;
+                        $pendAmt = $o->grand_total - $dispAmt;
+                        if ($isDispFilter) {
+                            $rowQty = $o->dispatched_qty;
+                            $rowAmt = $dispAmt;
+                        } elseif ($isPendFilter) {
+                            $rowQty = $o->pending_qty;
+                            $rowAmt = $pendAmt;
+                        }
+                    }
+                @endphp
                 <tr>
                     <td>{{ $i + 1 }}</td>
                     <td><strong>#ORD-{{ str_pad($o->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
@@ -173,8 +191,8 @@
                     <td>{{ $o->agent_name }}</td>
                     <td>{{ $o->shop_name }}</td>
                     <td>{{ ucfirst($o->sale_type ?? 'item') }}</td>
-                    <td>{{ number_format($o->total_qty, $o->sale_type == 'fabric' ? 2 : 0) }}</td>
-                    <td>{{ number_format($o->grand_total, 2) }}</td>
+                    <td>{{ number_format($rowQty, $o->sale_type == 'fabric' ? 2 : 0) }}</td>
+                    <td>{{ number_format($rowAmt, 2) }}</td>
                     <td>
                         @php
                             $isDelayed = ($o->status == 'delayed') || ($o->status == 'pending' && $o->expected_dispatch_date && $o->expected_dispatch_date < date('Y-m-d'));
