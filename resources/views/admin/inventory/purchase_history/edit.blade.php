@@ -287,7 +287,7 @@
                     @csrf
 
                     <div class="row mb-3">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="label-premium">Source Type</label>
                             <select name="source_type" id="sourceType" class="form-control select2">
                                 <option value="vendor" {{ $purchase->vendor_id ? 'selected' : '' }}>Vendor</option>
@@ -322,8 +322,12 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            <label class="label-premium">Purchase Store Date</label>
+                        <div class="col-md-2">
+                            <label class="label-premium">Bill No. / Inv No.</label>
+                            <input type="text" name="bill_no" class="form-control form-control-premium" placeholder="Enter Bill No." value="{{ old('bill_no', $purchase->bill_no) }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="label-premium">Purchase Date</label>
                             <input type="date" name="purchase_date" class="form-control form-control-premium" value="{{ $purchase->purchase_date ? \Carbon\Carbon::parse($purchase->purchase_date)->format('Y-m-d') : date('Y-m-d') }}">
                         </div>
                     </div>

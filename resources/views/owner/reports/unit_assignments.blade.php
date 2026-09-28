@@ -282,12 +282,22 @@
                     @else
                         <div class="detail-item">
                             <span class="detail-label">Lot No</span>
-                            <span class="detail-val">{{ $item->lot_no ?? 'Pending' }}</span>
+                            <span class="detail-val">
+                                {{ $item->lot_no ?? 'Pending' }}
+                                @if(!empty($item->has_rework))
+                                    <span class="badge badge-warning text-dark ml-1" style="font-size: 10px;">Rework</span>
+                                @endif
+                            </span>
                         </div>
                         @if(!$productionStatus)
                             <div class="detail-item">
                                 <span class="detail-label">From Stage</span>
-                                <span class="detail-val">{{ $item->from_stage->name ?? $item->fromStage->name ?? '-' }}</span>
+                                <span class="detail-val">
+                                    {{ $item->from_stage->name ?? $item->fromStage->name ?? '-' }}
+                                    @if(!empty($item->has_rework) && !empty($item->rework_from_stage) && $item->rework_from_stage !== ($item->from_stage->name ?? ''))
+                                        <div style="font-size: 10px; color: #dc2626; font-weight: 700;">(Rework: {{ $item->rework_from_stage }})</div>
+                                    @endif
+                                </span>
                             </div>
                         @endif
                     @endif
@@ -300,7 +310,12 @@
                     @else
                         <div class="detail-item">
                             <span class="detail-label">Start Date</span>
-                            <span class="detail-val">{{ $item->start_time ? $item->start_time->format('d M Y') : '-' }}</span>
+                            <span class="detail-val">
+                                {{ $item->start_time ? $item->start_time->format('d M Y') : '-' }}
+                                @if(!empty($item->has_rework) && !empty($item->rework_start_time) && $item->rework_start_time->format('d M Y') !== ($item->start_time ? $item->start_time->format('d M Y') : ''))
+                                    <div style="font-size: 10px; color: #64748b;">Rework: {{ $item->rework_start_time->format('d M Y') }}</div>
+                                @endif
+                            </span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Est. Completion</span>
@@ -328,6 +343,9 @@
                         <div class="qty-item" style="border-right: 1px solid #e2e8f0;">
                             <div class="qty-val text-primary">{{ $item->assigned_qty ?? 0 }}</div>
                             <div class="qty-label">Assigned</div>
+                            @if(!empty($item->has_rework) && !empty($item->rework_qty))
+                                <div style="font-size: 9px; color: #b45309; font-weight: 700;">({{ $item->rework_qty }} Rework)</div>
+                            @endif
                         </div>
                         <div class="qty-item" style="border-right: 1px solid #e2e8f0;">
                             <div class="qty-val text-success">{{ $receivedOwner }}</div>
@@ -336,6 +354,9 @@
                         <div class="qty-item">
                             <div class="qty-val text-danger">{{ $item->pending_qty ?? 0 }}</div>
                             <div class="qty-label">Pending</div>
+                            @if(!empty($item->has_rework) && !empty($item->rework_pending_qty) && $item->rework_pending_qty > 0)
+                                <div style="font-size: 9px; color: #dc2626; font-weight: 700;">({{ $item->rework_pending_qty }} Rework)</div>
+                            @endif
                         </div>
                     @endif
                 </div>

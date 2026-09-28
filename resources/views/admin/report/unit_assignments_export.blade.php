@@ -67,7 +67,7 @@
                 </td>
                 @endif
                 @if($type !== 'cutting')
-                    <td>{{ $item->lot_no ?? '-' }}</td>
+                    <td>{{ $item->lot_no ?? '-' }}@if(!empty($item->has_rework)) (Rework)@endif</td>
                 @endif
                 <td>{{ $item->design_number ?? '-' }}</td>
                 <td>
@@ -81,9 +81,9 @@
                     <td>{{ $assignedVal }}</td>
                     <td>{{ $item->production_date ?? '-' }}</td>
                 @else
-                    <td>{{ $assignedVal }}</td>
+                    <td>{{ $assignedVal }}@if(!empty($item->has_rework) && !empty($item->rework_qty)) (Incl. {{ $item->rework_qty }} Rework)@endif</td>
                     <td>{{ $receivedVal }}</td>
-                    <td>{{ $pendingVal }}</td>
+                    <td>{{ $pendingVal }}@if(!empty($item->has_rework) && !empty($item->rework_pending_qty) && $item->rework_pending_qty > 0) ({{ $item->rework_pending_qty }} Rework)@endif</td>
                     <td>{{ $item->start_time ? $item->start_time->format('d-m-Y') : '-' }}</td>
                     <td>{{ $item->end_time ? $item->end_time->format('d-m-Y') : '-' }}</td>
                     <td>{{ $item->estimated_time ? $item->estimated_time->format('d-m-Y') : '-' }}</td>

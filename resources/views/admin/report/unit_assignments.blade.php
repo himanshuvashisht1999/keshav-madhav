@@ -349,25 +349,67 @@
                                                         @endif
                                                     </td>
                                                     @if(!$productionStatus)
-                                                        <td>{{ $item->from_stage->name ?? $item->fromStage->name ?? '-' }}</td>
+                                                        <td>
+                                                            {{ $item->from_stage->name ?? $item->fromStage->name ?? '-' }}
+                                                            @if(!empty($item->has_rework) && !empty($item->rework_from_stage) && $item->rework_from_stage !== ($item->from_stage->name ?? ''))
+                                                                <div class="text-danger small font-weight-bold" style="font-size: 10px;" title="Rework sent from {{ $item->rework_from_stage }}">
+                                                                    <i class="fas fa-undo"></i> Rework: {{ $item->rework_from_stage }}
+                                                                </div>
+                                                            @endif
+                                                        </td>
                                                         <td>{{ $item->to_stage_name ?? $item->to_stage->name ?? $item->toStage->name ?? '-' }}</td>
                                                     @endif
-                                                    <td>{{ $item->lot_no ?? 'Pending' }}</td>
+                                                    <td>
+                                                        {{ $item->lot_no ?? 'Pending' }}
+                                                        @if(!empty($item->has_rework))
+                                                            <span class="badge badge-warning text-dark ml-1" style="font-size: 10px; padding: 2px 5px;" title="{{ $item->rework_remarks ?? 'Defect return for rework' }}">
+                                                                <i class="fas fa-tools"></i> Rework
+                                                            </span>
+                                                        @endif
+                                                    </td>
                                                     <td>{{ $item->design_number ?? '-' }}</td>
                                                     @if(!$productionStatus)
-                                                        <td>{{ $item->getFromUnitMaster->name ?? $item->getUnitMaster->name ?? '-' }}</td>
+                                                        <td>
+                                                            {{ $item->getFromUnitMaster->name ?? $item->getUnitMaster->name ?? '-' }}
+                                                            @if(!empty($item->has_rework) && !empty($item->rework_from_unit) && $item->rework_from_unit !== ($item->getFromUnitMaster->name ?? ''))
+                                                                <div class="text-danger small font-weight-bold" style="font-size: 10px;">
+                                                                    (Rework: {{ $item->rework_from_unit }})
+                                                                </div>
+                                                            @endif
+                                                        </td>
                                                     @endif
                                                     @if($productionStatus)
                                                         <td>{{ $assignedValOther }} Pcs</td>
                                                     @else
-                                                        <td>{{ $assignedValOther }} Pcs</td>
+                                                        <td>
+                                                            <div>{{ $assignedValOther }} Pcs</div>
+                                                            @if(!empty($item->has_rework) && !empty($item->rework_qty))
+                                                                <div class="text-muted" style="font-size: 11px; white-space: nowrap;">
+                                                                    ({{ $item->regular_qty ?? ($assignedValOther - $item->rework_qty) }} Reg + <span class="text-warning font-weight-bold">{{ $item->rework_qty }} Rework</span>)
+                                                                </div>
+                                                            @endif
+                                                        </td>
                                                         <td>{{ $receivedValOther }} Pcs</td>
-                                                        <td>{{ $pendingValOther }} Pcs</td>
+                                                        <td>
+                                                            <div>{{ $pendingValOther }} Pcs</div>
+                                                            @if(!empty($item->has_rework) && !empty($item->rework_pending_qty) && $item->rework_pending_qty > 0)
+                                                                <span class="badge badge-danger text-wrap" style="font-size: 10px; padding: 2px 6px; margin-top: 2px;" title="{{ $item->rework_remarks ?? 'Defect return for rework' }}">
+                                                                    <i class="fas fa-exclamation-triangle"></i> {{ $item->rework_pending_qty }} Pcs Rework
+                                                                </span>
+                                                            @endif
+                                                        </td>
                                                     @endif
                                                     @if($productionStatus)
                                                         <td>{{ $item->production_date ?? '-' }}</td>
                                                     @else
-                                                        <td>{{ $item->start_time ? $item->start_time->format('d M Y') : '-' }}</td>
+                                                        <td>
+                                                            {{ $item->start_time ? $item->start_time->format('d M Y') : '-' }}
+                                                            @if(!empty($item->has_rework) && !empty($item->rework_start_time) && $item->rework_start_time->format('d M Y') !== ($item->start_time ? $item->start_time->format('d M Y') : ''))
+                                                                <div class="text-muted small" style="font-size: 10px;" title="Rework Returned Date">
+                                                                    Rework: {{ $item->rework_start_time->format('d M Y') }}
+                                                                </div>
+                                                            @endif
+                                                        </td>
                                                         <td>{{ $item->end_time ? $item->end_time->format('d M Y') : '-' }}</td>
                                                         <td>{{ $item->estimated_time ? $item->estimated_time->format('d M Y') : '-' }}</td>
                                                     @endif

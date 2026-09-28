@@ -133,8 +133,12 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <label class="small font-weight-bold text-muted mb-1">Production PO Number</label>
+                            <div class="col-md-2">
+                                <label class="small font-weight-bold text-muted mb-1">Bill No.</label>
+                                <input type="text" id="bill_no_filter" class="form-control" placeholder="Search Bill...">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="small font-weight-bold text-muted mb-1">Production PO</label>
                                 <input type="text" id="po_number_filter" class="form-control" placeholder="Search PO...">
                             </div>
                             <div class="col-md-1 mt-3 mt-md-0">
@@ -153,6 +157,7 @@
                                     <tr>
                                         <th class="pl-4">#</th>
                                         <th>Purchase Date</th>
+                                        <th>Bill No.</th>
                                         <th>Source</th>
                                         <th>Production PO</th>
                                         <th>Total Boxes</th>
@@ -188,6 +193,7 @@
                     d.vendor_id = $('#vendor_filter').val();
                     d.customer_id = $('#customer_filter').val();
                     d.po_number = $('#po_number_filter').val();
+                    d.bill_no = $('#bill_no_filter').val();
                 }
             },
             order: [[1, 'desc']],
@@ -200,6 +206,10 @@
                         let dateStr = data ? data : row.created_at;
                         return `<div class="font-weight-bold">${moment(dateStr).format('DD MMM YYYY')}</div>`;
                     }
+                },
+                { 
+                    data: 'bill_no', 
+                    name: 'bill_no'
                 },
                 { 
                     data: 'source', 
@@ -244,7 +254,7 @@
         });
 
         // Filter triggers
-        $('#start_date, #end_date, #po_number_filter').on('change keyup', function () {
+        $('#start_date, #end_date, #po_number_filter, #bill_no_filter').on('change keyup', function () {
             table.draw();
         });
 
@@ -254,7 +264,7 @@
 
         // Reset filter
         $('#reset_filters').on('click', function () {
-            $('#start_date, #end_date, #po_number_filter').val('');
+            $('#start_date, #end_date, #po_number_filter, #bill_no_filter').val('');
             $('#vendor_filter, #customer_filter').val('').trigger('change');
             table.draw();
         });

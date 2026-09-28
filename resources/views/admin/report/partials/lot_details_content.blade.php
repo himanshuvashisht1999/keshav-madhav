@@ -507,9 +507,14 @@
                                     $txType = 'transfer';
                                     if (get_class($transaction) == 'App\Models\OrderPrintingToStichingTransaction') $txType = 'printing_stitching';
                                     if (get_class($transaction) == 'App\Models\OrderGodamStageTransaction') $txType = 'godam';
+                                    $isTxRework = ($transaction->type === 'rework' || (string)$transaction->type === '0' || stripos($transaction->remarks ?? '', 'rework') !== false || stripos($transaction->remarks ?? '', 'rewash') !== false);
                                 @endphp
-                                <div class="stage-card" style="border-left-color: #f59e0b; background: #fffbeb;">
-                                    <span class="status-badge" style="background: #fef3c7; color: #b45309;">Transfer</span>
+                                <div class="stage-card" style="border-left-color: {{ $isTxRework ? '#ef4444' : '#f59e0b' }}; background: {{ $isTxRework ? '#fff5f5' : '#fffbeb' }};">
+                                    @if($isTxRework)
+                                        <span class="status-badge" style="background: #fee2e2; color: #dc2626;"><i class="fas fa-tools mr-1"></i> Rework</span>
+                                    @else
+                                        <span class="status-badge" style="background: #fef3c7; color: #b45309;">Transfer</span>
+                                    @endif
                                     
                                     @if($lastSessionType == $txType && $lastSessionId == $transaction->id)
                                         <form action="{{ route('admin.report.lots.delete-session', ['type' => $txType, 'id' => $transaction->id]) }}" method="POST" style="position: absolute; top: 12px; right: 85px; z-index: 10;">
@@ -528,6 +533,11 @@
                                         <div class="text-muted" style="font-size: 11px;">
                                             Unit: <strong class="text-dark">{{ $transaction->getFromUnitMaster?->name ?? '-' }} <i class="fas fa-arrow-right mx-1 text-muted" style="font-size:9px;"></i> {{ $transaction->getToUnitMaster?->name ?? '-' }}</strong>
                                         </div>
+                                        @if($isTxRework && !empty($transaction->remarks))
+                                            <div class="text-danger small font-weight-bold mt-1" style="font-size: 11px;">
+                                                <i class="fas fa-exclamation-circle"></i> {{ $transaction->remarks }}
+                                            </div>
+                                        @endif
                                     </div>
                                     
                                     <div class="stage-metrics">

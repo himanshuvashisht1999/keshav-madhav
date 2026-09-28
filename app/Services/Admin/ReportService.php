@@ -2342,20 +2342,68 @@ class ReportService
                     : null;
                 $item->estimated_time = $eta ? \Carbon\Carbon::parse($eta) : null;
 
+                $isItemRework = ($item->type === 'rework' || (string)$item->type === '0' || stripos($item->remarks ?? '', 'rework') !== false || stripos($item->remarks ?? '', 'rewash') !== false);
+                $itemReworkQty = $isItemRework ? $assignedQty : 0;
+                $itemRemQty = (float)($item->remaining_quantity ?? $assignedQty);
+                $itemReworkPendingQty = $isItemRework ? min((float)$pendingQty, $itemRemQty) : 0;
+
                 $groupKey = $item->lot_no . '_' . $t_stage_id . '_' . $item->sub_stage_id_to;
                 if (!isset($groupedAssignments[$groupKey])) {
                     $item->assigned_qty = $assignedQty;
                     $item->pending_qty = $pendingQty;
                     $item->receive_qty = max(0, (float) $assignedQty - (float) $pendingQty);
                     $item->received_qty = $item->receive_qty;
+                    $item->regular_qty = $isItemRework ? 0 : $assignedQty;
+                    $item->rework_qty = $itemReworkQty;
+                    $item->rework_pending_qty = $itemReworkPendingQty;
+                    $item->has_rework = $isItemRework;
+                    $item->rework_remarks = $isItemRework ? ($item->remarks ?? 'Defect return for rework') : null;
+                    if ($isItemRework) {
+                        $item->rework_start_time = $item->production_datetime ? \Carbon\Carbon::parse($item->production_datetime) : \Carbon\Carbon::parse($item->created_at);
+                        $item->rework_from_stage = $item->from_stage->name ?? 'Packing';
+                        $item->rework_from_unit = $item->getFromUnitMaster->name ?? null;
+                    }
                     $groupedAssignments[$groupKey] = $item;
                 } else {
                     $groupedAssignments[$groupKey]->assigned_qty += $assignedQty;
                     $groupedAssignments[$groupKey]->pending_qty = $pendingQty;
                     $groupedAssignments[$groupKey]->receive_qty = max(0, (float) $groupedAssignments[$groupKey]->assigned_qty - (float) $groupedAssignments[$groupKey]->pending_qty);
                     $groupedAssignments[$groupKey]->received_qty = $groupedAssignments[$groupKey]->receive_qty;
+                    if ($isItemRework) {
+                        $groupedAssignments[$groupKey]->rework_qty = ($groupedAssignments[$groupKey]->rework_qty ?? 0) + $assignedQty;
+                        $groupedAssignments[$groupKey]->rework_pending_qty = ($groupedAssignments[$groupKey]->rework_pending_qty ?? 0) + $itemReworkPendingQty;
+                        $groupedAssignments[$groupKey]->has_rework = true;
+                        if (empty($groupedAssignments[$groupKey]->rework_remarks) && !empty($item->remarks)) {
+                            $groupedAssignments[$groupKey]->rework_remarks = $item->remarks;
+                        }
+                        if (empty($groupedAssignments[$groupKey]->rework_start_time)) {
+                            $groupedAssignments[$groupKey]->rework_start_time = $item->production_datetime ? \Carbon\Carbon::parse($item->production_datetime) : \Carbon\Carbon::parse($item->created_at);
+                        }
+                        if (empty($groupedAssignments[$groupKey]->rework_from_stage)) {
+                            $groupedAssignments[$groupKey]->rework_from_stage = $item->from_stage->name ?? 'Packing';
+                        }
+                        if (empty($groupedAssignments[$groupKey]->rework_from_unit) && !empty($item->getFromUnitMaster->name)) {
+                            $groupedAssignments[$groupKey]->rework_from_unit = $item->getFromUnitMaster->name;
+                        }
+                    } else {
+                        $groupedAssignments[$groupKey]->regular_qty = ($groupedAssignments[$groupKey]->regular_qty ?? 0) + $assignedQty;
+                    }
                 }
             }
+
+            foreach ($groupedAssignments as $gk => $gItem) {
+                if (!empty($gItem->has_rework)) {
+                    $gItem->rework_pending_qty = min((float)$gItem->pending_qty, (float)($gItem->rework_pending_qty ?? 0));
+                    $gItem->regular_pending_qty = max(0, (float)$gItem->pending_qty - (float)$gItem->rework_pending_qty);
+                    $gItem->regular_qty = max(0, (float)$gItem->assigned_qty - (float)$gItem->rework_qty);
+                } else {
+                    $gItem->rework_qty = 0;
+                    $gItem->rework_pending_qty = 0;
+                    $gItem->regular_pending_qty = (float)$gItem->pending_qty;
+                    $gItem->regular_qty = (float)$gItem->assigned_qty;
+                }
+            }
+
             $assignmentsOther = collect(array_values($groupedAssignments))->sortBy('id')->values()->all();
             $assignments = array_merge($assignments, $assignmentsOther);
         } // Close if (!$stageId || $stageId != 3)

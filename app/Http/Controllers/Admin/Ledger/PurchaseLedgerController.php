@@ -22,8 +22,9 @@ class PurchaseLedgerController extends Controller
         $purchases = $query->orderBy('date', 'desc')->paginate(25)->appends($request->all());
 
         $vendors = DB::table('vendors')->select('id', 'name')->orderBy('name')->get();
+        $purchaseAgents = DB::table('purchase_agents')->select('id', 'name')->where('status', 1)->orderBy('name')->get();
 
-        return view('admin.ledger.purchase.index', compact('purchases', 'vendors', 'totalGrandTotal'));
+        return view('admin.ledger.purchase.index', compact('purchases', 'vendors', 'purchaseAgents', 'totalGrandTotal'));
     }
 
     public function exportPdf(Request $request)
@@ -38,11 +39,21 @@ class PurchaseLedgerController extends Controller
             $selectedVendor = DB::table('vendors')->where('id', $request->vendor_id)->value('name');
         }
 
+        $selectedPurchaseAgent = null;
+        if ($request->filled('purchase_agent_id')) {
+            if ($request->purchase_agent_id === 'direct') {
+                $selectedPurchaseAgent = 'Direct (No Agent)';
+            } else {
+                $selectedPurchaseAgent = DB::table('purchase_agents')->where('id', $request->purchase_agent_id)->value('name');
+            }
+        }
+
         $pdf = Pdf::loadView('admin.ledger.purchase.pdf', [
             'purchases' => $purchases,
             'totalGrandTotal' => $totalGrandTotal,
             'filters' => $request->all(),
             'selectedVendor' => $selectedVendor,
+            'selectedPurchaseAgent' => $selectedPurchaseAgent,
         ])->setPaper('a4', 'portrait');
 
         $filename = 'Purchase_Ledger_' . date('Y-m-d_His') . '.pdf';
@@ -62,16 +73,16 @@ class PurchaseLedgerController extends Controller
 
         // Header metadata
         $sheet->setCellValue('A1', 'Purchase Ledger Report');
-        $sheet->mergeCells('A1:F1');
+        $sheet->mergeCells('A1:G1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         $sheet->setCellValue('A2', 'Generated: ' . date('d-m-Y H:i A') . ' | Total Grand Total: ₹' . number_format($totalGrandTotal, 2));
-        $sheet->mergeCells('A2:F2');
+        $sheet->mergeCells('A2:G2');
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         // Table Headers
-        $headers = ['S.No.', 'Date', 'Bill No.', 'Vendor Name', 'Receipt Type', 'Grand Total'];
+        $headers = ['S.No.', 'Date', 'Bill No.', 'Vendor Name', 'Purchase Agent', 'Receipt Type', 'Grand Total'];
         $sheet->fromArray($headers, NULL, 'A4');
 
         $headerStyle = [
@@ -82,7 +93,7 @@ class PurchaseLedgerController extends Controller
             ],
             'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
         ];
-        $sheet->getStyle('A4:F4')->applyFromArray($headerStyle);
+        $sheet->getStyle('A4:G4')->applyFromArray($headerStyle);
         $sheet->getRowDimension(4)->setRowHeight(25);
 
         $rowNumber = 5;
@@ -92,18 +103,19 @@ class PurchaseLedgerController extends Controller
             $sheet->setCellValue('B' . $rowNumber, $item->date ? date('d-m-Y', strtotime($item->date)) : 'N/A');
             $sheet->setCellValue('C' . $rowNumber, $item->invoice_no ?? 'N/A');
             $sheet->setCellValue('D' . $rowNumber, $item->vendor_name ?? 'N/A');
-            $sheet->setCellValue('E' . $rowNumber, $item->item_type ?? 'N/A');
-            $sheet->setCellValue('F' . $rowNumber, (float) $item->grand_total);
-            $sheet->getStyle('F' . $rowNumber)->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->setCellValue('E' . $rowNumber, $item->purchase_agent_name ?? 'Direct');
+            $sheet->setCellValue('F' . $rowNumber, $item->item_type ?? 'N/A');
+            $sheet->setCellValue('G' . $rowNumber, (float) $item->grand_total);
+            $sheet->getStyle('G' . $rowNumber)->getNumberFormat()->setFormatCode('#,##0.00');
             $rowNumber++;
         }
 
         // Total Row
         $sheet->setCellValue('A' . $rowNumber, 'TOTAL');
-        $sheet->mergeCells("A{$rowNumber}:E{$rowNumber}");
-        $sheet->setCellValue('F' . $rowNumber, (float) $totalGrandTotal);
-        $sheet->getStyle('F' . $rowNumber)->getNumberFormat()->setFormatCode('#,##0.00');
-        $sheet->getStyle("A{$rowNumber}:F{$rowNumber}")->applyFromArray([
+        $sheet->mergeCells("A{$rowNumber}:F{$rowNumber}");
+        $sheet->setCellValue('G' . $rowNumber, (float) $totalGrandTotal);
+        $sheet->getStyle('G' . $rowNumber)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->getStyle("A{$rowNumber}:G{$rowNumber}")->applyFromArray([
             'font' => ['bold' => true],
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -111,7 +123,7 @@ class PurchaseLedgerController extends Controller
             ]
         ]);
 
-        foreach (range('A', 'F') as $col) {
+        foreach (range('A', 'G') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
@@ -133,10 +145,13 @@ class PurchaseLedgerController extends Controller
         // Fabric Receipts (Invoices)
         $fabricsQuery = DB::table('fabric_receipts')
             ->join('vendors', 'fabric_receipts.vendor_id', '=', 'vendors.id')
+            ->leftJoin('purchase_agents', 'vendors.purchase_agent_id', '=', 'purchase_agents.id')
             ->select(
                 'fabric_receipts.id as ref_id',
                 'fabric_receipts.bill_no as invoice_no',
                 'vendors.name as vendor_name',
+                DB::raw("CAST(purchase_agents.name AS CHAR) COLLATE utf8mb4_unicode_ci as purchase_agent_name"),
+                'vendors.purchase_agent_id',
                 DB::raw("CAST('Fabric' AS CHAR) COLLATE utf8mb4_unicode_ci as item_type"),
                 'fabric_receipts.time as date',
                 DB::raw('COALESCE(fabric_receipts.total_amount, 0) as grand_total')
@@ -145,10 +160,13 @@ class PurchaseLedgerController extends Controller
         // Item Receipts (Invoices) - from Domestic Inventory Purchases
         $itemsQuery = DB::table('domestic_inventory_purchases')
             ->join('vendors', 'domestic_inventory_purchases.vendor_id', '=', 'vendors.id')
+            ->leftJoin('purchase_agents', 'vendors.purchase_agent_id', '=', 'purchase_agents.id')
             ->select(
                 'domestic_inventory_purchases.id as ref_id',
-                DB::raw('NULL as invoice_no'),
+                DB::raw("CAST(domestic_inventory_purchases.bill_no AS CHAR) COLLATE utf8mb4_unicode_ci as invoice_no"),
                 'vendors.name as vendor_name',
+                DB::raw("CAST(purchase_agents.name AS CHAR) COLLATE utf8mb4_unicode_ci as purchase_agent_name"),
+                'vendors.purchase_agent_id',
                 DB::raw("CAST('Product/Accessory' AS CHAR) COLLATE utf8mb4_unicode_ci as item_type"),
                 'domestic_inventory_purchases.purchase_date as date',
                 DB::raw('COALESCE(domestic_inventory_purchases.total_amount, 0) as grand_total')
@@ -157,7 +175,7 @@ class PurchaseLedgerController extends Controller
         if ($request->filled('bill_no')) {
             $billNo = trim($request->bill_no);
             $fabricsQuery->where('fabric_receipts.bill_no', 'like', "%{$billNo}%");
-            $itemsQuery->whereRaw('1 = 0');
+            $itemsQuery->where('domestic_inventory_purchases.bill_no', 'like', "%{$billNo}%");
         }
 
         if ($request->filled('from_date')) {
@@ -181,6 +199,22 @@ class PurchaseLedgerController extends Controller
         if ($request->filled('vendor_id')) {
             $fabricsQuery->where('fabric_receipts.vendor_id', $request->vendor_id);
             $itemsQuery->where('domestic_inventory_purchases.vendor_id', $request->vendor_id);
+        }
+
+        if ($request->filled('purchase_agent_id')) {
+            if ($request->purchase_agent_id === 'direct') {
+                $fabricsQuery->where(function ($q) {
+                    $q->whereNull('vendors.purchase_agent_id')
+                      ->orWhere('vendors.purchase_agent_id', 0);
+                });
+                $itemsQuery->where(function ($q) {
+                    $q->whereNull('vendors.purchase_agent_id')
+                      ->orWhere('vendors.purchase_agent_id', 0);
+                });
+            } else {
+                $fabricsQuery->where('vendors.purchase_agent_id', $request->purchase_agent_id);
+                $itemsQuery->where('vendors.purchase_agent_id', $request->purchase_agent_id);
+            }
         }
 
         $combinedQuery = $fabricsQuery->union($itemsQuery);

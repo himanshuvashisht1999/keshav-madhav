@@ -33,7 +33,7 @@
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body p-3">
                         <form action="{{ route('admin.ledger.purchase.index') }}" method="GET" class="row align-items-end">
-                            <div class="col-md-2 mb-2">
+                            <div class="col-md mb-2">
                                 <label class="small text-muted font-weight-bold">Filter by Vendor</label>
                                 <select name="vendor_id" class="form-control select2" onchange="this.form.submit()">
                                     <option value="">All Vendors</option>
@@ -44,11 +44,23 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-2">
+                            <div class="col-md mb-2">
+                                <label class="small text-muted font-weight-bold">Purchase Agent</label>
+                                <select name="purchase_agent_id" class="form-control select2" onchange="this.form.submit()">
+                                    <option value="">All Purchase Agents</option>
+                                    @foreach($purchaseAgents as $agent)
+                                        <option value="{{ $agent->id }}" {{ request('purchase_agent_id') == $agent->id ? 'selected' : '' }}>
+                                            {{ $agent->name }}
+                                        </option>
+                                    @endforeach
+                                    <option value="direct" {{ request('purchase_agent_id') == 'direct' ? 'selected' : '' }}>Direct (No Agent)</option>
+                                </select>
+                            </div>
+                            <div class="col-md mb-2">
                                 <label class="small text-muted font-weight-bold">Bill No.</label>
                                 <input type="text" name="bill_no" class="form-control" placeholder="Search Bill No" value="{{ request('bill_no') }}">
                             </div>
-                            <div class="col-md-2 mb-2">
+                            <div class="col-md mb-2">
                                 <label class="small text-muted font-weight-bold">Item Type</label>
                                 <select name="item_type" class="form-control" onchange="this.form.submit()">
                                     <option value="">All Types</option>
@@ -56,19 +68,19 @@
                                     <option value="Fabric" {{ request('item_type') === 'Fabric' ? 'selected' : '' }}>Fabric</option>
                                 </select>
                             </div>
-                            <div class="col-md-2 mb-2">
+                            <div class="col-md mb-2">
                                 <label class="small text-muted font-weight-bold">From Date</label>
                                 <input type="date" name="from_date" class="form-control" value="{{ request('from_date') }}" onchange="this.form.submit()">
                             </div>
-                            <div class="col-md-2 mb-2">
+                            <div class="col-md mb-2">
                                 <label class="small text-muted font-weight-bold">To Date</label>
                                 <input type="date" name="to_date" class="form-control" value="{{ request('to_date') }}" onchange="this.form.submit()">
                             </div>
-                            <div class="col-md-2 mb-2 d-flex">
-                                <button type="submit" class="btn btn-primary flex-fill mr-1 shadow-sm font-weight-bold">
+                            <div class="col-md-auto mb-2 d-flex">
+                                <button type="submit" class="btn btn-primary px-3 mr-1 shadow-sm font-weight-bold">
                                     <i class="fas fa-filter mr-1"></i> APPLY
                                 </button>
-                                <a href="{{ route('admin.ledger.purchase.index') }}" class="btn btn-outline-secondary shadow-sm" title="Reset Filters">
+                                <a href="{{ route('admin.ledger.purchase.index') }}" class="btn btn-outline-secondary px-3 shadow-sm" title="Reset Filters">
                                     <i class="fas fa-undo"></i>
                                 </a>
                             </div>
@@ -84,6 +96,7 @@
                                     <th>Date</th>
                                     <th>Bill No.</th>
                                     <th>Vendor Name</th>
+                                    <th>Purchase Agent</th>
                                     <th>Receipt Type</th>
                                     <th>Grand Total</th>
                                     <th class="text-right">Action</th>
@@ -101,6 +114,15 @@
                                             @endif
                                         </td>
                                         <td><strong>{{ $item->vendor_name }}</strong></td>
+                                        <td>
+                                            @if($item->purchase_agent_name)
+                                                <span class="badge badge-info px-2 py-1 shadow-sm" style="border-radius: 4px; font-size: 11px;">
+                                                    <i class="fas fa-user-tie mr-1"></i>{{ $item->purchase_agent_name }}
+                                                </span>
+                                            @else
+                                                <span class="badge badge-light text-muted border px-2 py-1" style="border-radius: 4px; font-size: 11px;">Direct</span>
+                                            @endif
+                                        </td>
                                         <td>
                                             @if($item->item_type == 'Fabric')
                                                 <span class="badge badge-info">{{ $item->item_type }}</span>
@@ -125,7 +147,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-5 text-muted">No purchase receipts found matching the criteria.</td>
+                                        <td colspan="7" class="text-center py-5 text-muted">No purchase receipts found matching the criteria.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

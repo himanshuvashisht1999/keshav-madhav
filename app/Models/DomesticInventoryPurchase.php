@@ -15,6 +15,7 @@ class DomesticInventoryPurchase extends Model
         'vendor_id',
         'customer_id',
         'production_po_id',
+        'bill_no',
         'user_id',
         'purchase_date',
         'sub_total',

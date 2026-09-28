@@ -64,6 +64,16 @@
                                 </div>
                             </div>
                             <div class="col-md-2">
+                                <div class="detail-label">Bill No. / Inv No.</div>
+                                <div class="detail-value">
+                                    @if($purchase->bill_no)
+                                        <span class="badge badge-soft-primary px-2 py-1 font-weight-bold" style="font-size: 0.9rem;">{{ $purchase->bill_no }}</span>
+                                    @else
+                                        <span class="text-muted italic">-</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-2">
                                 <div class="detail-label">Production PO</div>
                                 <div class="detail-value">
                                     @if($purchase->productionPO)
@@ -73,11 +83,11 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <div class="detail-label">Date & Time</div>
                                 <div class="detail-value">{{ $purchase->created_at->format('d M Y, h:i A') }}</div>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-1">
                                 <div class="detail-label">Total Items</div>
                                 <div class="detail-value">{{ $purchase->items->count() }} Variants</div>
                             </div>

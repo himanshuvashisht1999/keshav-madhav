@@ -600,6 +600,7 @@ class InventoryController extends Controller
             'source_type' => 'required|in:production,sample,vendor,customer,consume',
             'vendor_id' => 'required_if:source_type,vendor',
             'customer_id' => 'required_if:source_type,customer',
+            'bill_no' => 'nullable|string|max:100',
             'purchase_date' => 'nullable|date',
             'products.*.product_id' => 'required',
             'products.*.color_id' => 'required',
@@ -651,6 +652,7 @@ class InventoryController extends Controller
                     'vendor_id' => $vendor_id,
                     'customer_id' => $customer_id,
                     'production_po_id' => $request->production_po_id,
+                    'bill_no' => $request->bill_no,
                     'user_id' => auth()->id(),
                     'purchase_date' => $request->purchase_date ?? now()->toDateString(),
                     'sub_total' => $request->sub_total ?? 0,
@@ -1365,11 +1367,17 @@ class InventoryController extends Controller
                 $q->where('po_number', 'like', "%{$request->po_number}%");
             });
         }
+        if ($request->has('bill_no') && $request->bill_no) {
+            $query->where('bill_no', 'like', "%{$request->bill_no}%");
+        }
 
         return Datatables::of($query)
             ->addIndexColumn()
             ->addColumn('production_po', function ($row) {
                 return $row->productionPO ? $row->productionPO->po_number : '<span class="text-muted small">Manual</span>';
+            })
+            ->addColumn('bill_no', function ($row) {
+                return $row->bill_no ? '<strong>' . e($row->bill_no) . '</strong>' : '<span class="text-muted small">-</span>';
             })
             ->addColumn('source', function ($row) {
                 if ($row->vendor_id)
@@ -1382,6 +1390,9 @@ class InventoryController extends Controller
                 $query->whereHas('productionPO', function($q) use ($keyword) {
                     $q->where('po_number', 'like', "%{$keyword}%");
                 });
+            })
+            ->filterColumn('bill_no', function($query, $keyword) {
+                $query->where('bill_no', 'like', "%{$keyword}%");
             })
             ->filterColumn('source', function($query, $keyword) {
                 $query->whereHas('vendor', function($q) use ($keyword) {
@@ -1401,7 +1412,7 @@ class InventoryController extends Controller
                             <button class="btn btn-sm btn-soft-danger btn-delete-purchase" data-id="' . $row->id . '" title="Delete"><i class="fas fa-trash"></i></button>
                         </div>';
             })
-            ->rawColumns(['action', 'production_po'])
+            ->rawColumns(['action', 'production_po', 'bill_no'])
             ->make(true);
     }
 
@@ -1500,6 +1511,7 @@ class InventoryController extends Controller
             $purchase = \App\Models\DomesticInventoryPurchase::findOrFail($id);
 
             $request->validate([
+                'bill_no' => 'nullable|string|max:100',
                 'purchase_date' => 'nullable|date',
                 'sub_total' => 'required|numeric|min:0',
                 'total_amount' => 'required|numeric|min:0',
@@ -1579,6 +1591,7 @@ class InventoryController extends Controller
                 'vendor_id' => $request->source_type == 'vendor' ? $request->vendor_id : null,
                 'customer_id' => $request->source_type == 'customer' ? $request->customer_id : null,
                 'production_po_id' => $request->production_po_id,
+                'bill_no' => $request->bill_no,
                 'purchase_date' => $request->purchase_date ?? now()->toDateString(),
                 'sub_total' => $request->sub_total,
                 'gst_type' => $request->gst_type ?? 'percentage',

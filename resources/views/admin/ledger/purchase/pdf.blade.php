@@ -126,16 +126,19 @@
 
     <table class="filter-summary">
         <tr>
-            <td style="width: 25%;">
+            <td style="width: 20%;">
                 <span class="filter-label">Vendor:</span> {{ $selectedVendor ?? 'All Vendors' }}
             </td>
-            <td style="width: 25%;">
+            <td style="width: 20%;">
+                <span class="filter-label">Purchase Agent:</span> {{ $selectedPurchaseAgent ?? 'All Agents' }}
+            </td>
+            <td style="width: 20%;">
                 <span class="filter-label">Item Type:</span> {{ !empty($filters['item_type']) ? $filters['item_type'] : 'All Types' }}
             </td>
-            <td style="width: 25%;">
+            <td style="width: 20%;">
                 <span class="filter-label">Bill No:</span> {{ !empty($filters['bill_no']) ? $filters['bill_no'] : 'All' }}
             </td>
-            <td style="width: 25%;">
+            <td style="width: 20%;">
                 <span class="filter-label">Date Range:</span>
                 @if(!empty($filters['from_date']) || !empty($filters['to_date']))
                     {{ !empty($filters['from_date']) ? date('d-m-Y', strtotime($filters['from_date'])) : 'Start' }} to {{ !empty($filters['to_date']) ? date('d-m-Y', strtotime($filters['to_date'])) : 'Today' }}
@@ -155,11 +158,12 @@
         <thead>
             <tr>
                 <th style="width: 5%;" class="text-center">#</th>
-                <th style="width: 15%;">Date</th>
-                <th style="width: 20%;">Bill No.</th>
-                <th style="width: 30%;">Vendor Name</th>
-                <th style="width: 15%;">Receipt Type</th>
-                <th style="width: 15%;" class="text-right">Grand Total</th>
+                <th style="width: 12%;">Date</th>
+                <th style="width: 16%;">Bill No.</th>
+                <th style="width: 25%;">Vendor Name</th>
+                <th style="width: 18%;">Purchase Agent</th>
+                <th style="width: 12%;">Receipt Type</th>
+                <th style="width: 12%;" class="text-right">Grand Total</th>
             </tr>
         </thead>
         <tbody>
@@ -170,18 +174,19 @@
                     <td>{{ $item->date ? date('d M Y', strtotime($item->date)) : 'N/A' }}</td>
                     <td><strong>{{ $item->invoice_no ?? 'N/A' }}</strong></td>
                     <td>{{ $item->vendor_name ?? 'N/A' }}</td>
+                    <td>{{ $item->purchase_agent_name ?? 'Direct' }}</td>
                     <td>{{ $item->item_type }}</td>
                     <td class="text-right font-weight-bold">₹{{ number_format($item->grand_total, 2) }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center" style="padding: 15px; color: #94a3b8;">No purchase records found matching the criteria.</td>
+                    <td colspan="7" class="text-center" style="padding: 15px; color: #94a3b8;">No purchase records found matching the criteria.</td>
                 </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr style="background-color: #e2e8f0; font-weight: bold;">
-                <td colspan="5" class="text-right">TOTAL:</td>
+                <td colspan="6" class="text-right">TOTAL:</td>
                 <td class="text-right" style="font-size: 11px; color: #1e3c72;">₹{{ number_format($totalGrandTotal, 2) }}</td>
             </tr>
         </tfoot>
