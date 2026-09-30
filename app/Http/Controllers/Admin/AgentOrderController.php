@@ -5075,7 +5075,7 @@ class AgentOrderController extends Controller
         DB::beginTransaction();
         try {
             $return = AgentOrderReturn::with('items')->findOrFail($id);
-            $dispatch = \App\Models\AgentOrderDispatch::findOrFail($return->agent_order_dispatch_id);
+            $dispatch = \App\Models\AgentOrderDispatch::find($return->agent_order_dispatch_id);
 
             foreach ($return->items as $item) {
                 // Reverse Inventory
@@ -5099,16 +5099,18 @@ class AgentOrderController extends Controller
             }
 
             // Reverse Party Balance
-            $party = $dispatch->party();
-            if ($party) {
-                // Reverse return (decreases balance back)
-                $party->decrement('balance', $return->grand_total);
+            if ($dispatch) {
+                $party = $dispatch->party();
+                if ($party) {
+                    // Reverse return (decreases balance back)
+                    $party->decrement('balance', $return->grand_total);
+                }
             }
 
             log_deletion('Agent Order Return', $id, [
                 'return'   => $return->toArray(),
                 'items'    => $return->items ? $return->items->toArray() : [],
-                'dispatch' => $dispatch->toArray(),
+                'dispatch' => $dispatch ? $dispatch->toArray() : null,
             ]);
 
             $return->delete();
@@ -5124,6 +5126,12 @@ class AgentOrderController extends Controller
     public function destroyDispatch($id)
     {
         $dispatch = \App\Models\AgentOrderDispatch::with(['orders'])->findOrFail($id);
+
+        // Check if any returns exist against this dispatch
+        $hasReturns = \App\Models\AgentOrderReturn::where('agent_order_dispatch_id', $id)->exists();
+        if ($hasReturns) {
+            return redirect()->back()->with('error', 'Cannot delete dispatch because one or more sales returns are recorded against it. Please delete the sales return(s) first.');
+        }
 
         DB::beginTransaction();
         try {

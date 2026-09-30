@@ -213,9 +213,18 @@
                             <i class="fas fa-undo"></i> <span class="d-none d-xl-inline">Sales Return</span>
                         </a>
                         
+                        @php
+                            $hasReturns = $dispatch->returns()->exists();
+                        @endphp
+                        @if($hasReturns)
+                        <button type="button" class="btn btn-action bg-soft-danger text-muted border-0" onclick="alert('Cannot delete this dispatch because one or more sales returns are created against it. Please delete the sales return(s) first.')" title="Cannot delete: Sales Return exists" style="cursor: not-allowed; opacity: 0.6;">
+                            <i class="fas fa-trash-alt"></i> <span class="d-none d-xl-inline">Delete</span>
+                        </button>
+                        @else
                         <a href="{{ route('admin.agent-orders.dispatches.destroy', $dispatch->id) }}" class="btn btn-action bg-soft-danger text-danger border-0" onclick="return confirm('Are you sure you want to PERMANENTLY delete this dispatch? This will reverse stock and customer balance.')" title="Delete Dispatch">
                             <i class="fas fa-trash-alt"></i> <span class="d-none d-xl-inline">Delete</span>
                         </a>
+                        @endif
 
                         @if(!$isFabric)
                         <div class="btn-group">

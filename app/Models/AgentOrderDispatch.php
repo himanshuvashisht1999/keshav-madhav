@@ -57,6 +57,11 @@ class AgentOrderDispatch extends Model
         return $this->hasMany(AgentOrderDispatchItem::class, 'agent_order_dispatch_id');
     }
 
+    public function returns()
+    {
+        return $this->hasMany(AgentOrderReturn::class, 'agent_order_dispatch_id');
+    }
+
     public function company()
     {
         return $this->belongsTo(Company::class, 'company_id');
