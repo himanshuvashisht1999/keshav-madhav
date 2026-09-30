@@ -1219,98 +1219,226 @@ class PackingService
         try {
             $orderMainId = $data['order_id'];
             $slipId = $data['slip_id'];
-            $toStageId = $data['to_stage_id'];
-            $toUnitId = $data['to_unit_id'];
+            $rackId = $data['rack_id'] ?? null;
+            $toStageId = $data['to_stage_id'] ?? null;
+            $toUnitId = $data['to_unit_id'] ?? null;
             $items = $data['items']; // [{detail_id, qty, lot_no}]
-            $remarks = $data['remarks'] ?? 'Defect return for rework';
+            $remarks = $data['remarks'] ?? 'Defect stored in rack for rework';
             $slipMain = \App\Models\ProductionSlipDigitization::findOrFail($slipId);
 
-            // 1. Group by lot_no
-            $itemsByLot = collect($items)->groupBy('lot_no');
-            
-            foreach ($itemsByLot as $lotNo => $lotItems) {
-                // Calculate total Pcs for this lot
-                $totalPcs = $lotItems->sum('qty');
-                
-                if ($totalPcs <= 0) continue;
+            $totalStoredPcs = 0;
 
-                // 2. Identify the source Lot Number
-                $sourceTx = OrderStageTransaction::where('to_stage_id', 11) // Packing
+            foreach ($items as $item) {
+                $qty = (int) $item['qty'];
+                $lotNo = $item['lot_no'];
+                if ($qty <= 0) continue;
+
+                $detail = \App\Models\OrderProductSetDetail::findOrFail($item['detail_id']);
+                $set = \App\Models\OrderProductSet::findOrFail($detail->order_products_set_id);
+
+                // 1. Create Outflow Record stored in Rack (Status: stored / pending assignment)
+                \App\Models\ProductionOutflowInventory::create([
+                    'type' => 'rework',
+                    'order_main_id' => $orderMainId,
+                    'slip_id' => $slipId,
+                    'lot_no' => $lotNo,
+                    'rack_id' => $rackId,
+                    'product_id' => $set->production_goods_id,
+                    'color_id' => $set->color_id,
+                    'size_id' => $detail->id,
+                    'quantity' => $qty,
+                    'responsible_stage_id' => $toStageId ?: null,
+                    'responsible_unit_id' => $toUnitId ?: null,
+                    'remarks' => $remarks,
+                    'status' => 'stored'
+                ]);
+
+                // 2. DEDUCT from current unit's availability in Packing (Stage 11)
+                $incomingTxs = OrderStageTransaction::where('to_stage_id', 11)
                     ->where(function($q) use ($slipMain) {
                         $q->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
                           ->orWhereNull('sub_stage_id_to');
                     })
                     ->where('lot_no', $lotNo)
+                    ->orderBy('id', 'asc') // FIFO
+                    ->get();
+
+                if ($incomingTxs->isEmpty()) {
+                    $incomingTxs = OrderStageTransaction::where('to_stage_id', 11)
+                        ->where('lot_no', $lotNo)
+                        ->orderBy('id', 'asc')
+                        ->get();
+                }
+
+                $rem = $qty;
+                foreach ($incomingTxs as $itx) {
+                    if ($rem <= 0) break;
+                    if ($itx->remaining_quantity <= 0) continue;
+
+                    $deduct = min($itx->remaining_quantity, $rem);
+                    $itx->remaining_quantity -= $deduct;
+                    $itx->save();
+                    $rem -= $deduct;
+                }
+
+                $totalStoredPcs += $qty;
+            }
+
+            DB::commit();
+            return [
+                'status' => 'success',
+                'message' => "Successfully stored $totalStoredPcs defect piece(s) in rack. Admin can assign them for rework from the Rework List."
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function assignReworkFromRack($data)
+    {
+        DB::beginTransaction();
+        try {
+            $ids = $data['ids'] ?? [];
+            if (empty($ids) || !is_array($ids)) {
+                throw new \Exception("Please select at least one rework record to assign.");
+            }
+
+            $toStageId = $data['to_stage_id'] ?? null;
+            $toUnitId = $data['to_unit_id'] ?? null;
+            $remarks = $data['remarks'] ?? null;
+
+            if (!$toStageId || !$toUnitId) {
+                throw new \Exception("Please select target Stage and Unit for rework assignment.");
+            }
+
+            $records = \App\Models\ProductionOutflowInventory::with(['orderMain', 'size.orderProductSet', 'rack.storeroom', 'slip'])
+                ->whereIn('id', $ids)
+                ->where('type', 'rework')
+                ->where('status', 'stored')
+                ->get();
+
+            if ($records->isEmpty()) {
+                throw new \Exception("No pending stored rework records found for the selected items.");
+            }
+
+            // Group by slip_id & lot_no so that each lot has a distinct clean OrderStageTransaction
+            $grouped = $records->groupBy(function($item) {
+                return $item->slip_id . '_' . $item->lot_no;
+            });
+
+            $totalAssignedCount = 0;
+
+            foreach ($grouped as $groupKey => $groupItems) {
+                $first = $groupItems->first();
+                $lotNo = $first->lot_no;
+                $slipId = $first->slip_id;
+                $slipMain = $first->slip;
+                $totalLotPcs = $groupItems->sum('quantity');
+
+                $rackName = $first->rack ? ($first->rack->storeroom ? $first->rack->storeroom->name . ' - ' : '') . $first->rack->name : 'Rack';
+                $unitIdFrom = $slipMain ? $slipMain->stage_master_unit_id : null;
+
+                $sourceTx = OrderStageTransaction::where('to_stage_id', 11)
+                    ->where('lot_no', $lotNo)
                     ->orderBy('id', 'desc')
                     ->first();
 
                 if (!$sourceTx) {
-                    throw new \Exception("No incoming production pieces found to return for Lot $lotNo.");
+                    $sourceTx = OrderStageTransaction::where('lot_no', $lotNo)->orderBy('id', 'desc')->first();
                 }
 
-                // 3. Create NEW OrderStageTransaction for REWORK
+                $txRemarks = ($remarks ? $remarks . ' ' : '') . "[Assigned from $rackName]";
+
+                // Create OrderStageTransaction for REWORK
                 $newTx = OrderStageTransaction::create([
-                    'company_id' => $sourceTx->company_id,
-                    'sub_company_id' => $sourceTx->sub_company_id,
-                    'project_id' => $sourceTx->project_id,
-                    'sku' => $sourceTx->sku,
-                    'order_product_id' => $sourceTx->order_product_id,
+                    'company_id' => $sourceTx ? $sourceTx->company_id : 1,
+                    'sub_company_id' => $sourceTx ? $sourceTx->sub_company_id : null,
+                    'project_id' => $sourceTx ? $sourceTx->project_id : null,
+                    'sku' => $sourceTx ? $sourceTx->sku : ($first->orderMain ? $first->orderMain->sku : null),
+                    'order_product_id' => $sourceTx ? $sourceTx->order_product_id : null,
                     'from_stage_id' => 11, // From Packing
                     'to_stage_id' => $toStageId,
-                    'sub_stage_id' => $slipMain->stage_master_unit_id,
+                    'sub_stage_id' => $unitIdFrom,
                     'sub_stage_id_to' => $toUnitId,
                     'lot_no' => $lotNo,
-                    'quantity' => $totalPcs,
-                    'remaining_quantity' => $totalPcs,
-                    'remarks' => $remarks,
+                    'quantity' => $totalLotPcs,
+                    'remaining_quantity' => $totalLotPcs,
+                    'remarks' => $txRemarks,
                     'production_datetime' => now(),
                     'production_slip_digitization_id' => $slipId,
                     'status' => 1,
-                    'type' => 'rework' // KEY: mark as rework
+                    'type' => 'rework'
                 ]);
 
-                // 4. Create Transaction Details
-                foreach ($lotItems as $item) {
-                    $qty = (int) $item['qty'];
-                    if ($qty <= 0)
-                        continue;
-
-                    $detail = \App\Models\OrderProductSetDetail::find($item['detail_id']);
-
+                // Create transaction details & update outflow record
+                foreach ($groupItems as $item) {
                     OrderStageTransactionDetail::create([
                         'order_stage_transaction_id' => $newTx->id,
-                        'size' => $detail->size ?? 'N/A',
-                        'quantity' => $qty
+                        'size' => $item->size ? $item->size->size : 'N/A',
+                        'quantity' => $item->quantity
                     ]);
 
-                    // 5. DEDUCT from current unit's availability
-                    $incomingTxs = OrderStageTransaction::where('to_stage_id', 11)
-                        ->where(function($q) use ($slipMain) {
-                            $q->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
-                              ->orWhereNull('sub_stage_id_to');
-                        })
-                        ->where('lot_no', $lotNo)
-                        ->orderBy('id', 'asc') // FIFO
-                        ->get();
+                    $item->status = 'assigned';
+                    $item->assigned_stage_id = $toStageId;
+                    $item->assigned_unit_id = $toUnitId;
+                    $item->assigned_transaction_id = $newTx->id;
+                    $item->assigned_at = now();
+                    $item->assigned_by = auth()->id();
+                    $item->save();
 
-                    $rem = $qty;
-                    foreach ($incomingTxs as $itx) {
-                        if ($rem <= 0)
-                            break;
-                        if ($itx->remaining_quantity <= 0)
-                            continue;
-
-                        $deduct = min($itx->remaining_quantity, $rem);
-                        $itx->remaining_quantity -= $deduct;
-                        $itx->save();
-                        $rem -= $deduct;
-                    }
+                    $totalAssignedCount += $item->quantity;
                 }
             }
 
             DB::commit();
-            return ['status' => 'success', 'message' => "Successfully reassigned $totalPcs pieces for rework."];
+            return [
+                'status' => 'success',
+                'message' => "Successfully assigned $totalAssignedCount piece(s) for rework to the selected unit."
+            ];
 
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function reassignReworkUnit($data)
+    {
+        DB::beginTransaction();
+        try {
+            $id = $data['id'];
+            $toStageId = $data['to_stage_id'];
+            $toUnitId = $data['to_unit_id'];
+            $remarks = $data['remarks'] ?? null;
+
+            $outflow = \App\Models\ProductionOutflowInventory::findOrFail($id);
+            if ($outflow->type !== 'rework') {
+                throw new \Exception("Invalid record type.");
+            }
+
+            if ($outflow->assigned_transaction_id) {
+                $tx = OrderStageTransaction::find($outflow->assigned_transaction_id);
+                if ($tx) {
+                    $tx->to_stage_id = $toStageId;
+                    $tx->sub_stage_id_to = $toUnitId;
+                    if ($remarks) {
+                        $tx->remarks = $remarks;
+                    }
+                    $tx->save();
+                }
+            }
+
+            $outflow->assigned_stage_id = $toStageId;
+            $outflow->assigned_unit_id = $toUnitId;
+            if ($remarks) {
+                $outflow->remarks = $remarks;
+            }
+            $outflow->save();
+
+            DB::commit();
+            return ['status' => 'success', 'message' => "Rework unit assignment updated successfully."];
         } catch (\Exception $e) {
             DB::rollBack();
             return ['status' => 'error', 'message' => $e->getMessage()];
@@ -1530,57 +1658,119 @@ class PackingService
     {
         DB::beginTransaction();
         try {
-            $rework = \App\Models\OrderStageTransaction::findOrFail($id);
-            if ($rework->type !== 'rework' && (int)$rework->type !== 0) {
-                throw new \Exception("Only rework movement records can be deleted from here.");
-            }
+            // 1. Check if ID is in ProductionOutflowInventory (new stored in rack rework)
+            $outflow = \App\Models\ProductionOutflowInventory::find($id);
+            if ($outflow && $outflow->type === 'rework') {
+                if ($outflow->assigned_transaction_id) {
+                    $assignedTx = \App\Models\OrderStageTransaction::find($outflow->assigned_transaction_id);
+                    if ($assignedTx) {
+                        $assignedTx->details()->delete();
+                        $assignedTx->delete();
+                    }
+                }
 
-            // 1. Revert Deduction from Incoming Packing pool
-            $sourceTxs = \App\Models\OrderStageTransaction::where('lot_no', $rework->lot_no)
-                ->where('to_stage_id', 11)
-                ->when($rework->sub_stage_id, function($q) use ($rework) {
-                    $q->where(function($sq) use ($rework) {
-                        $sq->where('sub_stage_id_to', $rework->sub_stage_id)
-                          ->orWhereNull('sub_stage_id_to');
-                    });
-                })
-                ->orderBy('id', 'desc')
-                ->get();
-
-            if ($sourceTxs->isEmpty()) {
-                $sourceTxs = \App\Models\OrderStageTransaction::where('lot_no', $rework->lot_no)
+                // Restore stock back to stage 11
+                $slip = \App\Models\ProductionSlipDigitization::find($outflow->slip_id);
+                $packingUnitId = $slip ? $slip->stage_master_unit_id : null;
+                $receivedTxs = \App\Models\OrderStageTransaction::where('lot_no', $outflow->lot_no)
                     ->where('to_stage_id', 11)
+                    ->when($packingUnitId, function($q) use ($packingUnitId) {
+                        $q->where(function($sq) use ($packingUnitId) {
+                            $sq->where('sub_stage_id_to', $packingUnitId)->orWhereNull('sub_stage_id_to');
+                        });
+                    })
                     ->orderBy('id', 'desc')
                     ->get();
-            }
 
-            $rem = $rework->quantity;
-            foreach ($sourceTxs as $tx) {
-                if ($rem <= 0) break;
-                $space_available = max(0, $tx->quantity - $tx->remaining_quantity);
-                if ($space_available > 0) {
-                    $to_add = min($rem, $space_available);
-                    $tx->remaining_quantity += $to_add;
-                    $tx->is_closed_for_unit = $tx->remaining_quantity <= 0 ? 1 : 0;
-                    $tx->status = $tx->remaining_quantity <= 0 ? 2 : 1;
-                    $tx->save();
-                    $rem -= $to_add;
+                if ($receivedTxs->isEmpty()) {
+                    $receivedTxs = \App\Models\OrderStageTransaction::where('lot_no', $outflow->lot_no)
+                        ->where('to_stage_id', 11)
+                        ->orderBy('id', 'desc')
+                        ->get();
                 }
+
+                $rem = $outflow->quantity;
+                foreach ($receivedTxs as $tx) {
+                    if ($rem <= 0) break;
+                    $space_available = max(0, $tx->quantity - $tx->remaining_quantity);
+                    if ($space_available > 0) {
+                        $to_add = min($rem, $space_available);
+                        $tx->remaining_quantity += $to_add;
+                        $tx->is_closed_for_unit = $tx->remaining_quantity <= 0 ? 1 : 0;
+                        $tx->status = $tx->remaining_quantity <= 0 ? 2 : 1;
+                        $tx->save();
+                        $rem -= $to_add;
+                    }
+                }
+
+                if ($rem > 0 && $receivedTxs->isNotEmpty()) {
+                    $first = $receivedTxs->first();
+                    $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $rem);
+                    $first->is_closed_for_unit = $first->remaining_quantity <= 0 ? 1 : 0;
+                    $first->status = $first->remaining_quantity <= 0 ? 2 : 1;
+                    $first->save();
+                }
+
+                $outflow->delete();
+                DB::commit();
+                return ['status' => 'success', 'message' => 'Defect/Rework record deleted and stock restored to packing.'];
             }
 
-            if ($rem > 0 && $sourceTxs->isNotEmpty()) {
-                $first = $sourceTxs->first();
-                $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $rem);
-                $first->is_closed_for_unit = $first->remaining_quantity <= 0 ? 1 : 0;
-                $first->status = $first->remaining_quantity <= 0 ? 2 : 1;
-                $first->save();
+            // 2. Fallback for legacy OrderStageTransaction rework records
+            $rework = \App\Models\OrderStageTransaction::find($id);
+            if ($rework) {
+                if ($rework->type !== 'rework' && (int)$rework->type !== 0) {
+                    throw new \Exception("Only rework movement records can be deleted from here.");
+                }
+
+                $sourceTxs = \App\Models\OrderStageTransaction::where('lot_no', $rework->lot_no)
+                    ->where('to_stage_id', 11)
+                    ->when($rework->sub_stage_id, function($q) use ($rework) {
+                        $q->where(function($sq) use ($rework) {
+                            $sq->where('sub_stage_id_to', $rework->sub_stage_id)
+                              ->orWhereNull('sub_stage_id_to');
+                        });
+                    })
+                    ->orderBy('id', 'desc')
+                    ->get();
+
+                if ($sourceTxs->isEmpty()) {
+                    $sourceTxs = \App\Models\OrderStageTransaction::where('lot_no', $rework->lot_no)
+                        ->where('to_stage_id', 11)
+                        ->orderBy('id', 'desc')
+                        ->get();
+                }
+
+                $rem = $rework->quantity;
+                foreach ($sourceTxs as $tx) {
+                    if ($rem <= 0) break;
+                    $space_available = max(0, $tx->quantity - $tx->remaining_quantity);
+                    if ($space_available > 0) {
+                        $to_add = min($rem, $space_available);
+                        $tx->remaining_quantity += $to_add;
+                        $tx->is_closed_for_unit = $tx->remaining_quantity <= 0 ? 1 : 0;
+                        $tx->status = $tx->remaining_quantity <= 0 ? 2 : 1;
+                        $tx->save();
+                        $rem -= $to_add;
+                    }
+                }
+
+                if ($rem > 0 && $sourceTxs->isNotEmpty()) {
+                    $first = $sourceTxs->first();
+                    $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $rem);
+                    $first->is_closed_for_unit = $first->remaining_quantity <= 0 ? 1 : 0;
+                    $first->status = $first->remaining_quantity <= 0 ? 2 : 1;
+                    $first->save();
+                }
+
+                $rework->details()->delete();
+                $rework->delete();
+
+                DB::commit();
+                return ['status' => 'success', 'message' => 'Rework deleted and pieces reverted to stock.'];
             }
 
-            // 2. Delete the rework record (which is itself an 'outgoing' record in board display)
-            $rework->delete();
-
-            DB::commit();
-            return ['status' => 'success', 'message' => 'Rework deleted and pieces reverted to stock.'];
+            throw new \Exception("Record not found.");
         } catch (\Exception $e) {
             DB::rollBack();
             return ['status' => 'error', 'message' => $e->getMessage()];

@@ -679,7 +679,12 @@
                     </div>
                     <div class="tab-pane fade" id="tab-rework" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                            <h5 class="text-danger mb-0"><i class="fas fa-exclamation-triangle"></i> Defect / Rework</h5>
+                            <div class="d-flex align-items-center">
+                                <h5 class="text-danger mb-0"><i class="fas fa-exclamation-triangle"></i> Defect / Rework</h5>
+                                <a href="{{ route('admin.packing.reworkList') }}" target="_blank" class="btn btn-xs btn-outline-danger font-weight-bold ml-3 shadow-sm">
+                                    <i class="fas fa-external-link-alt mr-1"></i> Rework Assignment List
+                                </a>
+                            </div>
                             <div class="d-flex align-items-center" style="gap: 8px;">
                                 <span class="badge badge-light border text-danger px-2 py-1 font-weight-bold" style="{{ $saved_rework_total > 0 ? '' : 'display:none;' }} font-size: 0.85rem;">
                                     Saved: <strong id="reworkSavedDisplay">{{ $saved_rework_total }} Pcs</strong>
@@ -692,24 +697,37 @@
                         <form id="reworkForm">
                             <div class="row mb-3">
                                 <div class="col-md-3">
-                                    <label>Select Stage <span class="text-danger">*</span></label>
-                                    <select id="reworkStage" class="form-control form-control-sm select2" required>
-                                        <option value="">-- Select Stage --</option>
+                                    <label>Select Storeroom / Rack <span class="text-danger">*</span></label>
+                                    <select id="reworkRack" class="form-control form-control-sm select2" required>
+                                        <option value="">-- Select Rack --</option>
+                                        @foreach($storerooms as $store)
+                                            <optgroup label="{{ $store->name }}">
+                                                @foreach($store->racks as $rack)
+                                                    <option value="{{ $rack->id }}">{{ $rack->name }}</option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endforeach
                                     </select>
                                 </div>
                                 <div class="col-md-3">
-                                    <label>Select Unit <span class="text-danger">*</span></label>
-                                    <select id="reworkUnit" class="form-control form-control-sm select2" required>
+                                    <label>Target Stage <small class="text-muted">(Optional)</small></label>
+                                    <select id="reworkStage" class="form-control form-control-sm select2">
+                                        <option value="">-- Select Stage --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label>Target Unit <small class="text-muted">(Optional)</small></label>
+                                    <select id="reworkUnit" class="form-control form-control-sm select2">
                                         <option value="">-- Select Unit --</option>
                                     </select>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-2">
                                     <label>Remarks</label>
                                     <input type="text" id="reworkRemarks" class="form-control form-control-sm" placeholder="Optional notes...">
                                 </div>
                                 <div class="col-md-2 d-flex align-items-end">
                                     <button type="button" id="btnSaveRework" class="btn btn-sm btn-danger w-100">
-                                        <i class="fas fa-save"></i> Save Rework
+                                        <i class="fas fa-warehouse mr-1"></i> Store in Rack
                                     </button>
                                 </div>
                             </div>
@@ -812,9 +830,11 @@
                                     <tr>
                                         <th width="3%" class="text-center"><input type="checkbox" class="select-all-rework"></th>
                                         <th>LOT NO</th>
-                                        <th>To Stage</th>
-                                        <th>To Unit</th>
+                                        <th>Storeroom / Rack</th>
+                                        <th>Target Stage</th>
+                                        <th>Target Unit</th>
                                         <th>Size : Qty</th>
+                                        <th>Status</th>
                                         <th>Remarks</th>
                                         <th>Action</th>
                                     </tr>
@@ -824,12 +844,29 @@
                                         <tr>
                                             <td class="text-center"><input type="checkbox" class="rework-chk" value="{{ $rw->id }}"></td>
                                             <td class="font-weight-bold">{{ $rw->lot_no }}</td>
-                                            <td>{{ $rw->toStage->name ?? 'N/A' }}</td>
-                                            <td>{{ $rw->toUnit->name ?? 'N/A' }}</td>
                                             <td>
-                                                @foreach($rw->details as $d)
-                                                    <span class="badge badge-light border">{{ $d->size ?? 'Unknown' }}: {{ $d->quantity }}</span>
-                                                @endforeach
+                                                <i class="fas fa-warehouse text-muted mr-1"></i>
+                                                {{ $rw->rack ? (($rw->rack->storeroom ? $rw->rack->storeroom->name . ' - ' : '') . $rw->rack->name) : 'N/A' }}
+                                            </td>
+                                            <td>{{ $rw->responsibleStage->name ?? ($rw->toStage->name ?? 'N/A') }}</td>
+                                            <td>{{ $rw->responsibleUnit->name ?? ($rw->toUnit->name ?? 'N/A') }}</td>
+                                            <td>
+                                                @if(isset($rw->size))
+                                                    <span class="badge badge-light border">{{ $rw->size->size ?? 'Unknown' }}: {{ $rw->quantity }} Pcs</span>
+                                                @elseif(isset($rw->details))
+                                                    @foreach($rw->details as $d)
+                                                        <span class="badge badge-light border">{{ $d->size ?? 'Unknown' }}: {{ $d->quantity }} Pcs</span>
+                                                    @endforeach
+                                                @else
+                                                    <span class="badge badge-light border">{{ $rw->quantity }} Pcs</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($rw->status === 'assigned')
+                                                    <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i> Assigned</span>
+                                                @else
+                                                    <span class="badge badge-warning text-dark"><i class="fas fa-warehouse mr-1"></i> Stored in Rack</span>
+                                                @endif
                                             </td>
                                             <td>{{ $rw->remarks ?? '-' }}</td>
                                             <td>
@@ -839,7 +876,7 @@
                                             </td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="7" class="text-center text-muted py-3">No rework records found.</td></tr>
+                                        <tr><td colspan="9" class="text-center text-muted py-3">No rework records found.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -1640,14 +1677,15 @@
             });
         });
 
-        // Save Rework
+        // Save Rework (Store in Rack)
         $('#btnSaveRework').click(function() {
+            let rack_id = $('#reworkRack').val();
             let to_stage_id = $('#reworkStage').val();
             let to_unit_id = $('#reworkUnit').val();
             let remarks = $('#reworkRemarks').val();
             
-            if(!to_stage_id || !to_unit_id) {
-                alert('Please select Stage and Unit');
+            if(!rack_id) {
+                alert('Please select a Storeroom / Rack to store defect items.');
                 return;
             }
 
@@ -1669,7 +1707,7 @@
             }
 
             let $btn = $(this);
-            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Storing...');
 
             $.ajax({
                 url: "{{ route('admin.packing.reassignRework') }}",
@@ -1678,6 +1716,7 @@
                     _token: '{{ csrf_token() }}',
                     order_id: '{{ $order->id }}',
                     slip_id: SLIP_ID,
+                    rack_id: rack_id,
                     to_stage_id: to_stage_id,
                     to_unit_id: to_unit_id,
                     remarks: remarks,
@@ -1685,18 +1724,19 @@
                 },
                 success: function(res) {
                     if (res.status === 'success') {
-                        toastr.success(res.message || 'Defect/Rework successfully reassigned.');
+                        toastr.success(res.message || 'Defect/Rework successfully stored in rack.');
                         setTimeout(() => {
                             window.location.reload();
                         }, 1000);
                     } else {
                         alert(res.message);
-                        $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Rework');
+                        $btn.prop('disabled', false).html('<i class="fas fa-warehouse mr-1"></i> Store in Rack');
                     }
                 },
-                error: function() {
-                    alert('Error saving rework');
-                    $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Rework');
+                error: function(xhr) {
+                    let msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error storing defect in rack';
+                    alert(msg);
+                    $btn.prop('disabled', false).html('<i class="fas fa-warehouse mr-1"></i> Store in Rack');
                 }
             });
         });

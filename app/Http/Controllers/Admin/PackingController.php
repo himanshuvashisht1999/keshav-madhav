@@ -173,7 +173,7 @@ class PackingController extends Controller
             // Fetch non-packing outflows (Dead, Sampling, Debit, Damage) for THIS order on this slip
             $outflows = \App\Models\ProductionOutflowInventory::where('slip_id', $slip_id)
                 ->where('order_main_id', $order->id)
-                ->whereNotIn('type', ['packing', 'packing_divert']) // Filter out packing and divert movements per user request
+                ->whereNotIn('type', ['packing', 'packing_divert', 'rework']) // Filter out packing, divert and rework movements
                 ->with(['product', 'color', 'size', 'rack.storeroom', 'responsibleStage', 'responsibleUnit'])
                 ->get();
 
@@ -365,7 +365,7 @@ class PackingController extends Controller
             // Fetch non-packing outflows (Dead, Sampling, Debit, Damage) for THIS order on this slip
             $outflows = \App\Models\ProductionOutflowInventory::where('slip_id', $slip_id)
                 ->where('order_main_id', $order->id)
-                ->whereNotIn('type', ['packing', 'packing_divert']) // Filter out packing and divert movements per user request
+                ->whereNotIn('type', ['packing', 'packing_divert', 'rework']) // Filter out packing, divert and rework movements
                 ->with(['product', 'color', 'size', 'rack.storeroom', 'responsibleStage', 'responsibleUnit'])
                 ->get();
 
@@ -524,19 +524,46 @@ class PackingController extends Controller
             })
             ->groupBy('lot_no');
 
-        $rework_by_lot_size = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transaction_details.order_stage_transaction_id', '=', 'order_stage_transactions.id')
+        $rework_outflow_by_lot_size = \App\Models\ProductionOutflowInventory::join('order_products_set_details', 'production_outflow_inventories.size_id', '=', 'order_products_set_details.id')
+            ->whereIn('production_outflow_inventories.lot_no', $selected_lots)
+            ->where('production_outflow_inventories.slip_id', $slip_id)
+            ->where('production_outflow_inventories.type', 'rework')
+            ->select('production_outflow_inventories.lot_no', 'order_products_set_details.size', DB::raw('SUM(production_outflow_inventories.quantity) as total'))
+            ->groupBy('production_outflow_inventories.lot_no', 'order_products_set_details.size')
+            ->get()
+            ->map(function($item) {
+                $item->size = trim(strtoupper($item->size));
+                return $item;
+            });
+
+        $assigned_tx_ids = \App\Models\ProductionOutflowInventory::where('slip_id', $slip_id)
+            ->whereNotNull('assigned_transaction_id')
+            ->pluck('assigned_transaction_id')
+            ->filter()
+            ->toArray();
+
+        $legacy_reworks = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transaction_details.order_stage_transaction_id', '=', 'order_stage_transactions.id')
             ->whereIn('order_stage_transactions.lot_no', $selected_lots)
             ->where('order_stage_transactions.production_slip_digitization_id', $slip_id)
             ->where('order_stage_transactions.from_stage_id', 11)
             ->where('order_stage_transactions.type', 'rework')
+            ->when(!empty($assigned_tx_ids), function($q) use ($assigned_tx_ids) {
+                $q->whereNotIn('order_stage_transactions.id', $assigned_tx_ids);
+            })
             ->select('order_stage_transactions.lot_no', 'order_stage_transaction_details.size', DB::raw('SUM(order_stage_transaction_details.quantity) as total'))
             ->groupBy('order_stage_transactions.lot_no', 'order_stage_transaction_details.size')
             ->get()
-            ->groupBy('lot_no');
+            ->map(function($item) {
+                $item->size = trim(strtoupper($item->size));
+                return $item;
+            });
+
+        $rework_by_lot_size = $rework_outflow_by_lot_size->concat($legacy_reworks)->groupBy('lot_no');
 
         $outflow_by_lot_size = \App\Models\ProductionOutflowInventory::join('order_products_set_details', 'production_outflow_inventories.size_id', '=', 'order_products_set_details.id')
             ->whereIn('production_outflow_inventories.lot_no', $selected_lots)
             ->where('production_outflow_inventories.slip_id', $slip_id)
+            ->whereIn('production_outflow_inventories.type', ['dead', 'sampling', 'debit'])
             ->select('production_outflow_inventories.lot_no', 'order_products_set_details.size', DB::raw('SUM(production_outflow_inventories.quantity) as total'))
             ->groupBy('production_outflow_inventories.lot_no', 'order_products_set_details.size')
             ->get()
@@ -571,19 +598,16 @@ class PackingController extends Controller
         $unique_colors = $lots_data->map(function($item) {
             return (object)['id' => $item->color_id, 'name' => $item->color_name];
         })->unique('id')->values();
-        $storerooms = \App\Models\Storeroom::where('status', 1)->get();
+        $storerooms = \App\Models\Storeroom::with('racks')->where('status', 1)->get();
 
         $saved_cartons = \App\Models\PackingCarton::with(['items.detail.orderProductSet.size_measurement'])
             ->where('packing_main_id', $packing->id)
             ->where('status', 1)
             ->get();
 
-        $saved_reworks = \App\Models\OrderStageTransaction::whereIn('lot_no', $selected_lots)
-            ->where('from_stage_id', 11)
-            ->where(function($q) {
-                $q->where('type', 'rework')->orWhere('type', 0);
-            })
-            ->with(['toStage', 'toUnit', 'details'])
+        $saved_reworks = \App\Models\ProductionOutflowInventory::where('slip_id', $slip_id)
+            ->where('type', 'rework')
+            ->with(['rack.storeroom', 'size', 'responsibleStage', 'responsibleUnit', 'assignedStage', 'assignedUnit'])
             ->get();
 
         $saved_dead = \App\Models\ProductionOutflowInventory::where('slip_id', $slip_id)
@@ -2491,8 +2515,9 @@ class PackingController extends Controller
         $data = $request->validate([
             'order_id' => 'required',
             'slip_id' => 'required',
-            'to_stage_id' => 'required',
-            'to_unit_id' => 'required',
+            'rack_id' => 'required',
+            'to_stage_id' => 'nullable',
+            'to_unit_id' => 'nullable',
             'items' => 'required|array',
             'items.*.detail_id' => 'required',
             'items.*.qty' => 'required|numeric|min:1',
@@ -2503,6 +2528,202 @@ class PackingController extends Controller
         $result = $this->service->reassignRework($data);
         return response()->json($result);
     }
+
+    public function reworkList(Request $request)
+    {
+        $storerooms = \App\Models\Storeroom::with('racks')->where('status', 1)->get();
+        $stages = \App\Models\MasterProductStage::where('status', 1)
+            ->whereIn('id', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+            ->get();
+
+        // Summary counts
+        $totalStoredPieces = \App\Models\ProductionOutflowInventory::where('type', 'rework')
+            ->where('status', 'stored')
+            ->sum('quantity');
+
+        $totalAssignedPieces = \App\Models\ProductionOutflowInventory::where('type', 'rework')
+            ->where('status', 'assigned')
+            ->sum('quantity');
+
+        $totalActiveLots = \App\Models\ProductionOutflowInventory::where('type', 'rework')
+            ->distinct('lot_no')
+            ->count('lot_no');
+
+        return view('admin.packing.rework_list', compact('storerooms', 'stages', 'totalStoredPieces', 'totalAssignedPieces', 'totalActiveLots'));
+    }
+
+    public function reworkListData(Request $request)
+    {
+        $query = \App\Models\ProductionOutflowInventory::with([
+            'orderMain.customer',
+            'product',
+            'color',
+            'size.orderProductSet',
+            'rack.storeroom',
+            'responsibleStage',
+            'responsibleUnit',
+            'assignedStage',
+            'assignedUnit',
+            'assignedUser',
+            'slip'
+        ])->where('type', 'rework');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('rack_id')) {
+            $query->where('rack_id', $request->rack_id);
+        }
+
+        if ($request->filled('search_term')) {
+            $term = trim($request->search_term);
+            $query->where(function($q) use ($term) {
+                $q->where('lot_no', 'like', "%{$term}%")
+                  ->orWhere('remarks', 'like', "%{$term}%")
+                  ->orWhereHas('orderMain', function($oq) use ($term) {
+                      $oq->where('order_no', 'like', "%{$term}%")
+                         ->orWhereHas('customer', function($cq) use ($term) {
+                             $cq->where('name', 'like', "%{$term}%");
+                         });
+                  })
+                  ->orWhereHas('product', function($pq) use ($term) {
+                      $pq->where('design_number', 'like', "%{$term}%");
+                  });
+            });
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        $records = $query->orderBy('id', 'desc')->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $records
+        ]);
+    }
+
+    public function assignReworkFromRack(Request $request)
+    {
+        $data = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'required|numeric',
+            'to_stage_id' => 'required',
+            'to_unit_id' => 'required',
+            'remarks' => 'nullable|string'
+        ]);
+
+        $result = $this->service->assignReworkFromRack($data);
+        return response()->json($result);
+    }
+
+    public function reassignReworkUnit(Request $request)
+    {
+        $data = $request->validate([
+            'id' => 'required',
+            'to_stage_id' => 'required',
+            'to_unit_id' => 'required',
+            'remarks' => 'nullable|string'
+        ]);
+
+        $result = $this->service->reassignReworkUnit($data);
+        return response()->json($result);
+    }
+
+    public function downloadReworkSlip(Request $request, $id)
+    {
+        $outflow = \App\Models\ProductionOutflowInventory::with([
+            'orderMain.customer',
+            'product.series',
+            'color',
+            'size',
+            'rack.storeroom',
+            'responsibleStage',
+            'responsibleUnit',
+            'assignedStage',
+            'assignedUnit',
+            'assignedUser',
+            'slip'
+        ])->findOrFail($id);
+
+        if ($outflow->status !== 'assigned') {
+            return redirect()->back()->with('error', 'Slip can only be downloaded after the item is assigned for rework.');
+        }
+
+        $items = collect([$outflow]);
+        $general_setting = \App\Models\GeneralSettings::first();
+        $isBulk = false;
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.packing.rework_slip', compact('items', 'general_setting', 'isBulk'))
+            ->setPaper('A4', 'portrait');
+
+        $safeLot = str_replace(['/', '\\', ' '], '_', $outflow->lot_no ?? 'Lot');
+        $fileName = 'Rework_Slip_' . $safeLot . '_#' . $outflow->id . '.pdf';
+
+        if ($request->get('view') == 1) {
+            return $pdf->stream($fileName);
+        }
+
+        return $pdf->download($fileName);
+    }
+
+    public function downloadBulkReworkSlip(Request $request)
+    {
+        $rawIds = $request->query('ids') ?? $request->input('ids');
+        if (is_string($rawIds)) {
+            $ids = array_filter(explode(',', $rawIds));
+        } elseif (is_array($rawIds)) {
+            $ids = array_filter($rawIds);
+        } else {
+            $ids = [];
+        }
+
+        if (empty($ids)) {
+            return redirect()->back()->with('error', 'Please select at least one assigned rework record to download slips.');
+        }
+
+        $items = \App\Models\ProductionOutflowInventory::with([
+            'orderMain.customer',
+            'product.series',
+            'color',
+            'size',
+            'rack.storeroom',
+            'responsibleStage',
+            'responsibleUnit',
+            'assignedStage',
+            'assignedUnit',
+            'assignedUser',
+            'slip'
+        ])->whereIn('id', $ids)
+          ->where('status', 'assigned')
+          ->orderBy('id', 'desc')
+          ->get();
+
+        if ($items->isEmpty()) {
+            return redirect()->back()->with('error', 'Slip can only be downloaded after items are assigned for rework. None of the selected records are assigned yet.');
+        }
+
+        $general_setting = \App\Models\GeneralSettings::first();
+        $isBulk = true;
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.packing.rework_slip', compact('items', 'general_setting', 'isBulk'))
+            ->setPaper('A4', 'portrait');
+
+        $fileName = 'Rework_Slips_Bulk_' . date('Ymd_His') . '.pdf';
+
+        if ($request->get('view') == 1) {
+            return $pdf->stream($fileName);
+        }
+
+        return $pdf->download($fileName);
+    }
+
 
     public function deleteOutflow($id)
     {

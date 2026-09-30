@@ -10,6 +10,9 @@
                         <small class="text-muted">Monitor and manage order packing sessions</small>
                     </div>
                     <div class="col-sm-6 text-right">
+                        <a href="{{ route('admin.packing.reworkList') }}" class="btn btn-outline-danger px-3 shadow-sm mr-2">
+                            <i class="fas fa-tools mr-1"></i> Defect / Rework List
+                        </a>
                         <a href="{{ route('admin.uploaded-slips.index') }}" class="btn btn-primary px-4 shadow-sm">
                             <i class="fas fa-plus mr-1"></i> Start New Packing
                         </a>

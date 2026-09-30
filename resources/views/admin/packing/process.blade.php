@@ -1181,14 +1181,30 @@
                     </div>
 
                     <div class="row mb-3">
+                        <div class="col-md-12 mb-2">
+                            <label class="font-weight-bold small text-muted">SELECT STOREROOM / RACK <span class="text-danger">*</span></label>
+                            <select id="reworkRackModal" class="form-control">
+                                <option value="">-- Select Rack --</option>
+                                @foreach($storerooms as $store)
+                                    <optgroup label="{{ $store->name }}">
+                                        @foreach($store->racks as $rack)
+                                            <option value="{{ $rack->id }}">{{ $rack->name }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
                         <div class="col-md-6 mb-2">
-                            <label class="font-weight-bold small text-muted">TARGET STAGE</label>
+                            <label class="font-weight-bold small text-muted">TARGET STAGE (OPTIONAL)</label>
                             <select id="reworkStage" class="form-control" onchange="updateReworkUnits()">
                                 <option value="">Select Stage</option>
                             </select>
                         </div>
                         <div class="col-md-6 mb-2">
-                            <label class="font-weight-bold small text-muted">TARGET UNIT</label>
+                            <label class="font-weight-bold small text-muted">TARGET UNIT (OPTIONAL)</label>
                             <select id="reworkUnit" class="form-control">
                                 <option value="">Select Unit</option>
                             </select>
@@ -3505,12 +3521,13 @@
             }
 
             function submitReworkAssignment() {
+                let rackId = $('#reworkRackModal').val();
                 let stageId = $('#reworkStage').val();
                 let unitId = $('#reworkUnit').val();
                 let remarks = $('#reworkRemarks').val();
 
-                if (!stageId || !unitId) {
-                    alert('Please select target stage and unit.');
+                if (!rackId) {
+                    alert('Please select a Storeroom / Rack to store defect items.');
                     return;
                 }
 
@@ -3521,7 +3538,7 @@
                     return;
                 }
 
-                if (!confirm('Are you sure you want to reassign these pieces for rework? This will reduce the available quantity at this unit.')) {
+                if (!confirm('Are you sure you want to store these defect pieces in rack? This will reduce the available quantity at packing.')) {
                     return;
                 }
 
@@ -3532,6 +3549,7 @@
                         _token: "{{ csrf_token() }}",
                         order_id: ORDER_ID,
                         slip_id: SLIP_ID,
+                        rack_id: rackId,
                         to_stage_id: stageId,
                         to_unit_id: unitId,
                         items: items,

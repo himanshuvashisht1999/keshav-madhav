@@ -443,6 +443,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
             // Rework Routes
             Route::post('/reassign-rework', [AdminPackingController::class, 'reassignRework'])->name('reassignRework');
+            Route::get('/rework-list', [AdminPackingController::class, 'reworkList'])->name('reworkList');
+            Route::get('/rework-list-data', [AdminPackingController::class, 'reworkListData'])->name('reworkListData');
+            Route::post('/assign-rework-from-rack', [AdminPackingController::class, 'assignReworkFromRack'])->name('assignReworkFromRack');
+            Route::post('/reassign-rework-unit', [AdminPackingController::class, 'reassignReworkUnit'])->name('reassignReworkUnit');
+            Route::get('/download-rework-slip/{id}', [AdminPackingController::class, 'downloadReworkSlip'])->name('downloadReworkSlip');
+            Route::get('/download-bulk-rework-slip', [AdminPackingController::class, 'downloadBulkReworkSlip'])->name('downloadBulkReworkSlip');
             Route::post('/record-dead-stock', [AdminPackingController::class, 'recordDeadStock'])->name('recordDeadStock');
             Route::post('/record-sampling-stock', [AdminPackingController::class, 'recordSamplingStock'])->name('recordSamplingStock');
             Route::post('/record-unit-debit', [AdminPackingController::class, 'recordUnitDebit'])->name('recordUnitDebit');

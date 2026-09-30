@@ -176,10 +176,18 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                     @can('manage-packing-module')
                         <li class="nav-item">
                             <a href="{{ route('admin.packing.index') }}"
-                                class="{{ str_contains($page_url, 'admin/packing') ? 'nav-link active' : 'nav-link' }} border_class"
+                                class="{{ (str_contains($page_url, 'admin/packing') && !str_contains($page_url, 'admin/packing/rework-list')) ? 'nav-link active' : 'nav-link' }} border_class"
                                 style="position:static;">
                                 <i class="nav-icon fas fa-box-open"></i>
                                 <p>PACKING MODULE</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.packing.reworkList') }}"
+                                class="{{ str_contains($page_url, 'admin/packing/rework-list') ? 'nav-link active' : 'nav-link' }} border_class"
+                                style="position:static;">
+                                <i class="nav-icon fas fa-tools"></i>
+                                <p>DEFECT / REWORK LIST</p>
                             </a>
                         </li>
                     @endcan

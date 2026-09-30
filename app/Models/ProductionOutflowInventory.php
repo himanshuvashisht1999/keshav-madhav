@@ -27,6 +27,11 @@ class ProductionOutflowInventory extends Model
         'discount',
         'responsible_stage_id',
         'responsible_unit_id',
+        'assigned_stage_id',
+        'assigned_unit_id',
+        'assigned_transaction_id',
+        'assigned_at',
+        'assigned_by',
         'barcode',
         'remarks',
         'status'
@@ -75,5 +80,25 @@ class ProductionOutflowInventory extends Model
     public function slip()
     {
         return $this->belongsTo(ProductionSlipDigitization::class, 'slip_id');
+    }
+
+    public function assignedStage()
+    {
+        return $this->belongsTo(MasterProductStage::class, 'assigned_stage_id');
+    }
+
+    public function assignedUnit()
+    {
+        return $this->belongsTo(StageMasterUnit::class, 'assigned_unit_id');
+    }
+
+    public function assignedTransaction()
+    {
+        return $this->belongsTo(OrderStageTransaction::class, 'assigned_transaction_id');
+    }
+
+    public function assignedUser()
+    {
+        return $this->belongsTo(User::class, 'assigned_by');
     }
 }
