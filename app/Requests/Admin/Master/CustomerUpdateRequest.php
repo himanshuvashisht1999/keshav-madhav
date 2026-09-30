@@ -29,10 +29,7 @@ class CustomerUpdateRequest extends FormRequest
             'payment_term_days' => 'nullable|integer',
         ];
 
-        // If it's an existing record, we might need to check if it's a shop (parent_id exists)
-        $customer = \App\Models\MasterCustomer::find($this->id);
-
-        if (($this->type == 'domestic' && $this->subtype == 'agent') || ($customer && $customer->parent_id)) {
+        if ($this->type == 'domestic' && $this->subtype == 'agent') {
             $rules['name'] = 'nullable';
             $rules['shop_name'] = 'required';
             // $rules['shop_phone'] = 'required';

@@ -548,6 +548,8 @@ class CustomerService
                 if ($request->sales_agent_id) {
                     $update_data->parent_id = $request->sales_agent_id;
                     $update_data->sales_agent_id = $request->sales_agent_id;
+                }
+                if ($update_data->parent_id || $request->sales_agent_id) {
                     // Update shop details for this record since it's now acting as a shop
                     $update_data->name = $request->shop_name ?: $update_data->name;
                     $update_data->phone = $request->shop_phone ?: $update_data->phone;
