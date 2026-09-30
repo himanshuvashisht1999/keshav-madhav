@@ -91,7 +91,24 @@
 
                                 <div class="col-sm-6 mb-2">
                                     <div class="text-xs text-uppercase font-weight-bold text-muted mb-1">Physical Slip Photo</div>
-                                    @if($slip->image)
+                                    @php
+                                        $showSlipFile = $slip->slip_file ?? $slip->image ?? null;
+                                        $showSlipUrl = null;
+                                        $showIsPdf = false;
+                                        if ($showSlipFile) {
+                                            if (file_exists(public_path('assets/production_slips/' . $showSlipFile))) {
+                                                $showSlipUrl = asset('assets/production_slips/' . $showSlipFile);
+                                            } elseif (file_exists(public_path('storage/' . $showSlipFile))) {
+                                                $showSlipUrl = asset('storage/' . $showSlipFile);
+                                            } elseif (file_exists(storage_path('app/public/' . $showSlipFile))) {
+                                                $showSlipUrl = asset('storage/' . $showSlipFile);
+                                            } else {
+                                                $showSlipUrl = asset('assets/production_slips/' . $showSlipFile);
+                                            }
+                                            $showIsPdf = strtolower(pathinfo($showSlipFile, PATHINFO_EXTENSION)) === 'pdf';
+                                        }
+                                    @endphp
+                                    @if($showSlipUrl)
                                         <button type="button" class="btn btn-sm btn-outline-primary font-weight-bold" data-toggle="modal" data-target="#slipPhotoModal">
                                             <i class="fas fa-image mr-1"></i> View Original Scan
                                         </button>
@@ -471,5 +488,47 @@
 
         </div>
     </section>
+
+    <!-- Slip Photo Modal -->
+    @if(isset($showSlipUrl) && $showSlipUrl)
+        <div class="modal fade" id="slipPhotoModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-dark text-white py-2 px-3">
+                        <h6 class="modal-title font-weight-bold mb-0">
+                            <i class="fas fa-file-image mr-2 text-info"></i>Physical Slip Scan #{{ $slip->id }}
+                            @if($slip->bill_number)
+                                <span class="badge badge-secondary ml-2 font-weight-normal">Bill: {{ $slip->bill_number }}</span>
+                            @endif
+                        </h6>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body text-center p-2 bg-light">
+                        @if($showIsPdf)
+                            <iframe src="{{ $showSlipUrl }}" style="width: 100%; height: 80vh; border: none;" class="rounded"></iframe>
+                        @else
+                            <img src="{{ $showSlipUrl }}" class="img-fluid rounded shadow-sm" style="max-height: 80vh; max-width: 100%; object-fit: contain; cursor: zoom-in;" onclick="window.open('{{ $showSlipUrl }}', '_blank')" alt="Slip #{{ $slip->id }}" title="Click to view full size">
+                        @endif
+                    </div>
+                    <div class="modal-footer py-2 px-3 bg-white justify-content-between">
+                        <div class="small text-muted font-weight-bold">
+                            Uploaded: {{ $slip->created_at->format('d M, Y h:i A') }}
+                        </div>
+                        <div>
+                            <a href="{{ $showSlipUrl }}" target="_blank" class="btn btn-sm btn-primary mr-1">
+                                <i class="fas fa-external-link-alt mr-1"></i> Open Original
+                            </a>
+                            <a href="{{ $showSlipUrl }}" download class="btn btn-sm btn-outline-secondary mr-1">
+                                <i class="fas fa-download mr-1"></i> Download
+                            </a>
+                            <button type="button" class="btn btn-sm btn-light border" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
 @endsection

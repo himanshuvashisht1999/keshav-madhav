@@ -362,12 +362,29 @@
 
                                         <!-- Action Buttons -->
                                         <td class="text-right px-3 text-nowrap">
+                                            @php
+                                                $slipFile = $slip->slip_file ?? $slip->image ?? null;
+                                                $slipUrl = null;
+                                                $isPdf = false;
+                                                if ($slipFile) {
+                                                    if (file_exists(public_path('assets/production_slips/' . $slipFile))) {
+                                                        $slipUrl = asset('assets/production_slips/' . $slipFile);
+                                                    } elseif (file_exists(public_path('storage/' . $slipFile))) {
+                                                        $slipUrl = asset('storage/' . $slipFile);
+                                                    } elseif (file_exists(storage_path('app/public/' . $slipFile))) {
+                                                        $slipUrl = asset('storage/' . $slipFile);
+                                                    } else {
+                                                        $slipUrl = asset('assets/production_slips/' . $slipFile);
+                                                    }
+                                                    $isPdf = strtolower(pathinfo($slipFile, PATHINFO_EXTENSION)) === 'pdf';
+                                                }
+                                            @endphp
                                             <div class="btn-group btn-group-sm">
                                                 <a href="{{ route('admin.reports.slips.show', $slip->id) }}" class="btn btn-outline-primary shadow-xs" title="View Details">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                @if($slip->image)
-                                                    <button type="button" class="btn btn-outline-dark shadow-xs" data-toggle="modal" data-target="#slipImageModal{{ $slip->id }}" title="View Physical Slip Photo">
+                                                @if($slipUrl)
+                                                    <button type="button" class="btn btn-outline-info shadow-xs" data-toggle="modal" data-target="#slipImageModal{{ $slip->id }}" title="View Physical Slip Photo">
                                                         <i class="fas fa-image"></i>
                                                     </button>
                                                 @endif
@@ -377,28 +394,41 @@
                                             </div>
 
                                             <!-- Slip Image Modal -->
-                                            @if($slip->image)
+                                            @if($slipUrl)
                                                 <div class="modal fade text-left" id="slipImageModal{{ $slip->id }}" tabindex="-1" role="dialog" aria-hidden="true">
                                                     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
                                                         <div class="modal-content border-0 shadow-lg">
                                                             <div class="modal-header bg-dark text-white py-2 px-3">
                                                                 <h6 class="modal-title font-weight-bold mb-0">
-                                                                    <i class="fas fa-image mr-2"></i>Physical Slip #{{ $slip->id }}
+                                                                    <i class="fas fa-file-image mr-2 text-info"></i>Physical Slip #{{ $slip->id }}
+                                                                    @if($slip->bill_number)
+                                                                        <span class="badge badge-secondary ml-2 font-weight-normal">Bill: {{ $slip->bill_number }}</span>
+                                                                    @endif
                                                                 </h6>
                                                                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                                                     <span aria-hidden="true">&times;</span>
                                                                 </button>
                                                             </div>
-                                                            <div class="modal-body text-center p-0 bg-light">
-                                                                <img src="{{ asset('storage/' . $slip->image) }}" class="img-fluid rounded" style="max-height: 80vh; width: auto;" alt="Slip #{{ $slip->id }}">
+                                                            <div class="modal-body text-center p-2 bg-light">
+                                                                @if($isPdf)
+                                                                    <iframe src="{{ $slipUrl }}" style="width: 100%; height: 75vh; border: none;" class="rounded"></iframe>
+                                                                @else
+                                                                    <img src="{{ $slipUrl }}" class="img-fluid rounded shadow-sm" style="max-height: 75vh; max-width: 100%; object-fit: contain; cursor: zoom-in;" onclick="window.open('{{ $slipUrl }}', '_blank')" alt="Slip #{{ $slip->id }}" title="Click to view full size">
+                                                                @endif
                                                             </div>
                                                             <div class="modal-footer py-2 px-3 bg-white justify-content-between">
                                                                 <div class="small text-muted font-weight-bold">
                                                                     Uploaded: {{ $slip->created_at->format('d M, Y h:i A') }}
                                                                 </div>
-                                                                <a href="{{ asset('storage/' . $slip->image) }}" target="_blank" class="btn btn-sm btn-primary">
-                                                                    <i class="fas fa-external-link-alt mr-1"></i> Open Original Image
-                                                                </a>
+                                                                <div>
+                                                                    <a href="{{ $slipUrl }}" target="_blank" class="btn btn-sm btn-primary mr-1">
+                                                                        <i class="fas fa-external-link-alt mr-1"></i> Open Original
+                                                                    </a>
+                                                                    <a href="{{ $slipUrl }}" download class="btn btn-sm btn-outline-secondary mr-1">
+                                                                        <i class="fas fa-download mr-1"></i> Download
+                                                                    </a>
+                                                                    <button type="button" class="btn btn-sm btn-light border" data-dismiss="modal">Close</button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
