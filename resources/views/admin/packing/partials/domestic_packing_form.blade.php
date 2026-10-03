@@ -7,9 +7,11 @@
              <div class="col-md-3 mb-2">
                 <label class="small font-weight-bold">Design</label>
                 <select id="domesticDesign" class="form-control form-control-sm select2">
+                    @if(count($designs_with_ids) > 1)
                     <option value="">Select Design</option>
+                    @endif
                     @foreach($designs_with_ids as $d)
-                    <option value="{{ $d->design_number }}" data-product-id="{{ $d->id }}">{{ $d->design_number }}</option>
+                    <option value="{{ $d->design_number }}" data-product-id="{{ $d->id }}" {{ count($designs_with_ids) === 1 ? 'selected' : '' }}>{{ $d->design_number }}</option>
                     @endforeach
                 </select>
             </div>
@@ -28,11 +30,19 @@
             <div class="col-md-2 mb-2">
                 <label class="small font-weight-bold">Storage Rack</label>
                 <select id="domesticRack" class="form-control form-control-sm select2">
+                    @php
+                        $dom_racks_count = 0;
+                        foreach($storerooms as $store) {
+                            $dom_racks_count += $store->racks->count();
+                        }
+                    @endphp
+                    @if($dom_racks_count > 1)
                     <option value="">Select Storage</option>
+                    @endif
                     @foreach($storerooms as $store)
                         <optgroup label="{{ $store->name }}">
                             @foreach($store->racks as $rack)
-                                <option value="{{ $rack->id }}">{{ $rack->name }}</option>
+                                <option value="{{ $rack->id }}" {{ $dom_racks_count === 1 ? 'selected' : '' }}>{{ $rack->name }}</option>
                             @endforeach
                         </optgroup>
                     @endforeach

@@ -472,11 +472,20 @@
                         
                         <div class="card bg-light border-0 shadow-sm mb-4">
                             <div class="card-body p-3">
-                                <h6 class="font-weight-bold mb-3 small text-uppercase text-primary">Range Quick Add</h6>
+                                @php
+                                    $default_start_carton = ($saved_cartons->max('carton_no') ?? 0) + 1;
+                                    $last_carton = $saved_cartons->last();
+                                    $last_mrp = ($last_carton && $last_carton->items->first() && $last_carton->items->first()->mrp > 0) ? $last_carton->items->first()->mrp : '';
+                                    $last_price = ($last_carton && $last_carton->items->first() && $last_carton->items->first()->selling_price > 0) ? $last_carton->items->first()->selling_price : '';
+                                    $last_barcode = $last_carton ? ($last_carton->barcode ?? '') : '';
+                                @endphp
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="font-weight-bold mb-0 small text-uppercase text-primary">Range Quick Add</h6>
+                                </div>
                                 <div class="row align-items-end">
                                     <div class="col-md-2 mb-2">
                                         <label class="small font-weight-bold">Start Carton NO</label>
-                                        <input type="number" id="plannerStart" class="form-control form-control-sm" placeholder="e.g. 1">
+                                        <input type="number" id="plannerStart" class="form-control form-control-sm" placeholder="e.g. 1" value="{{ $default_start_carton }}">
                                     </div>
                                     <div class="col-md-2 mb-2">
                                         <label class="small font-weight-bold">End Carton NO</label>
@@ -492,9 +501,11 @@
                                     <div class="col-md-2 mb-2">
                                         <label class="small font-weight-bold">Design</label>
                                         <select id="plannerDesign" class="form-control form-control-sm select2">
+                                            @if(count($unique_designs) > 1)
                                             <option value="">Select Design</option>
+                                            @endif
                                             @foreach($unique_designs as $design)
-                                            <option value="{{ $design }}">{{ $design }}</option>
+                                            <option value="{{ $design }}" {{ count($unique_designs) === 1 ? 'selected' : '' }}>{{ $design }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -522,18 +533,20 @@
                                     </div>
                                     <div class="col-md-2 mb-2">
                                         <label class="small font-weight-bold">MRP</label>
-                                        <input type="number" step="0.01" id="plannerMrp" class="form-control form-control-sm" placeholder="0.00">
+                                        <input type="number" step="0.01" id="plannerMrp" class="form-control form-control-sm" placeholder="0.00" value="{{ $last_mrp }}">
                                     </div>
                                     <div class="col-md-2 mb-2">
                                         <label class="small font-weight-bold">Price</label>
-                                        <input type="number" step="0.01" id="plannerPrice" class="form-control form-control-sm" placeholder="0.00">
+                                        <input type="number" step="0.01" id="plannerPrice" class="form-control form-control-sm" placeholder="0.00" value="{{ $last_price }}">
                                     </div>
                                     <div class="col-md-2 mb-2">
                                         <label class="small font-weight-bold">Warehouse</label>
                                         <select id="plannerWarehouse" class="form-control form-control-sm select2">
+                                            @if($storerooms->count() > 1)
                                             <option value="">Select Store Room</option>
+                                            @endif
                                             @foreach($storerooms as $room)
-                                            <option value="{{ $room->id }}">{{ $room->name }}</option>
+                                            <option value="{{ $room->id }}" {{ $storerooms->count() === 1 ? 'selected' : '' }}>{{ $room->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -545,9 +558,12 @@
                                     </div>
                                     <div class="col-md-2 mb-2">
                                         <label class="small font-weight-bold">Barcode (Optional)</label>
-                                        <input type="text" id="plannerBarcode" class="form-control form-control-sm" placeholder="Optional">
+                                        <input type="text" id="plannerBarcode" class="form-control form-control-sm" placeholder="Optional" value="{{ $last_barcode }}">
                                     </div>
                                     <div class="col-md-12 d-flex justify-content-end mt-2">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 mr-2" id="btnResetPlannerForm">
+                                            <i class="fas fa-undo mr-1"></i> Reset Form
+                                        </button>
                                         <button class="btn btn-primary btn-sm px-4" id="btnSavePlanDirect">
                                             <i class="fas fa-save mr-1"></i> Save Plan
                                         </button>
@@ -1414,8 +1430,13 @@
     const OUTFLOW_BY_LOT_SIZE = {!! json_encode($outflow_by_lot_size) !!};
     const SLIP_ID = "{{ $slip_id }}";
 
-    // Planner Variables
+    // Planner Variables & State
     let expandedLots = [];
+    let plannerSavedState = null;
+    try {
+        let rawState = sessionStorage.getItem('planner_last_state_' + SLIP_ID);
+        if (rawState) plannerSavedState = JSON.parse(rawState);
+    } catch(e) {}
 
     function initAvailableSizes() {
         expandedLots = [];
@@ -1494,10 +1515,16 @@
         let uniqueSizes = [...new Set(expandedLots.map(l => l.size))].sort();
         let $singleSizeSelect = $('#plannerSingleSize');
         if ($singleSizeSelect.length) {
-            $singleSizeSelect.html('<option value="">Select Size</option>');
+            $singleSizeSelect.empty();
+            if (uniqueSizes.length > 1) {
+                $singleSizeSelect.append('<option value="">Select Size</option>');
+            }
             uniqueSizes.forEach(size => {
                 $singleSizeSelect.append(`<option value="${size}">${size}</option>`);
             });
+            if (uniqueSizes.length === 1) {
+                $singleSizeSelect.val(uniqueSizes[0]);
+            }
             $singleSizeSelect.trigger('change');
         }
     }
@@ -1519,6 +1546,27 @@
         $('.select2').select2({ width: '100%' });
         initAvailableSizes();
 
+        // Restore planner state if present
+        if (plannerSavedState) {
+            if (plannerSavedState.start) $('#plannerStart').val(plannerSavedState.start);
+            if (plannerSavedState.end) $('#plannerEnd').val(plannerSavedState.end);
+            if (plannerSavedState.type) {
+                $('#plannerType').val(plannerSavedState.type);
+                if (plannerSavedState.type === 'Loose') {
+                    $('#sizeSetCol').hide();
+                    $('#singleSizeCol').show();
+                } else {
+                    $('#sizeSetCol').show();
+                    $('#singleSizeCol').hide();
+                }
+            }
+            if (plannerSavedState.qty) $('#plannerQty').val(plannerSavedState.qty);
+            if (plannerSavedState.mrp) $('#plannerMrp').val(plannerSavedState.mrp);
+            if (plannerSavedState.price) $('#plannerPrice').val(plannerSavedState.price);
+            if (plannerSavedState.barcode) $('#plannerBarcode').val(plannerSavedState.barcode);
+            if (plannerSavedState.design) $('#plannerDesign').val(plannerSavedState.design).trigger('change.select2');
+            if (plannerSavedState.warehouse_id) $('#plannerWarehouse').val(plannerSavedState.warehouse_id).trigger('change.select2');
+        }
         $('#plannerType').change(function() {
             let type = $(this).val();
             if (type === 'Loose') {
@@ -2032,24 +2080,44 @@
                 data: { design_number: design, size_set_id: sizeSetId },
                 success: function(response) {
                     if (response.status === 'success') {
-                        if (response.mrp && parseFloat(response.mrp) > 0) {
-                            $('#plannerMrp').val(response.mrp);
-                        } else {
-                            $('#plannerMrp').val('');
+                        let fetchedMrp = (response.mrp && parseFloat(response.mrp) > 0) ? response.mrp : null;
+                        let savedMrp = (plannerSavedState && plannerSavedState.mrp) ? plannerSavedState.mrp : "{{ $last_mrp }}";
+                        if (fetchedMrp) {
+                            $('#plannerMrp').val(fetchedMrp);
+                        } else if (savedMrp) {
+                            $('#plannerMrp').val(savedMrp);
                         }
                         
-                        if (response.price && parseFloat(response.price) > 0) {
-                            $('#plannerPrice').val(response.price);
-                        } else {
-                            $('#plannerPrice').val('');
+                        let fetchedPrice = (response.price && parseFloat(response.price) > 0) ? response.price : null;
+                        let savedPrice = (plannerSavedState && plannerSavedState.price) ? plannerSavedState.price : "{{ $last_price }}";
+                        if (fetchedPrice) {
+                            $('#plannerPrice').val(fetchedPrice);
+                        } else if (savedPrice) {
+                            $('#plannerPrice').val(savedPrice);
+                        }
+
+                        let savedBarcode = (plannerSavedState && plannerSavedState.barcode) ? plannerSavedState.barcode : "{{ $last_barcode }}";
+                        if (savedBarcode && !$('#plannerBarcode').val()) {
+                            $('#plannerBarcode').val(savedBarcode);
                         }
                         
                         let $colorSelect = $('#plannerColor');
-                        $colorSelect.html('<option value="">Select Color</option>').trigger('change');
-                        if (response.colors && response.colors.length > 0) {
-                            response.colors.forEach(function(c) {
-                                $colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
-                            });
+                        $colorSelect.empty();
+                        let colors = response.colors || [];
+                        if (colors.length > 1) {
+                            $colorSelect.append('<option value="">Select Color</option>');
+                        } else if (colors.length === 0) {
+                            $colorSelect.append('<option value="">No Colors</option>');
+                        }
+                        
+                        colors.forEach(function(c) {
+                            $colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
+                        });
+                        
+                        if (plannerSavedState && plannerSavedState.color_id && $colorSelect.find(`option[value="${plannerSavedState.color_id}"]`).length) {
+                            $colorSelect.val(plannerSavedState.color_id);
+                        } else if (colors.length >= 1) {
+                            $colorSelect.val(colors[0].id);
                         }
                         $colorSelect.trigger('change');
                     }
@@ -2062,8 +2130,6 @@
             let design = $(this).val();
             let $sizeSetSelect = $('#plannerSizeSet');
             $sizeSetSelect.html('<option value="">Select Size Set</option>').prop('disabled', true).trigger('change');
-            $('#plannerMrp').val('');
-            $('#plannerPrice').val('');
             
             if (!design) return;
 
@@ -2073,11 +2139,24 @@
                 data: { design_number: design, for_planner: 1 },
                 success: function(response) {
                     if (response.status === 'success' && response.size_sets) {
-                        response.size_sets.forEach(set => {
+                        $sizeSetSelect.empty();
+                        let sets = response.size_sets;
+                        if (sets.length > 1) {
+                            $sizeSetSelect.append('<option value="">Select Size Set</option>');
+                        }
+                        sets.forEach(set => {
                             let sizesJson = JSON.stringify(set.required_sizes).replace(/"/g, '&quot;');
                             $sizeSetSelect.append(`<option value="${set.id}" data-sizes="${sizesJson}">${set.name} (${set.no_of_pcs} pcs)</option>`);
                         });
-                        $sizeSetSelect.prop('disabled', false).trigger('change');
+                        $sizeSetSelect.prop('disabled', false);
+
+                        if (plannerSavedState && plannerSavedState.size_set_id && $sizeSetSelect.find(`option[value="${plannerSavedState.size_set_id}"]`).length) {
+                            $sizeSetSelect.val(plannerSavedState.size_set_id).trigger('change');
+                        } else if (sets.length >= 1) {
+                            $sizeSetSelect.val(sets[0].id).trigger('change');
+                        } else {
+                            $sizeSetSelect.trigger('change');
+                        }
                     }
                 }
             });
@@ -2101,22 +2180,51 @@
         $('#plannerWarehouse').change(function() {
             let warehouseId = $(this).val();
             let $rackSelect = $('#plannerRack');
-            $rackSelect.html('<option value="">Select Rack</option>').trigger('change');
+            $rackSelect.empty();
             
-            if (!warehouseId) return;
+            if (!warehouseId) {
+                $rackSelect.html('<option value="">Select Rack</option>').trigger('change');
+                return;
+            }
             
             $.ajax({
                 url: "{{ route('admin.inventory.warehouse_stock.racks', '') }}/" + warehouseId,
                 type: 'GET',
                 success: function(data) {
                     if (data && data.length > 0) {
+                        if (data.length > 1) {
+                            $rackSelect.append('<option value="">Select Rack (Optional)</option>');
+                        }
                         data.forEach(function(rack) {
                             $rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
                         });
+                        if (plannerSavedState && plannerSavedState.rack_id && $rackSelect.find(`option[value="${plannerSavedState.rack_id}"]`).length) {
+                            $rackSelect.val(plannerSavedState.rack_id);
+                        } else if (data.length >= 1) {
+                            $rackSelect.val(data[0].id);
+                        }
+                    } else {
+                        $rackSelect.append('<option value="">No Racks</option>');
                     }
                     $rackSelect.trigger('change');
                 }
             });
+        });
+
+        // Trigger initial cascade once all change handlers are registered
+        if ($('#plannerDesign').val()) {
+            $('#plannerDesign').trigger('change');
+        }
+        if ($('#plannerWarehouse').val()) {
+            $('#plannerWarehouse').trigger('change');
+        }
+        $('#packingTabs a[href="#tab-planner"]').on('shown.bs.tab', function () {
+            if ($('#plannerDesign').val() && (!$('#plannerSizeSet').val() || $('#plannerSizeSet option').length <= 1)) {
+                $('#plannerDesign').trigger('change');
+            }
+            if ($('#plannerWarehouse').val() && (!$('#plannerRack').val() || $('#plannerRack option').length <= 1)) {
+                $('#plannerWarehouse').trigger('change');
+            }
         });
         // 3. Add Range logic
         $('#btnSavePlanDirect').click(function() {
@@ -2272,6 +2380,25 @@
                     },
                     success: function(response) {
                         if (response.status === 'success') {
+                            // Remember planner state for sequence continuation
+                            let batchCount = (end - start + 1);
+                            let nextStart = end + 1;
+                            let nextEnd = nextStart + batchCount - 1;
+                            sessionStorage.setItem('planner_last_state_' + SLIP_ID, JSON.stringify({
+                                start: nextStart,
+                                end: nextEnd,
+                                type: type,
+                                design: design,
+                                size_set_id: sizeSetId,
+                                qty: qty,
+                                mrp: mrp,
+                                price: price,
+                                warehouse_id: warehouseId,
+                                rack_id: rackId,
+                                color_id: colorId,
+                                barcode: barcode
+                            }));
+                            localStorage.setItem('activePackingTab', '#tab-planner');
                             alert(response.message);
                             window.location.reload();
                         } else {
@@ -2285,6 +2412,11 @@
                     }
                 });
             }
+        });
+
+        $('#btnResetPlannerForm').click(function() {
+            sessionStorage.removeItem('planner_last_state_' + SLIP_ID);
+            window.location.reload();
         });
 
         $(document).on('click', '.btn-delete-carton', function() {
@@ -2340,6 +2472,10 @@
                     data: { design_number: design, for_domestic: 1 },
                     success: function(res) {
                         if (res.status === 'success' && res.size_sets) {
+                            $sizeSet.empty();
+                            if (res.size_sets.length > 1) {
+                                $sizeSet.append('<option value="">Select Size Set</option>');
+                            }
                             res.size_sets.forEach(set => {
                                 let sizesJson = '';
                                 if(set.required_sizes && set.required_sizes.length) {
@@ -2347,7 +2483,11 @@
                                 }
                                 $sizeSet.append(`<option value="${set.id}" data-sizes="${sizesJson}">${set.name} (${set.no_of_pcs} pcs)</option>`);
                             });
-                            $sizeSet.prop('disabled', false).trigger('change');
+                            $sizeSet.prop('disabled', false);
+                            if (res.size_sets.length >= 1) {
+                                $sizeSet.val(res.size_sets[0].id);
+                            }
+                            $sizeSet.trigger('change');
                         }
                     }
                 });
@@ -2369,10 +2509,18 @@
                     data: { design_number: design, size_set_id: sizeSetId, strict_colors: 1 },
                     success: function(res) {
                         if (res.status === 'success' && res.colors) {
+                            $color.empty();
+                            if (res.colors.length > 1) {
+                                $color.append('<option value="">Select Color</option>');
+                            }
                             res.colors.forEach(c => {
                                 $color.append(`<option value="${c.id}">${c.name}</option>`);
                             });
-                            $color.prop('disabled', false).trigger('change');
+                            $color.prop('disabled', false);
+                            if (res.colors.length >= 1) {
+                                $color.val(res.colors[0].id);
+                            }
+                            $color.trigger('change');
                         }
                     }
                 });
@@ -2382,6 +2530,15 @@
 
         $('#domesticColor').change(function() {
             checkDomesticModalBtn();
+        });
+
+        if ($('#domesticDesign').val()) {
+            $('#domesticDesign').trigger('change');
+        }
+        $('#packingTabs a[href="#tab-domestic"]').on('shown.bs.tab', function () {
+            if ($('#domesticDesign').val() && (!$('#domesticSizeSet').val() || $('#domesticSizeSet option').length <= 1)) {
+                $('#domesticDesign').trigger('change');
+            }
         });
 
         // 3. Open Size Allocation Modal
