@@ -1803,6 +1803,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/process-new/{slip_id}/api/get-size-sets', [\App\Http\Controllers\Admin\PackingController::class, 'apiGetSizeSets'])->name('apiGetSizeSets');
             Route::get('/process-new/{slip_id}/api/get-master-data', [\App\Http\Controllers\Admin\PackingController::class, 'apiGetMasterData'])->name('apiGetMasterData');
             Route::post('/process-new/{slip_id}/api/save-carton-plan', [\App\Http\Controllers\Admin\PackingController::class, 'apiSaveCartonPlan'])->name('apiSaveCartonPlan');
+            Route::post('/process-new/{slip_id}/api/update-carton-pricing/{carton_id}', [\App\Http\Controllers\Admin\PackingController::class, 'apiUpdateCartonPricing'])->name('apiUpdateCartonPricing');
+            Route::post('/process-new/{slip_id}/api/bulk-update-cartons-pricing', [\App\Http\Controllers\Admin\PackingController::class, 'apiBulkUpdateCartonsPricing'])->name('apiBulkUpdateCartonsPricing');
             Route::delete('/process-new/{slip_id}/api/delete-carton/{carton_id}', [\App\Http\Controllers\Admin\PackingController::class, 'apiDeleteCarton'])->name('apiDeleteCarton');
             Route::delete('/process-new/{slip_id}/api/delete-domestic/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'apiDeleteDomestic'])->name('apiDeleteDomestic');
             

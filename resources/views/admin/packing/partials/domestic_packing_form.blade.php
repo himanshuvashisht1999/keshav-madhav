@@ -28,8 +28,8 @@
                 </select>
             </div>
             <div class="col-md-2 mb-2">
-                <label class="small font-weight-bold">Storage Rack</label>
-                <select id="domesticRack" class="form-control form-control-sm select2">
+                <label class="small font-weight-bold">Storage Rack <span class="text-danger">*</span></label>
+                <select id="domesticRack" class="form-control form-control-sm select2" required>
                     @php
                         $dom_racks_count = 0;
                         foreach($storerooms as $store) {

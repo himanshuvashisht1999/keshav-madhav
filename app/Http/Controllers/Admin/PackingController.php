@@ -1232,6 +1232,86 @@ class PackingController extends Controller
         }
     }
 
+    public function apiUpdateCartonPricing(Request $request, $slip_id, $carton_id)
+    {
+        $carton = \App\Models\PackingCarton::find($carton_id);
+        if (!$carton) {
+            return response()->json(['status' => 'error', 'message' => 'Carton not found']);
+        }
+
+        $mrp = $request->input('mrp');
+        $price = $request->input('price');
+
+        $mrpVal = (is_numeric($mrp) && $mrp >= 0) ? (float)$mrp : 0;
+        $priceVal = (is_numeric($price) && $price >= 0) ? (float)$price : 0;
+
+        \App\Models\PackingItem::where('packing_carton_id', $carton->id)
+            ->update([
+                'mrp' => $mrpVal,
+                'selling_price' => $priceVal
+            ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Pricing updated for Carton ' . $carton->carton_no,
+            'carton_id' => $carton->id,
+            'mrp' => $mrpVal,
+            'price' => $priceVal
+        ]);
+    }
+
+    public function apiBulkUpdateCartonsPricing(Request $request, $slip_id)
+    {
+        $cartonsData = $request->input('cartons');
+        $cartonIds = $request->input('carton_ids');
+        $commonMrp = $request->input('mrp');
+        $commonPrice = $request->input('price');
+
+        \DB::beginTransaction();
+        try {
+            $updatedCount = 0;
+
+            if (!empty($cartonsData) && is_array($cartonsData)) {
+                foreach ($cartonsData as $row) {
+                    $cartonId = $row['id'] ?? null;
+                    if (!$cartonId) continue;
+
+                    $mrp = isset($row['mrp']) && is_numeric($row['mrp']) ? (float)$row['mrp'] : 0;
+                    $price = isset($row['price']) && is_numeric($row['price']) ? (float)$row['price'] : 0;
+
+                    \App\Models\PackingItem::where('packing_carton_id', $cartonId)
+                        ->update([
+                            'mrp' => $mrp,
+                            'selling_price' => $price
+                        ]);
+                    $updatedCount++;
+                }
+            } elseif (!empty($cartonIds) && is_array($cartonIds)) {
+                $mrp = is_numeric($commonMrp) ? (float)$commonMrp : 0;
+                $price = is_numeric($commonPrice) ? (float)$commonPrice : 0;
+
+                \App\Models\PackingItem::whereIn('packing_carton_id', $cartonIds)
+                    ->update([
+                        'mrp' => $mrp,
+                        'selling_price' => $price
+                    ]);
+                $updatedCount = count($cartonIds);
+            } else {
+                return response()->json(['status' => 'error', 'message' => 'No carton pricing data provided']);
+            }
+
+            \DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "Successfully updated pricing for {$updatedCount} carton(s)."
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
     public function apiDeleteCarton(Request $request, $slip_id, $carton_id)
     {
         $carton = \App\Models\PackingCarton::with('items')->find($carton_id);
@@ -2844,6 +2924,9 @@ class PackingController extends Controller
             'order_id' => 'required',
             'slip_id' => 'required',
             'boxes' => 'required|array|min:1',
+            'boxes.*.rack_id' => 'required',
+        ], [
+            'boxes.*.rack_id.required' => 'Storage Rack is required for domestic diversion.'
         ]);
 
         $slip_id = $request->slip_id;
@@ -2859,6 +2942,10 @@ class PackingController extends Controller
             $totalBoxesProcessed = 0;
 
             foreach ($boxesData as $data) {
+                if (empty($data['rack_id'])) {
+                    throw new \Exception('Storage Rack is required for domestic diversion.');
+                }
+
                 $sizeSetMaster = \App\Models\MasterSizeMeasurement::find($data['size_set_id']);
                 if (!$sizeSetMaster)
                     continue;

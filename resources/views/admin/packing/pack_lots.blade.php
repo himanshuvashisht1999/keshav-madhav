@@ -116,6 +116,19 @@
         border: 1px solid #ced4da;
         color: #333;
     }
+    .carton-pricing-modified {
+        border-color: #ffc107 !important;
+        background-color: #fffdf2 !important;
+        box-shadow: 0 0 0 0.15rem rgba(255, 193, 7, 0.25) !important;
+    }
+    .carton-pricing-saved {
+        border-color: #28a745 !important;
+        background-color: #f2fff4 !important;
+        transition: all 0.5s ease;
+    }
+    .row-pricing-modified {
+        background-color: #fffdf5 !important;
+    }
 </style>
 
 <div class="content-wrapper">
@@ -593,9 +606,18 @@
                                 $saved_grand_total_sets += $total_sets;
                             }
                         @endphp
-                        <div class="d-flex align-items-center mb-3">
-                            <h6 class="font-weight-bold mb-0">Saved Cartons <span class="badge badge-secondary">{{ $saved_cartons->count() }}</span> — Total Sets: <span class="badge badge-info">{{ round($saved_grand_total_sets, 2) }}</span></h6>
-                            <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-cartons" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+                        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap" style="gap: 10px;">
+                            <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
+                                <h6 class="font-weight-bold mb-0">Saved Cartons <span class="badge badge-secondary">{{ $saved_cartons->count() }}</span> — Total Sets: <span class="badge badge-info">{{ round($saved_grand_total_sets, 2) }}</span></h6>
+                                <button type="button" class="btn btn-xs btn-danger btn-bulk-delete-cartons" style="display:none;"><i class="fas fa-trash-alt mr-1"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+                                <button type="button" class="btn btn-xs btn-success btn-save-all-pricing" style="display:none;"><i class="fas fa-check-double mr-1"></i> Save Modified MRP/Price (<span class="modified-count">0</span>)</button>
+                            </div>
+                            <div class="d-flex align-items-center bulk-pricing-toolbar" style="display: none; gap: 6px;">
+                                <span class="small font-weight-bold text-muted mr-1">Apply to Selected (<span class="selected-count">0</span>):</span>
+                                <input type="number" step="0.01" min="0" id="bulkSetMRP" class="form-control form-control-sm text-right" placeholder="MRP" style="width: 80px; height: 26px; font-size: 0.8rem;">
+                                <input type="number" step="0.01" min="0" id="bulkSetPrice" class="form-control form-control-sm text-right" placeholder="Price" style="width: 80px; height: 26px; font-size: 0.8rem;">
+                                <button type="button" class="btn btn-xs btn-primary font-weight-bold" id="btnApplyBulkPricing"><i class="fas fa-bolt mr-1"></i> Apply & Save</button>
+                            </div>
                         </div>
                         <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                             <table class="table erp-table table-sm table-bordered">
@@ -609,10 +631,10 @@
                                         <th>Design</th>
                                         <th>Size Set</th>
                                         <th>Color</th>
-                                        <th>MRP</th>
-                                        <th>Price</th>
+                                        <th style="min-width: 105px;">MRP</th>
+                                        <th style="min-width: 105px;">Price</th>
                                         <!-- <th>Barcode</th> -->
-                                        <th>Action</th>
+                                        <th style="min-width: 105px;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -654,7 +676,7 @@
                                         $mrp = $sc->items->first() ? $sc->items->first()->mrp : 0;
                                         $price = $sc->items->first() ? $sc->items->first()->selling_price : 0;
                                     @endphp
-                                    <tr>
+                                    <tr data-carton-id="{{ $sc->id }}">
                                         <td class="text-center"><input type="checkbox" class="carton-chk" value="{{ $sc->id }}"></td>
                                         <!-- <td>{{ $sc->id }}</td> -->
                                         <td class="font-weight-bold">{{ $sc->carton_no }}</td>
@@ -663,13 +685,34 @@
                                         <td>{{ $design }}</td>
                                         <td>{{ $size_set }}</td>
                                         <td>{{ $color }}</td>
-                                        <td>{{ number_format($mrp, 2) }}</td>
-                                        <td>{{ number_format($price, 2) }}</td>
+                                        <td style="width: 105px;">
+                                            <input type="number" step="0.01" min="0" 
+                                                   class="form-control form-control-sm carton-mrp-input px-1 text-right font-weight-bold" 
+                                                   data-id="{{ $sc->id }}" 
+                                                   data-original="{{ (float)$mrp }}" 
+                                                   value="{{ $mrp > 0 ? (float)$mrp : '' }}" 
+                                                   placeholder="0.00" 
+                                                   style="height: 28px; width: 90px; font-size: 0.85rem;">
+                                        </td>
+                                        <td style="width: 105px;">
+                                            <input type="number" step="0.01" min="0" 
+                                                   class="form-control form-control-sm carton-price-input px-1 text-right font-weight-bold" 
+                                                   data-id="{{ $sc->id }}" 
+                                                   data-original="{{ (float)$price }}" 
+                                                   value="{{ $price > 0 ? (float)$price : '' }}" 
+                                                   placeholder="0.00" 
+                                                   style="height: 28px; width: 90px; font-size: 0.85rem;">
+                                        </td>
                                         <!-- <td>{{ $sc->barcode ?? 'N/A' }}</td> -->
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-delete-carton" data-id="{{ $sc->id }}">
-                                                <i class="fas fa-trash"></i> Delete
-                                            </button>
+                                        <td style="width: 105px;">
+                                            <div class="d-flex align-items-center" style="gap: 4px;">
+                                                <button type="button" class="btn btn-sm btn-success py-0 px-2 btn-save-carton-pricing" data-id="{{ $sc->id }}" title="Save MRP & Price" style="display: none; height: 26px; line-height: 24px; font-size: 0.75rem;">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-delete-carton" data-id="{{ $sc->id }}" style="height: 26px; line-height: 24px; font-size: 0.75rem;">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                     @empty
@@ -2445,13 +2488,307 @@
             });
         });
 
+        // ---------------- SAVED CARTONS PRICING & SELECTION LOGIC ---------------- //
+
+        function updateCartonSelectionState() {
+            let totalChecked = $('.carton-chk:checked').length;
+            let totalCartons = $('.carton-chk').length;
+
+            $('.selected-count').text(totalChecked);
+            if (totalChecked > 0) {
+                $('.btn-bulk-delete-cartons').show();
+                $('.bulk-pricing-toolbar').attr('style', 'display: flex !important; gap: 6px;');
+            } else {
+                $('.btn-bulk-delete-cartons').hide();
+                $('.bulk-pricing-toolbar').attr('style', 'display: none !important;');
+            }
+
+            $('.select-all-cartons').prop('checked', totalCartons > 0 && totalChecked === totalCartons);
+        }
+
+        $(document).on('change', '.select-all-cartons', function() {
+            let isChecked = $(this).is(':checked');
+            $('.carton-chk').prop('checked', isChecked);
+            updateCartonSelectionState();
+        });
+
+        $(document).on('change', '.carton-chk', function() {
+            updateCartonSelectionState();
+        });
+
+        function checkRowPricingModified($row) {
+            let $mrp = $row.find('.carton-mrp-input');
+            let $price = $row.find('.carton-price-input');
+            let $btnSave = $row.find('.btn-save-carton-pricing');
+
+            let origMrp = parseFloat($mrp.data('original')) || 0;
+            let origPrice = parseFloat($price.data('original')) || 0;
+
+            let curMrp = parseFloat($mrp.val()) || 0;
+            let curPrice = parseFloat($price.val()) || 0;
+
+            let mrpChanged = Math.abs(curMrp - origMrp) > 0.0001;
+            let priceChanged = Math.abs(curPrice - origPrice) > 0.0001;
+
+            if (mrpChanged || priceChanged) {
+                $row.addClass('row-pricing-modified');
+                if (mrpChanged) $mrp.addClass('carton-pricing-modified'); else $mrp.removeClass('carton-pricing-modified');
+                if (priceChanged) $price.addClass('carton-pricing-modified'); else $price.removeClass('carton-pricing-modified');
+                $btnSave.fadeIn(150);
+            } else {
+                $row.removeClass('row-pricing-modified');
+                $mrp.removeClass('carton-pricing-modified');
+                $price.removeClass('carton-pricing-modified');
+                $btnSave.fadeOut(150);
+            }
+
+            let modifiedCount = $('.row-pricing-modified').length;
+            $('.modified-count').text(modifiedCount);
+            if (modifiedCount > 0) {
+                $('.btn-save-all-pricing').show();
+            } else {
+                $('.btn-save-all-pricing').hide();
+            }
+        }
+
+        $(document).on('input change', '.carton-mrp-input, .carton-price-input', function() {
+            let $row = $(this).closest('tr');
+            checkRowPricingModified($row);
+        });
+
+        $(document).on('keypress', '.carton-mrp-input, .carton-price-input', function(e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                let $row = $(this).closest('tr');
+                $row.find('.btn-save-carton-pricing').click();
+            }
+        });
+
+        $(document).on('click', '.btn-save-carton-pricing', function() {
+            let $btn = $(this);
+            let id = $btn.data('id');
+            let $row = $btn.closest('tr');
+            let $mrp = $row.find('.carton-mrp-input');
+            let $price = $row.find('.carton-price-input');
+
+            let mrpVal = $mrp.val();
+            let priceVal = $price.val();
+
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+            $.ajax({
+                url: "{{ route('admin.packing.apiUpdateCartonPricing', ['slip_id' => $slip_id, 'carton_id' => 'PLACEHOLDER']) }}".replace('PLACEHOLDER', id),
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    mrp: mrpVal,
+                    price: priceVal
+                },
+                success: function(res) {
+                    $btn.prop('disabled', false).html('<i class="fas fa-check"></i>');
+                    if (res.status === 'success') {
+                        $mrp.data('original', res.mrp).removeClass('carton-pricing-modified').addClass('carton-pricing-saved');
+                        $price.data('original', res.price).removeClass('carton-pricing-modified').addClass('carton-pricing-saved');
+                        $row.removeClass('row-pricing-modified');
+                        $btn.hide();
+
+                        setTimeout(function() {
+                            $mrp.removeClass('carton-pricing-saved');
+                            $price.removeClass('carton-pricing-saved');
+                        }, 1200);
+
+                        let modifiedCount = $('.row-pricing-modified').length;
+                        $('.modified-count').text(modifiedCount);
+                        if (modifiedCount === 0) {
+                            $('.btn-save-all-pricing').hide();
+                        }
+
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(res.message);
+                        }
+                    } else {
+                        alert(res.message || 'Error updating pricing');
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).html('<i class="fas fa-check"></i>');
+                    alert('Error connecting to server.');
+                }
+            });
+        });
+
+        // Bulk Save Modified
+        $('.btn-save-all-pricing').click(function() {
+            let $btn = $(this);
+            let modified = [];
+            $('.row-pricing-modified').each(function() {
+                let id = $(this).data('carton-id');
+                let mrp = $(this).find('.carton-mrp-input').val();
+                let price = $(this).find('.carton-price-input').val();
+                if (id) {
+                    modified.push({ id: id, mrp: mrp, price: price });
+                }
+            });
+
+            if (modified.length === 0) return;
+
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
+
+            $.ajax({
+                url: "{{ route('admin.packing.apiBulkUpdateCartonsPricing', $slip_id) }}",
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    cartons: modified
+                },
+                success: function(res) {
+                    $btn.prop('disabled', false).html('<i class="fas fa-check-double mr-1"></i> Save Modified MRP/Price (<span class="modified-count">0</span>)');
+                    if (res.status === 'success') {
+                        $('.row-pricing-modified').each(function() {
+                            let $r = $(this);
+                            let $mrp = $r.find('.carton-mrp-input');
+                            let $price = $r.find('.carton-price-input');
+                            $mrp.data('original', $mrp.val()).removeClass('carton-pricing-modified').addClass('carton-pricing-saved');
+                            $price.data('original', $price.val()).removeClass('carton-pricing-modified').addClass('carton-pricing-saved');
+                            $r.removeClass('row-pricing-modified');
+                            $r.find('.btn-save-carton-pricing').hide();
+
+                            setTimeout(function() {
+                                $mrp.removeClass('carton-pricing-saved');
+                                $price.removeClass('carton-pricing-saved');
+                            }, 1200);
+                        });
+                        $('.modified-count').text(0);
+                        $('.btn-save-all-pricing').hide();
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(res.message);
+                        } else {
+                            alert(res.message);
+                        }
+                    } else {
+                        alert(res.message || 'Error updating pricing');
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).html('<i class="fas fa-check-double mr-1"></i> Save Modified MRP/Price');
+                    alert('Error connecting to server.');
+                }
+            });
+        });
+
+        // Apply Bulk Pricing to Checked Cartons
+        $('#btnApplyBulkPricing').click(function() {
+            let checkedIds = [];
+            $('.carton-chk:checked').each(function() {
+                checkedIds.push($(this).val());
+            });
+
+            if (checkedIds.length === 0) {
+                alert('Please select at least one carton.');
+                return;
+            }
+
+            let bulkMrp = $('#bulkSetMRP').val();
+            let bulkPrice = $('#bulkSetPrice').val();
+
+            if (bulkMrp === '' && bulkPrice === '') {
+                alert('Please enter MRP or Price to apply.');
+                return;
+            }
+
+            let $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+            $.ajax({
+                url: "{{ route('admin.packing.apiBulkUpdateCartonsPricing', $slip_id) }}",
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    carton_ids: checkedIds,
+                    mrp: bulkMrp,
+                    price: bulkPrice
+                },
+                success: function(res) {
+                    $btn.prop('disabled', false).html('<i class="fas fa-bolt mr-1"></i> Apply & Save');
+                    if (res.status === 'success') {
+                        checkedIds.forEach(function(cid) {
+                            let $row = $(`tr[data-carton-id="${cid}"]`);
+                            if ($row.length) {
+                                let $mrp = $row.find('.carton-mrp-input');
+                                let $price = $row.find('.carton-price-input');
+                                if (bulkMrp !== '') {
+                                    $mrp.val(bulkMrp).data('original', bulkMrp);
+                                }
+                                if (bulkPrice !== '') {
+                                    $price.val(bulkPrice).data('original', bulkPrice);
+                                }
+                                $mrp.removeClass('carton-pricing-modified').addClass('carton-pricing-saved');
+                                $price.removeClass('carton-pricing-modified').addClass('carton-pricing-saved');
+                                $row.removeClass('row-pricing-modified');
+                                $row.find('.btn-save-carton-pricing').hide();
+
+                                setTimeout(function() {
+                                    $mrp.removeClass('carton-pricing-saved');
+                                    $price.removeClass('carton-pricing-saved');
+                                }, 1200);
+                            }
+                        });
+
+                        $('#bulkSetMRP').val('');
+                        $('#bulkSetPrice').val('');
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(res.message);
+                        } else {
+                            alert(res.message);
+                        }
+                    } else {
+                        alert(res.message || 'Error updating pricing');
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).html('<i class="fas fa-bolt mr-1"></i> Apply & Save');
+                    alert('Error connecting to server.');
+                }
+            });
+        });
+
+        // Bulk Delete Selected Cartons
+        $('.btn-bulk-delete-cartons').click(function() {
+            let checkedIds = [];
+            $('.carton-chk:checked').each(function() {
+                checkedIds.push($(this).val());
+            });
+
+            if (checkedIds.length === 0) return;
+            if (!confirm(`Are you sure you want to delete ${checkedIds.length} selected carton(s)?`)) return;
+
+            let $btn = $(this);
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Deleting...');
+
+            let deletePromises = checkedIds.map(function(cid) {
+                return $.ajax({
+                    url: "{{ route('admin.packing.apiDeleteCarton', ['slip_id' => $slip_id, 'carton_id' => 'PLACEHOLDER']) }}".replace('PLACEHOLDER', cid),
+                    type: 'DELETE',
+                    data: { _token: '{{ csrf_token() }}' }
+                });
+            });
+
+            $.when.apply($, deletePromises).done(function() {
+                window.location.reload();
+            }).fail(function() {
+                alert('One or more cartons failed to delete. Reloading page...');
+                window.location.reload();
+            });
+        });
+
         // ---------------- DOMESTIC DIVERSION LOGIC ---------------- //
 
         function checkDomesticModalBtn() {
             let design = $('#domesticDesign').val();
             let sizeSetId = $('#domesticSizeSet').val();
             let colorId = $('#domesticColor').val();
-            $('#btnOpenDomesticModal').prop('disabled', !(design && sizeSetId && colorId));
+            let rackId = $('#domesticRack').val();
+            $('#btnOpenDomesticModal').prop('disabled', !(design && sizeSetId && colorId && rackId));
         }
 
         // 1. Design change -> set product id, fetch size sets with for_domestic: 1
@@ -2532,6 +2869,10 @@
             checkDomesticModalBtn();
         });
 
+        $('#domesticRack').change(function() {
+            checkDomesticModalBtn();
+        });
+
         if ($('#domesticDesign').val()) {
             $('#domesticDesign').trigger('change');
         }
@@ -2539,6 +2880,7 @@
             if ($('#domesticDesign').val() && (!$('#domesticSizeSet').val() || $('#domesticSizeSet option').length <= 1)) {
                 $('#domesticDesign').trigger('change');
             }
+            checkDomesticModalBtn();
         });
 
         // 3. Open Size Allocation Modal
@@ -2550,10 +2892,10 @@
             let colorId = $('#domesticColor').val();
             let colorName = $('#domesticColor option:selected').text();
             let rackId = $('#domesticRack').val();
-            let rackName = rackId ? $('#domesticRack option:selected').text() : 'None (Unallocated)';
+            let rackName = $('#domesticRack option:selected').text();
 
-            if (!design || !sizeSetId || !colorId) {
-                alert('Please select Design, Size Set, and Color first.');
+            if (!design || !sizeSetId || !colorId || !rackId) {
+                alert('Please select Design, Size Set, Color, and Storage Rack first.');
                 return;
             }
 
@@ -2774,8 +3116,8 @@
             let rackName = $('#domesticRack option:selected').text();
             let boxQty = parseInt($('#mdlDomesticBoxQty').val()) || 0;
 
-            if (!design || !sizeSetId || !colorId || boxQty < 1) {
-                alert('Please verify all fields.');
+            if (!design || !sizeSetId || !colorId || !rackId || boxQty < 1) {
+                alert('Please select a Storage Rack and verify all required fields.');
                 return;
             }
 
