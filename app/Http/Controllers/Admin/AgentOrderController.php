@@ -94,6 +94,7 @@ class AgentOrderController extends Controller
         $fittings = \App\Models\MasterProductFitting::where('status', 1)->pluck('name', 'id');
         $product_natures = \App\Models\ProductNature::pluck('name', 'id');
         $fabric_types = \App\Models\FabricType::pluck('name', 'id');
+        $brands = \App\Models\Brand::orderBy('name')->pluck('name', 'id');
 
         $prices = DB::table('production_goods_variants')
             ->select('production_goods_id as product_id', 'master_size_measurement_id as size_set_id', DB::raw('MAX(mrp) as mrp'))
@@ -194,6 +195,9 @@ class AgentOrderController extends Controller
         if ($request->filled('fabric_type_id')) {
             $query->where('production_goods.fabric_type_id', $request->fabric_type_id);
         }
+        if ($request->filled('brand_id')) {
+            $query->where('production_goods.brand_id', $request->brand_id);
+        }
 
         $mrpFrom = $request->input('mrp_from', $request->input('min_mrp'));
         if ($mrpFrom !== null && $mrpFrom !== '') {
@@ -229,7 +233,7 @@ class AgentOrderController extends Controller
                 DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample')
             );
 
-        $boxes = $query->groupBy(
+        $query = $query->groupBy(
             'domestic_inventories.product_id',
             'domestic_inventories.color_id',
             'domestic_inventories.size_set_id',
@@ -244,8 +248,16 @@ class AgentOrderController extends Controller
 
             DB::raw($discount_col)
         )
-            ->havingRaw('(SUM(domestic_inventories.total_boxes) > MAX(COALESCE(alloc.total_allocated, 0))) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)')
-            ->orderBy('production_goods.design_number')
+            ->havingRaw('((SUM(domestic_inventories.total_boxes) > MAX(COALESCE(alloc.total_allocated, 0))) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0))');
+
+        if ($request->filled('min_boxes')) {
+            $query->havingRaw('(SUM(domestic_inventories.total_boxes) - MAX(COALESCE(alloc.total_allocated, 0))) >= ?', [(int) $request->min_boxes]);
+        }
+        if ($request->filled('max_boxes')) {
+            $query->havingRaw('(SUM(domestic_inventories.total_boxes) - MAX(COALESCE(alloc.total_allocated, 0))) <= ?', [(int) $request->max_boxes]);
+        }
+
+        $boxes = $query->orderBy('production_goods.design_number')
             ->paginate(20)
             ->appends($request->except('page'));
 
@@ -292,7 +304,7 @@ class AgentOrderController extends Controller
             ]);
         }
 
-        return view('admin.agent_orders.create', compact('agent', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'patterns', 'fittings', 'product_natures', 'fabric_types', 'boxes', 'boxImages', 'gst_percentage'));
+        return view('admin.agent_orders.create', compact('agent', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'patterns', 'fittings', 'product_natures', 'fabric_types', 'brands', 'boxes', 'boxImages', 'gst_percentage'));
     }
 
     public function getFabricRolls($id)
@@ -1364,6 +1376,7 @@ class AgentOrderController extends Controller
         $fittings = \App\Models\MasterProductFitting::where('status', 1)->pluck('name', 'id');
         $product_natures = \App\Models\ProductNature::pluck('name', 'id');
         $fabric_types = \App\Models\FabricType::pluck('name', 'id');
+        $brands = \App\Models\Brand::orderBy('name')->pluck('name', 'id');
 
         // Build Query for All Boxes
         $prices = DB::table('production_goods_variants')
@@ -1473,6 +1486,20 @@ class AgentOrderController extends Controller
         if ($request->filled('fabric_type_id')) {
             $query->where('production_goods.fabric_type_id', $request->fabric_type_id);
         }
+        if ($request->filled('brand_id')) {
+            $query->where('production_goods.brand_id', $request->brand_id);
+        }
+
+        $mrpFrom = $request->input('mrp_from', $request->input('min_mrp'));
+        if ($mrpFrom !== null && $mrpFrom !== '') {
+            $query->where('ip.mrp', '>=', (float) $mrpFrom);
+        }
+
+        $mrpTo = $request->input('mrp_to', $request->input('max_mrp'));
+        if ($mrpTo !== null && $mrpTo !== '') {
+            $query->where('ip.mrp', '<=', (float) $mrpTo);
+        }
+
         $query = $query->leftJoinSub($allocated, 'alloc', function ($join) {
             $join->on('domestic_inventories.product_id', '=', 'alloc.product_id')
                 ->on('domestic_inventories.color_id', '=', 'alloc.color_id')
@@ -1516,8 +1543,17 @@ class AgentOrderController extends Controller
         // Clone the builder before applying pagination, so we can fetch all selected items
         $queryForSelected = $query->clone();
 
+        $query = $query
+            ->havingRaw('((SUM(domestic_inventories.total_boxes) > 0 OR MAX(COALESCE(current_items.current_order_qty, 0)) > 0) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0))');
+
+        if ($request->filled('min_boxes')) {
+            $query->havingRaw('(SUM(domestic_inventories.total_boxes) - MAX(COALESCE(alloc.total_allocated, 0))) >= ?', [(int) $request->min_boxes]);
+        }
+        if ($request->filled('max_boxes')) {
+            $query->havingRaw('(SUM(domestic_inventories.total_boxes) - MAX(COALESCE(alloc.total_allocated, 0))) <= ?', [(int) $request->max_boxes]);
+        }
+
         $boxes = $query
-            ->havingRaw('(SUM(domestic_inventories.total_boxes) > 0 OR MAX(COALESCE(current_items.current_order_qty, 0)) > 0) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)')
             ->orderByRaw('current_order_qty DESC')
             ->orderBy('production_goods.design_number')
             ->paginate(20)
@@ -1562,7 +1598,11 @@ class AgentOrderController extends Controller
                     'size_set_id' => $item->size_set_id,
                     'qty' => $item->current_order_qty,
                     'pcs_per_box' => (float) $item->pcs_per_box,
-                    'unit_price' => (float) $item->unit_price
+                    'unit_price' => (float) $item->unit_price,
+                    'design_number' => $item->design_number ?? null,
+                    'garment' => trim(($item->series_name ?? '') . ' ' . ($item->name_of_garment ?? '')),
+                    'color_name' => isset($item->color_name) ? str_replace(' ('.$item->color_id.')', '', $item->color_name) : null,
+                    'size_set_name' => $item->size_set_name ?? null
                 ];
             })
             ->toArray();
@@ -1574,6 +1614,10 @@ class AgentOrderController extends Controller
                 'product_id',
                 'color_id',
                 'size_set_id',
+                DB::raw('MAX(product_name) as garment'),
+                DB::raw('MAX(design_number) as design_number'),
+                DB::raw('MAX(color_name) as color_name'),
+                DB::raw('MAX(size_set_name) as size_set_name'),
                 DB::raw('SUM(box_qty) as total_box_qty'),
                 DB::raw('MAX(quantity / NULLIF(box_qty, 0)) as pcs_per_box'),
                 DB::raw('MAX(selling_price) as unit_price')
@@ -1590,7 +1634,11 @@ class AgentOrderController extends Controller
                     'size_set_id' => $oi->size_set_id,
                     'qty' => (int) $oi->total_box_qty,
                     'pcs_per_box' => (float) ($oi->pcs_per_box ?? 1),
-                    'unit_price' => (float) ($oi->unit_price ?? 0)
+                    'unit_price' => (float) ($oi->unit_price ?? 0),
+                    'design_number' => $oi->design_number ?? null,
+                    'garment' => $oi->garment ?? null,
+                    'color_name' => isset($oi->color_name) ? str_replace(' ('.$oi->color_id.')', '', $oi->color_name) : null,
+                    'size_set_name' => $oi->size_set_name ?? null
                 ];
             }
         }
@@ -1639,7 +1687,7 @@ class AgentOrderController extends Controller
         $vendors = DB::table('vendors')->select('id', 'name')->where('status', 1)->get();
         $salesMen = \App\Models\SalesMan::where('status', 1)->get();
 
-        return view('admin.agent_orders.edit', compact('order', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'patterns', 'fittings', 'product_natures', 'fabric_types', 'boxes', 'boxImages', 'selected_quantities', 'dispatched_quantities', 'gst_percentage', 'agents', 'shops', 'vendors', 'salesMen'));
+        return view('admin.agent_orders.edit', compact('order', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'patterns', 'fittings', 'product_natures', 'fabric_types', 'brands', 'boxes', 'boxImages', 'selected_quantities', 'dispatched_quantities', 'gst_percentage', 'agents', 'shops', 'vendors', 'salesMen'));
     }
 
     public function update(Request $request, $id)

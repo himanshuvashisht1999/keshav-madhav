@@ -12,7 +12,11 @@
     data-pcs="{{ $variation->pcs_per_box }}" data-price="{{ $variation->unit_price }}"
     data-available="{{ $variation->available_boxes }}"
     data-physical="{{ $physBoxes }}"
-    data-dispatched="{{ $dispQty }}">
+    data-dispatched="{{ $dispQty }}"
+    data-design="{{ $variation->design_number }}"
+    data-garment="{{ trim(($variation->series_name ?? '') . ' ' . $variation->name_of_garment) }}"
+    data-color="{{ str_replace(' ('.$variation->color_id.')', '', $variation->color_name) }}"
+    data-size="{{ $variation->size_set_name }}">
     <td>
         @if($image)
             <img src="{{ asset('assets/products/' . $image) }}" alt="Product"

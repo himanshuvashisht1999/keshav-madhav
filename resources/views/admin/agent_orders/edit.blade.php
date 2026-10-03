@@ -9,18 +9,19 @@
                         <h4 class="m-0 text-dark font-weight-bold text-truncate" title="Edit Order #ORD-{{ $order->id }}">Edit Order #ORD-{{ $order->id }}</h4>
                         <p class="text-muted small mb-0 text-truncate"><i class="fas fa-store mr-1"></i> <span class="text-primary">{{ $shop->name ?? 'N/A' }}</span> | <i class="fas fa-user mr-1"></i> Agent: {{ $order->agent->name ?? 'N/A' }}</p>
                     </div>
-                    <div class="col-md-5 col-sm-6">
-                        <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('admin.agent-orders.index') }}">Agent Orders</a></li>
-                            <li class="breadcrumb-item active">Edit Order</li>
-                        </ol>
+                    <div class="col-md-5 col-sm-6 text-right d-flex justify-content-end align-items-center flex-wrap">
+                        <a href="{{ route('admin.agent-orders.show', $order->id) }}" class="btn btn-outline-secondary btn-sm shadow-sm mr-2" style="border-radius: 6px;">
+                            <i class="fas fa-arrow-left mr-1"></i> Back to Order
+                        </a>
+                        <button type="button" class="btn btn-primary btn-sm shadow-sm font-weight-bold px-3 open-checkout-modal-btn" id="topCheckoutBtn" style="border-radius: 6px;" title="Review selected items and update order">
+                            <i class="fas fa-arrow-circle-right mr-1"></i> Review & Update <span class="badge badge-light text-dark ml-1 font-weight-bold" id="topBoxesBadge">0 Boxes</span>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <section class="content pb-5 mb-5" style="padding-bottom: 150px !important;">
+        <section class="content pb-4 mb-4" style="padding-bottom: 75px !important;">
             <div class="container-fluid">
                 <!-- Order Basic Information -->
                 <div class="card shadow-sm border-0 mb-3 bg-white">
@@ -173,11 +174,58 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-4 col-12 mb-1 text-right mt-3">
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">Brand</label>
+                                    <select name="brand_id" id="brand_id" class="form-control form-control-sm select2">
+                                        <option value="">All Brands</option>
+                                        @foreach($brands as $id => $name)
+                                            <option value="{{ $id }}" {{ request('brand_id') == $id ? 'selected' : '' }}>
+                                                {{ $name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">MRP From</label>
+                                    <div class="input-group input-group-sm">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text py-0">₹</span>
+                                        </div>
+                                        <input type="number" name="mrp_from" id="mrp_from" class="form-control form-control-sm" placeholder="Min" min="0" step="any" value="{{ request('mrp_from') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">MRP To</label>
+                                    <div class="input-group input-group-sm">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text py-0">₹</span>
+                                        </div>
+                                        <input type="number" name="mrp_to" id="mrp_to" class="form-control form-control-sm" placeholder="Max" min="0" step="any" value="{{ request('mrp_to') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">Min Boxes</label>
+                                    <div class="input-group input-group-sm">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text py-0"><i class="fas fa-box small"></i></span>
+                                        </div>
+                                        <input type="number" name="min_boxes" id="min_boxes" class="form-control form-control-sm" placeholder="Min Boxes" min="0" value="{{ request('min_boxes') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-2 col-6 mb-1">
+                                    <label class="small font-weight-bold text-muted mb-0">Max Boxes</label>
+                                    <div class="input-group input-group-sm">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text py-0"><i class="fas fa-boxes small"></i></span>
+                                        </div>
+                                        <input type="number" name="max_boxes" id="max_boxes" class="form-control form-control-sm" placeholder="Max Boxes" min="0" value="{{ request('max_boxes') }}">
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-2 d-flex justify-content-end align-items-center">
                                     <button type="submit" class="btn btn-primary btn-sm px-4 mr-2 shadow-sm">
                                         <i class="fas fa-search mr-1"></i> Filter
                                     </button>
-                                    <button type="button" id="btn-reset-filters" class="btn btn-secondary btn-sm px-3 shadow-sm">
+                                    <button type="button" id="btn-reset-filters" class="btn btn-secondary btn-sm px-3 shadow-sm" title="Reset Filters">
                                         <i class="fas fa-undo"></i>
                                     </button>
                                 </div>
@@ -188,14 +236,21 @@
 
                 <!-- Inventory Table -->
                 <div class="card shadow-sm border-0 overflow-hidden" style="border-radius: 12px;">
-                    <div class="card-header bg-white py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="font-weight-bold mb-0 text-dark">
-                                <i class="fas fa-boxes mr-2 text-primary"></i> Inventory Selection
-                            </h6>
-                            <span class="badge badge-light border text-muted px-3 py-2" id="variationsCount">
-                                {{ $boxes->total() }} Items Available
-                            </span>
+                    <div class="card-header bg-white py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap">
+                            <div class="d-flex align-items-center my-1">
+                                <h6 class="font-weight-bold mb-0 text-dark mr-3">
+                                    <i class="fas fa-boxes mr-2 text-primary"></i> Inventory Selection
+                                </h6>
+                                <span class="badge badge-light border text-muted px-2 py-1" id="variationsCount">
+                                    {{ $boxes->total() }} Items Available
+                                </span>
+                            </div>
+                            <div class="d-flex align-items-center my-1">
+                                <button type="button" class="btn btn-primary btn-sm font-weight-bold shadow-sm px-3 open-checkout-modal-btn" id="cardCheckoutBtn" style="border-radius: 6px; display: none;">
+                                    <i class="fas fa-shopping-cart mr-1"></i> Review & Update (<span id="cardBoxesCount">0</span> Boxes • ₹<span id="cardGrandTotal">0</span>) <i class="fas fa-arrow-right ml-1"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body p-0">
@@ -235,121 +290,207 @@
             </div>
         </section>
 
-        <!-- Sticky Bottom Summary Bar -->
-        <div class="fixed-bottom bg-white shadow-lg border-top p-3 animate__animated animate__fadeInUp"
-            id="summaryBar" style="z-index: 1050; left: 250px;"> <!-- left: 250px to account for sidebar -->
-            <div class="container-fluid">
-                <div class="row align-items-center">
-                    <div class="col-md-2 border-right">
-                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Selected</small>
-                        <span class="h5 font-weight-bold text-dark mb-0" id="selectedCount">0</span>
-                        <small class="text-muted ml-1">Boxes</small>
+        <!-- Sleek Floating Bottom Bar -->
+        <div class="fixed-bottom bg-white shadow-lg border-top py-2 px-3 animate__animated animate__fadeInUp"
+            id="summaryBar" style="z-index: 1040; left: 250px; border-top: 1px solid #dee2e6;">
+            <div class="container-fluid d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center flex-wrap">
+                    <div class="mr-3">
+                        <span class="text-muted small font-weight-bold mr-1">Selected:</span>
+                        <span class="badge badge-primary font-weight-bold px-2 py-1" style="font-size: 13px;">
+                            <span id="selectedCount">0</span> Boxes
+                        </span>
                     </div>
+                    <div class="mr-3 border-left pl-3 d-none d-sm-inline-block">
+                        <span class="text-muted small font-weight-bold mr-1">Subtotal:</span>
+                        <span class="font-weight-bold text-dark">₹<span id="bottomSubTotal">0.00</span></span>
+                    </div>
+                    <div class="border-left pl-3">
+                        <span class="text-muted small font-weight-bold mr-1">Est. Grand Total:</span>
+                        <span class="h5 font-weight-bold text-success mb-0">₹<span id="bottomGrandTotal">0.00</span></span>
+                    </div>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-primary btn-sm font-weight-bold px-4 shadow-sm open-checkout-modal-btn" style="border-radius: 6px;">
+                        Review & Update <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
 
-                    <div class="col-md-3 border-right">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <small class="text-muted font-weight-bold">Subtotal:</small>
-                            <span class="font-weight-bold">₹<span id="subTotalAmount">0</span></span>
+        <!-- Order Review & Update Modal -->
+        <div class="modal fade" id="orderCheckoutModal" tabindex="-1" role="dialog" aria-labelledby="orderCheckoutModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered" role="document" style="max-width: 920px;">
+                <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+                    <div class="modal-header bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="modal-title font-weight-bold text-dark mb-0" id="orderCheckoutModalLabel">
+                                <i class="fas fa-clipboard-check text-primary mr-2"></i> Review & Update Order #ORD-{{ $order->id }}
+                            </h5>
+                            <small class="text-muted">
+                                Party: <strong class="text-dark">{{ $shop->name ?? 'N/A' }}</strong> ({{ ucfirst($order->party_type ?? 'customer') }}) &nbsp;•&nbsp;
+                                Agent: {{ $order->agent->name ?? 'Direct' }}
+                            </small>
                         </div>
-                        <div class="input-group input-group-sm mb-1" title="Discount Percentage">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text py-0 px-1" style="font-size: 10px;">Disc %</span>
+                        <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    
+                    <div class="modal-body p-3 p-md-4">
+                        <div class="row">
+                            <!-- Left: Selected Variations Breakdown -->
+                            <div class="col-md-5 mb-3 mb-md-0 border-right">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="font-weight-bold text-muted small text-uppercase"><i class="fas fa-boxes mr-1"></i> Selected Variations</span>
+                                    <span class="badge badge-info px-2 py-1" id="modalItemsCount">0 Items</span>
+                                </div>
+                                <div id="modalSelectedItemsList" class="border rounded bg-light p-2" style="max-height: 250px; overflow-y: auto;">
+                                    <!-- Dynamically populated -->
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                                    <span class="text-muted small font-weight-bold">Total Selected Boxes:</span>
+                                    <span class="badge badge-primary px-2 py-1 font-weight-bold" style="font-size: 13px;"><span id="modalTotalBoxes">0</span> Boxes</span>
+                                </div>
                             </div>
-                            <input type="number" id="discountPercentage" class="form-control text-right h-auto py-0 px-1" 
-                                style="font-weight: bold;" value="{{ $order->discount_percentage }}" min="0" max="100" step="any">
-                        </div>
-                        <div class="input-group input-group-sm" title="Discount Amount">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text py-0 px-1" style="font-size: 10px;">Disc ₹</span>
+
+                            <!-- Right: Pricing & Tax Breakdown -->
+                            <div class="col-md-7">
+                                <span class="font-weight-bold text-muted small text-uppercase d-block mb-2"><i class="fas fa-calculator mr-1"></i> Financial Summary</span>
+                                <div class="bg-light p-3 rounded border">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="text-muted font-weight-bold">Subtotal:</span>
+                                        <span class="font-weight-bold h6 mb-0">₹<span id="subTotalAmount">0.00</span></span>
+                                    </div>
+
+                                    <div class="row align-items-center mb-2">
+                                        <div class="col-6">
+                                            <div class="input-group input-group-sm" title="Discount Percentage">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text py-0 px-2 font-weight-bold" style="font-size: 11px;">Disc %</span>
+                                                </div>
+                                                <input type="number" id="discountPercentage" class="form-control text-right" 
+                                                    style="font-weight: bold;" value="{{ $order->discount_percentage }}" min="0" max="100" step="any">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="input-group input-group-sm" title="Discount Amount">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text py-0 px-2 font-weight-bold" style="font-size: 11px;">Disc ₹</span>
+                                                </div>
+                                                <input type="number" id="discountAmountInput" class="form-control text-right" 
+                                                    style="font-weight: bold;" value="{{ $order->discount_amount }}" min="0">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center mb-2 border-top pt-2">
+                                        <span class="text-muted font-weight-bold">Taxable Amount:</span>
+                                        <span class="font-weight-bold h6 mb-0">₹<span id="taxableAmount">0.00</span></span>
+                                    </div>
+
+                                    <div class="row align-items-center mb-2">
+                                        <div class="col-6">
+                                            <div class="input-group input-group-sm" title="GST Percentage">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text py-0 px-2 font-weight-bold" style="font-size: 11px;">GST %</span>
+                                                </div>
+                                                <input type="number" id="gstPercentage" class="form-control text-right" 
+                                                    style="font-weight: bold;" value="{{ $order->gst_percentage }}" min="0" max="100" step="any">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="input-group input-group-sm" title="GST Amount">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text py-0 px-2 font-weight-bold" style="font-size: 11px;">GST ₹</span>
+                                                </div>
+                                                <input type="number" id="gstAmountInput" class="form-control text-right" 
+                                                    style="font-weight: bold;" value="{{ $order->gst_amount }}" min="0">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row align-items-center mb-3">
+                                        <div class="col-6">
+                                            <span class="text-muted font-weight-bold small">Other Charges:</span>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="input-group input-group-sm">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text py-0 px-2">₹</span>
+                                                </div>
+                                                <input type="number" id="other_charges" class="form-control text-right font-weight-bold" value="{{ $order->other_charges ?? 0 }}" min="0" step="1">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Grand Total Box -->
+                                    <div class="bg-primary text-white p-2 rounded text-center shadow-sm">
+                                        <small class="text-uppercase tracking-wider font-weight-bold text-white-50 d-block">Grand Total</small>
+                                        <span class="h3 font-weight-bold mb-0">₹<span id="grandTotalAmount">0.00</span></span>
+                                    </div>
+                                </div>
                             </div>
-                            <input type="number" id="discountAmountInput" class="form-control text-right h-auto py-0 px-1" 
-                                style="font-weight: bold;" value="{{ $order->discount_amount }}" min="0">
                         </div>
-                    </div>
 
-                    <div class="col-md-2 border-right">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <small class="text-muted font-weight-bold">Taxable:</small>
-                            <span class="font-weight-bold">₹<span id="taxableAmount">0</span></span>
-                        </div>
-                        <div class="input-group input-group-sm mb-1" title="GST Percentage">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text py-0 px-1" style="font-size: 10px;">GST %</span>
+                        <!-- Logistics & Dispatch Details -->
+                        <div class="border-top pt-3 mt-3">
+                            <span class="font-weight-bold text-muted small text-uppercase d-block mb-2"><i class="fas fa-truck mr-1"></i> Order & Logistics Details</span>
+                            <div class="row">
+                                <div class="col-md-3 col-6 mb-2">
+                                    <label class="small text-muted font-weight-bold mb-1">Expected Dispatch</label>
+                                    <input type="date" id="expectedDispatchDate" class="form-control form-control-sm" 
+                                        value="{{ $order->expected_dispatch_date ?: (\Carbon\Carbon::parse($order->expected_dispatch_date)->format('Y-m-d') ?: date('Y-m-d', strtotime('+3 days'))) }}">
+                                </div>
+                                <div class="col-md-3 col-6 mb-2">
+                                    <label class="small text-muted font-weight-bold mb-1">Status</label>
+                                    <select id="orderStatus" class="form-control form-control-sm">
+                                        <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>PENDING</option>
+                                        <option value="delayed" {{ $order->status == 'delayed' ? 'selected' : '' }}>DELAYED</option>
+                                        <option value="partially_dispatched" {{ $order->status == 'partially_dispatched' ? 'selected' : '' }}>PARTIALLY DISPATCHED</option>
+                                        <option value="dispatched" {{ $order->status == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 col-6 mb-2">
+                                    <label class="small text-muted font-weight-bold mb-1">Booking Station</label>
+                                    <input type="text" id="booking_station" class="form-control form-control-sm" placeholder="Station" value="{{ $order->booking_station }}">
+                                </div>
+                                <div class="col-md-3 col-6 mb-2">
+                                    <label class="small text-muted font-weight-bold mb-1">Transport</label>
+                                    <input type="text" id="transport" class="form-control form-control-sm" placeholder="Transport Name" value="{{ $order->transport }}">
+                                </div>
+                                <div class="col-12 mb-1">
+                                    <label class="small text-muted font-weight-bold mb-1">Order Remark / Notes</label>
+                                    @php
+                                        $previousRemarks = \DB::table('agent_orders')->whereNotNull('remark')->where('remark', '!=', '')->distinct()->pluck('remark');
+                                    @endphp
+                                    <input type="text" id="remark" class="form-control form-control-sm" list="previous_remarks_list" placeholder="Enter notes..." value="{{ $order->remark }}" autocomplete="off">
+                                    <datalist id="previous_remarks_list">
+                                        @foreach($previousRemarks as $rem)
+                                            <option value="{{ $rem }}">
+                                        @endforeach
+                                    </datalist>
+                                </div>
                             </div>
-                            <input type="number" id="gstPercentage" class="form-control text-right h-auto py-0 px-1" 
-                                style="font-weight: bold;" value="{{ $order->gst_percentage }}" min="0" max="100" step="any">
-                        </div>
-                        <div class="input-group input-group-sm" title="GST Amount">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text py-0 px-1" style="font-size: 10px;">GST ₹</span>
-                            </div>
-                            <input type="number" id="gstAmountInput" class="form-control text-right h-auto py-0 px-1" 
-                                style="font-weight: bold;" value="{{ $order->gst_amount }}" min="0">
                         </div>
                     </div>
 
-                    <div class="col-md-2 border-right">
-                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Other Charges</small>
-                        <div class="input-group input-group-sm mt-1">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">₹</span>
-                            </div>
-                            <input type="number" id="other_charges" class="form-control" value="{{ $order->other_charges ?? 0 }}" min="0" step="1">
-                        </div>
-                    </div>
-                    <div class="col-md-2 border-right">
-                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Expected Dispatch</small>
-                        <input type="date" id="expectedDispatchDate" class="form-control form-control-sm mt-1"
-                            value="{{ $order->expected_dispatch_date ?: (\Carbon\Carbon::parse($order->expected_dispatch_date)->format('Y-m-d') ?: date('Y-m-d', strtotime('+3 days'))) }}">
-                    </div>
-                    <div class="col-md-2 border-right">
-                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Status</small>
-                        <select id="orderStatus" class="form-control form-control-sm mt-1">
-                            <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>PENDING</option>
-                            <option value="delayed" {{ $order->status == 'delayed' ? 'selected' : '' }}>DELAYED</option>
-                            <option value="partially_dispatched" {{ $order->status == 'partially_dispatched' ? 'selected' : '' }}>PARTIALLY DISPATCHED</option>
-                            <option value="dispatched" {{ $order->status == 'dispatched' ? 'selected' : '' }}>DISPATCHED</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-2 border-right">
-                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Booking & Transport</small>
-                        <input type="text" id="booking_station" class="form-control form-control-sm mt-1" placeholder="Station" value="{{ $order->booking_station }}">
-                        <input type="text" id="transport" class="form-control form-control-sm mt-1" placeholder="Transport" value="{{ $order->transport }}">
-                    </div>
-
-                    <div class="col-md-2 border-right">
-                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Order Remark</small>
-                        @php
-                            $previousRemarks = \DB::table('agent_orders')->whereNotNull('remark')->where('remark', '!=', '')->distinct()->pluck('remark');
-                        @endphp
-                        <input type="text" id="remark" class="form-control form-control-sm mt-1" list="previous_remarks_list" placeholder="Notes..." value="{{ $order->remark }}" autocomplete="off">
-                        <datalist id="previous_remarks_list">
-                            @foreach($previousRemarks as $rem)
-                                <option value="{{ $rem }}">
-                            @endforeach
-                        </datalist>
-                    </div>
-
-                    <div class="col-md-2 text-center border-right">
-                        <small class="text-muted d-block uppercase tracking-wider font-weight-bold">Grand Total</small>
-                        <span class="h4 font-weight-bold text-primary mb-0">₹<span id="grandTotalAmount">0</span></span>
-                    </div>
-
-                    <div class="col-md-2">
-                        <div class="d-flex flex-column gap-1">
-                            <button type="button" class="btn btn-primary btn-block py-2 font-weight-bold shadow-sm update-order-btn">
-                                Update <i class="fas fa-save ml-1"></i>
-                            </button>
-                            <a href="{{ route('admin.agent-orders.show', $order->id) }}" class="btn btn-outline-secondary btn-block py-1 font-weight-bold small">
+                    <div class="modal-footer bg-light py-2 px-3 border-top d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-dismiss="modal">
+                            <i class="fas fa-arrow-left mr-1"></i> Back to Inventory
+                        </button>
+                        <div class="d-flex align-items-center">
+                            <a href="{{ route('admin.agent-orders.show', $order->id) }}" class="btn btn-outline-danger btn-sm px-3 mr-2">
                                 Cancel
                             </a>
+                            <button type="button" class="btn btn-primary px-4 font-weight-bold shadow update-order-btn">
+                                Update Order <i class="fas fa-save ml-2"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
     <style>
         .font-weight-500 { font-weight: 500; }
@@ -360,6 +501,9 @@
         .quantity-control { max-width: 140px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-radius: 6px; overflow: hidden; }
         .quantity-control input { border-left: 0; border-right: 0; font-weight: bold; }
         .fixed-bottom { transition: left 0.3s; }
+        #summaryBar { box-shadow: 0 -4px 15px rgba(0,0,0,0.08) !important; }
+        #modalSelectedItemsList::-webkit-scrollbar { width: 5px; }
+        #modalSelectedItemsList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         @media (max-width: 991px) { .fixed-bottom { left: 0 !important; } }
     </style>
 @endsection
@@ -372,6 +516,7 @@
             let gst_mode = 'percentage';
             let cart = new Map();
             const initialVariations = @json($selected_quantities);
+            const dispatchedQuantities = @json($dispatched_quantities ?? []);
 
             // --- INFINITE SCROLL & REAL-TIME FILTER START ---
             let nextPage = {{ $boxes->nextPageUrl() ? ($boxes->currentPage() + 1) : 'null' }};
@@ -439,6 +584,14 @@
                 loadMore(true);
             });
 
+            let filterInputTimer;
+            $('#mrp_from, #mrp_to, #min_boxes, #max_boxes').on('input change', function() {
+                clearTimeout(filterInputTimer);
+                filterInputTimer = setTimeout(function() {
+                    loadMore(true);
+                }, 400);
+            });
+
             $('#filterForm').on('submit', function(e) {
                 e.preventDefault();
                 loadMore(true);
@@ -446,19 +599,27 @@
 
             $('#btn-reset-filters').on('click', function() {
                 $('#filterForm select').val('').trigger('change');
-                // The 'change' event will automatically trigger loadMore(true) due to the listener above
+                $('#filterForm input[type="number"], #filterForm input[type="text"]').not(':hidden').val('');
+                loadMore(true);
             });
             // --- INFINITE SCROLL & REAL-TIME FILTER END ---
 
             Object.keys(initialVariations).forEach(key => {
                 const itemData = initialVariations[key];
+                const dispQty = parseInt(itemData.dispatched_qty || dispatchedQuantities[key] || 0) || 0;
                 cart.set(key, {
                     product_id: itemData.product_id,
                     color_id: itemData.color_id,
                     size_set_id: itemData.size_set_id,
                     qty: parseInt(itemData.qty) || 0,
                     pcs_per_box: parseFloat(itemData.pcs_per_box),
-                    unit_price: parseFloat(itemData.unit_price)
+                    unit_price: parseFloat(itemData.unit_price),
+                    design: itemData.design_number || null,
+                    garment: itemData.garment || null,
+                    color: itemData.color_name || null,
+                    size: itemData.size_set_name || null,
+                    min: dispQty,
+                    max: null
                 });
             });
 
@@ -466,13 +627,18 @@
                 $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
             }
 
-
             function updateUI() {
-                // Sync prices from DOM to cart (handles sample set toggle changes)
+                // Sync prices and limits from DOM to cart if available
                 $('.variation-row').each(function () {
                     const key = $(this).data('key');
                     if (cart.has(key)) {
-                        cart.get(key).unit_price = parseFloat($(this).data('price'));
+                        const item = cart.get(key);
+                        item.unit_price = parseFloat($(this).data('price'));
+                        const rInput = $(this).find('.box-qty-input');
+                        if (rInput.length) {
+                            if (rInput.attr('min')) item.min = parseInt(rInput.attr('min')) || 0;
+                            if (rInput.attr('max')) item.max = parseInt(rInput.attr('max'));
+                        }
                     }
                 });
 
@@ -524,10 +690,27 @@
 
                 const grandTotal = Math.ceil(taxableAmount + gstAmount + otherCharges);
 
-                $('#selectedCount').text(totalBoxes);
-                $('#subTotalAmount').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                $('#taxableAmount').text(taxableAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                $('#grandTotalAmount').text(grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                const formattedSubTotal = subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const formattedTaxable = taxableAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const formattedGrandTotal = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                $('#selectedCount, #modalTotalBoxes').text(totalBoxes);
+                $('#subTotalAmount, #bottomSubTotal').text(formattedSubTotal);
+                $('#taxableAmount').text(formattedTaxable);
+                $('#grandTotalAmount, #bottomGrandTotal, #cardGrandTotal').text(formattedGrandTotal);
+
+                $('#topBoxesBadge').text(totalBoxes + (totalBoxes === 1 ? ' Box' : ' Boxes'));
+                $('#cardBoxesCount').text(totalBoxes);
+
+                if (totalBoxes > 0) {
+                    $('#topCheckoutBtn').removeClass('btn-secondary').addClass('btn-primary');
+                    $('#cardCheckoutBtn').fadeIn(200);
+                    $('#summaryBar').fadeIn(200);
+                } else {
+                    $('#topCheckoutBtn').removeClass('btn-primary').addClass('btn-secondary');
+                    $('#cardCheckoutBtn').fadeOut(200);
+                    $('#summaryBar').fadeOut(200);
+                }
 
                 $('.variation-row').each(function () {
                     const key = $(this).data('key');
@@ -562,18 +745,303 @@
                 }
 
                 if (qty > 0) {
+                    const designNumber = row.data('design') || row.find('td:nth-child(2) .font-weight-bold').first().text().trim();
+                    const garmentName = row.data('garment') || row.find('td:nth-child(2) .text-primary').first().text().trim();
+                    const colorName = row.data('color') || row.find('td:nth-child(2) .text-muted.small').first().text().replace(/[\r\n\t]+/g, ' ').replace('Color:', '').trim();
+                    const sizeName = row.data('size') || row.find('td:nth-child(3) .badge').first().text().trim();
+
                     cart.set(key, {
                         product_id: row.data('product-id'),
                         color_id: row.data('color-id'),
                         size_set_id: row.data('size-set-id'),
                         qty: qty,
                         pcs_per_box: parseFloat(row.data('pcs')),
-                        unit_price: parseFloat(row.data('price'))
+                        unit_price: parseFloat(row.data('price')),
+                        design: designNumber,
+                        garment: garmentName,
+                        color: colorName,
+                        size: sizeName,
+                        min: min,
+                        max: isNaN(max) ? null : max
                     });
                 } else {
                     cart.delete(key);
                 }
                 updateUI();
+            });
+
+            function renderModalItems() {
+                let itemsHtml = '';
+                let count = 0;
+                cart.forEach((item, key) => {
+                    if (item.qty > 0) {
+                        count++;
+                        // If metadata is missing, attempt recovery from DOM
+                        if (!item.design || !item.color) {
+                            const row = $(`.variation-row[data-key="${key}"]`);
+                            if (row.length) {
+                                item.design = row.data('design') || row.find('td:nth-child(2) .font-weight-bold').first().text().trim();
+                                item.garment = row.data('garment') || row.find('td:nth-child(2) .text-primary').first().text().trim();
+                                item.color = row.data('color') || row.find('td:nth-child(2) .text-muted.small').first().text().replace(/[\r\n\t]+/g, ' ').replace('Color:', '').trim();
+                                item.size = row.data('size') || row.find('td:nth-child(3) .badge').first().text().trim();
+                                const rInput = row.find('.box-qty-input');
+                                if (rInput.length) {
+                                    if (rInput.attr('min')) item.min = parseInt(rInput.attr('min')) || 0;
+                                    if (rInput.attr('max')) item.max = parseInt(rInput.attr('max'));
+                                }
+                                cart.set(key, item);
+                            }
+                        }
+
+                        const designText = item.design || ('Design #' + item.product_id);
+                        const garmentText = item.garment || '';
+                        const colorText = item.color || '';
+                        const sizeText = item.size || '';
+                        const minQty = parseInt(item.min) || 0;
+                        const maxAttr = (item.max !== null && item.max !== undefined && !isNaN(item.max)) ? `max="${item.max}"` : '';
+                        const lineTotal = item.qty * item.pcs_per_box * item.unit_price;
+
+                        itemsHtml += `
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom modal-item-row" id="modal-item-${key}" data-key="${key}">
+                                <div style="line-height: 1.25; max-width: 56%;">
+                                    <div class="font-weight-bold text-dark mb-0">
+                                        ${designText} 
+                                        ${sizeText ? `<span class="badge badge-light border text-muted ml-1">${sizeText}</span>` : ''}
+                                        ${minQty > 0 ? `<span class="badge badge-warning text-dark font-weight-bold ml-1 px-1" style="font-size: 10px;" title="Dispatched: ${minQty} boxes"><i class="fas fa-truck mr-1"></i>Disp: ${minQty}</span>` : ''}
+                                    </div>
+                                    <small class="text-muted d-block text-truncate">${garmentText} ${colorText ? `• ${colorText}` : ''}</small>
+                                    <small class="text-secondary">${item.pcs_per_box} pcs/box @ ₹${parseFloat(item.unit_price).toFixed(2)}</small>
+                                </div>
+                                <div class="text-right ml-2" style="min-width: 145px;">
+                                    <div class="d-flex align-items-center justify-content-end mb-1">
+                                        <div class="input-group input-group-sm" style="width: 105px;">
+                                            <div class="input-group-prepend">
+                                                <button type="button" class="btn btn-outline-danger btn-modal-minus py-0 px-2 font-weight-bold" data-key="${key}" title="Decrease quantity" style="font-size: 13px; line-height: 1.4;">-</button>
+                                            </div>
+                                            <input type="number" class="form-control text-center py-0 px-1 font-weight-bold modal-qty-input" 
+                                                value="${item.qty}" min="${minQty}" ${maxAttr} data-key="${key}" style="height: 28px; font-size: 13px;">
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-outline-success btn-modal-plus py-0 px-2 font-weight-bold" data-key="${key}" title="Increase quantity" style="font-size: 13px; line-height: 1.4;">+</button>
+                                            </div>
+                                        </div>
+                                        ${minQty > 0 
+                                            ? `<span class="text-muted ml-2" title="Cannot remove: ${minQty} boxes already dispatched" style="cursor: not-allowed; opacity: 0.4;"><i class="fas fa-lock" style="font-size: 13px;"></i></span>`
+                                            : `<button type="button" class="btn btn-link text-danger p-0 ml-2 btn-modal-remove" data-key="${key}" title="Remove variation">
+                                                <i class="fas fa-trash-alt" style="font-size: 13px;"></i>
+                                               </button>`
+                                        }
+                                    </div>
+                                    <div class="font-weight-bold text-dark small">
+                                        <span class="text-muted font-weight-normal mr-1" style="font-size: 11px;">Total:</span>₹<span id="modal-item-total-${key}">${Math.ceil(lineTotal).toLocaleString('en-IN')}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (count === 0) {
+                    itemsHtml = '<div class="text-center text-muted py-4"><i class="fas fa-boxes fa-2x mb-2 d-block opacity-50"></i>No variations selected yet.</div>';
+                }
+
+                $('#modalSelectedItemsList').html(itemsHtml);
+                $('#modalItemsCount').text(count + (count === 1 ? ' Item' : ' Items'));
+            }
+
+            // Modal Plus Button
+            $(document).on('click', '.btn-modal-plus', function() {
+                const key = $(this).data('key');
+                const item = cart.get(key);
+                if (!item) return;
+
+                let max = item.max;
+                if (max === undefined || max === null) {
+                    const rowInput = $(`.variation-row[data-key="${key}"] .box-qty-input`);
+                    if (rowInput.length && rowInput.attr('max')) {
+                        max = parseInt(rowInput.attr('max'));
+                        item.max = max;
+                    }
+                }
+
+                if (max !== null && max !== undefined && !isNaN(max) && item.qty >= max) {
+                    Swal.fire('Limit Exceeded', 'Only ' + max + ' available.', 'warning');
+                    return;
+                }
+
+                item.qty += 1;
+                cart.set(key, item);
+
+                $(`#modal-item-${key} .modal-qty-input`).val(item.qty);
+                const lineTotal = item.qty * item.pcs_per_box * item.unit_price;
+                $(`#modal-item-total-${key}`).text(Math.ceil(lineTotal).toLocaleString('en-IN'));
+
+                const bgRowInput = $(`.variation-row[data-key="${key}"] .box-qty-input`);
+                if (bgRowInput.length) {
+                    bgRowInput.val(item.qty);
+                    bgRowInput.closest('.variation-row').addClass('has-qty');
+                }
+
+                updateUI();
+            });
+
+            // Modal Minus Button
+            $(document).on('click', '.btn-modal-minus', function() {
+                const key = $(this).data('key');
+                const item = cart.get(key);
+                if (!item) return;
+
+                const min = parseInt(item.min) || 0;
+                if (item.qty <= min) {
+                    if (min > 0) {
+                        Swal.fire('Locked Quantity', 'Cannot reduce below already dispatched quantity (' + min + ' boxes).', 'info');
+                    }
+                    return;
+                }
+
+                const newQty = item.qty - 1;
+                if (newQty <= 0) {
+                    cart.delete(key);
+                    $(`#modal-item-${key}`).fadeOut(200, function() {
+                        $(this).remove();
+                        let remainingItems = 0;
+                        cart.forEach(it => { if (it.qty > 0) remainingItems++; });
+                        $('#modalItemsCount').text(remainingItems + (remainingItems === 1 ? ' Item' : ' Items'));
+                        if (remainingItems === 0) {
+                            $('#modalSelectedItemsList').html('<div class="text-center text-muted py-4"><i class="fas fa-boxes fa-2x mb-2 d-block opacity-50"></i>No variations selected yet.</div>');
+                        }
+                    });
+
+                    const bgRowInput = $(`.variation-row[data-key="${key}"] .box-qty-input`);
+                    if (bgRowInput.length) {
+                        bgRowInput.val(0);
+                        bgRowInput.closest('.variation-row').removeClass('has-qty');
+                    }
+                } else {
+                    item.qty = newQty;
+                    cart.set(key, item);
+
+                    $(`#modal-item-${key} .modal-qty-input`).val(item.qty);
+                    const lineTotal = item.qty * item.pcs_per_box * item.unit_price;
+                    $(`#modal-item-total-${key}`).text(Math.ceil(lineTotal).toLocaleString('en-IN'));
+
+                    const bgRowInput = $(`.variation-row[data-key="${key}"] .box-qty-input`);
+                    if (bgRowInput.length) {
+                        bgRowInput.val(item.qty);
+                    }
+                }
+
+                updateUI();
+            });
+
+            // Modal Trash Remove Button
+            $(document).on('click', '.btn-modal-remove', function() {
+                const key = $(this).data('key');
+                const item = cart.get(key);
+                if (!item) return;
+
+                const min = parseInt(item.min) || 0;
+                if (min > 0) {
+                    Swal.fire('Locked Quantity', 'Cannot remove this item because ' + min + ' boxes are already dispatched.', 'warning');
+                    return;
+                }
+
+                cart.delete(key);
+                $(`#modal-item-${key}`).fadeOut(200, function() {
+                    $(this).remove();
+                    let remainingItems = 0;
+                    cart.forEach(it => { if (it.qty > 0) remainingItems++; });
+                    $('#modalItemsCount').text(remainingItems + (remainingItems === 1 ? ' Item' : ' Items'));
+                    if (remainingItems === 0) {
+                        $('#modalSelectedItemsList').html('<div class="text-center text-muted py-4"><i class="fas fa-boxes fa-2x mb-2 d-block opacity-50"></i>No variations selected yet.</div>');
+                    }
+                });
+
+                const bgRowInput = $(`.variation-row[data-key="${key}"] .box-qty-input`);
+                if (bgRowInput.length) {
+                    bgRowInput.val(0);
+                    bgRowInput.closest('.variation-row').removeClass('has-qty');
+                }
+
+                updateUI();
+            });
+
+            // Modal Direct Quantity Input
+            $(document).on('change', '.modal-qty-input', function() {
+                const key = $(this).data('key');
+                const item = cart.get(key);
+                if (!item) return;
+
+                let qty = parseInt($(this).val()) || 0;
+                const min = parseInt(item.min) || 0;
+                let max = item.max;
+
+                if (max === undefined || max === null) {
+                    const rowInput = $(`.variation-row[data-key="${key}"] .box-qty-input`);
+                    if (rowInput.length && rowInput.attr('max')) {
+                        max = parseInt(rowInput.attr('max'));
+                        item.max = max;
+                    }
+                }
+
+                if (qty < min) {
+                    Swal.fire('Locked Quantity', 'Cannot reduce below already dispatched quantity (' + min + ' boxes).', 'warning');
+                    qty = min;
+                    $(this).val(qty);
+                }
+
+                if (max !== null && max !== undefined && !isNaN(max) && qty > max) {
+                    Swal.fire('Limit Exceeded', 'Only ' + max + ' available.', 'warning');
+                    qty = max;
+                    $(this).val(qty);
+                }
+
+                if (qty <= 0) {
+                    cart.delete(key);
+                    $(`#modal-item-${key}`).fadeOut(200, function() {
+                        $(this).remove();
+                        let remainingItems = 0;
+                        cart.forEach(it => { if (it.qty > 0) remainingItems++; });
+                        $('#modalItemsCount').text(remainingItems + (remainingItems === 1 ? ' Item' : ' Items'));
+                        if (remainingItems === 0) {
+                            $('#modalSelectedItemsList').html('<div class="text-center text-muted py-4"><i class="fas fa-boxes fa-2x mb-2 d-block opacity-50"></i>No variations selected yet.</div>');
+                        }
+                    });
+
+                    const bgRowInput = $(`.variation-row[data-key="${key}"] .box-qty-input`);
+                    if (bgRowInput.length) {
+                        bgRowInput.val(0);
+                        bgRowInput.closest('.variation-row').removeClass('has-qty');
+                    }
+                } else {
+                    item.qty = qty;
+                    cart.set(key, item);
+                    const lineTotal = item.qty * item.pcs_per_box * item.unit_price;
+                    $(`#modal-item-total-${key}`).text(Math.ceil(lineTotal).toLocaleString('en-IN'));
+
+                    const bgRowInput = $(`.variation-row[data-key="${key}"] .box-qty-input`);
+                    if (bgRowInput.length) {
+                        bgRowInput.val(item.qty);
+                        bgRowInput.closest('.variation-row').addClass('has-qty');
+                    }
+                }
+
+                updateUI();
+            });
+
+            $(document).on('click', '.open-checkout-modal-btn', function() {
+                let totalBoxes = 0;
+                cart.forEach(item => { if (item.qty > 0) totalBoxes += item.qty; });
+                if (totalBoxes === 0) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'No Boxes Selected',
+                        text: 'Please select quantity for at least one variation before proceeding.',
+                        confirmButtonText: 'OK'
+                    });
+                    return;
+                }
+                renderModalItems();
+                $('#orderCheckoutModal').modal('show');
             });
 
             $(document).on('input', '#discountPercentage', function() {
@@ -636,8 +1104,6 @@
                     return;
                 }
 
-                let discountPercent = parseFloat($('#discountInput').val()) || 0;
-                let gstPercent = parseFloat($('#gstInput').val()) || 0;
                 let otherCharges = parseFloat($('#other_charges').val()) || 0;
                 let expectedDate = $('#expectedDispatchDate').val();
 
@@ -668,7 +1134,7 @@
                                 status: $('#orderStatus').val(),
                                 remark: $('#remark').val(),
                                 booking_station: $('#booking_station').val(),
-                                transport: $('#transport') .val(),
+                                transport: $('#transport').val(),
                                 party_type: $('input[name="party_type"]:checked').val(),
                                 master_customer_id: $('#editCustomerSelect').val(),
                                 master_vendor_id: $('#editVendorSelect').val()
