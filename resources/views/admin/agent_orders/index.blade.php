@@ -28,6 +28,10 @@
                     <div class="card-body bg-light rounded p-2">
                         <form action="{{ route('admin.agent-orders.index') }}" method="GET" class="row align-items-end">
                             <div class="col-md mb-2">
+                                <label class="small text-muted font-weight-bold mb-1">Order ID</label>
+                                <input type="text" name="order_id" class="form-control form-control-sm" placeholder="Search Order ID..." value="{{ request('order_id') }}">
+                            </div>
+                            <div class="col-md mb-2">
                                 <label class="small text-muted font-weight-bold mb-1">Filter by Agent</label>
                                 <select name="agent_id" id="agent_id" class="form-control select2 form-control-sm">
                                     <option value="">All Agents</option>
@@ -199,6 +203,7 @@
                                             <label class="custom-control-label" for="checkAll"></label>
                                         </div>
                                     </th>
+                                    <th class="align-middle text-center" width="45">Sr. No</th>
                                     <th class="align-middle">Order ID</th>
                                     <th class="align-middle">Agent</th>
                                     <th class="align-middle">Shop Name</th>
@@ -225,6 +230,9 @@
                                                 <label class="custom-control-label" for="check_{{ $order->id }}"></label>
                                             </div>
                                             @endif
+                                        </td>
+                                        <td class="text-center text-muted font-weight-bold" style="font-size: 0.8rem;">
+                                            {{ ($orders->currentPage() - 1) * $orders->perPage() + $loop->iteration }}
                                         </td>
                                         <td class="text-nowrap">
                                             <a href="{{ route('admin.agent-orders.show', $order->id) }}" class="font-weight-bold">
@@ -381,7 +389,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-center py-5 text-muted">No agent orders found.</td>
+                                        <td colspan="13" class="text-center py-5 text-muted">No agent orders found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

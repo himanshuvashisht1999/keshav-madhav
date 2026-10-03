@@ -20,7 +20,8 @@ class ContractorVoucherController extends Controller
 
     public function index()
     {
-        return view('admin.payment.voucher.contractor.index');
+        $response['contractors'] = Contractor::where('status', 1)->orderBy('name')->get();
+        return view('admin.payment.voucher.contractor.index', $response);
     }
 
     public function indexList(Request $request)

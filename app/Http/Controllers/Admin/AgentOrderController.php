@@ -701,6 +701,19 @@ class AgentOrderController extends Controller
                 DB::raw('(SELECT COALESCE(SUM(quantity * selling_price), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) + (SELECT COALESCE(SUM(meter * selling_price), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) as pending_amount')
             );
 
+        if ($request->filled('order_id')) {
+            $raw = trim($request->order_id);
+            $clean = preg_replace('/[^0-9]/', '', $raw);
+            $intVal = ltrim($clean, '0');
+            if ($intVal !== '') {
+                $query->where('agent_orders.id', $intVal);
+            } elseif ($clean !== '') {
+                $query->where('agent_orders.id', $clean);
+            } else {
+                $query->where('agent_orders.id', $raw);
+            }
+        }
+
         if ($request->filled('agent_id')) {
             if ($request->agent_id === 'direct') {
                 $query->where(function ($q) {
@@ -830,6 +843,19 @@ class AgentOrderController extends Controller
                 DB::raw('(SELECT COALESCE(SUM(quantity * selling_price), 0) FROM agent_order_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) + (SELECT COALESCE(SUM(meter * selling_price), 0) FROM agent_order_fabric_items WHERE agent_order_id = agent_orders.id AND dispatched_at IS NULL) as pending_subtotal')
             );
 
+        if ($request->filled('order_id')) {
+            $raw = trim($request->order_id);
+            $clean = preg_replace('/[^0-9]/', '', $raw);
+            $intVal = ltrim($clean, '0');
+            if ($intVal !== '') {
+                $query->where('agent_orders.id', $intVal);
+            } elseif ($clean !== '') {
+                $query->where('agent_orders.id', $clean);
+            } else {
+                $query->where('agent_orders.id', $raw);
+            }
+        }
+
         if ($request->filled('agent_id')) {
             if ($request->agent_id === 'direct') {
                 $query->where(function ($q) {
@@ -898,7 +924,7 @@ class AgentOrderController extends Controller
     {
         $rows   = $this->buildOrdersQuery($request)->get();
         $totals = $this->calculateOrdersTotals($this->buildOrdersQuery($request), $request->status);
-        $filters = array_filter($request->only(['agent_id','party_id','status','sale_type','payment_status','from_date','to_date']));
+        $filters = array_filter($request->only(['order_id','agent_id','party_id','status','sale_type','payment_status','from_date','to_date']));
 
         $pdf = Pdf::loadView('admin.agent_orders.export_pdf', compact('rows', 'totals', 'filters'))
             ->setPaper('A4', 'landscape');
@@ -3328,6 +3354,11 @@ class AgentOrderController extends Controller
                 DB::raw("CAST(c.name AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as customer_name"),
                 DB::raw("CAST(v.name AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as vendor_name"),
                 DB::raw("CAST(a.name AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as agent_name"),
+                DB::raw("CAST(COALESCE(
+                    (SELECT GROUP_CONCAT(DISTINCT di.agent_order_id ORDER BY di.agent_order_id ASC SEPARATOR ', ') FROM agent_order_dispatch_items di WHERE di.agent_order_dispatch_id = d.id),
+                    (SELECT GROUP_CONCAT(DISTINCT oi.agent_order_id ORDER BY oi.agent_order_id ASC SEPARATOR ', ') FROM agent_order_items oi WHERE oi.agent_order_dispatch_id = d.id),
+                    (SELECT GROUP_CONCAT(DISTINCT fi.agent_order_id ORDER BY fi.agent_order_id ASC SEPARATOR ', ') FROM agent_order_fabric_items fi WHERE fi.agent_order_dispatch_id = d.id)
+                ) AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as order_ids"),
                 'd.created_at'
             )
             ->leftJoin('master_customers as c', 'd.master_customer_id', '=', 'c.id')
@@ -3352,6 +3383,35 @@ class AgentOrderController extends Controller
 
         if ($request->filled('bill_no')) {
             $q1->where('d.bill_no', 'like', '%' . $request->bill_no . '%');
+        }
+
+        if ($request->filled('order_id')) {
+            $raw = trim($request->order_id);
+            $clean = preg_replace('/[^0-9]/', '', $raw);
+            $targetId = ltrim($clean, '0');
+            if ($targetId === '' && $clean !== '') $targetId = $clean;
+            if ($targetId === '') $targetId = $raw;
+
+            $q1->where(function ($q) use ($targetId) {
+                $q->whereExists(function ($query) use ($targetId) {
+                    $query->select(DB::raw(1))
+                        ->from('agent_order_dispatch_items as di')
+                        ->whereColumn('di.agent_order_dispatch_id', 'd.id')
+                        ->where('di.agent_order_id', $targetId);
+                })
+                ->orWhereExists(function ($query) use ($targetId) {
+                    $query->select(DB::raw(1))
+                        ->from('agent_order_items as oi')
+                        ->whereColumn('oi.agent_order_dispatch_id', 'd.id')
+                        ->where('oi.agent_order_id', $targetId);
+                })
+                ->orWhereExists(function ($query) use ($targetId) {
+                    $query->select(DB::raw(1))
+                        ->from('agent_order_fabric_items as fi')
+                        ->whereColumn('fi.agent_order_dispatch_id', 'd.id')
+                        ->where('fi.agent_order_id', $targetId);
+                });
+            });
         }
 
         if ($request->filled('agent_id')) {
@@ -3403,6 +3463,7 @@ class AgentOrderController extends Controller
                 DB::raw("CAST(c.name AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as customer_name"),
                 DB::raw("CAST(NULL AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as vendor_name"),
                 DB::raw("CAST(NULL AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as agent_name"),
+                DB::raw("CAST(d.main_order_id AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as order_ids"),
                 'd.created_at'
             )
             ->leftJoin('master_customers as c', 'd.customer_id', '=', 'c.id');
@@ -3429,6 +3490,15 @@ class AgentOrderController extends Controller
         }
         if ($request->filled('bill_no')) {
             $q2->where('d.bill_number', 'like', '%' . $request->bill_no . '%');
+        }
+        if ($request->filled('order_id')) {
+            $raw = trim($request->order_id);
+            $clean = preg_replace('/[^0-9]/', '', $raw);
+            $targetId = ltrim($clean, '0');
+            if ($targetId === '' && $clean !== '') $targetId = $clean;
+            if ($targetId === '') $targetId = $raw;
+
+            $q2->where('d.main_order_id', $targetId);
         }
 
         // 3. Union and build final query
@@ -3457,7 +3527,7 @@ class AgentOrderController extends Controller
         $dispatches = $this->buildDispatchesQuery($request)->get();
         $totalGrandTotal = $dispatches->sum('grand_total');
         
-        $filters = array_filter($request->only(['shop_id', 'vendor_id', 'from_date', 'to_date', 'bill_no', 'dispatch_type', 'agent_id']));
+        $filters = array_filter($request->only(['shop_id', 'vendor_id', 'from_date', 'to_date', 'bill_no', 'order_id', 'dispatch_type', 'agent_id']));
 
         $pdf = Pdf::loadView('admin.agent_orders.dispatches.export_pdf', compact('dispatches', 'totalGrandTotal', 'filters'))
             ->setPaper('A4', 'landscape');
@@ -3475,8 +3545,8 @@ class AgentOrderController extends Controller
         $sheet->setTitle('Dispatches');
 
         // Header row
-        $headers = ['#', 'Dispatch ID', 'Party Name', 'Party Type', 'Agent', 'Grand Total (₹)', 'Bill No', 'Date', 'Remark'];
-        $cols    = range('A', 'I');
+        $headers = ['#', 'Dispatch ID', 'Order ID', 'Party Name', 'Party Type', 'Agent', 'Grand Total (₹)', 'Bill No', 'Date', 'Remark'];
+        $cols    = range('A', 'J');
         foreach ($headers as $i => $h) {
             $cell = $cols[$i] . '1';
             $sheet->setCellValue($cell, $h);
@@ -3499,18 +3569,28 @@ class AgentOrderController extends Controller
             $agentName = ($dispatch->source_type ?? '') === 'corporate'
                 ? 'Direct'
                 : ($dispatch->agent_name ?? ($dispatch->agent->name ?? 'Direct'));
+
+            $orderIdFormatted = '-';
+            if (!empty($dispatch->order_ids)) {
+                $rawIds = array_filter(array_map('trim', explode(',', $dispatch->order_ids)));
+                $formattedArr = array_map(function ($id) {
+                    return is_numeric($id) ? '#ORD-' . str_pad($id, 5, '0', STR_PAD_LEFT) : $id;
+                }, $rawIds);
+                $orderIdFormatted = implode(', ', $formattedArr);
+            }
                 
             $sheet->setCellValue('A' . $row, $i + 1);
             $sheet->setCellValue('B' . $row, '#DSP-' . str_pad($dispatch->id, 5, '0', STR_PAD_LEFT));
-            $sheet->setCellValue('C' . $row, $partyName);
-            $sheet->setCellValue('D' . $row, ucfirst($dispatch->party_type ?? 'Customer'));
-            $sheet->setCellValue('E' . $row, $agentName);
-            $sheet->setCellValue('F' . $row, $dispatch->grand_total);
-            $sheet->setCellValue('G' . $row, $dispatch->bill_no ?? '-');
-            $sheet->setCellValue('H' . $row, $dispatch->dispatch_date ? \Carbon\Carbon::parse($dispatch->dispatch_date)->format('d M Y') : 'N/A');
-            $sheet->setCellValue('I' . $row, $dispatch->remark);
+            $sheet->setCellValue('C' . $row, $orderIdFormatted);
+            $sheet->setCellValue('D' . $row, $partyName);
+            $sheet->setCellValue('E' . $row, ucfirst($dispatch->party_type ?? 'Customer'));
+            $sheet->setCellValue('F' . $row, $agentName);
+            $sheet->setCellValue('G' . $row, $dispatch->grand_total);
+            $sheet->setCellValue('H' . $row, $dispatch->bill_no ?? '-');
+            $sheet->setCellValue('I' . $row, $dispatch->dispatch_date ? \Carbon\Carbon::parse($dispatch->dispatch_date)->format('d M Y') : 'N/A');
+            $sheet->setCellValue('J' . $row, $dispatch->remark);
             
-            $sheet->getStyle('F' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->getStyle('G' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
             $row++;
         }
 

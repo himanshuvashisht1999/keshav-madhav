@@ -92,6 +92,10 @@
                                 <input type="text" name="bill_no" class="form-control form-control-sm" value="{{ request('bill_no') }}" placeholder="Enter Bill No">
                             </div>
                             <div class="col-md-2 mb-1">
+                                <label class="small text-muted mb-0">Order ID</label>
+                                <input type="text" name="order_id" class="form-control form-control-sm" value="{{ request('order_id') }}" placeholder="e.g. 45 or #ORD-00045">
+                            </div>
+                            <div class="col-md-2 mb-1">
                                 <div class="d-flex w-100">
                                     <button type="submit" class="btn btn-primary btn-sm shadow-sm flex-fill mr-1">
                                         <i class="fas fa-filter"></i> Apply
@@ -128,6 +132,7 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th class="font-weight-normal">Dispatch ID</th>
+                                    <th class="font-weight-normal">Order ID</th>
                                     <th class="font-weight-normal">Source</th>
                                     <th class="font-weight-normal">Party Name</th>
                                     <th class="font-weight-normal">Agent</th>
@@ -141,7 +146,32 @@
                             <tbody>
                                 @forelse($dispatches as $dispatch)
                                     <tr>
-                                        <td><small>#DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}</small></td>
+                                        <td><small class="font-weight-bold">#DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}</small></td>
+                                        <td>
+                                            @if(!empty($dispatch->order_ids))
+                                                @php
+                                                    $orderIds = array_filter(array_map('trim', explode(',', $dispatch->order_ids)));
+                                                @endphp
+                                                <div class="d-flex flex-wrap" style="gap: 4px; max-width: 190px;">
+                                                    @foreach($orderIds as $oid)
+                                                        @if($dispatch->source_type === 'corporate')
+                                                            <span class="badge badge-light border text-dark font-weight-bold" title="Corporate Order #{{ $oid }}">
+                                                                #ORD-{{ is_numeric($oid) ? str_pad($oid, 5, '0', STR_PAD_LEFT) : $oid }}
+                                                            </span>
+                                                        @else
+                                                            <a href="{{ route('admin.agent-orders.show', $oid) }}" 
+                                                               class="badge badge-light border text-primary font-weight-bold shadow-xs text-decoration-none"
+                                                               title="View Order #{{ $oid }}"
+                                                               target="_blank">
+                                                                #ORD-{{ is_numeric($oid) ? str_pad($oid, 5, '0', STR_PAD_LEFT) : $oid }}
+                                                            </a>
+                                                        @endif
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <span class="text-muted small">-</span>
+                                            @endif
+                                        </td>
                                         <td>
                                             @if($dispatch->source_type === 'corporate')
                                                 <span class="badge badge-secondary">Corporate</span>
@@ -163,7 +193,7 @@
                                                 <span class="badge badge-info">{{ $dispatch->agent_name ?? 'Direct' }}</span>
                                             @endif
                                         </td>
-                                        <td><span class="text-primary">₹{{ number_format($dispatch->grand_total, 2) }}</span></td>
+                                        <td><span class="text-primary font-weight-bold">₹{{ number_format($dispatch->grand_total, 2) }}</span></td>
                                         <td>{{ $dispatch->bill_no ?? '-' }}</td>
                                         <td>{{ $dispatch->dispatch_date ? date('d M Y', strtotime($dispatch->dispatch_date)) : 'N/A' }}</td>
                                         <td><small class="text-muted">{{ Str::limit($dispatch->remark, 30) }}</small></td>
@@ -241,7 +271,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-center py-5 text-muted">No dispatch records found.</td>
+                                        <td colspan="10" class="text-center py-5 text-muted">No dispatch records found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

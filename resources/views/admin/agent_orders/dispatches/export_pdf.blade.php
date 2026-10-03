@@ -145,13 +145,14 @@
         <thead>
             <tr>
                 <th width="3%">#</th>
-                <th width="12%">Dispatch ID</th>
-                <th width="20%">Party Name</th>
-                <th width="10%">Party Type</th>
-                <th width="15%">Agent</th>
-                <th width="15%">Grand Total (Rs.)</th>
-                <th width="10%">Bill No</th>
-                <th width="15%">Date</th>
+                <th width="11%">Dispatch ID</th>
+                <th width="12%">Order ID</th>
+                <th width="18%">Party Name</th>
+                <th width="9%">Party Type</th>
+                <th width="13%">Agent</th>
+                <th width="13%">Grand Total (Rs.)</th>
+                <th width="9%">Bill No</th>
+                <th width="12%">Date</th>
             </tr>
         </thead>
         <tbody>
@@ -165,10 +166,20 @@
                     $agentName = ($dispatch->source_type ?? '') === 'corporate' 
                         ? 'Direct' 
                         : ($dispatch->agent_name ?? ($dispatch->agent->name ?? 'Direct'));
+
+                    $orderIdsFormatted = '-';
+                    if (!empty($dispatch->order_ids)) {
+                        $rawIds = array_filter(array_map('trim', explode(',', $dispatch->order_ids)));
+                        $formattedOrders = array_map(function($id) {
+                            return '#ORD-' . (is_numeric($id) ? str_pad($id, 5, '0', STR_PAD_LEFT) : $id);
+                        }, $rawIds);
+                        $orderIdsFormatted = implode(', ', $formattedOrders);
+                    }
                 @endphp
                 <tr>
                     <td>{{ $i + 1 }}</td>
                     <td><strong>#DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
+                    <td>{{ $orderIdsFormatted }}</td>
                     <td>{{ $partyName }}</td>
                     <td>{{ ucfirst($dispatch->party_type ?? 'Customer') }}</td>
                     <td>{{ $agentName }}</td>
@@ -178,13 +189,13 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" style="text-align:center; padding:20px; color:#94a3b8;">No records found.</td>
+                    <td colspan="9" style="text-align:center; padding:20px; color:#94a3b8;">No records found.</td>
                 </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr class="totals-row">
-                <td colspan="5" style="text-align:right;">TOTAL</td>
+                <td colspan="6" style="text-align:right;">TOTAL</td>
                 <td>Rs. {{ number_format($totalGrandTotal, 2) }}</td>
                 <td colspan="2" style="text-align:center;">{{ $dispatches->count() }} dispatches</td>
             </tr>

@@ -19,7 +19,8 @@ class ConsumableVoucherController extends Controller
 
     public function index()
     {
-        return view('admin.payment.voucher.consumable.index');
+        $response['consumableGoods'] = ConsumableGood::where('status', 1)->orderBy('name')->get();
+        return view('admin.payment.voucher.consumable.index', $response);
     }
 
     public function indexList(Request $request)

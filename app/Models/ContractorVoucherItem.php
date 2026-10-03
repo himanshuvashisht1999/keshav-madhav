@@ -22,4 +22,9 @@ class ContractorVoucherItem extends Model
     {
         return $this->belongsTo(ContractorVoucher::class);
     }
+
+    public function orderLot()
+    {
+        return $this->belongsTo(FabricRollAssigning::class, 'order_lot_id');
+    }
 }

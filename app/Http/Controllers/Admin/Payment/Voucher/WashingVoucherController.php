@@ -20,7 +20,8 @@ class WashingVoucherController extends Controller
 
     public function index()
     {
-        return view('admin.payment.voucher.washing.index');
+        $response['washingMasters'] = WashingMaster::where('status', 1)->orderBy('name')->get();
+        return view('admin.payment.voucher.washing.index', $response);
     }
 
     public function indexList(Request $request)
