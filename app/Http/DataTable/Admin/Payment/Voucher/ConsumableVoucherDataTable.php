@@ -37,6 +37,7 @@ class ConsumableVoucherDataTable
             })
             ->addColumn('action', function ($row) {
                 return '
+                <a href="' . route('admin.payment.voucher.consumable.show', ['id' => $row->id]) . '" class="mr-2" data-toggle="tooltip" data-placement="top" title="View"><i class="fas fa-eye text-primary"></i></a>
                 <a href="' . route('admin.payment.voucher.consumable.edit', ['id' => $row->id]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted"></i></a>
                 <a href="' . route('admin.payment.voucher.consumable.delete', ['id' => $row->id]) . '" class="ml-2" data-toggle="tooltip" data-placement="top" title="Delete" onclick="return confirm(\'Are you sure you want to delete this voucher?\')"><i class="fas fa-trash text-danger"></i></a>
                 ';

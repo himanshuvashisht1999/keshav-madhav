@@ -39,6 +39,15 @@ class ConsumableVoucherController extends Controller
         return redirect()->route('admin.payment.voucher.consumable.index')->withSuccess('The consumable voucher has been successfully created.');
     }
 
+    public function show(Request $request)
+    {
+        $response['data'] = $this->service->show($request);
+        if (!$response['data']) {
+            abort(404, 'Consumable voucher not found.');
+        }
+        return view('admin.payment.voucher.consumable.show', $response);
+    }
+
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);

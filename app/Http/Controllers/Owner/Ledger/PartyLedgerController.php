@@ -726,7 +726,8 @@ class PartyLedgerController extends Controller
                         'debit' => 0,
                         'credit' => (float) $cv->total_amount,
                         'description' => 'Consumable Voucher: ' . ($cv->remarks ?? '-'),
-                        'view_url' => '#'
+                        'view_url' => route('admin.payment.voucher.consumable.show', ['id' => $cv->id]),
+                        'slip_url' => $cv->document ? asset($cv->document) : null
                     ]);
                 }
             }

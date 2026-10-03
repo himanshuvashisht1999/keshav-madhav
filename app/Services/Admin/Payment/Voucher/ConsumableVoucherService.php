@@ -72,9 +72,16 @@ class ConsumableVoucherService
         });
     }
 
+    public function show(Request $request)
+    {
+        $id = $request->route('id') ?? $request->id;
+        return ConsumableVoucher::with(['items', 'consumableGood'])->find($id);
+    }
+
     public function edit(Request $request)
     {
-        return ConsumableVoucher::with('items')->find($request->id);
+        $id = $request->route('id') ?? $request->id;
+        return ConsumableVoucher::with('items')->find($id);
     }
 
     public function update(Request $request)

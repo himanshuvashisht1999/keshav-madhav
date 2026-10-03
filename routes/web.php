@@ -1737,6 +1737,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                     Route::get('/indexList', [AdminConsumableVoucherController::class, 'indexList'])->name('indexList');
                     Route::get('/create', [AdminConsumableVoucherController::class, 'create'])->name('create');
                     Route::post('/store', [AdminConsumableVoucherController::class, 'store'])->name('store');
+                    Route::get('/show/{id?}', [AdminConsumableVoucherController::class, 'show'])->name('show');
                     Route::get('/edit', [AdminConsumableVoucherController::class, 'edit'])->name('edit');
                     Route::post('/update', [AdminConsumableVoucherController::class, 'update'])->name('update');
                     Route::get('/delete', [AdminConsumableVoucherController::class, 'delete'])->name('delete');

@@ -528,6 +528,7 @@ class PartyLedgerController extends Controller
                 }
 
                 $txType = $isCredit ? 'Receipt' : ($isDebit ? 'Payment' : 'Adjustment');
+                $slipUrl = !empty($p->image) ? asset($p->image) : null;
                 $transactions->push((object) [
                     'customer_id' => $p->party_id,
                     'date' => $p->payment_date,
@@ -537,7 +538,8 @@ class PartyLedgerController extends Controller
                     'debit' => $debit,
                     'credit' => $credit,
                     'description' => $desc . ($p->remarks ? ': ' . $p->remarks : ''),
-                    'view_url' => route('admin.payment.history.show', $p->id)
+                    'view_url' => route('admin.payment.history.show', $p->id),
+                    'slip_url' => $slipUrl
                 ]);
             }
 
@@ -821,6 +823,7 @@ class PartyLedgerController extends Controller
             }
 
             $txType = $isCredit ? 'Receipt' : ($isDebit ? 'Payment' : 'Adjustment');
+            $slipUrl = !empty($p->image) ? asset($p->image) : null;
             $transactions->push((object) [
                 'date' => $p->payment_date,
                 'created_at' => $p->created_at,
@@ -829,7 +832,8 @@ class PartyLedgerController extends Controller
                 'debit' => $debit,
                 'credit' => $credit,
                 'description' => $desc . ($p->remarks ? ': ' . $p->remarks : ''),
-                'view_url' => route('admin.payment.history.show', $p->id)
+                'view_url' => route('admin.payment.history.show', $p->id),
+                'slip_url' => $slipUrl
             ]);
         }
 
@@ -862,6 +866,7 @@ class PartyLedgerController extends Controller
 
                 foreach ($receipts as $r) {
                     $rDate = $r->time ? \Carbon\Carbon::parse($r->time)->format('Y-m-d') : \Carbon\Carbon::parse($r->created_at)->format('Y-m-d');
+                    $slipUrl = $r->challan_photo ? asset('assets/receipts/challan/' . $r->challan_photo) : null;
                     $transactions->push((object) [
                         'date' => $rDate,
                         'created_at' => $r->created_at,
@@ -870,7 +875,8 @@ class PartyLedgerController extends Controller
                         'debit' => 0,
                         'credit' => (float) $r->total_amount,
                         'description' => 'Fabric Inward (Shipment: ' . ($r->shipment_id ?? '-') . ')',
-                        'view_url' => route('admin.fabric_receipt.view', ['id' => $r->id])
+                        'view_url' => route('admin.fabric_receipt.view', ['id' => $r->id]),
+                        'slip_url' => $slipUrl
                     ]);
                 }
 
@@ -950,6 +956,7 @@ class PartyLedgerController extends Controller
                 }
 
                 $txType = $isCredit ? 'Receipt' : ($isDebit ? 'Payment' : 'Adjustment');
+                $slipUrl = !empty($p->image) ? asset($p->image) : null;
                 $transactions->push((object) [
                     'date' => $p->payment_date,
                     'created_at' => $p->created_at,
@@ -958,7 +965,8 @@ class PartyLedgerController extends Controller
                     'debit' => $debit,
                     'credit' => $credit,
                     'description' => $desc . ($p->remarks ? ': ' . $p->remarks : ''),
-                    'view_url' => route('admin.payment.history.show', $p->id)
+                    'view_url' => route('admin.payment.history.show', $p->id),
+                    'slip_url' => $slipUrl
                 ]);
             }
 
@@ -978,7 +986,8 @@ class PartyLedgerController extends Controller
                         'debit' => 0,
                         'credit' => (float) $cv->total_amount,
                         'description' => 'Contractor Voucher: ' . ($cv->remarks ?? '-'),
-                        'view_url' => '#'
+                        'view_url' => route('admin.payment.voucher.contractor.edit', ['id' => $cv->id]),
+                        'slip_url' => $cv->document ? asset($cv->document) : null
                     ]);
                 }
             } elseif (strtolower($master->name) === 'washing master') {
@@ -996,7 +1005,8 @@ class PartyLedgerController extends Controller
                         'debit' => 0,
                         'credit' => (float) $wv->total_amount,
                         'description' => 'Washing Voucher: ' . ($wv->remarks ?? '-'),
-                        'view_url' => '#'
+                        'view_url' => route('admin.payment.voucher.washing.edit', ['id' => $wv->id]),
+                        'slip_url' => $wv->document ? asset($wv->document) : null
                     ]);
                 }
             } elseif (strtolower($master->name) === 'consumable good') {
@@ -1014,7 +1024,8 @@ class PartyLedgerController extends Controller
                         'debit' => 0,
                         'credit' => (float) $cv->total_amount,
                         'description' => 'Consumable Voucher: ' . ($cv->remarks ?? '-'),
-                        'view_url' => '#'
+                        'view_url' => route('admin.payment.voucher.consumable.show', ['id' => $cv->id]),
+                        'slip_url' => $cv->document ? asset($cv->document) : null
                     ]);
                 }
             }
@@ -1113,12 +1124,22 @@ class PartyLedgerController extends Controller
         $refNo = $request->query('ref_no');
         $debitValue = $request->query('debit_value');
         $creditValue = $request->query('credit_value');
+        $hasSlip = $request->query('has_slip');
 
-        if (!$transactionType && !$adjustmentType && !$refNo && $debitValue === null && $creditValue === null) {
+        if (!$transactionType && !$adjustmentType && !$refNo && $debitValue === null && $creditValue === null && !$hasSlip) {
             return $transactions;
         }
 
-        return $transactions->filter(function ($tx) use ($transactionType, $adjustmentType, $refNo, $debitValue, $creditValue) {
+        return $transactions->filter(function ($tx) use ($transactionType, $adjustmentType, $refNo, $debitValue, $creditValue, $hasSlip) {
+            // 0. Slip attachment filter
+            if ($hasSlip && $hasSlip !== 'all') {
+                if ($hasSlip === 'yes' && empty($tx->slip_url)) {
+                    return false;
+                }
+                if ($hasSlip === 'no' && !empty($tx->slip_url)) {
+                    return false;
+                }
+            }
             // 1. Transaction Type filter
             if ($transactionType && $transactionType !== 'all') {
                 $matchType = false;
