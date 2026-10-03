@@ -173,9 +173,29 @@
                                 <label class="small font-weight-bold text-muted mb-1">Max Boxes</label>
                                 <input type="number" id="max_boxes_filter" class="form-control" placeholder="Max Qty" min="0">
                             </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">MRP From</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">₹</span>
+                                    </div>
+                                    <input type="number" id="mrp_from_filter" class="form-control" placeholder="Min MRP" min="0" step="any">
+                                </div>
+                            </div>
+
+                            <div class="col-md-2 mb-3">
+                                <label class="small font-weight-bold text-muted mb-1">MRP To</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">₹</span>
+                                    </div>
+                                    <input type="number" id="mrp_to_filter" class="form-control" placeholder="Max MRP" min="0" step="any">
+                                </div>
+                            </div>
                             
                             <div class="col-md-1 mb-3">
-                                <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block">
+                                <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block" title="Reset Filters">
                                     <i class="fas fa-undo"></i>
                                 </button>
                             </div>
@@ -198,6 +218,7 @@
                                         <th class="py-3">Location (WH / Rack)</th>
                                         <th class="py-3 text-center">Total Boxes</th>
                                         <th class="py-3 text-center">Quantity</th>
+                                        <th class="py-3 text-center">MRP</th>
                                         <th class="py-3 text-center">Action</th>
                                     </tr>
                                 </thead>
@@ -343,7 +364,9 @@
                         nature_id: $('#nature_filter').val(),
                         fabric_type_id: $('#fabric_type_filter').val(),
                         min_boxes: $('#min_boxes_filter').val(),
-                        max_boxes: $('#max_boxes_filter').val()
+                        max_boxes: $('#max_boxes_filter').val(),
+                        mrp_from: $('#mrp_from_filter').val(),
+                        mrp_to: $('#mrp_to_filter').val()
                     },
                     success: function(res) {
                         if (reset) {
@@ -368,7 +391,7 @@
                         }
                         
                         if (container.is(':empty')) {
-                            container.append('<tr><td colspan="8" class="text-center py-5 text-muted">No inventory records found.</td></tr>');
+                            container.append('<tr><td colspan="10" class="text-center py-5 text-muted">No inventory records found.</td></tr>');
                             $('#no-more-data').hide();
                         }
                     },
@@ -416,7 +439,7 @@
 
             // Delay on typing numbers so it doesn't trigger on every keystroke too quickly
             let filterTimer;
-            $('#min_boxes_filter, #max_boxes_filter').on('input', function () {
+            $('#min_boxes_filter, #max_boxes_filter, #mrp_from_filter, #mrp_to_filter').on('input', function () {
                 clearTimeout(filterTimer);
                 filterTimer = setTimeout(function() {
                     loadMore(true);
@@ -428,6 +451,8 @@
                 $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter').val('').trigger('change');
                 $('#min_boxes_filter').val('1');
                 $('#max_boxes_filter').val('');
+                $('#mrp_from_filter').val('');
+                $('#mrp_to_filter').val('');
                 loadMore(true);
             });
 
@@ -461,6 +486,8 @@
                 url += '&fabric_type_id=' + ($('#fabric_type_filter').val() || '');
                 url += '&min_boxes=' + ($('#min_boxes_filter').val() || '');
                 url += '&max_boxes=' + ($('#max_boxes_filter').val() || '');
+                url += '&mrp_from=' + ($('#mrp_from_filter').val() || '');
+                url += '&mrp_to=' + ($('#mrp_to_filter').val() || '');
                 return url;
             }
 
@@ -477,8 +504,7 @@
             // Handle Export Price
             $('#export_excel_price').click(function(e) {
                 e.preventDefault();
-                let url = "{{ route('admin.inventory.warehouse_stock.export') }}?" + getFilterData() + '&type=excel_price';
-                window.location.href = url;
+                window.location.href = getExportUrl('excel_price');
             });
 
             // Image Gallery Modal Logic

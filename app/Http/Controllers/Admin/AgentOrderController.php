@@ -195,6 +195,16 @@ class AgentOrderController extends Controller
             $query->where('production_goods.fabric_type_id', $request->fabric_type_id);
         }
 
+        $mrpFrom = $request->input('mrp_from', $request->input('min_mrp'));
+        if ($mrpFrom !== null && $mrpFrom !== '') {
+            $query->where('ip.mrp', '>=', (float) $mrpFrom);
+        }
+
+        $mrpTo = $request->input('mrp_to', $request->input('max_mrp'));
+        if ($mrpTo !== null && $mrpTo !== '') {
+            $query->where('ip.mrp', '<=', (float) $mrpTo);
+        }
+
         $query->leftJoinSub($allocated, 'alloc', function ($join) {
             $join->on('domestic_inventories.product_id', '=', 'alloc.product_id')
                 ->on('domestic_inventories.color_id', '=', 'alloc.color_id')

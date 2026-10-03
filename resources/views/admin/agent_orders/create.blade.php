@@ -265,12 +265,30 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-4 col-12 mb-1 text-right">
+                                        <div class="col-md-2 col-6 mb-1">
+                                            <label class="small font-weight-bold text-muted mb-0">MRP From</label>
+                                            <div class="input-group input-group-sm">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text py-0">₹</span>
+                                                </div>
+                                                <input type="number" name="mrp_from" id="mrp_from" class="form-control form-control-sm" placeholder="Min" min="0" step="any" value="{{ request('mrp_from') }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 col-6 mb-1">
+                                            <label class="small font-weight-bold text-muted mb-0">MRP To</label>
+                                            <div class="input-group input-group-sm">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text py-0">₹</span>
+                                                </div>
+                                                <input type="number" name="mrp_to" id="mrp_to" class="form-control form-control-sm" placeholder="Max" min="0" step="any" value="{{ request('mrp_to') }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-12 mt-2 d-flex justify-content-end align-items-center">
                                             <button type="submit" class="btn btn-primary btn-sm px-4 mr-2 shadow-sm">
                                                 <i class="fas fa-search mr-1"></i> Filter
                                             </button>
-                                            <a href="{{ route('admin.agent-orders.create', ['order_type' => request('order_type'), 'sales_agent_id' => $agent->id, 'sales_man_id' => request('sales_man_id'), 'master_customer_id' => $shop->id, 'order_date' => request('order_date')]) }}" 
-                                               class="btn btn-secondary btn-sm px-3 shadow-sm">
+                                            <a href="{{ route('admin.agent-orders.create', ['order_type' => request('order_type'), 'sale_type' => request('sale_type'), 'party_type' => request('party_type', 'customer'), 'sales_agent_id' => $agent->id, 'sales_man_id' => request('sales_man_id'), 'master_customer_id' => request('master_customer_id'), 'master_vendor_id' => request('master_vendor_id'), 'order_date' => request('order_date')]) }}" 
+                                               class="btn btn-secondary btn-sm px-3 shadow-sm" title="Reset Filters">
                                                 <i class="fas fa-undo"></i>
                                             </a>
                                         </div>
@@ -637,6 +655,14 @@
                 // If this is triggered by Select2 initialization, ignore it if possible
                 // But generally fine to reset on change
                 loadMore(true);
+            });
+
+            let mrpTimer;
+            $('#mrp_from, #mrp_to').on('input', function() {
+                clearTimeout(mrpTimer);
+                mrpTimer = setTimeout(function() {
+                    loadMore(true);
+                }, 600);
             });
 
             $('#filterForm').on('submit', function(e) {

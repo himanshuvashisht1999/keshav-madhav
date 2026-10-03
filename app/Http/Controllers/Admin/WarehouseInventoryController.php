@@ -136,6 +136,16 @@ class WarehouseInventoryController extends Controller
                  ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
         });
 
+        $mrpFrom = $request->input('mrp_from', $request->input('min_mrp'));
+        if ($mrpFrom !== null && $mrpFrom !== '') {
+            $query->where('variants.mrp', '>=', (float) $mrpFrom);
+        }
+
+        $mrpTo = $request->input('mrp_to', $request->input('max_mrp'));
+        if ($mrpTo !== null && $mrpTo !== '') {
+            $query->where('variants.mrp', '<=', (float) $mrpTo);
+        }
+
         $query->select(
             'domestic_inventories.product_id', 
             'domestic_inventories.size_set_id', 
@@ -143,8 +153,16 @@ class WarehouseInventoryController extends Controller
             DB::raw('SUM(domestic_inventories.total_boxes) - MAX(COALESCE(order_totals.total_ordered_boxes, 0)) as total_boxes'),
             DB::raw('MAX(domestic_inventories.quantity) as quantity'), // Assuming pieces per box is the same, use MAX
             'variants.image as product_image',
-            'variants.id as variant_id'
-        )->groupBy('domestic_inventories.product_id', 'domestic_inventories.size_set_id', 'domestic_inventories.rack_id', 'variants.image', 'variants.id');
+            'variants.id as variant_id',
+            'variants.mrp as mrp'
+        )->groupBy(
+            'domestic_inventories.product_id', 
+            'domestic_inventories.size_set_id', 
+            'domestic_inventories.rack_id', 
+            'variants.image', 
+            'variants.id',
+            'variants.mrp'
+        );
 
         return $query;
     }
@@ -198,6 +216,9 @@ class WarehouseInventoryController extends Controller
                 $wh = $row->rack->storeroom->name ?? 'N/A';
                 $rk = $row->rack->name ?? 'N/A';
                 return $wh . ' / ' . $rk;
+            })
+            ->addColumn('mrp', function ($row) {
+                return $row->mrp ? '₹' . number_format($row->mrp, 2) : '-';
             })
             ->addColumn('action', function ($row) {
                 $btn = '<a href="' . route('admin.inventory.warehouse_stock.show', [$row->product_id, $row->size_set_id, $row->rack_id]) . '" class="btn btn-xs btn-primary mr-1" title="View"><i class="fas fa-eye"></i></a>';

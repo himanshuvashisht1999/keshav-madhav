@@ -882,6 +882,7 @@ class ReportController extends Controller
     public function fabricReturnView($id)
     {
         $response['return'] = $this->service->getFabricReturnDetails($id);
+        return view('admin.report.fabric_return_view', $response);
     }
 
     public function salesManReport(Request $request)

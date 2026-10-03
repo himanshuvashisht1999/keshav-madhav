@@ -22,6 +22,9 @@
         <span class="badge badge-info px-2 py-1">{{ $row->total_boxes }}</span>
     </td>
     <td class="text-center">{{ $row->quantity }}</td>
+    <td class="text-center font-weight-bold">
+        {{ isset($row->mrp) && $row->mrp !== null ? '₹' . number_format($row->mrp, 2) : '-' }}
+    </td>
     <td class="text-center">
         <a href="{{ route('admin.inventory.warehouse_stock.show', [$row->product_id ?? 0, $row->size_set_id ?? 0, $row->rack_id ?? 0]) }}" class="btn btn-xs btn-primary shadow-xs mr-1" title="View">
             <i class="fas fa-eye"></i>
