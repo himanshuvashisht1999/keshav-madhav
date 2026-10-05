@@ -99,6 +99,14 @@
                                 <div class="detail-label">Total Pieces</div>
                                 <div class="detail-value text-success font-weight-bold">{{ $purchase->items->sum(function($item) { return $item->box_quantity * $item->pieces_per_box; }) }}</div>
                             </div>
+                            @if($purchase->remarks)
+                            <div class="col-12 mt-3 pt-3 border-top">
+                                <div class="detail-label"><i class="fas fa-comment-alt text-primary mr-1"></i> Remarks</div>
+                                <div class="detail-value text-dark" style="font-weight: 500; font-size: 0.95rem;">
+                                    {{ $purchase->remarks }}
+                                </div>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>

@@ -5,381 +5,489 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         :root {
-            --primary-color: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #eef2ff;
-            --secondary-color: #94a3b8;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --bg-main: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --erp-primary: #4f46e5;
+            --erp-primary-hover: #4338ca;
+            --erp-primary-light: #eef2ff;
+            --erp-success: #059669;
+            --erp-success-light: #ecfdf5;
+            --erp-danger: #dc2626;
+            --erp-danger-light: #fef2f2;
+            --erp-warning: #d97706;
+            --erp-border: #cbd5e1;
+            --erp-bg-header: #f1f5f9;
+            --erp-text: #0f172a;
+            --erp-muted: #64748b;
         }
 
         .content-wrapper {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-main);
-            padding-bottom: 300px;
+            background-color: #f8fafc;
+            padding-bottom: 75px;
         }
 
-        .content-header {
-            padding: 0 !important;
+        /* STICKY ERP TOP HUD BAR */
+        .sticky-erp-hud {
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom: 2px solid #e2e8f0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+            padding: 8px 16px;
+            margin: -0.5rem -0.5rem 10px -0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: nowrap;
         }
 
-        .content {
-            padding-top: 0 !important;
+        .hud-stat-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 14px;
+            border-radius: 8px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            min-width: 200px;
         }
 
-        .premium-page-header {
-            padding: 0.75rem 0;
+        .hud-source-box {
+            border-left: 4px solid var(--erp-primary);
+            background: #fafbff;
         }
 
-        .page-title {
-            font-size: 1.5rem;
+        .hud-target-box {
+            border-left: 4px solid var(--erp-success);
+            background: #fbfdfb;
+        }
+
+        .hud-subtotal-box {
+            border-left: 4px solid #f59e0b;
+            background: #fffdf7;
+        }
+
+        .hud-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .hud-numbers {
+            font-size: 1.15rem;
             font-weight: 800;
-            color: var(--text-main);
-            letter-spacing: -0.025em;
-            margin-bottom: 0.125rem;
+            line-height: 1.2;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
         }
 
-        .page-subtitle {
-            color: var(--text-muted);
-            font-size: 0.875rem;
+        /* ERP CARDS & TABLES */
+        .erp-card {
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            margin-bottom: 10px;
+            overflow: hidden;
         }
 
-        /* ITEM CARD STYLING */
-        .inventory-item-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow);
-            margin-bottom: 24px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: visible;
-        }
-
-        .inventory-item-card:hover {
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
-        }
-
-        .card-header-premium {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border-color);
+        .erp-card-header {
+            padding: 7px 12px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #fcfdfe;
-            border-radius: 16px 16px 0 0;
         }
 
-        .item-number {
+        .erp-card-title {
+            font-size: 12px;
             font-weight: 700;
-            color: var(--primary-dark);
-            font-size: 0.875rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.3px;
+            margin: 0;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 6px;
         }
 
-        .card-body-premium {
-            padding: 1.5rem;
-        }
-
-        .input-group-premium {
-            margin-bottom: 0.75rem;
-        }
-
-        .label-premium {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-            margin-bottom: 0.25rem;
-        }
-
-        .form-control-premium {
-            /* height: 44px; */
+        .erp-table {
             width: 100%;
-            font-size: 0.9375rem;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            background-color: #fff;
-            transition: all 0.2s;
-            padding: 0 12px;
+            margin-bottom: 0;
+            font-size: 11.5px;
+            border-collapse: separate;
+            border-spacing: 0;
         }
 
-        .form-control-premium:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        .erp-table thead th {
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 6px 8px;
+            border-bottom: 2px solid #cbd5e1;
+            border-top: none;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .erp-table tbody td {
+            padding: 5px 8px;
+            vertical-align: middle;
+            border-top: 1px solid #edf2f7;
+            border-bottom: none;
+        }
+
+        .erp-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* COMPACT CONTROLS IN ERP */
+        .erp-input {
+            height: 31px !important;
+            padding: 2px 8px !important;
+            font-size: 12px !important;
+            font-weight: 600;
+            border-radius: 5px !important;
+            border: 1px solid #cbd5e1 !important;
+            background-color: #ffffff;
+            line-height: 1.2;
+            width: 100%;
+        }
+
+        .erp-input:focus {
+            border-color: var(--erp-primary) !important;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15) !important;
             outline: none;
         }
 
-        /* SELECT2 CUSTOMIZATION */
+        .erp-input[readonly] {
+            background-color: #f1f5f9 !important;
+            color: #475569;
+        }
+
+        .erp-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #475569;
+            margin-bottom: 3px;
+            display: block;
+        }
+
+        /* SELECT2 IN ERP */
         .select2-container--bootstrap4 .select2-selection {
-            /* height: 44px !important; */
-            border-radius: 10px !important;
-            border: 1px solid var(--border-color) !important;
+            height: 31px !important;
+            min-height: 31px !important;
+            border-radius: 5px !important;
+            border: 1px solid #cbd5e1 !important;
+            padding: 0 !important;
             display: flex;
             align-items: center;
         }
 
         .select2-container--bootstrap4 .select2-selection__rendered {
-            line-height: 42px !important;
-            font-size: 0.9375rem !important;
-            padding-left: 12px !important;
+            line-height: 29px !important;
+            font-size: 12px !important;
+            padding-left: 8px !important;
+            padding-right: 18px !important;
+            color: var(--erp-text);
+        }
+
+        .select2-container--bootstrap4 .select2-selection__arrow {
+            height: 29px !important;
+            right: 4px !important;
+            width: 14px !important;
         }
 
         .select2-dropdown {
-            border-radius: 12px !important;
-            box-shadow: var(--shadow-lg) !important;
-            border-color: var(--border-color) !important;
-            z-index: 10000 !important;
-            /* Ensure it stays on top of everything including sticky footer */
-            overflow: hidden;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12) !important;
+            border: 1px solid #cbd5e1 !important;
+            font-size: 12px !important;
+            z-index: 10050 !important;
         }
 
-        .select2-results__options {
-            max-height: 500px !important;
+        /* PILLS & BADGES */
+        .erp-pill {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 10.5px;
+            font-weight: 700;
+            line-height: 1.3;
+            white-space: nowrap;
+        }
+
+        .erp-pill-source {
+            background: #e0e7ff;
+            color: #3730a3;
+            border: 1px solid #c7d2fe;
+        }
+
+        .erp-pill-gen {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
         }
 
         /* BUTTONS */
-        .btn-add-item {
-            background: #fff;
-            color: var(--primary-color);
-            border: 2px dashed var(--primary-color);
-            border-radius: 12px;
-            padding: 1rem;
-            width: 100%;
+        .btn-erp-add {
+            font-size: 11px;
             font-weight: 700;
-            font-size: 1rem;
-            transition: all 0.2s;
-            display: flex;
+            padding: 4px 12px;
+            border-radius: 5px;
+            line-height: 1.4;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .btn-erp-icon {
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.75rem;
-            margin-top: 1rem;
-            cursor: pointer;
-        }
-
-        .btn-add-item:hover {
-            background: var(--primary-light);
-            color: var(--primary-dark);
-            border-style: solid;
-        }
-
-        .btn-remove-item {
-            background: #fee2e2;
-            color: var(--danger-color);
+            border-radius: 5px;
+            font-size: 11px;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            transition: all 0.2s;
+            transition: all 0.15s ease;
             cursor: pointer;
         }
 
-        .btn-remove-item:hover {
-            background: var(--danger-color);
+        .btn-erp-del {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .btn-erp-del:hover {
+            background: #ef4444;
             color: #fff;
         }
 
-        .sticky-actions {
+        .btn-hud-confirm {
+            background: linear-gradient(135deg, var(--erp-primary) 0%, var(--erp-primary-hover) 100%);
+            color: #ffffff !important;
+            font-weight: 700;
+            font-size: 12.5px;
+            border-radius: 6px;
+            padding: 6px 16px;
+            border: none;
+            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+            white-space: nowrap;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-hud-confirm:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+        }
+
+        /* STICKY BOTTOM ACTIONS BAR */
+        .sticky-bottom-bar {
             position: fixed;
             bottom: 0;
             left: 250px;
             right: 0;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(16px);
-            padding: 1.25rem 2.5rem;
-            border-top: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(10px);
+            padding: 8px 24px;
+            border-top: 1px solid #cbd5e1;
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
-            gap: 2rem;
             z-index: 1000;
-            box-shadow: 0 -8px 20px -5px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
         }
 
         @media (max-width: 991.98px) {
-            .sticky-actions {
+            .sticky-bottom-bar {
                 left: 0;
             }
-        }
-
-        .btn-confirm {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-            color: #fff !important;
-            border: none;
-            border-radius: 12px;
-            padding: 0.875rem 2.5rem;
-            font-weight: 700;
-            font-size: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .btn-confirm:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 25px -5px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn-cancel {
-            color: var(--text-muted);
-            font-weight: 600;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .btn-cancel:hover {
-            color: var(--text-main);
-        }
-
-        .animate-in {
-            animation: fadeIn 0.4s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            .sticky-erp-hud {
+                flex-wrap: wrap;
             }
         }
     </style>
 
     <div class="content-wrapper">
-        <section class="content-header">
-            <div class="container-fluid">
-                <header class="premium-page-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="page-title">Purchase Stock Entry</h1>
-                        <!-- <p class="page-subtitle">Add new stock from vendors or customers.</p> -->
-                    </div>
-                    <a href="{{ route('admin.inventory.purchase_history.index') }}" class="btn btn-outline-primary btn-sm shadow-sm px-3" style="border-radius: 0.5rem; font-weight: 600;">
-                        <i class="fas fa-history mr-2"></i>View History
-                    </a>
-                </header>
-            </div>
-        </section>
-
-        <section class="content">
-            <div class="container-fluid">
+        <section class="content pt-1">
+            <div class="container-fluid px-2">
                 <form action="{{ route('admin.inventory.store') }}" method="POST" id="addStockForm">
                     @csrf
 
-                    <div class="row mb-3">
-                        <div class="col-md-2">
-                            <label class="label-premium">Source Type</label>
-                            <select name="source_type" id="sourceType" class="form-control select2">
-                                <option value="vendor">Vendor</option>
-                                <option value="customer">Customer</option>
-                            </select>
+                    <!-- ========================================================= -->
+                    <!-- 1. STICKY ERP TOP HUD BAR (MATCHES CONSUME PAGE) -->
+                    <!-- ========================================================= -->
+                    <div class="sticky-erp-hud">
+                        <!-- Total Boxes Stat Box -->
+                        <div class="hud-stat-box hud-source-box">
+                            <div>
+                                <span class="hud-label text-primary"><i class="fas fa-boxes mr-1"></i> TOTAL BOXES</span>
+                                <div class="hud-numbers">
+                                    <span id="hudTotalBoxes" class="text-primary">0</span> <small class="text-muted" style="font-size:10px;">Boxes</small>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="label-premium text-primary">Load from Production PO</label>
-                            <select name="production_po_id" id="loadProductionPO" class="form-control select2">
-                                <option value="">Select PO (Optional)</option>
-                                @foreach($productionPOs as $po)
-                                    <option value="{{ $po->id }}">{{ $po->po_number }}</option>
-                                @endforeach
-                            </select>
+
+                        <!-- Total Pieces Stat Box -->
+                        <div class="hud-stat-box hud-target-box">
+                            <div>
+                                <span class="hud-label text-success"><i class="fas fa-tshirt mr-1"></i> TOTAL PIECES</span>
+                                <div class="hud-numbers">
+                                    <span id="hudTotalPieces" class="text-success">0</span> <small class="text-muted" style="font-size:10px;">Pieces</small>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-3" id="vendorContainer">
-                            <label class="label-premium">Select Vendor</label>
-                            <select name="vendor_id" id="vendorSelect" class="form-control select2">
-                                <option value="">Select Vendor</option>
-                                @foreach($vendors as $vendor)
-                                    <option value="{{ $vendor->id }}">{{ $vendor->company_name ?? $vendor->name }}</option>
-                                @endforeach
-                            </select>
+
+                        <!-- Sub Total Stat Box -->
+                        <div class="hud-stat-box hud-subtotal-box">
+                            <div>
+                                <span class="hud-label text-warning"><i class="fas fa-receipt mr-1"></i> SUB TOTAL</span>
+                                <div class="hud-numbers">
+                                    <span id="hudSubTotal" class="text-dark">₹0.00</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-3" id="customerContainer" style="display: none;">
-                            <label class="label-premium">Select Customer</label>
-                            <select name="customer_id" id="customerSelect" class="form-control select2">
-                                <option value="">Select Customer</option>
-                                @foreach($customers as $customer)
-                                    <option value="{{ $customer->id }}">{{ $customer->company_name ?? $customer->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="label-premium">Bill No. / Inv No.</label>
-                            <input type="text" name="bill_no" class="form-control form-control-premium" placeholder="Enter Bill No." value="{{ old('bill_no') }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="label-premium">Purchase Date</label>
-                            <input type="date" name="purchase_date" class="form-control form-control-premium" value="{{ date('Y-m-d') }}">
+
+                        <!-- Actions in HUD -->
+                        <div class="d-flex align-items-center">
+                            <a href="{{ route('admin.inventory.purchase_history.index') }}" class="btn btn-outline-secondary btn-erp-add mr-2" style="height: 31px;">
+                                <i class="fas fa-history mr-1"></i> Purchase History
+                            </a>
+                            <button type="button" class="btn-hud-confirm btn-open-summary" id="btnHudOpenSummary">
+                                <i class="fas fa-file-invoice-dollar mr-1"></i> Review & Upload
+                            </button>
                         </div>
                     </div>
 
-                    <div id="poReferenceContainer" class="card card-premium mb-3 animate-in" style="display: none; border-left: 4px solid #6366f1;">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0 font-weight-bold text-primary"><i class="fas fa-list-ul mr-2"></i>PO Items Reference</h6>
-                                <span class="badge badge-primary px-3" id="poRefNumber">PO #000</span>
+                    <!-- ========================================================= -->
+                    <!-- 2. SECTION 1: SOURCE & INVOICE DETAILS (ERP CARD) -->
+                    <!-- ========================================================= -->
+                    <div class="erp-card">
+                        <div class="erp-card-header">
+                            <div class="erp-card-title text-primary">
+                                <i class="fas fa-file-invoice"></i> 1. Source & Invoice Details
                             </div>
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover mb-0" style="font-size: 0.85rem;">
-                                    <thead class="bg-light">
-                                        <tr>
-                                            <th>Design No</th>
-                                            <th>Pattern / Fitting</th>
-                                            <th>Size / Color</th>
-                                            <th>PO Quantity</th>
-                                            <th>PO Rate</th>
-                                            <th class="text-right">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="poRefBody"></tbody>
-                                </table>
+                        </div>
+                        <div class="p-2">
+                            <div class="form-row align-items-end">
+                                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                                    <label class="erp-label">Source Type *</label>
+                                    <select name="source_type" id="sourceType" class="erp-input select2">
+                                        <option value="vendor">Vendor</option>
+                                        <option value="customer">Customer</option>
+                                    </select>
+                                </div>
+                                <div class="col-lg-3 col-md-3 col-sm-6 mb-1">
+                                    <label class="erp-label text-primary">Production PO (Optional)</label>
+                                    <select name="production_po_id" id="loadProductionPO" class="erp-input select2">
+                                        <option value="">-- Optional: Select PO --</option>
+                                        @foreach($productionPOs as $po)
+                                            <option value="{{ $po->id }}">{{ $po->po_number }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-lg-3 col-md-3 col-sm-6 mb-1" id="vendorContainer">
+                                    <label class="erp-label">Vendor *</label>
+                                    <select name="vendor_id" id="vendorSelect" class="erp-input select2">
+                                        <option value="">Select Vendor</option>
+                                        @foreach($vendors as $vendor)
+                                            <option value="{{ $vendor->id }}">{{ $vendor->company_name ?? $vendor->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-lg-3 col-md-3 col-sm-6 mb-1" id="customerContainer" style="display: none;">
+                                    <label class="erp-label">Customer *</label>
+                                    <select name="customer_id" id="customerSelect" class="erp-input select2">
+                                        <option value="">Select Customer</option>
+                                        @foreach($customers as $customer)
+                                            <option value="{{ $customer->id }}">{{ $customer->company_name ?? $customer->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                                    <label class="erp-label">Bill / Inv No.</label>
+                                    <input type="text" name="bill_no" class="erp-input" placeholder="Enter Bill No." value="{{ old('bill_no') }}">
+                                </div>
+                                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                                    <label class="erp-label">Purchase Date *</label>
+                                    <input type="date" name="purchase_date" class="erp-input" value="{{ date('Y-m-d') }}">
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Quick Add Header Section -->
-                    <div class="card shadow-sm border-0 mb-3 bg-soft-primary animate-in">
-                        <div class="card-body p-3">
-                            <h6 class="text-primary font-weight-bold mb-3">
-                                <i class="fas fa-cart-plus mr-2"></i>Quick Add Product
-                            </h6>
-                            <div class="row g-3 align-items-end">
-                                <div class="col-md-2">
-                                    <label class="label-premium text-primary">Warehouse *</label>
-                                    <select id="headerWarehouse" class="form-control select2">
+                    <!-- PO Reference Panel (When PO selected) -->
+                    <div id="poReferenceContainer" class="erp-card border border-primary mb-2" style="display: none;">
+                        <div class="erp-card-header bg-light">
+                            <div class="erp-card-title text-primary" style="font-size: 11.5px;">
+                                <i class="fas fa-list-ul"></i> PO Items Reference (<span id="poRefNumber">PO #</span>)
+                            </div>
+                            <span class="badge badge-primary" style="font-size: 10px;">Click 'Select' to use an item</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="erp-table table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Design No</th>
+                                        <th>Pattern / Fitting</th>
+                                        <th>Size / Color</th>
+                                        <th class="text-center">PO Quantity</th>
+                                        <th class="text-right">PO Rate</th>
+                                        <th class="text-center" style="width: 70px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="poRefBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ========================================================= -->
+                    <!-- 3. SECTION 2: ADD PRODUCT ITEM (1 SINGLE COMPACT LINE) -->
+                    <!-- ========================================================= -->
+                    <div class="erp-card">
+                        <div class="erp-card-header">
+                            <div class="erp-card-title text-success">
+                                <i class="fas fa-cart-plus"></i> 2. Add Product Item
+                            </div>
+                        </div>
+                        <div class="p-2">
+                            <div class="form-row align-items-end">
+                                <div class="col-lg-2 col-md-3 col-6 mb-1">
+                                    <label class="erp-label">Warehouse *</label>
+                                    <select id="headerWarehouse" class="erp-input select2">
                                         <option value="">Warehouse</option>
                                         @foreach($storerooms as $room)
                                             <option value="{{ $room->id }}">{{ $room->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2">
-                                    <label class="label-premium text-primary">Rack *</label>
-                                    <select id="headerRack" class="form-control select2">
+                                <div class="col-lg-1 col-md-2 col-6 mb-1">
+                                    <label class="erp-label">Rack *</label>
+                                    <select id="headerRack" class="erp-input select2">
                                         <option value="">Rack</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
-                                    <label class="label-premium text-primary">Design No *</label>
-                                    <select id="headerDesign" class="form-control select2">
+                                <div class="col-lg-3 col-md-3 col-12 mb-1">
+                                    <label class="erp-label">Design *</label>
+                                    <select id="headerDesign" class="erp-input select2">
                                         <option value="">Select Design</option>
                                         @foreach($products as $product)
                                             <option value="{{ $product->id }}" data-name="{{ $product->name_of_garment }}">
@@ -388,209 +496,239 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2">
-                                    <label class="label-premium text-primary">Pattern</label>
-                                    <input type="text" id="headerPatternDisplay"
-                                        class="form-control form-control-premium bg-light" placeholder="Auto" readonly>
-                                    <input type="hidden" id="headerPattern">
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="label-premium text-primary">Fitting</label>
-                                    <input type="text" id="headerFittingDisplay"
-                                        class="form-control form-control-premium bg-light" placeholder="Auto" readonly>
-                                    <input type="hidden" id="headerFitting">
-                                </div>
-                                <div class="col-md-3 mt-2">
-                                    <label class="label-premium text-primary">Size Set *</label>
-                                    <select id="headerSizeSet" class="form-control select2">
-                                        <option value="">Size Set</option>
+                                <div class="col-lg-1 col-md-2 col-6 mb-1">
+                                    <label class="erp-label">Size Set *</label>
+                                    <select id="headerSizeSet" class="erp-input select2">
+                                        <option value="">Size</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3 mt-2">
-                                    <label class="label-premium text-primary">Color *</label>
-                                    <select id="headerColor" class="form-control select2">
+                                <div class="col-lg-2 col-md-2 col-6 mb-1">
+                                    <label class="erp-label">Color *</label>
+                                    <select id="headerColor" class="erp-input select2">
                                         <option value="">Color</option>
                                     </select>
                                 </div>
-                                <div class="col-md-1 mt-2">
-                                    <label class="label-premium text-primary">Pcs/Box</label>
-                                    <input type="number" id="headerPcsPerBox"
-                                        class="form-control form-control-premium bg-light" readonly>
+                                <div class="col-lg-1 col-md-2 col-4 mb-1">
+                                    <label class="erp-label">Boxes *</label>
+                                    <input type="number" id="headerTotalBoxes" class="erp-input text-center font-weight-bold" min="1" placeholder="Qty">
                                 </div>
-                                <div class="col-md-1 mt-2">
-                                    <label class="label-premium text-primary">MRP</label>
-                                    <input type="number" id="headerMRP" class="form-control form-control-premium bg-light"
-                                        readonly>
+                                <div class="col-lg-1 col-md-2 col-4 mb-1">
+                                    <label class="erp-label">Rate (₹) *</label>
+                                    <input type="number" id="headerPurchaseRate" class="erp-input text-right font-weight-bold" step="0.01" min="0" placeholder="0.00">
                                 </div>
-                                <div class="col-md-1 mt-2">
-                                    <label class="label-premium text-primary">Boxes *</label>
-                                    <input type="number" id="headerTotalBoxes" class="form-control form-control-premium"
-                                        placeholder="Qty" min="1">
-                                </div>
-                                <div class="col-md-1 mt-2">
-                                    <label class="label-premium text-primary">Rate *</label>
-                                    <input type="number" id="headerPurchaseRate" class="form-control form-control-premium"
-                                        placeholder="Rate" step="0.01" min="0">
-                                </div>
-                                <div class="col-md-2 mt-3">
-                                    <button type="button" id="btnAddToList"
-                                        class="btn btn-primary btn-block font-weight-bold"
-                                        style="height: 48px; border-radius: 12px;">
-                                        <i class="fas fa-plus mr-2"></i>Add Product
+                                <div class="col-lg-1 col-md-2 col-4 mb-1">
+                                    <button type="button" id="btnAddToList" class="btn btn-primary btn-block btn-erp-add justify-content-center" style="height: 31px;">
+                                        <i class="fas fa-plus"></i> Add
                                     </button>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Hidden fields for specs -->
+                        <input type="hidden" id="headerPattern">
+                        <input type="hidden" id="headerFitting">
+                        <input type="hidden" id="headerPatternDisplay">
+                        <input type="hidden" id="headerFittingDisplay">
+                        <input type="hidden" id="headerPcsPerBox" value="1">
+                        <input type="hidden" id="headerMRP" value="0">
                     </div>
 
-                    <!-- Product List Table -->
-                    <div class="card shadow-sm border-0 mb-4 animate-in">
-                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-primary">
-                                <i class="fas fa-list-ul mr-2"></i>Added Products List
-                            </h6>
-                            <div id="tableCountBadges" class="d-flex align-items-center" style="display: none !important;">
-                                <span class="badge badge-primary px-3 py-2 mr-2" style="font-size: 0.85rem;">
-                                    <i class="fas fa-boxes mr-1"></i> Total Boxes: <strong id="tableHeaderTotalBoxes">0</strong>
+                    <!-- ========================================================= -->
+                    <!-- 4. SECTION 3: ADDED PRODUCTS LIST (ERP TABLE) -->
+                    <!-- ========================================================= -->
+                    <div class="erp-card">
+                        <div class="erp-card-header">
+                            <div class="erp-card-title text-dark">
+                                <i class="fas fa-boxes"></i> 3. Added Products List
+                                <span class="badge badge-light border text-muted ml-2 font-weight-normal" style="font-size:11px;">
+                                    <strong id="tableItemCount">0</strong> items added
                                 </span>
-                                <span class="badge badge-success px-3 py-2" style="font-size: 0.85rem;">
-                                    <i class="fas fa-tshirt mr-1"></i> Total Pieces: <strong id="tableHeaderTotalPieces">0</strong>
+                            </div>
+                            <div id="tableCountBadges" style="display: none;">
+                                <span class="badge badge-primary px-2 py-1 mr-1" style="font-size: 11px;">
+                                    <strong id="tableHeaderTotalBoxes">0</strong> Boxes
+                                </span>
+                                <span class="badge badge-success px-2 py-1" style="font-size: 11px;">
+                                    <strong id="tableHeaderTotalPieces">0</strong> Pieces
                                 </span>
                             </div>
                         </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0" id="purchaseTable">
-                                    <thead class="bg-light text-primary">
-                                        <tr>
-                                            <th class="pl-4">Design</th>
-                                            <th>Pattern/Fitting</th>
-                                            <th>Warehouse/Rack</th>
-                                            <th>Size/Color</th>
-                                            <th>Boxes</th>
-                                            <th>Pcs/Box</th>
-                                            <th>MRP</th>
-                                            <th>Rate</th>
-                                            <th>Total</th>
-                                            <th class="text-right pr-4">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="itemsContainer">
-                                        <!-- Table Rows Will Be Appended Here -->
-                                    </tbody>
-                                    <tfoot class="bg-light font-weight-bold" id="purchaseTableFooter" style="display: none;">
-                                        <tr>
-                                            <th colspan="4" class="text-right pr-4 text-muted">Total:</th>
-                                            <th>
-                                                <span id="footerTotalBoxes" class="badge badge-primary px-2 py-1" style="font-size: 0.95rem;">0</span>
-                                                <div class="small text-muted font-weight-normal">Boxes</div>
-                                            </th>
-                                            <th>
-                                                <span id="footerTotalPieces" class="badge badge-success px-2 py-1" style="font-size: 0.95rem;">0</span>
-                                                <div class="small text-muted font-weight-normal">Pieces</div>
-                                            </th>
-                                            <th colspan="2"></th>
-                                            <th>
-                                                <span id="footerSubTotal" class="text-primary font-weight-bold" style="font-size: 1rem;">₹0.00</span>
-                                                <div class="small text-muted font-weight-normal">Sub Total</div>
-                                            </th>
-                                            <th></th>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                            <div id="emptyState" class="p-5 text-center text-muted">
-                                <i class="fas fa-shopping-basket fa-3x mb-3 opacity-25"></i>
-                                <p class="mb-0">No products added yet. Use the header above to add products.</p>
-                            </div>
+                        <div class="table-responsive">
+                            <table class="erp-table table table-sm table-hover mb-0" id="purchaseTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 3%; text-align: center;">#</th>
+                                        <th style="width: 22%;">Design No</th>
+                                        <th style="width: 14%;">Pattern / Fit</th>
+                                        <th style="width: 15%;">Warehouse / Rack</th>
+                                        <th style="width: 13%;">Size / Color</th>
+                                        <th style="width: 7%; text-align: center;">Boxes</th>
+                                        <th style="width: 6%; text-align: center;">Pcs/Bx</th>
+                                        <th style="width: 7%; text-align: right;">MRP</th>
+                                        <th style="width: 7%; text-align: right;">Rate (₹)</th>
+                                        <th style="width: 8%; text-align: right;">Total (₹)</th>
+                                        <th style="width: 4%; text-align: center;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemsContainer">
+                                    <tr id="emptyState">
+                                        <td colspan="11" class="text-center text-muted py-4">
+                                            <i class="fas fa-shopping-basket mr-1 fa-lg text-secondary opacity-50"></i> No products added yet. Select options above and click <strong>+ Add</strong>.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
-                    <div id="purchaseSummaryContainer" class="card mt-4 shadow-sm border-0" style="display: none;">
-                        <div class="card-header bg-soft-primary py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <h5 class="mb-0 text-primary font-weight-bold"><i
-                                    class="fas fa-file-invoice-dollar mr-2"></i>Purchase Summary (Complete)</h5>
-                            <div class="d-flex align-items-center">
-                                <span class="badge badge-primary px-3 py-2 mr-2" style="font-size: 0.9rem;">
-                                    <i class="fas fa-boxes mr-1"></i> Total Boxes: <strong id="summaryHeaderBoxes">0</strong>
+                    <!-- ========================================================= -->
+                    <!-- 5. STICKY BOTTOM ACTIONS BAR (MATCHES CONSUME PAGE) -->
+                    <!-- ========================================================= -->
+                    <div class="sticky-bottom-bar">
+                        <div>
+                            <a href="{{ route('admin.inventory.index') }}" class="text-secondary font-weight-bold mr-3" style="font-size:12px;">
+                                <i class="fas fa-arrow-left mr-1"></i> Cancel and Exit
+                            </a>
+                            <span class="text-muted small">All stock entries are validated in real time before submission.</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="mr-4 text-right">
+                                <span class="text-muted small mr-2 font-weight-bold">
+                                    Boxes: <strong class="text-primary" id="footerTotalBoxes">0</strong>
                                 </span>
-                                <span class="badge badge-success px-3 py-2" style="font-size: 0.9rem;">
-                                    <i class="fas fa-tshirt mr-1"></i> Total Pieces: <strong id="summaryHeaderPieces">0</strong>
+                                <span class="text-muted small mr-2 font-weight-bold">|</span>
+                                <span class="text-muted small mr-2 font-weight-bold">
+                                    Pieces: <strong class="text-success" id="footerTotalPieces">0</strong>
+                                </span>
+                                <span class="text-muted small mr-2 font-weight-bold">|</span>
+                                <span class="text-muted small font-weight-bold">
+                                    Sub Total: <strong class="text-dark" id="footerSubTotal">₹0.00</strong>
                                 </span>
                             </div>
+                            <button type="button" class="btn-hud-confirm btn-open-summary" id="btnBottomOpenSummary">
+                                <i class="fas fa-check-double mr-1"></i> Review Summary & Upload
+                            </button>
                         </div>
-                        <div class="card-body bg-light-gray">
-                            <div class="row">
-                                <div class="col-md-2 input-group-premium">
-                                    <label class="label-premium text-primary font-weight-bold"><i class="fas fa-boxes mr-1"></i> Total Boxes</label>
-                                    <input type="number" id="global_total_boxes"
-                                        class="form-control form-control-premium bg-light font-weight-bold text-primary" value="0"
-                                        readonly>
+                    </div>
+
+                    <!-- ========================================================= -->
+                    <!-- 6. INVOICE SUMMARY MODAL (MATCHES ERP DESIGN) -->
+                    <!-- ========================================================= -->
+                    <div class="modal fade" id="purchaseSummaryModal" tabindex="-1" role="dialog" aria-labelledby="summaryModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 520px;">
+                            <div class="modal-content shadow-lg border-0" style="border-radius: 10px; overflow: hidden;">
+                                <div class="modal-header bg-light py-2 px-3 border-bottom">
+                                    <h6 class="modal-title font-weight-bold text-dark mb-0" id="summaryModalLabel">
+                                        <i class="fas fa-receipt text-primary mr-1"></i> Purchase Order Invoice Summary
+                                    </h6>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
                                 </div>
-                                <div class="col-md-2 input-group-premium">
-                                    <label class="label-premium text-success font-weight-bold"><i class="fas fa-tshirt mr-1"></i> Total Pieces</label>
-                                    <input type="number" id="global_total_pieces"
-                                        class="form-control form-control-premium bg-light font-weight-bold text-success" value="0"
-                                        readonly>
-                                </div>
-                                <div class="col-md-2 input-group-premium">
-                                    <label class="label-premium">Sub Total</label>
-                                    <input type="number" name="sub_total" id="global_sub_total"
-                                        class="form-control form-control-premium bg-light" placeholder="0.00" step="0.01"
-                                        readonly>
-                                </div>
-                                <div class="col-md-2 input-group-premium">
-                                    <label class="label-premium">GST</label>
-                                    <div class="input-group">
-                                        <input type="number" name="gst_value" id="global_gst_value"
-                                            class="form-control form-control-premium" placeholder="Value" step="0.01"
-                                            min="0">
-                                        <div class="input-group-append">
-                                            <select name="gst_type" id="global_gst_type"
-                                                class="custom-select form-control-premium bg-light"
-                                                style="width: auto; border-radius: 0 8px 8px 0;">
-                                                <option value="percentage">%</option>
-                                                <option value="amount">₹</option>
-                                            </select>
+                                <div class="modal-body p-3 bg-light">
+                                    <!-- 3 Top Metric Cards -->
+                                    <div class="row no-gutters bg-white border rounded p-2 mb-3 text-center shadow-sm">
+                                        <div class="col-4 border-right">
+                                            <span class="hud-label text-primary">Total Boxes</span>
+                                            <div class="h5 mb-0 font-weight-bold text-primary" id="modalTotalBoxes">0</div>
+                                            <input type="hidden" id="global_total_boxes" value="0">
+                                        </div>
+                                        <div class="col-4 border-right">
+                                            <span class="hud-label text-success">Total Pieces</span>
+                                            <div class="h5 mb-0 font-weight-bold text-success" id="modalTotalPieces">0</div>
+                                            <input type="hidden" id="global_total_pieces" value="0">
+                                        </div>
+                                        <div class="col-4">
+                                            <span class="hud-label text-warning">Sub Total</span>
+                                            <div class="h5 mb-0 font-weight-bold text-dark" id="modalSubTotalText">₹0.00</div>
+                                            <input type="hidden" name="sub_total" id="global_sub_total" value="0.00">
                                         </div>
                                     </div>
-                                    <input type="hidden" name="gst" id="global_gst_amount">
+
+                                    <!-- Financial Calculation Box -->
+                                    <div class="card border-0 shadow-sm mb-3">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                                <span class="font-weight-bold text-muted small text-uppercase">Sub Total</span>
+                                                <span class="font-weight-bold text-dark" id="modalSubTotalRow">₹0.00</span>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                                <div>
+                                                    <span class="font-weight-bold text-muted small text-uppercase d-block">GST Tax</span>
+                                                    <small class="text-muted" style="font-size:11px;">Percentage (%) or Flat (₹)</small>
+                                                </div>
+                                                <div class="text-right">
+                                                    <div class="input-group input-group-sm" style="width: 165px;">
+                                                        <input type="number" name="gst_value" id="global_gst_value" class="form-control text-right font-weight-bold" placeholder="0.00" step="0.01" min="0">
+                                                        <div class="input-group-append">
+                                                            <select name="gst_type" id="global_gst_type" class="custom-select custom-select-sm bg-light" style="width: 65px;">
+                                                                <option value="percentage">%</option>
+                                                                <option value="amount">₹</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <small class="text-muted font-weight-bold d-block mt-1" id="modalGstCalcText">+ ₹0.00</small>
+                                                    <input type="hidden" name="gst" id="global_gst_amount" value="0.00">
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                                <div>
+                                                    <span class="font-weight-bold text-muted small text-uppercase d-block">Other Charges (+)</span>
+                                                    <small class="text-muted" style="font-size:11px;">Freight, loading, etc.</small>
+                                                </div>
+                                                <div class="input-group input-group-sm" style="width: 165px;">
+                                                    <div class="input-group-prepend"><span class="input-group-text font-weight-bold">₹</span></div>
+                                                    <input type="number" name="other_amount" id="global_other_amount" class="form-control text-right font-weight-bold" placeholder="0.00" step="0.01" min="0">
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                                <div>
+                                                    <span class="font-weight-bold text-muted small text-uppercase d-block">Discount (-)</span>
+                                                    <small class="text-muted" style="font-size:11px;">Vendor concession</small>
+                                                </div>
+                                                <div class="input-group input-group-sm" style="width: 165px;">
+                                                    <div class="input-group-prepend"><span class="input-group-text font-weight-bold">₹</span></div>
+                                                    <input type="number" name="discount" id="global_discount" class="form-control text-right font-weight-bold" placeholder="0.00" step="0.01" min="0">
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between align-items-center py-2">
+                                                <div style="min-width: 130px;">
+                                                    <span class="font-weight-bold text-muted small text-uppercase d-block"><i class="fas fa-comment-alt text-secondary mr-1"></i> Remarks</span>
+                                                    <small class="text-muted" style="font-size:11px;">Order note or remarks</small>
+                                                </div>
+                                                <div class="ml-3 flex-grow-1" style="max-width: 250px;">
+                                                    <input type="text" name="remarks" id="global_remarks" class="form-control form-control-sm" placeholder="Enter remarks (optional)..." maxlength="500">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Grand Total Banner -->
+                                    <div class="d-flex justify-content-between align-items-center p-3 rounded shadow-sm" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff;">
+                                        <div>
+                                            <span class="hud-label text-white-50">Net Payable Amount</span>
+                                            <h6 class="mb-0 text-white font-weight-bold">Grand Total</h6>
+                                        </div>
+                                        <div class="text-right">
+                                            <h3 class="mb-0 font-weight-bold text-warning" id="displayGrandTotal">₹0.00</h3>
+                                            <input type="hidden" name="total_amount" id="global_total_amount" value="0.00">
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-1 input-group-premium">
-                                    <label class="label-premium">Other</label>
-                                    <input type="number" name="other_amount" id="global_other_amount"
-                                        class="form-control form-control-premium" placeholder="Other" step="0.01" min="0">
-                                </div>
-                                <div class="col-md-1 input-group-premium">
-                                    <label class="label-premium">Discount</label>
-                                    <input type="number" name="discount" id="global_discount"
-                                        class="form-control form-control-premium" placeholder="Disc" step="0.01" min="0">
-                                </div>
-                                <div class="col-md-2 input-group-premium">
-                                    <label class="label-premium text-primary font-weight-bold">Grand Total</label>
-                                    <input type="number" name="total_amount" id="global_total_amount"
-                                        class="form-control form-control-premium bg-light font-weight-bold text-primary" placeholder="0.00" step="0.01"
-                                        readonly>
+                                <div class="modal-footer bg-white py-2 px-3 border-top d-flex justify-content-between">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 font-weight-bold" data-dismiss="modal">
+                                        <i class="fas fa-arrow-left mr-1"></i> Back to Edit
+                                    </button>
+                                    <button type="submit" class="btn-hud-confirm" id="btnConfirmSubmit">
+                                        <i class="fas fa-check-circle mr-1"></i> Confirm & Upload Stock
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-
-
-                    <div class="sticky-actions">
-                        <div class="mr-auto d-flex align-items-center">
-                            <span class="badge badge-pill badge-light border px-3 py-2 text-dark mr-2" style="font-size: 0.95rem;">
-                                <i class="fas fa-boxes text-primary mr-1"></i> Total Boxes: <strong id="stickyTotalBoxes" class="text-primary">0</strong>
-                            </span>
-                            <span class="badge badge-pill badge-light border px-3 py-2 text-dark" style="font-size: 0.95rem;">
-                                <i class="fas fa-tshirt text-success mr-1"></i> Total Pieces: <strong id="stickyTotalPieces" class="text-success">0</strong>
-                            </span>
-                        </div>
-                        <a href="{{ route('admin.inventory.index') }}" class="btn-cancel">Cancel and Exit</a>
-                        <button type="submit" class="btn btn-confirm">
-                            <i class="fas fa-check-double mr-2"></i> Confirm and Upload Stock
-                        </button>
                     </div>
                 </form>
             </div>
@@ -602,14 +740,14 @@
             $(function () {
                 let itemCount = 0;
                 let currentVariants = [];
+                let currentPOItems = [];
 
                 function initSelect2(container) {
                     container.find('.select2').each(function () {
                         $(this).select2({
                             theme: 'bootstrap4',
                             width: '100%',
-                            dropdownAutoWidth: true,
-                            dropdownParent: $('body')
+                            dropdownAutoWidth: true
                         });
                     });
                 }
@@ -619,7 +757,6 @@
                 // Handle Source Type
                 $('#sourceType').on('change', function () {
                     let type = $(this).val();
-                    $('#purchaseSummaryContainer').show();
                     if (type === 'vendor') {
                         $('#vendorContainer').show();
                         $('#customerContainer').hide();
@@ -640,7 +777,9 @@
                                 rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
                             });
                             rackSelect.trigger('change.select2');
-                            if (data.length > 0) rackSelect.val(data[0].id).trigger('change.select2');
+                            if (data.length > 0) {
+                                rackSelect.val(data[0].id).trigger('change.select2');
+                            }
                         });
                     }
                 });
@@ -656,10 +795,11 @@
                     $('#headerPattern').val('');
                     $('#headerFittingDisplay').val('');
                     $('#headerFitting').val('');
-                    sizeSelect.empty().append('<option value="">Size Set</option>').trigger('change.select2');
+
+                    sizeSelect.empty().append('<option value="">Size</option>').trigger('change.select2');
                     colorSelect.empty().append('<option value="">Color</option>').trigger('change.select2');
-                    $('#headerPcsPerBox').val('');
-                    $('#headerMRP').val('');
+                    $('#headerPcsPerBox').val('1');
+                    $('#headerMRP').val('0');
                     currentVariants = [];
 
                     if (productId) {
@@ -685,8 +825,8 @@
                     let sizeSetId = $(this).val();
                     let colorSelect = $('#headerColor');
                     colorSelect.empty().append('<option value="">Color</option>').trigger('change.select2');
-                    $('#headerPcsPerBox').val('');
-                    $('#headerMRP').val('');
+                    $('#headerPcsPerBox').val('1');
+                    $('#headerMRP').val('0');
 
                     if (sizeSetId) {
                         $.get("{{ url('admin/inventory/get-size-set-info') }}/" + sizeSetId, function (data) {
@@ -701,7 +841,7 @@
                             });
                             colorSelect.trigger('change.select2');
 
-                            // Auto-fill Quantity and Rate from PO if unique match found
+                            // Auto-fill Quantity and Rate from PO if match found
                             if (currentPOItems.length > 0) {
                                 const productId = $('#headerDesign').val();
                                 const poMatch = currentPOItems.find(item => 
@@ -712,7 +852,6 @@
                                     $('#headerTotalBoxes').val(poMatch.total_boxes);
                                     $('#headerPurchaseRate').val(poMatch.purchase_rate);
                                     
-                                    // If only one color in PO for this design+size, select it
                                     const colorsInPOForThisSize = currentPOItems.filter(item => 
                                         item.product_id == productId && item.size_set_id == sizeSetId
                                     );
@@ -735,15 +874,15 @@
                         product_id: $('#headerDesign').val(),
                         product_name: $('#headerDesign option:selected').text(),
                         pattern_id: $('#headerPattern').val(),
-                        pattern_name: $('#headerPatternDisplay').val(),
+                        pattern_name: $('#headerPatternDisplay').val() || '-',
                         fitting_id: $('#headerFitting').val(),
-                        fitting_name: $('#headerFittingDisplay').val(),
+                        fitting_name: $('#headerFittingDisplay').val() || '-',
                         size_set_id: $('#headerSizeSet').val(),
                         size_set_name: $('#headerSizeSet option:selected').text(),
                         color_id: $('#headerColor').val(),
                         color_name: $('#headerColor option:selected').text(),
-                        pieces_per_box: $('#headerPcsPerBox').val(),
-                        mrp: $('#headerMRP').val(),
+                        pieces_per_box: $('#headerPcsPerBox').val() || 1,
+                        mrp: $('#headerMRP').val() || 0,
                         total_boxes: $('#headerTotalBoxes').val(),
                         purchase_rate: $('#headerPurchaseRate').val()
                     };
@@ -757,15 +896,9 @@
                     addToTable(data);
                     toastr.success('Product added to list');
 
-                    // Reset only specific fields for faster entry
-                    // $('#headerTotalBoxes').val('');
-                    // $('#headerPurchaseRate').val('');
-                    // $('#headerSizeSet').val('').trigger('change.select2');
-                    // $('#headerColor').val('').trigger('change.select2');
+                    // Reset boxes quantity
+                    $('#headerTotalBoxes').val('');
                 });
-
-                const originalDesignHtml = $('#headerDesign').html();
-                let currentPOItems = [];
 
                 // Load from Production PO
                 $('#loadProductionPO').on('change', function() {
@@ -800,25 +933,18 @@
                                     $('#customerSelect').val(response.customer_id).trigger('change');
                                 }
 
-                                // Filter Design Dropdown
-                                let filteredHtml = '<option value="">Select Design (PO Filtered)</option>';
+                                // Filter Reference Table
                                 let refHtml = '';
-                                const addedProductIds = new Set();
                                 
                                 response.items.forEach(item => {
-                                    if (!addedProductIds.has(item.product_id)) {
-                                        filteredHtml += `<option value="${item.product_id}" data-name="${item.product_name}">${item.design_number}</option>`;
-                                        addedProductIds.add(item.product_id);
-                                    }
-
                                     refHtml += `
                                         <tr>
                                             <td class="font-weight-bold">${item.design_number}</td>
                                             <td>${item.pattern_name} / ${item.fitting_name}</td>
-                                            <td><span class="badge badge-light">${item.size_set_name}</span> / ${item.color_name}</td>
-                                            <td>${item.total_boxes} Boxes</td>
-                                            <td>₹${item.purchase_rate}</td>
-                                            <td class="text-right">
+                                            <td><span class="erp-pill erp-pill-source">${item.size_set_name}</span> / ${item.color_name}</td>
+                                            <td class="text-center font-weight-bold">${item.total_boxes} Bx</td>
+                                            <td class="text-right font-weight-bold">₹${item.purchase_rate}</td>
+                                            <td class="text-center">
                                                 <button type="button" class="btn btn-primary btn-xs px-2 py-0 btn-apply-po-item" 
                                                     data-product="${item.product_id}" 
                                                     data-size="${item.size_set_id}" 
@@ -836,7 +962,7 @@
                                 $('#poRefBody').html(refHtml);
                                 $('#poReferenceContainer').fadeIn();
 
-                                toastr.success(`PO loaded: ${response.items.length} items for reference`);
+                                toastr.success(`PO loaded: ${response.items.length} items available`);
                             }
                         },
                         error: function() {
@@ -863,7 +989,7 @@
                             $('#headerColor').val(colorId).trigger('change.select2');
                             $('#headerTotalBoxes').val(boxes);
                             $('#headerPurchaseRate').val(rate);
-                            toastr.info('PO item details applied to form');
+                            toastr.info('PO item applied to input line');
                         }, 500);
                     }, 800);
                 });
@@ -871,7 +997,7 @@
                 function addToTable(data) {
                     // Check for duplicates in UI
                     let exists = false;
-                    $('#itemsContainer tr').each(function() {
+                    $('#itemsContainer tr').not('#emptyState').each(function() {
                         const rowProductId = $(this).find('input[name*="[product_id]"]').val();
                         const rowColorId = $(this).find('input[name*="[color_id]"]').val();
                         const rowSizeSetId = $(this).find('input[name*="[size_set_id]"]').val();
@@ -890,67 +1016,76 @@
                     });
 
                     if (exists) {
-                        toastr.warning('Product already in list');
+                        toastr.warning('Product item already in the list');
                         return;
                     }
 
                     const idx = itemCount++;
-                    const total = (parseFloat(data.total_boxes) * parseFloat(data.pieces_per_box) * parseFloat(data.purchase_rate)).toFixed(2);
+                    const rowNumber = $('#itemsContainer tr').not('#emptyState').length + 1;
+                    const totalPcs = parseFloat(data.total_boxes) * parseFloat(data.pieces_per_box);
+                    const total = (totalPcs * parseFloat(data.purchase_rate)).toFixed(2);
 
                     const rowHtml = `
-                                        <tr class="animate-in" data-index="${idx}">
-                                            <td class="pl-4">
-                                                <span class="font-weight-bold text-dark">${data.product_name}</span>
-                                                <div class="small text-muted">#${data.design_number || ''}</div>
-                                                <input type="hidden" name="products[${idx}][product_id]" value="${data.product_id}">
-                                            </td>
-                                            <td>
-                                                <div class="small text-muted">${data.pattern_name} / ${data.fitting_name}</div>
-                                                <input type="hidden" name="products[${idx}][pattern_id]" value="${data.pattern_id}">
-                                                <input type="hidden" name="products[${idx}][fitting_id]" value="${data.fitting_id}">
-                                            </td>
-                                            <td>
-                                                <div class="small text-muted">${data.warehouse_name || 'N/A'} / ${data.rack_name || 'N/A'}</div>
-                                                <input type="hidden" name="products[${idx}][warehouse_id]" value="${data.warehouse_id || ''}">
-                                                <input type="hidden" name="products[${idx}][rack_id]" value="${data.rack_id || ''}">
-                                            </td>
-                                            <td>
-                                                <div class="badge badge-soft-info">${data.size_set_name}</div>
-                                                <div class="small text-muted">${data.color_name}</div>
-                                                <input type="hidden" name="products[${idx}][size_set_id]" value="${data.size_set_id}">
-                                                <input type="hidden" name="products[${idx}][color_id]" value="${data.color_id}">
-                                            </td>
-                                            <td>
-                                                <input type="number" name="products[${idx}][total_boxes]" value="${data.total_boxes}" class="form-control form-control-sm row-boxes" style="width: 70px;">
-                                            </td>
-                                            <td>
-                                                <input type="number" name="products[${idx}][pieces_per_box]" value="${data.pieces_per_box}" class="form-control form-control-sm row-pcs" style="width: 70px;">
-                                            </td>
-                                            <td>
-                                                <span>₹${data.mrp}</span>
-                                                <input type="hidden" name="products[${idx}][mrp]" value="${data.mrp}">
-                                            </td>
-                                            <td>
-                                                <input type="number" name="products[${idx}][purchase_rate]" value="${data.purchase_rate}" class="form-control form-control-sm row-rate" step="0.01" style="width: 90px;">
-                                            </td>
-                                            <td>
-                                                <span class="text-primary font-weight-bold row-total">₹${total}</span>
-                                            </td>
-                                            <td class="text-right pr-4">
-                                                <button type="button" class="btn btn-soft-danger btn-sm btn-remove-row">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    `;
+                        <tr data-index="${idx}">
+                            <td class="text-center font-weight-bold row-index text-muted" style="font-size:11px;">${rowNumber}</td>
+                            <td>
+                                <strong class="text-dark">${data.product_name}</strong>
+                                <input type="hidden" name="products[${idx}][product_id]" value="${data.product_id}">
+                            </td>
+                            <td>
+                                <span class="text-muted">${data.pattern_name} / ${data.fitting_name}</span>
+                                <input type="hidden" name="products[${idx}][pattern_id]" value="${data.pattern_id}">
+                                <input type="hidden" name="products[${idx}][fitting_id]" value="${data.fitting_id}">
+                            </td>
+                            <td>
+                                <span class="text-muted">${data.warehouse_name || 'N/A'} / ${data.rack_name || 'N/A'}</span>
+                                <input type="hidden" name="products[${idx}][warehouse_id]" value="${data.warehouse_id || ''}">
+                                <input type="hidden" name="products[${idx}][rack_id]" value="${data.rack_id || ''}">
+                            </td>
+                            <td>
+                                <span class="erp-pill erp-pill-source mr-1">${data.size_set_name}</span>
+                                <span class="erp-pill erp-pill-gen">${data.color_name}</span>
+                                <input type="hidden" name="products[${idx}][size_set_id]" value="${data.size_set_id}">
+                                <input type="hidden" name="products[${idx}][color_id]" value="${data.color_id}">
+                            </td>
+                            <td class="text-center">
+                                <input type="number" name="products[${idx}][total_boxes]" value="${data.total_boxes}" class="erp-input text-center row-boxes mx-auto font-weight-bold" min="1" style="max-width: 65px;">
+                            </td>
+                            <td class="text-center text-muted font-weight-bold" style="font-size:11px;">
+                                ${data.pieces_per_box}
+                                <input type="hidden" name="products[${idx}][pieces_per_box]" value="${data.pieces_per_box}" class="row-pcs">
+                            </td>
+                            <td class="text-right text-muted" style="font-size:11px;">
+                                ₹${parseFloat(data.mrp || 0).toFixed(2)}
+                                <input type="hidden" name="products[${idx}][mrp]" value="${data.mrp}">
+                            </td>
+                            <td class="text-right">
+                                <input type="number" name="products[${idx}][purchase_rate]" value="${data.purchase_rate}" class="erp-input text-right row-rate mx-auto font-weight-bold" step="0.01" min="0" style="max-width: 75px;">
+                            </td>
+                            <td class="text-right font-weight-bold text-primary row-total">
+                                ₹${total}
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn-erp-icon btn-erp-del btn-remove-row" title="Remove Item">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
 
-                    $('#itemsContainer').append(rowHtml);
                     $('#emptyState').hide();
+                    $('#itemsContainer').append(rowHtml);
                     calculateGlobalTotal();
                 }
 
-                // Also allow editing quantity and rate in the list
-                $(document).on('input', '.row-boxes, .row-pcs, .row-rate', function() {
+                function reindexRows() {
+                    $('#itemsContainer tr').not('#emptyState').each(function(i) {
+                        $(this).find('.row-index').text(i + 1);
+                    });
+                }
+
+                // Allow live editing quantity and rate in the table list
+                $(document).on('input', '.row-boxes, .row-rate', function() {
                     const row = $(this).closest('tr');
                     const boxes = parseFloat(row.find('.row-boxes').val()) || 0;
                     const pcs = parseFloat(row.find('.row-pcs').val()) || 0;
@@ -962,13 +1097,23 @@
 
                 // Remove Row
                 $(document).on('click', '.btn-remove-row', function () {
-                    $(this).closest('tr').fadeOut(300, function () {
-                        $(this).remove();
-                        if ($('#itemsContainer tr').length === 0) {
-                            $('#emptyState').show();
-                        }
-                        calculateGlobalTotal();
-                    });
+                    $(this).closest('tr').remove();
+                    reindexRows();
+                    if ($('#itemsContainer tr').not('#emptyState').length === 0) {
+                        $('#emptyState').show();
+                    }
+                    calculateGlobalTotal();
+                });
+
+                // Open Summary Modal (from either top HUD or bottom bar)
+                $(document).on('click', '.btn-open-summary', function() {
+                    const rowCount = $('#itemsContainer tr').not('#emptyState').length;
+                    if (rowCount === 0) {
+                        toastr.error('Please add at least one product to the list first.');
+                        return;
+                    }
+                    calculateGlobalTotal();
+                    $('#purchaseSummaryModal').modal('show');
                 });
 
                 $(document).on('input', '#global_gst_value, #global_other_amount, #global_discount', function () {
@@ -984,7 +1129,10 @@
                     let totalBoxes = 0;
                     let totalPieces = 0;
 
-                    $('#itemsContainer tr').each(function () {
+                    const rows = $('#itemsContainer tr').not('#emptyState');
+                    const rowCount = rows.length;
+
+                    rows.each(function () {
                         let boxes = parseFloat($(this).find('.row-boxes').val()) || 0;
                         let pcs = parseFloat($(this).find('.row-pcs').val()) || 0;
                         let rate = parseFloat($(this).find('.row-rate').val()) || 0;
@@ -993,26 +1141,35 @@
                         subTotal += (boxes * pcs * rate);
                     });
 
-                    // Update Total Boxes and Total Pieces across all summary areas
+                    // Update Top HUD values
+                    $('#hudTotalBoxes').text(totalBoxes.toLocaleString());
+                    $('#hudTotalPieces').text(totalPieces.toLocaleString());
+                    $('#hudSubTotal').text('₹' + subTotal.toFixed(2));
+
+                    // Update Modal values
                     $('#global_total_boxes').val(totalBoxes);
                     $('#global_total_pieces').val(totalPieces);
-                    $('#summaryHeaderBoxes').text(totalBoxes.toLocaleString());
-                    $('#summaryHeaderPieces').text(totalPieces.toLocaleString());
+                    $('#modalTotalBoxes').text(totalBoxes.toLocaleString());
+                    $('#modalTotalPieces').text(totalPieces.toLocaleString());
+                    $('#modalSubTotalText').text('₹' + subTotal.toFixed(2));
+                    $('#modalSubTotalRow').text('₹' + subTotal.toFixed(2));
+
+                    // Update Bottom Bar values
                     $('#footerTotalBoxes').text(totalBoxes.toLocaleString());
                     $('#footerTotalPieces').text(totalPieces.toLocaleString());
-                    $('#tableHeaderTotalBoxes').text(totalBoxes.toLocaleString());
-                    $('#tableHeaderTotalPieces').text(totalPieces.toLocaleString());
-                    $('#stickyTotalBoxes').text(totalBoxes.toLocaleString());
-                    $('#stickyTotalPieces').text(totalPieces.toLocaleString());
                     $('#footerSubTotal').text('₹' + subTotal.toFixed(2));
 
-                    if ($('#itemsContainer tr').length > 0) {
-                        $('#purchaseTableFooter').show();
-                        $('#tableCountBadges').attr('style', 'display: flex !important;');
-                        $('#purchaseSummaryContainer').show();
+                    // Update Table Header values
+                    $('#tableItemCount').text(rowCount);
+                    $('#tableHeaderTotalBoxes').text(totalBoxes.toLocaleString());
+                    $('#tableHeaderTotalPieces').text(totalPieces.toLocaleString());
+
+                    if (rowCount > 0) {
+                        $('#tableCountBadges').show();
+                        $('#emptyState').hide();
                     } else {
-                        $('#purchaseTableFooter').hide();
-                        $('#tableCountBadges').attr('style', 'display: none !important;');
+                        $('#tableCountBadges').hide();
+                        $('#emptyState').show();
                     }
 
                     $('#global_sub_total').val(subTotal.toFixed(2));
@@ -1030,13 +1187,16 @@
                     }
 
                     $('#global_gst_amount').val(gstAmount.toFixed(2));
+                    $('#modalGstCalcText').text('+ ₹' + gstAmount.toFixed(2));
+
                     let grandTotal = subTotal + gstAmount + other - discount;
 
                     $('#global_total_amount').val(grandTotal.toFixed(2));
+                    $('#displayGrandTotal').text('₹' + grandTotal.toFixed(2));
                 }
 
                 $('#addStockForm').on('submit', function (e) {
-                    if ($('#itemsContainer tr').length === 0) {
+                    if ($('#itemsContainer tr').not('#emptyState').length === 0) {
                         e.preventDefault();
                         toastr.error('Please add at least one product to the list.');
                         return;
@@ -1044,10 +1204,10 @@
 
                     e.preventDefault();
                     let form = $(this);
-                    let btn = form.find('button[type="submit"]');
+                    let btn = $('#btnConfirmSubmit');
                     let originalHtml = btn.html();
 
-                    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Saving...');
+                    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Saving...');
 
                     $.ajax({
                         url: form.attr('action'),
@@ -1056,6 +1216,7 @@
                         success: function (response) {
                             if (response.success) {
                                 toastr.success(response.message);
+                                $('#purchaseSummaryModal').modal('hide');
 
                                 // Auto-trigger barcode generation
                                 let pdfForm = $('<form>', {
@@ -1068,23 +1229,23 @@
                                     value: "{{ csrf_token() }}"
                                 }));
 
-                                  if (response.print_data) {
-                                      response.print_data.forEach(data => {
-                                          pdfForm.append($('<input>', {
-                                              type: 'hidden',
-                                              name: 'print_data[' + data.id + ']',
-                                              value: data.qty
-                                          }));
-                                      });
-                                  } else if (response.ids) {
-                                      response.ids.forEach(id => {
-                                          pdfForm.append($('<input>', {
-                                              type: 'hidden',
-                                              name: 'ids[]',
-                                              value: id
-                                          }));
-                                      });
-                                  }
+                                if (response.print_data) {
+                                    response.print_data.forEach(data => {
+                                        pdfForm.append($('<input>', {
+                                            type: 'hidden',
+                                            name: 'print_data[' + data.id + ']',
+                                            value: data.qty
+                                        }));
+                                    });
+                                } else if (response.ids) {
+                                    response.ids.forEach(id => {
+                                        pdfForm.append($('<input>', {
+                                            type: 'hidden',
+                                            name: 'ids[]',
+                                            value: id
+                                        }));
+                                    });
+                                }
 
                                 $('body').append(pdfForm);
                                 pdfForm.submit();

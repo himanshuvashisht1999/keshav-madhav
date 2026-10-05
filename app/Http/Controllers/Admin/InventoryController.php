@@ -618,6 +618,8 @@ class InventoryController extends Controller
             'other_amount' => 'nullable|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'total_amount' => 'nullable|numeric|min:0',
+            'remarks' => 'nullable|string|max:500',
+            'remark' => 'nullable|string|max:500',
         ]);
 
         DB::beginTransaction();
@@ -662,7 +664,7 @@ class InventoryController extends Controller
                     'other_amount' => $request->other_amount ?? 0,
                     'discount' => $request->discount ?? 0,
                     'total_amount' => $request->total_amount ?? 0,
-                    'remarks' => $request->remarks ?? null,
+                    'remarks' => $request->remarks ?? $request->remark ?? null,
                 ]);
             }
 
@@ -1418,7 +1420,15 @@ class InventoryController extends Controller
 
     public function purchaseHistoryEdit($id)
     {
-        $purchase = \App\Models\DomesticInventoryPurchase::with('items.newProduct', 'items.newSizeSet', 'items.newColor', 'items.newWarehouse', 'items.newRack')->findOrFail($id);
+        $purchase = \App\Models\DomesticInventoryPurchase::with([
+            'items.newProduct.series',
+            'items.newSizeSet',
+            'items.newColor',
+            'items.newWarehouse',
+            'items.newRack',
+            'items.newPattern',
+            'items.newFitting'
+        ])->findOrFail($id);
         $products = \App\Models\ProductionGoods::with('series')->get();
         $colors = \App\Models\MasterColor::all();
         $fittings = \App\Models\MasterProductFitting::all();
@@ -1600,6 +1610,7 @@ class InventoryController extends Controller
                 'other_amount' => $request->other_amount ?? 0,
                 'discount' => $request->discount ?? 0,
                 'total_amount' => $request->total_amount,
+                'remarks' => $request->remarks ?? $request->remark ?? $purchase->remarks,
             ]);
 
             // Adjust Balance (Apply New)
