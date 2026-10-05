@@ -1,11 +1,225 @@
 @extends('admin.layouts.app')
+
 @section('content')
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        .content-wrapper {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f1f5f9;
+            font-size: 12px;
+            padding: 6px 10px 30px 10px;
+        }
+
+        /* COMPACT ERP TOP BAR */
+        .erp-topbar {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 6px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        /* HIGH-DENSITY CARD */
+        .hd-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        .hd-card-header {
+            padding: 5px 10px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hd-card-title {
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #1e293b;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hd-card-body {
+            padding: 8px 10px;
+        }
+
+        /* FORM ELEMENTS (ULTRA COMPACT) */
+        .hd-form-group {
+            margin-bottom: 4px;
+        }
+
+        .hd-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            color: #475569;
+            margin-bottom: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hd-label .action-links a {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: none;
+            color: #4f46e5;
+            margin-left: 4px;
+        }
+
+        .hd-input {
+            height: 29px !important;
+            border-radius: 4px !important;
+            border: 1px solid #cbd5e1 !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            padding: 2px 8px !important;
+            line-height: 1.3 !important;
+        }
+
+        .hd-input:focus {
+            border-color: #4f46e5 !important;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15) !important;
+            outline: none;
+        }
+
+        .select2-container--bootstrap4 .select2-selection--single {
+            height: 29px !important;
+            border-radius: 4px !important;
+            border: 1px solid #cbd5e1 !important;
+            padding: 2px 6px !important;
+            font-size: 12px !important;
+            line-height: 23px !important;
+        }
+
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+            line-height: 23px !important;
+            padding-left: 2px !important;
+            font-size: 12px !important;
+        }
+
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__arrow {
+            height: 27px !important;
+            right: 4px !important;
+        }
+
+        /* COMPACT SIZE SET BLOCK */
+        .size-set-block {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            overflow: visible;
+        }
+
+        .size-set-header {
+            padding: 4px 8px;
+            background: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Ensure Select2 Dropdowns float comfortably and show 8-10 options */
+        .select2-container--bootstrap4 .select2-dropdown {
+            z-index: 9999 !important;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
+            border-radius: 4px !important;
+        }
+
+        .select2-container--bootstrap4 .select2-results > .select2-results__options {
+            max-height: 280px !important;
+            overflow-y: auto !important;
+        }
+
+        .select2-container--bootstrap4 .select2-results__option {
+            padding: 5px 10px !important;
+            font-size: 12px !important;
+        }
+
+        .size-set-body {
+            padding: 6px 8px;
+        }
+
+        /* COMPACT COLOR TABLE */
+        .hd-color-table {
+            width: 100%;
+            margin-bottom: 4px;
+            border-collapse: collapse;
+        }
+
+        .hd-color-table th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 3px 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .hd-color-table td {
+            padding: 3px 6px;
+            vertical-align: middle;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+        }
+
+        .barcode-badge {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            background: #eef2ff;
+            color: #4f46e5;
+            border: 1px solid #c7d2fe;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 10.5px;
+            font-weight: 600;
+        }
+
+        .thumb-preview-mini {
+            width: 26px;
+            height: 26px;
+            object-fit: cover;
+            border-radius: 3px;
+            border: 1px solid #cbd5e1;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .thumb-preview-card {
+            width: 38px;
+            height: 38px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* CUSTOM RATIO MODAL */
         .modal-ratio {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, .5);
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(2px);
             justify-content: center;
             align-items: center;
             z-index: 9999;
@@ -13,390 +227,505 @@
 
         .modal-ratio-content {
             background: #fff;
-            width: 420px;
-            padding: 20px;
+            width: 380px;
+            padding: 16px;
             border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid #cbd5e1;
         }
 
         .size-row-ratio {
             display: flex;
             justify-content: space-between;
-            padding: 6px;
-            background: #eef2f7;
-            margin-top: 6px;
+            align-items: center;
+            padding: 4px 8px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            margin-top: 4px;
         }
 
         .counter-ratio button {
-            width: 28px;
-            height: 28px;
-            border: none;
-            background: #28a745;
-            color: #fff;
+            width: 24px;
+            height: 24px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+            border-radius: 3px;
+            font-weight: 700;
+            font-size: 12px;
+            line-height: 1;
+            cursor: pointer;
         }
 
-        .open-ratio-label {
-            cursor: pointer;
-            color: #007bff;
-            font-weight: 600;
-            text-decoration: underline;
-            font-size: 13px;
-            margin-top: 5px;
-            display: inline-block;
+        .counter-ratio button:hover {
+            background: #4f46e5;
+            color: #fff;
         }
     </style>
+
     <div class="content-wrapper">
-        <!-- Content Header (Page header) -->
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1>Products Specification</h1>
-                    </div>
-                    <div class="col-sm-6">
-                        <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                            <li class="breadcrumb-item active">Create Product Specification</li>
-                        </ol>
+        <form action="{{ route('admin.master.production-goods.store') }}" method="post" enctype="multipart/form-data" id="createProductForm">
+            @csrf
+            <input type="hidden" name="company_id" value="2" id="company_id">
+
+            <!-- 1. COMPACT TOP ACTION BAR -->
+            <div class="erp-topbar">
+                <div class="d-flex align-items-center">
+                    <a href="{{ route('admin.master.production-goods.index') }}" class="btn btn-outline-secondary btn-xs mr-2 font-weight-bold" title="Back to Products">
+                        <i class="fas fa-arrow-left mr-1"></i> Back
+                    </a>
+                    <span class="badge badge-primary px-2 py-1 mr-2" style="font-size: 11px;">
+                        <i class="fas fa-plus mr-1"></i> New Product
+                    </span>
+                    <span class="badge badge-secondary px-2 py-1 mr-2" id="hud-design-badge" style="font-size: 11px; display: none;">
+                        <i class="fas fa-hashtag"></i> <span id="hud-design-val"></span>
+                    </span>
+                    <strong class="text-dark mr-3" style="font-size: 13px;" id="topbar-garment-title">
+                        New Product Specification
+                    </strong>
+                    <span class="badge badge-light border text-muted mr-1"><strong id="hud-total-sets">1</strong> Sets</span>
+                    <span class="badge badge-light border text-muted mr-1"><strong id="hud-total-colors">1</strong> Colors</span>
+                    <span class="badge badge-light border text-muted"><strong id="hud-total-images">1</strong> Photos</span>
+                </div>
+
+                <div class="d-flex align-items-center">
+                    <button type="submit" class="btn btn-primary btn-sm px-4 font-weight-bold shadow-sm" style="height: 28px; line-height: 14px;">
+                        <i class="fas fa-save mr-1"></i> Save Product Specification
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. BASIC PRODUCT SPECIFICATIONS (DENSE 4-COL GRID) -->
+            <div class="hd-card">
+                <div class="hd-card-header">
+                    <h3 class="hd-card-title text-primary">
+                        <i class="fas fa-tshirt"></i> 1. Product Specifications
+                    </h3>
+                </div>
+                <div class="hd-card-body">
+                    <div class="row">
+                        <!-- Design Number -->
+                        <div class="col-md-3 col-6">
+                            <div class="form-group hd-form-group">
+                                <label class="hd-label">
+                                    <span>Design Number *</span>
+                                </label>
+                                <input type="text" name="design_number" id="design_number_input" class="form-control hd-input font-weight-bold text-primary"
+                                    placeholder="Enter design number" value="{{ old('design_number') }}" required>
+                                @error('design_number')
+                                    <span class="text-danger small design-number-error font-weight-bold mt-1 d-block">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Product Name -->
+                        <div class="col-md-3 col-6">
+                            <div class="form-group hd-form-group">
+                                <label class="hd-label">
+                                    <span>Product / Garment Name</span>
+                                </label>
+                                <input type="text" name="name_of_garment" id="name_of_garment_input" class="form-control hd-input font-weight-bold"
+                                    placeholder="e.g. Basic T-Shirt" value="{{ old('name_of_garment') }}">
+                            </div>
+                        </div>
+
+                        <!-- Series Name -->
+                        <div class="col-md-3 col-6">
+                            <div class="form-group hd-form-group">
+                                <label class="hd-label">
+                                    <span>Series Name</span>
+                                    <span class="action-links">
+                                        <a href="{{ route('admin.master.series.create') }}" target="_blank" title="Create New Series"><i class="fas fa-plus"></i></a>
+                                        <a href="javascript:void(0)" id="refreshSeriesBtn" title="Refresh Series"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
+                                <select name="master_series_id" id="master_series_id" class="form-control select2" style="width: 100%;">
+                                    <option value="">Select Series</option>
+                                    @foreach($series_names as $series)
+                                        <option value="{{ $series->id }}" {{ old('master_series_id') == $series->id ? 'selected' : '' }}>{{ $series->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Brand -->
+                        <div class="col-md-3 col-6">
+                            <div class="form-group hd-form-group">
+                                <label class="hd-label">
+                                    <span>Brand</span>
+                                    <span class="action-links">
+                                        <a href="{{ route('admin.master.brand.create') }}" target="_blank" title="Create New Brand"><i class="fas fa-plus"></i></a>
+                                        <a href="javascript:void(0)" id="refreshBrandBtn" title="Refresh Brands"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
+                                <select name="brand_id" id="brand_id" class="form-control select2" style="width: 100%;">
+                                    <option value="">Select Brand</option>
+                                    @foreach($brands as $brand)
+                                        <option value="{{ $brand->id }}" {{ old('brand_id') == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Fitting -->
+                        <div class="col-md-3 col-6">
+                            <div class="form-group hd-form-group">
+                                <label class="hd-label">
+                                    <span>Fitting</span>
+                                    <span class="action-links">
+                                        <a href="{{ route('admin.master.fitting.create') }}" target="_blank" title="New"><i class="fas fa-plus"></i></a>
+                                        <a href="javascript:void(0)" id="refreshFittingBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
+                                <select name="master_product_fitting_id" id="master_product_fitting_id" class="form-control select2" style="width: 100%;">
+                                    <option value="">Select Fitting</option>
+                                    @foreach($fittings as $fit)
+                                        <option value="{{ $fit->id }}" {{ old('master_product_fitting_id') == $fit->id ? 'selected' : '' }}>{{ $fit->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Pattern -->
+                        <div class="col-md-3 col-6">
+                            <div class="form-group hd-form-group">
+                                <label class="hd-label">
+                                    <span>Pattern</span>
+                                    <span class="action-links">
+                                        <a href="{{ route('admin.master.pattern.create') }}" target="_blank" title="New"><i class="fas fa-plus"></i></a>
+                                        <a href="javascript:void(0)" id="refreshPatternBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
+                                <select name="master_pattern_id" id="master_pattern_id" class="form-control select2" style="width: 100%;">
+                                    <option value="">Select Pattern</option>
+                                    @foreach($garment_patterns as $p)
+                                        <option value="{{ $p->id }}" {{ old('master_pattern_id') == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Product Nature -->
+                        <div class="col-md-3 col-6">
+                            <div class="form-group hd-form-group">
+                                <label class="hd-label">
+                                    <span>Product Nature</span>
+                                    <span class="action-links">
+                                        <a href="{{ route('admin.master.product-nature.create') }}" target="_blank" title="New"><i class="fas fa-plus"></i></a>
+                                        <a href="javascript:void(0)" id="refreshProductNatureBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
+                                <select name="product_nature_id" id="product_nature_id" class="form-control select2" style="width: 100%;">
+                                    <option value="">Select Nature</option>
+                                    @foreach($product_natures as $pn)
+                                        <option value="{{ $pn->id }}" {{ old('product_nature_id') == $pn->id ? 'selected' : '' }}>{{ $pn->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Fabric Type -->
+                        <div class="col-md-3 col-6">
+                            <div class="form-group hd-form-group">
+                                <label class="hd-label">
+                                    <span>Fabric Type</span>
+                                    <span class="action-links">
+                                        <a href="{{ route('admin.master.fabric-type.create') }}" target="_blank" title="New"><i class="fas fa-plus"></i></a>
+                                        <a href="javascript:void(0)" id="refreshFabricTypeBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
+                                <select name="fabric_type_id" id="fabric_type_id" class="form-control select2" style="width: 100%;">
+                                    <option value="">Select Fabric Type</option>
+                                    @foreach($fabric_types as $ft)
+                                        <option value="{{ $ft->id }}" {{ old('fabric_type_id') == $ft->id ? 'selected' : '' }}>{{ $ft->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <!-- Main content -->
-        <section class="content">
-            <div class="container-fluid">
-                <div class="card card-default">
-                    <form action="{{route('admin.master.production-goods.store')}}" method="post"
-                        enctype="multipart/form-data">
-                        @csrf
-                        <div class="card-body">
-                            <div class="row">
-                                <input type="hidden" name="company_id" value="2" id="company_id">
+            <!-- 3. SIZE SETS & PRICING MATRIX (COMPACT ACCORDION / CARDS) -->
+            <div class="hd-card">
+                <div class="hd-card-header">
+                    <h3 class="hd-card-title text-primary">
+                        <i class="fas fa-layer-group"></i> 2. Size Sets & Pricing Matrix
+                    </h3>
+                    <button type="button" class="btn btn-primary btn-xs font-weight-bold add-size-set">
+                        <i class="fas fa-plus mr-1"></i> Add Size Set
+                    </button>
+                </div>
+                <div class="hd-card-body p-2" id="size-set-container">
+                    {{-- Row Template Initial --}}
+                    <div class="size-set-block">
+                        <div class="size-set-header">
+                            <div class="d-flex align-items-center">
+                                <span class="badge badge-primary mr-2" style="font-size: 10px;">
+                                    Set #<span class="set-idx-label">1</span>
+                                </span>
+                                <strong class="text-dark set-title-preview" style="font-size: 12px;">Size Set</strong>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <button type="button" class="btn btn-outline-primary btn-xs openCustomSizeBtn mr-2" style="display:none;">
+                                    <i class="fas fa-sliders-h mr-1"></i> Ratio
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-xs remove-size-set" disabled>
+                                    <i class="fas fa-trash-alt mr-1"></i> Remove
+                                </button>
+                            </div>
+                        </div>
 
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>Design Number</label>
-                                        <input type="text" name="design_number" class="form-control"
-                                            placeholder="Enter design number" value="{{old('design_number')}}">
-                                        @if ($errors->has('design_number'))
-                                            <span class="invalid-feedback d-block">{{ $errors->first('design_number') }}</span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                            <span>Series Name</span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.series.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                <a href="javascript:void(0)" class="text-info" id="refreshSeriesBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                        <div class="size-set-body">
+                            <div class="row align-items-center mb-2">
+                                <div class="col-md-5">
+                                    <div class="form-group hd-form-group mb-0">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="hd-label mb-0">Size Set *</label>
+                                            <span class="action-links">
+                                                <a href="{{ route('admin.master.size-measurement.index') }}" target="_blank" title="New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="refreshSizeSetBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
                                             </span>
-                                        </label>
-                                        <select name="master_series_id" id="master_series_id" class="form-control select2"
-                                            style="width: 100%;">
-                                            <option value="">Select Series</option>
-                                            @foreach($series_names as $series)
-                                                <option value="{{ $series->id }}" {{ old('master_series_id') == $series->id ? 'selected' : '' }}>{{ $series->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                            <span>Brand</span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.brand.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                <a href="javascript:void(0)" class="text-info" id="refreshBrandBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                            </span>
-                                        </label>
-                                        <select name="brand_id" id="brand_id" class="form-control select2"
-                                            style="width: 100%;">
-                                            <option value="">Select Brand</option>
-                                            @foreach($brands as $brand)
-                                                <option value="{{ $brand->id }}" {{ old('brand_id') == $brand->id ? 'selected' : '' }}>{{ $brand->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label>Product Name</label>
-                                        <input type="text" name="name_of_garment" class="form-control"
-                                            placeholder="Enter name of product" value="{{old('name_of_garment')}}">
-                                    </div>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                            <span>Fitting</span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.fitting.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                <a href="javascript:void(0)" class="text-info" id="refreshFittingBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                            </span>
-                                        </label>
-                                        <select name="master_product_fitting_id" id="master_product_fitting_id" class="form-control select2"
-                                            style="width: 100%;">
-                                            <option value="">Select Fitting</option>
-                                            @foreach($fittings as $fitting)
-                                                <option value="{{ $fitting->id }}">{{ $fitting->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                            <span>Pattern</span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.pattern.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                <a href="javascript:void(0)" class="text-info" id="refreshPatternBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                            </span>
-                                        </label>
-                                        <select name="master_pattern_id" id="master_pattern_id" class="form-control select2" style="width: 100%;">
-                                            <option value="">Select Pattern</option>
-                                            @foreach($garment_patterns as $p)
-                                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                            <span>Product Nature</span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.product-nature.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                <a href="javascript:void(0)" class="text-info" id="refreshProductNatureBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                            </span>
-                                        </label>
-                                        <select name="product_nature_id" id="product_nature_id" class="form-control select2" style="width: 100%;">
-                                            <option value="">Select Product Nature</option>
-                                            @foreach($product_natures as $pn)
-                                                <option value="{{ $pn->id }}">{{ $pn->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <div class="form-group">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                            <span>Fabric Type</span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.fabric-type.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                <a href="javascript:void(0)" class="text-info" id="refreshFabricTypeBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                            </span>
-                                        </label>
-                                        <select name="fabric_type_id" id="fabric_type_id" class="form-control select2" style="width: 100%;">
-                                            <option value="">Select Fabric Type</option>
-                                            @foreach($fabric_types as $ft)
-                                                <option value="{{ $ft->id }}">{{ $ft->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-12 mt-3">
-                                    <div class="card card-secondary">
-                                        <div class="card-header">
-                                            <h3 class="card-title">Size Sets & Pricing</h3>
-                                            <div class="card-tools">
-                                                <button type="button" class="btn btn-primary btn-sm add-size-set">Add More
-                                                    Size Set</button>
-                                            </div>
                                         </div>
-                                        <div class="card-body" id="size-set-container">
-                                            {{-- Row Template Start --}}
-                                            <div class="size-set-block mb-4 p-3 border rounded bg-light">
-                                                <div class="row align-items-end mb-3">
-                                                    <div class="col-md-4">
-                                                        <div class="form-group mb-0">
-                                                            <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                                                <span>Size Set</span>
-                                                                <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                                    <a href="{{ route('admin.master.size-measurement.index') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                                    <a href="javascript:void(0)" class="text-info refreshSizeSetBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                                                </span>
-                                                            </label>
-                                                            <select name="size_sets[]"
-                                                                class="form-control select2 size-set-select"
-                                                                style="width: 100%;">
-                                                                <option value="">Select Size Set</option>
-                                                                @foreach($sizes as $size)
-                                                                    <option value="{{ $size->id }}"
-                                                                        data-set-group="{{ $size->size_group }}"
-                                                                        data-pcs="{{ $size->no_of_pcs }}">{{ $size->name }}
-                                                                        ({{ $size->no_of_pcs }} Pcs)</option>
-                                                                @endforeach
-                                                            </select>
-                                                            <div class="open-ratio-label openCustomSizeBtn"
-                                                                style="display:none;">
-                                                                Update Ratio
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-3">
-                                                        <div class="form-group mb-0">
-                                                            <label>MRP (for this set)</label>
-                                                            <input type="number" name="mrps[]"
-                                                                class="form-control mrp-input" placeholder="0.00"
-                                                                step="0.01">
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-3">
-                                                        <div class="form-group mb-0">
-                                                            <label>Set Image</label>
-                                                            <input type="file" name="size_set_images[]"
-                                                                class="form-control-file size-set-image-input"
-                                                                accept="image/*">
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-2 text-right">
-                                                        <button type="button" class="btn btn-danger btn-sm remove-size-set"
-                                                            disabled><i class="fa fa-trash"></i> Remove Set</button>
-                                                    </div>
-                                                </div>
+                                        <select name="size_sets[]" class="form-control select2 size-set-select" style="width: 100%;">
+                                            <option value="">Select Size Set</option>
+                                            @foreach($sizes as $size)
+                                                <option value="{{ $size->id }}"
+                                                    data-set-group="{{ $size->size_group }}"
+                                                    data-pcs="{{ $size->no_of_pcs }}">{{ $size->name }}
+                                                    ({{ $size->no_of_pcs }} Pcs)</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
 
-                                                <div class="color-items-container ml-4">
-                                                    <h6>Colors & Images</h6>
-                                                    <div
-                                                        class="color-item-row row mb-2 align-items-center border-bottom pb-2">
-                                                        <div class="col-md-4">
-                                                            <label class="d-flex justify-content-between align-items-center mb-1 small text-uppercase">
-                                                                <span>Color</span>
-                                                                <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                                    <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i></a>
-                                                                    <a href="javascript:void(0)" class="text-info refreshColorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                                                </span>
-                                                            </label>
-                                                            <select name="variant_colors[0][0]"
-                                                                class="form-control select2 color-select"
-                                                                style="width: 100%;">
-                                                                <option value="">Select Color</option>
-                                                                @foreach($colors as $color)
-                                                                    <option value="{{ $color->id }}">{{ $color->name }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label class="small text-muted">Upload Image for this
-                                                                Color</label>
-                                                            <input type="file" name="variant_images[0][0]"
-                                                                class="form-control-file variant-image-input"
-                                                                accept="image/*">
-                                                        </div>
-                                                        <div class="col-md-2 text-right">
-                                                            <button type="button"
-                                                                class="btn btn-warning btn-sm remove-color-item" disabled><i
-                                                                    class="fa fa-times"></i></button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="ml-4 mt-2">
-                                                    <button type="button" class="btn btn-info btn-sm add-color-item"
-                                                        data-set-index="0"><i class="fa fa-plus"></i> Add Another
-                                                        Color</button>
-                                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group hd-form-group mb-0">
+                                        <label class="hd-label mb-1">MRP (₹)</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text bg-light text-muted border-right-0 py-0 px-2" style="font-size: 11px;">₹</span>
                                             </div>
+                                            <input type="number" name="mrps[]" class="form-control hd-input mrp-input border-left-0 font-weight-bold" placeholder="0.00" step="0.01">
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="col-md-12 mt-3">
-                                    <div class="card card-secondary">
-                                        <div class="card-header">
-                                            <h3 class="card-title"><i class="fas fa-images mr-2"></i>Product Images</h3>
-                                            <div class="card-tools">
-                                                <button type="button" class="btn btn-primary btn-sm add-product-image-btn">
-                                                    <i class="fas fa-plus mr-1"></i> Add More Image
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="card-body" id="product-images-container">
-                                            <div class="product-image-row mb-3 p-3 border rounded bg-light">
-                                                <div class="row align-items-center">
-                                                    <div class="col-md-5">
-                                                        <div class="form-group mb-0">
-                                                            <label class="text-muted small font-weight-bold text-uppercase">Image Title / Description</label>
-                                                            <input type="text" name="product_image_titles[]" class="form-control" placeholder="e.g. Front Photo, Back Photo, Neck Detail">
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-5">
-                                                        <div class="form-group mb-0">
-                                                            <label class="text-muted small font-weight-bold text-uppercase">Select Image</label>
-                                                            <div class="custom-file">
-                                                                <input type="file" name="product_images[]" class="custom-file-input product-image-file-input" accept="image/*">
-                                                                <label class="custom-file-label text-truncate">Choose image file</label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-1 text-center">
-                                                        <div class="image-preview-box" style="display:none;">
-                                                            <img src="" class="img-thumbnail" style="height: 48px; width: 48px; object-fit: cover;">
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-1 text-right">
-                                                        <button type="button" class="btn btn-danger btn-sm remove-product-image-btn" title="Remove"><i class="fa fa-trash"></i></button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                <div class="col-md-4">
+                                    <div class="form-group hd-form-group mb-0">
+                                        <label class="hd-label mb-1">Set Photo (Optional)</label>
+                                        <input type="file" name="size_set_images[]" class="form-control-file size-set-image-input" accept="image/*" style="font-size: 11px;">
                                     </div>
                                 </div>
+                            </div>
 
-                                <div class="col-md-12 text-right mt-3">
-                                    <button type="submit" class="btn btn-success btn-lg px-5 shadow">Submit Product
-                                        Specification</button>
+                            <table class="hd-color-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 38%;">Color Variant</th>
+                                        <th style="width: 25%;">SKU Barcode</th>
+                                        <th style="width: 32%;">Color Photo</th>
+                                        <th style="width: 5%; text-align: center;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="color-items-container">
+                                    <tr class="color-item-row">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div style="flex: 1;">
+                                                    <select name="variant_colors[0][0]" class="form-control select2 color-select" style="width: 100%;">
+                                                        <option value="">Select Color</option>
+                                                        @foreach($colors as $color)
+                                                            <option value="{{ $color->id }}">{{ $color->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <a href="javascript:void(0)" class="refreshColorBtn ml-1 text-info" title="Refresh Colors"><i class="fas fa-sync-alt" style="font-size: 10px;"></i></a>
+                                            </div>
+                                        </td>
+                                        <td><span class="text-muted" style="font-size: 10px;">Auto on save</span></td>
+                                        <td>
+                                            <input type="file" name="variant_images[0][0]" class="form-control-file variant-image-input" accept="image/*" style="font-size: 11px;">
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-xs text-danger remove-color-item p-0" disabled>
+                                                <i class="fas fa-times-circle" style="font-size: 14px;"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div>
+                                <button type="button" class="btn btn-xs btn-outline-primary add-color-item font-weight-bold" data-set-index="0">
+                                    <i class="fas fa-plus mr-1"></i> Add Color
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. PRODUCT GALLERY (COMPACT TABLE/GRID) -->
+            <div class="hd-card">
+                <div class="hd-card-header">
+                    <h3 class="hd-card-title text-primary">
+                        <i class="fas fa-images"></i> 3. Product Gallery & Photos
+                    </h3>
+                    <button type="button" class="btn btn-primary btn-xs font-weight-bold add-product-image-btn">
+                        <i class="fas fa-plus mr-1"></i> Add Photo
+                    </button>
+                </div>
+                <div class="hd-card-body p-2">
+                    <div id="product-images-container">
+                        <div class="product-image-row border rounded p-2 mb-1 bg-light">
+                            <div class="row align-items-center">
+                                <div class="col-md-5">
+                                    <input type="text" name="product_image_titles[]" class="form-control hd-input" placeholder="Photo Caption / Title (e.g. Front Photo, Back Photo)">
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="file" name="product_images[]" class="form-control-file product-image-file-input" accept="image/*" style="font-size: 11px;">
+                                </div>
+                                <div class="col-md-1 text-center">
+                                    <div class="image-preview-box" style="display:none;">
+                                        <img src="" class="thumb-preview-mini">
+                                    </div>
+                                </div>
+                                <div class="col-md-1 text-right">
+                                    <button type="button" class="btn btn-xs text-danger remove-product-image-btn" title="Remove">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
-        </section>
-    </div>
 
+            <!-- BOTTOM SAVE ACTION -->
+            <div class="text-center py-2">
+                <button type="submit" class="btn btn-primary px-5 py-2 font-weight-bold shadow-sm" style="font-size: 13px;">
+                    <i class="fas fa-save mr-1"></i> Save Product Specification
+                </button>
+                <a href="{{ route('admin.master.production-goods.index') }}" class="btn btn-outline-secondary px-4 py-2 ml-2" style="font-size: 13px;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
 @endsection
 
 @section('scripts')
-    <!-- CUSTOM SIZE MODAL -->
+    <!-- CUSTOM SIZE RATIO MODAL -->
     <div class="modal-ratio" id="sizeRatioModal">
         <div class="modal-ratio-content">
-            <div class="modal-header">
-                <h4>Update Ratio</h4>
-                <span class="close" onclick="closeRatioModal()" style="cursor:pointer;">&times;</span>
+            <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
+                <strong class="text-dark" style="font-size: 13px;"><i class="fas fa-sliders-h text-primary mr-1"></i> Update Size Ratio</strong>
+                <button type="button" class="close text-muted" onclick="closeRatioModal()" style="font-size: 1.2rem; line-height: 1;">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="output mb-2">
-                    <span>Size Name :</span>
-                    <strong id="ratio_size_name"></strong>
+            <div class="modal-body p-0">
+                <div class="d-flex justify-content-between align-items-center p-1 mb-2 bg-light rounded border">
+                    <span class="text-muted small font-weight-bold">Size Set:</span>
+                    <strong id="ratio_size_name" class="text-primary"></strong>
                 </div>
-                <div id="ratioSizeList"></div>
-                <div class="output mt-3">
-                    <span>Size Group:</span>
-                    <strong id="ratioGroupText">—</strong>
+                <div id="ratioSizeList" class="my-2" style="max-height: 220px; overflow-y: auto;"></div>
+                <div class="d-flex justify-content-between align-items-center p-1 mt-2 bg-light rounded border">
+                    <span class="text-muted small font-weight-bold">Ratio Group:</span>
+                    <strong id="ratioGroupText" class="text-dark">—</strong>
                 </div>
                 <input type="hidden" id="ratio_val_hidden">
             </div>
-            <div class="modal-footer mt-3">
-                <button type="button" class="btn btn-secondary" onclick="closeRatioModal()">Close</button>
-                <button type="button" class="btn btn-primary" onclick="saveRatioGroup()">Save</button>
+            <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top">
+                <button type="button" class="btn btn-outline-secondary btn-xs px-3 mr-2" onclick="closeRatioModal()">Close</button>
+                <button type="button" class="btn btn-primary btn-xs px-3 font-weight-bold" onclick="saveRatioGroup()">Save Ratio</button>
             </div>
         </div>
     </div>
 
     <script>
         $(document).ready(function () {
-            // Consolidated logic for Update Ratio visibility
+            // Initialize select2 on elements (attaches to body so dropdown floats freely over other elements)
+            function initSelect2($elements) {
+                $elements.each(function () {
+                    var $el = $(this);
+                    var opts = {
+                        theme: 'bootstrap4',
+                        width: '100%',
+                        dropdownAutoWidth: true
+                    };
+                    if ($el.closest('.modal').length) {
+                        opts.dropdownParent = $el.closest('.modal');
+                    }
+                    $el.select2(opts);
+                });
+            }
+
+            initSelect2($('.select2'));
+
+            // Sync Garment Title & Design Badge in Topbar
+            $('#name_of_garment_input').on('input', function() {
+                var val = $(this).val().trim();
+                $('#topbar-garment-title').text(val ? val : 'New Product Specification');
+            });
+
+            $('#design_number_input').on('input', function() {
+                var val = $(this).val().trim();
+                if (val) {
+                    $('#hud-design-badge').show();
+                    $('#hud-design-val').text(val);
+                } else {
+                    $('#hud-design-badge').hide();
+                }
+            });
+
+            // Design Number Validation on blur
+            $('input[name="design_number"]').on('blur', function() {
+                var designNumber = $(this).val().trim();
+                var $input = $(this);
+                var $formGroup = $input.closest('.form-group');
+                
+                $formGroup.find('.design-number-error').remove();
+                
+                if (designNumber) {
+                    $.ajax({
+                        url: "{{ route('admin.master.production-goods.check-design-number') }}",
+                        type: "GET",
+                        data: { design_number: designNumber },
+                        success: function (data) {
+                            if (data.exists) {
+                                $input.addClass('is-invalid');
+                                $formGroup.append('<span class="text-danger small design-number-error font-weight-bold mt-1 d-block"><i class="fas fa-exclamation-circle mr-1"></i> This design number already exists.</span>');
+                            } else {
+                                $input.removeClass('is-invalid');
+                            }
+                        }
+                    });
+                } else {
+                    $input.removeClass('is-invalid');
+                }
+            });
+
+            // Series to Product Name Auto-fill
+            $('#master_series_id').on('change', function () {
+                var seriesId = $(this).val();
+                if (seriesId) {
+                    $.ajax({
+                        url: "{{ route('admin.master.production-goods.get-next-product-name') }}",
+                        type: "GET",
+                        data: { master_series_id: seriesId },
+                        success: function (data) {
+                            if (data.next_name) {
+                                $('input[name="name_of_garment"]').val(data.next_name).trigger('input');
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Consolidated logic for Update Ratio button visibility
             function toggleRatioBtn($select) {
-                let btn = $select.siblings('.openCustomSizeBtn');
+                let btn = $select.closest('.size-set-block').find('.openCustomSizeBtn');
                 if ($select.val()) {
                     btn.show();
                 } else {
@@ -406,14 +735,15 @@
 
             $(document).on('change select2:select', '.size-set-select', function () {
                 toggleRatioBtn($(this));
+                let selectedText = $(this).find('option:selected').text();
+                if ($(this).val()) {
+                    $(this).closest('.size-set-block').find('.set-title-preview').text(selectedText);
+                } else {
+                    $(this).closest('.size-set-block').find('.set-title-preview').text('Size Set');
+                }
             });
 
-            // Initial check for pre-selected values
-            $('.size-set-select').each(function () {
-                toggleRatioBtn($(this));
-            });
-
-            // Refresh handlers
+            // Refresh Handlers
             $('#refreshSeriesBtn').on('click', function() {
                 var btn = $(this);
                 btn.html('<i class="fas fa-spinner fa-spin"></i>');
@@ -427,6 +757,7 @@
                     btn.html('<i class="fas fa-sync-alt"></i>');
                 }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
             });
+
             $('#refreshBrandBtn').on('click', function() {
                 var btn = $(this);
                 btn.html('<i class="fas fa-spinner fa-spin"></i>');
@@ -440,6 +771,7 @@
                     btn.html('<i class="fas fa-sync-alt"></i>');
                 }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
             });
+
             $('#refreshFittingBtn').on('click', function() {
                 var btn = $(this);
                 btn.html('<i class="fas fa-spinner fa-spin"></i>');
@@ -453,6 +785,7 @@
                     btn.html('<i class="fas fa-sync-alt"></i>');
                 }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
             });
+
             $('#refreshPatternBtn').on('click', function() {
                 var btn = $(this);
                 btn.html('<i class="fas fa-spinner fa-spin"></i>');
@@ -466,19 +799,21 @@
                     btn.html('<i class="fas fa-sync-alt"></i>');
                 }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
             });
+
             $('#refreshProductNatureBtn').on('click', function() {
                 var btn = $(this);
                 btn.html('<i class="fas fa-spinner fa-spin"></i>');
                 $.getJSON("{{ route('admin.master.product-nature.all_product_natures') }}", function(data) {
                     var select = $('#product_nature_id');
                     var currentVal = select.val();
-                    select.empty().append('<option value="">Select Product Nature</option>');
+                    select.empty().append('<option value="">Select Nature</option>');
                     data.forEach(function(item) { select.append('<option value="'+item.id+'">'+item.name+'</option>'); });
                     if(currentVal) select.val(currentVal);
                     select.trigger('change');
                     btn.html('<i class="fas fa-sync-alt"></i>');
                 }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
             });
+
             $('#refreshFabricTypeBtn').on('click', function() {
                 var btn = $(this);
                 btn.html('<i class="fas fa-spinner fa-spin"></i>');
@@ -492,9 +827,10 @@
                     btn.html('<i class="fas fa-sync-alt"></i>');
                 }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
             });
+
             $(document).on('click', '.refreshSizeSetBtn', function() {
                 var btn = $(this);
-                var select = btn.closest('.form-group').find('select');
+                var select = btn.closest('.hd-form-group').find('select');
                 btn.html('<i class="fas fa-spinner fa-spin"></i>');
                 $.getJSON("{{ route('admin.master.size.all_sizes') }}", function(data) {
                     var currentVal = select.val();
@@ -511,61 +847,19 @@
                     btn.html('<i class="fas fa-sync-alt"></i>');
                 }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
             });
+
             $(document).on('click', '.refreshColorBtn', function() {
                 var btn = $(this);
-                var select = btn.closest('.col-md-4').find('select');
-                btn.html('<i class="fas fa-spinner fa-spin"></i>');
+                var select = btn.closest('td').find('select');
+                btn.html('<i class="fas fa-spinner fa-spin" style="font-size: 10px;"></i>');
                 $.getJSON("{{ route('admin.master.colors.all_colors') }}", function(data) {
                     var currentVal = select.val();
                     select.empty().append('<option value="">Select Color</option>');
                     data.forEach(function(item) { select.append('<option value="'+item.id+'">'+item.name+'</option>'); });
                     if(currentVal) select.val(currentVal);
                     select.trigger('change');
-                    btn.html('<i class="fas fa-sync-alt"></i>');
-                }).fail(function() { btn.html('<i class="fas fa-sync-alt"></i>'); });
-            });
-
-            // Series to Product Name Auto-fill
-            $('#master_series_id').on('change', function () {
-                var seriesId = $(this).val();
-                if (seriesId) {
-                    $.ajax({
-                        url: "{{ route('admin.master.production-goods.get-next-product-name') }}",
-                        type: "GET",
-                        data: { master_series_id: seriesId },
-                        success: function (data) {
-                            $('input[name="name_of_garment"]').val(data.next_name);
-                        }
-                    });
-                }
-            });
-
-            // Design Number Validation
-            $('input[name="design_number"]').on('blur', function() {
-                var designNumber = $(this).val();
-                var $input = $(this);
-                var $formGroup = $input.closest('.form-group');
-                
-                // remove existing error if any
-                $formGroup.find('.design-number-error').remove();
-                
-                if (designNumber) {
-                    $.ajax({
-                        url: "{{ route('admin.master.production-goods.check-design-number') }}",
-                        type: "GET",
-                        data: { design_number: designNumber },
-                        success: function (data) {
-                            if (data.exists) {
-                                $input.addClass('is-invalid');
-                                $input.after('<span class="text-danger small design-number-error">This design number already exists.</span>');
-                            } else {
-                                $input.removeClass('is-invalid');
-                            }
-                        }
-                    });
-                } else {
-                    $input.removeClass('is-invalid');
-                }
+                    btn.html('<i class="fas fa-sync-alt" style="font-size: 10px;"></i>');
+                }).fail(function() { btn.html('<i class="fas fa-sync-alt" style="font-size: 10px;"></i>'); });
             });
 
             // Prevent duplicate size set selections across different blocks
@@ -629,169 +923,195 @@
             $(document).on('change', '.size-set-select', updateSizeSetOptions);
             $(document).on('change', '.color-select', updateColorOptions);
 
-            // Dynamic Rows Logic
+            // Re-indexing and HUD update logic
             function reindexAll() {
+                let totalSets = 0;
+                let totalColors = 0;
+
                 $('.size-set-block').each(function (sIdx) {
+                    totalSets++;
+                    $(this).find('.set-idx-label').text(sIdx + 1);
                     $(this).find('.add-color-item').attr('data-set-index', sIdx);
                     $(this).find('.size-set-select').attr('name', 'size_sets[]');
                     $(this).find('.mrp-input').attr('name', 'mrps[]');
                     $(this).find('.size-set-image-input').attr('name', 'size_set_images[]');
 
                     $(this).find('.color-item-row').each(function (cIdx) {
+                        totalColors++;
                         $(this).find('.color-select').attr('name', `variant_colors[${sIdx}][${cIdx}]`);
                         $(this).find('.variant-image-input').attr('name', `variant_images[${sIdx}][${cIdx}]`);
                     });
 
-                    // Update remove buttons for color items
                     let colorRows = $(this).find('.color-item-row');
                     colorRows.find('.remove-color-item').prop('disabled', colorRows.length === 1);
                 });
 
-                // Update remove buttons for size sets
                 let setBlocks = $('.size-set-block');
                 setBlocks.find('.remove-size-set').prop('disabled', setBlocks.length === 1);
+
+                // Update HUD Numbers
+                $('#hud-total-sets').text(totalSets);
+                $('#hud-total-colors').text(totalColors);
+
+                let totalImages = $('#product-images-container .product-image-row').length;
+                $('#hud-total-images').text(totalImages);
 
                 updateSizeSetOptions();
                 updateColorOptions();
             }
 
-            // Run initial check
-            updateSizeSetOptions();
-            updateColorOptions();
+            // Initial run
+            reindexAll();
 
-            // Add Size Set
+            // Add Size Set Block
             $('.add-size-set').on('click', function () {
                 let sIdx = $('.size-set-block').length;
                 let blockHtml = `
-                        <div class="size-set-block mb-4 p-3 border rounded bg-light">
-                            <div class="row align-items-end mb-3">
-                                <div class="col-md-4">
-                                    <div class="form-group mb-0">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                            <span>Size Set</span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.size.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                <a href="javascript:void(0)" class="text-info refreshSizeSetBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                    <div class="size-set-block">
+                        <div class="size-set-header">
+                            <div class="d-flex align-items-center">
+                                <span class="badge badge-primary mr-2" style="font-size: 10px;">
+                                    Set #<span class="set-idx-label">${sIdx + 1}</span>
+                                </span>
+                                <strong class="text-dark set-title-preview" style="font-size: 12px;">Size Set</strong>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <button type="button" class="btn btn-outline-primary btn-xs openCustomSizeBtn mr-2" style="display:none;">
+                                    <i class="fas fa-sliders-h mr-1"></i> Ratio
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-xs remove-size-set">
+                                    <i class="fas fa-trash-alt mr-1"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="size-set-body">
+                            <div class="row align-items-center mb-2">
+                                <div class="col-md-5">
+                                    <div class="form-group hd-form-group mb-0">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="hd-label mb-0">Size Set *</label>
+                                            <span class="action-links">
+                                                <a href="{{ route('admin.master.size-measurement.index') }}" target="_blank" title="New"><i class="fas fa-plus"></i> New</a>
+                                                <a href="javascript:void(0)" class="refreshSizeSetBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
                                             </span>
-                                        </label>
+                                        </div>
                                         <select name="size_sets[]" class="form-control select2 size-set-select" style="width: 100%;">
                                             <option value="">Select Size Set</option>
                                             @foreach($sizes as $size)
                                                 <option value="{{ $size->id }}" data-set-group="{{ $size->size_group }}" data-pcs="{{ $size->no_of_pcs }}">{{ $size->name }} ({{ $size->no_of_pcs }} Pcs)</option>
                                             @endforeach
                                         </select>
-                                        <div class="open-ratio-label openCustomSizeBtn" style="display:none;">
-                                            Update Ratio
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <div class="form-group hd-form-group mb-0">
+                                        <label class="hd-label mb-1">MRP (₹)</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text bg-light text-muted border-right-0 py-0 px-2" style="font-size: 11px;">₹</span>
+                                            </div>
+                                            <input type="number" name="mrps[]" class="form-control hd-input mrp-input border-left-0 font-weight-bold" placeholder="0.00" step="0.01">
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
-                                    <div class="form-group mb-0">
-                                        <label>MRP (for this set)</label>
-                                        <input type="number" name="mrps[]" class="form-control mrp-input" placeholder="0.00" step="0.01">
+
+                                <div class="col-md-4">
+                                    <div class="form-group hd-form-group mb-0">
+                                        <label class="hd-label mb-1">Set Photo (Optional)</label>
+                                        <input type="file" name="size_set_images[]" class="form-control-file size-set-image-input" accept="image/*" style="font-size: 11px;">
                                     </div>
-                                </div>
-                                <div class="col-md-3">
-                                     <div class="form-group mb-0">
-                                        <label>Set Image</label>
-                                        <input type="file" name="size_set_images[]" class="form-control-file size-set-image-input" accept="image/*">
-                                    </div>
-                                </div>
-                                <div class="col-md-2 text-right">
-                                    <button type="button" class="btn btn-danger btn-sm remove-size-set"><i class="fa fa-trash"></i> Remove Set</button>
                                 </div>
                             </div>
 
-                            <div class="color-items-container ml-4">
-                                <h6>Colors & Images</h6>
-                                <div class="color-item-row row mb-2 align-items-center border-bottom pb-2">
-                                    <div class="col-md-4">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 small text-uppercase">
-                                            <span>Color</span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i></a>
-                                                <a href="javascript:void(0)" class="text-info refreshColorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                            </span>
-                                        </label>
-                                        <select name="variant_colors[${sIdx}][0]" class="form-control select2 color-select" style="width: 100%;">
-                                            <option value="">Select Color</option>
-                                            @foreach($colors as $color)
-                                                <option value="{{ $color->id }}">{{ $color->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="small text-muted d-block">Upload Image for this Color</label>
-                                        <input type="file" name="variant_images[${sIdx}][0]" class="form-control-file variant-image-input" accept="image/*">
-                                    </div>
-                                    <div class="col-md-2 text-right">
-                                        <button type="button" class="btn btn-warning btn-sm remove-color-item" disabled><i class="fa fa-times"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="ml-4 mt-2">
-                                <button type="button" class="btn btn-info btn-sm add-color-item" data-set-index="${sIdx}"><i class="fa fa-plus"></i> Add Another Color</button>
+                            <table class="hd-color-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 38%;">Color Variant</th>
+                                        <th style="width: 25%;">SKU Barcode</th>
+                                        <th style="width: 32%;">Color Photo</th>
+                                        <th style="width: 5%; text-align: center;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="color-items-container">
+                                    <tr class="color-item-row">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div style="flex: 1;">
+                                                    <select name="variant_colors[${sIdx}][0]" class="form-control select2 color-select" style="width: 100%;">
+                                                        <option value="">Select Color</option>
+                                                        @foreach($colors as $color)
+                                                            <option value="{{ $color->id }}">{{ $color->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <a href="javascript:void(0)" class="refreshColorBtn ml-1 text-info" title="Refresh Colors"><i class="fas fa-sync-alt" style="font-size: 10px;"></i></a>
+                                            </div>
+                                        </td>
+                                        <td><span class="text-muted" style="font-size: 10px;">Auto on save</span></td>
+                                        <td>
+                                            <input type="file" name="variant_images[${sIdx}][0]" class="form-control-file variant-image-input" accept="image/*" style="font-size: 11px;">
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-xs text-danger remove-color-item p-0" disabled>
+                                                <i class="fas fa-times-circle" style="font-size: 14px;"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div>
+                                <button type="button" class="btn btn-xs btn-outline-primary add-color-item font-weight-bold" data-set-index="${sIdx}">
+                                    <i class="fas fa-plus mr-1"></i> Add Color
+                                </button>
                             </div>
                         </div>
-                    `;
+                    </div>
+                `;
                 $('#size-set-container').append(blockHtml);
-                $('#size-set-container .size-set-block:last .select2').each(function () {
-                    var $dropdownParent = $(this).closest('.modal').length ? $(this).closest('.modal') : $(this).parent();
-                    $(this).select2({
-                        theme: 'bootstrap4',
-                        width: '100%',
-                        dropdownAutoWidth: true,
-                        dropdownParent: $dropdownParent
-                    });
-                });
+                initSelect2($('#size-set-container .size-set-block:last .select2'));
                 reindexAll();
             });
 
-            // Add Color Row
+            // Add Another Color Row
             $(document).on('click', '.add-color-item', function () {
                 let sIdx = $(this).attr('data-set-index');
                 let container = $(this).closest('.size-set-block').find('.color-items-container');
                 let cIdx = container.find('.color-item-row').length;
-
                 let rowHtml = `
-                        <div class="color-item-row row mb-2 align-items-center border-bottom pb-2">
-                            <div class="col-md-4">
-                                <label class="d-flex justify-content-between align-items-center mb-1 small text-uppercase">
-                                    <span>Color</span>
-                                    <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                        <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i></a>
-                                        <a href="javascript:void(0)" class="text-info refreshColorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                    </span>
-                                </label>
-                                <select name="variant_colors[${sIdx}][${cIdx}]" class="form-control select2 color-select" style="width: 100%;">
-                                    <option value="">Select Color</option>
-                                    @foreach($colors as $color)
-                                        <option value="{{ $color->id }}">{{ $color->name }}</option>
-                                    @endforeach
-                                </select>
+                    <tr class="color-item-row">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div style="flex: 1;">
+                                    <select name="variant_colors[${sIdx}][${cIdx}]" class="form-control select2 color-select" style="width: 100%;">
+                                        <option value="">Select Color</option>
+                                        @foreach($colors as $color)
+                                            <option value="{{ $color->id }}">{{ $color->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <a href="javascript:void(0)" class="refreshColorBtn ml-1 text-info" title="Refresh Colors"><i class="fas fa-sync-alt" style="font-size: 10px;"></i></a>
                             </div>
-                            <div class="col-md-6">
-                                <label class="small text-muted d-block">Upload Image for this Color</label>
-                                <input type="file" name="variant_images[${sIdx}][${cIdx}]" class="form-control-file variant-image-input" accept="image/*">
-                            </div>
-                            <div class="col-md-2 text-right">
-                                <button type="button" class="btn btn-warning btn-sm remove-color-item"><i class="fa fa-times"></i></button>
-                            </div>
-                        </div>
-                    `;
+                        </td>
+                        <td><span class="text-muted" style="font-size: 10px;">Auto on save</span></td>
+                        <td>
+                            <input type="file" name="variant_images[${sIdx}][${cIdx}]" class="form-control-file variant-image-input" accept="image/*" style="font-size: 11px;">
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-xs text-danger remove-color-item p-0" title="Delete Color">
+                                <i class="fas fa-times-circle" style="font-size: 14px;"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
                 container.append(rowHtml);
-                container.find('.color-item-row:last .select2').each(function () {
-                    var $dropdownParent = $(this).closest('.modal').length ? $(this).closest('.modal') : $(this).parent();
-                    $(this).select2({
-                        theme: 'bootstrap4',
-                        width: '100%',
-                        dropdownAutoWidth: true,
-                        dropdownParent: $dropdownParent
-                    });
-                });
+                initSelect2(container.find('.color-item-row:last .select2'));
                 reindexAll();
             });
 
+            // Remove Size Set Block
             $(document).on('click', '.remove-size-set', function () {
                 if ($('.size-set-block').length > 1) {
                     $(this).closest('.size-set-block').remove();
@@ -799,6 +1119,7 @@
                 }
             });
 
+            // Remove Color Item
             $(document).on('click', '.remove-color-item', function () {
                 let container = $(this).closest('.color-items-container');
                 if (container.find('.color-item-row').length > 1) {
@@ -807,12 +1128,12 @@
                 }
             });
 
-            // Ratio Modal Logic (Shared)
+            // Ratio Modal Logic
             window.currentSizeSelect = null;
             window.sizeCounts = {};
 
             $(document).on('click', '.openCustomSizeBtn', function () {
-                window.currentSizeSelect = $(this).siblings('.size-set-select');
+                window.currentSizeSelect = $(this).closest('.size-set-block').find('.size-set-select');
                 let option = window.currentSizeSelect.find(':selected');
                 let setGroup = option.data('set-group') || "";
                 let setSizeName = option.text();
@@ -824,7 +1145,7 @@
 
             window.closeRatioModal = function () {
                 $('#sizeRatioModal').hide();
-            }
+            };
 
             window.loadRatioSizeGroup = function (group) {
                 window.sizeCounts = {};
@@ -834,13 +1155,13 @@
                     });
                 }
                 renderRatioSizes();
-            }
+            };
 
             window.changeRatioCount = function (size, change) {
                 window.sizeCounts[size] = (window.sizeCounts[size] || 0) + change;
                 if (window.sizeCounts[size] < 0) window.sizeCounts[size] = 0;
                 renderRatioSizes();
-            }
+            };
 
             window.renderRatioSizes = function () {
                 let list = document.getElementById('ratioSizeList');
@@ -853,15 +1174,15 @@
                     for (let i = 0; i < count; i++) group.push(size);
 
                     list.innerHTML += `
-                            <div class="size-row-ratio">
-                                <strong>${size}</strong>
-                                <div class="counter-ratio">
-                                    <button type="button" onclick="changeRatioCount('${size}', -1)">-</button>
-                                    <span>${count}</span>
-                                    <button type="button" onclick="changeRatioCount('${size}', 1)">+</button>
-                                </div>
+                        <div class="size-row-ratio">
+                            <strong class="text-dark">${size}</strong>
+                            <div class="counter-ratio">
+                                <button type="button" onclick="changeRatioCount('${size}', -1)">-</button>
+                                <span class="font-weight-bold px-2">${count}</span>
+                                <button type="button" onclick="changeRatioCount('${size}', 1)">+</button>
                             </div>
-                        `;
+                        </div>
+                    `;
                 });
 
                 let groupText = document.getElementById('ratioGroupText');
@@ -869,7 +1190,7 @@
 
                 let hiddenVal = document.getElementById('ratio_val_hidden');
                 if (hiddenVal) hiddenVal.value = getCalculatedRatio(group.join(','));
-            }
+            };
 
             function getCalculatedRatio(sizeString) {
                 if (!sizeString) return "";
@@ -924,40 +1245,34 @@
                         alert("Error saving ratio.");
                     }
                 });
-            }
+            };
 
-            // Product Images Dynamic Rows & Live Preview
+            // Gallery Images Dynamic Rows & Live Preview
             $('.add-product-image-btn').on('click', function() {
                 let rowHtml = `
-                    <div class="product-image-row mb-3 p-3 border rounded bg-light">
+                    <div class="product-image-row border rounded p-2 mb-1 bg-light">
                         <div class="row align-items-center">
                             <div class="col-md-5">
-                                <div class="form-group mb-0">
-                                    <label class="text-muted small font-weight-bold text-uppercase">Image Title / Description</label>
-                                    <input type="text" name="product_image_titles[]" class="form-control" placeholder="e.g. Front Photo, Back Photo, Neck Detail">
-                                </div>
+                                <input type="text" name="product_image_titles[]" class="form-control hd-input" placeholder="Photo Caption / Title (e.g. Front Photo, Back Photo)">
                             </div>
                             <div class="col-md-5">
-                                <div class="form-group mb-0">
-                                    <label class="text-muted small font-weight-bold text-uppercase">Select Image</label>
-                                    <div class="custom-file">
-                                        <input type="file" name="product_images[]" class="custom-file-input product-image-file-input" accept="image/*">
-                                        <label class="custom-file-label text-truncate">Choose image file</label>
-                                    </div>
-                                </div>
+                                <input type="file" name="product_images[]" class="form-control-file product-image-file-input" accept="image/*" style="font-size: 11px;">
                             </div>
                             <div class="col-md-1 text-center">
                                 <div class="image-preview-box" style="display:none;">
-                                    <img src="" class="img-thumbnail" style="height: 48px; width: 48px; object-fit: cover;">
+                                    <img src="" class="thumb-preview-mini">
                                 </div>
                             </div>
                             <div class="col-md-1 text-right">
-                                <button type="button" class="btn btn-danger btn-sm remove-product-image-btn" title="Remove"><i class="fa fa-trash"></i></button>
+                                <button type="button" class="btn btn-xs text-danger remove-product-image-btn" title="Remove">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
                 `;
                 $('#product-images-container').append(rowHtml);
+                reindexAll();
             });
 
             $(document).on('click', '.remove-product-image-btn', function() {
@@ -967,16 +1282,15 @@
                     let row = $(this).closest('.product-image-row');
                     row.find('input[type="text"]').val('');
                     row.find('input[type="file"]').val('');
-                    row.find('.custom-file-label').text('Choose image file');
                     row.find('.image-preview-box').hide().find('img').attr('src', '');
                 }
+                reindexAll();
             });
 
             $(document).on('change', '.product-image-file-input', function(e) {
                 let file = e.target.files[0];
                 let row = $(this).closest('.product-image-row');
                 if (file) {
-                    row.find('.custom-file-label').text(file.name);
                     let reader = new FileReader();
                     reader.onload = function(event) {
                         row.find('.image-preview-box img').attr('src', event.target.result);
@@ -984,7 +1298,6 @@
                     };
                     reader.readAsDataURL(file);
                 } else {
-                    row.find('.custom-file-label').text('Choose image file');
                     row.find('.image-preview-box').hide().find('img').attr('src', '');
                 }
             });
