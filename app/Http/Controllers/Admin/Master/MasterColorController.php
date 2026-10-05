@@ -23,6 +23,23 @@ class MasterColorController extends Controller {
         $data = \App\Models\MasterColor::select('id', 'name')->where('status', 1)->get();
         return response()->json($data);
     }
+    public function checkColorName(Request $request){
+        $name = trim($request->name ?? '');
+        $id = $request->id;
+
+        if (empty($name)) {
+            return response()->json(['exists' => false]);
+        }
+
+        $query = \App\Models\MasterColor::whereRaw('LOWER(TRIM(name)) = ?', [strtolower($name)])
+            ->where('status', 1);
+
+        if (!empty($id)) {
+            $query->where('id', '!=', $id);
+        }
+
+        return response()->json(['exists' => $query->exists()]);
+    }
     public function create(){
         return view('admin.master.colors.create');
     }

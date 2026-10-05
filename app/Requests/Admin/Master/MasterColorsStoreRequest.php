@@ -3,6 +3,7 @@
 namespace App\Requests\Admin\Master;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class MasterColorsStoreRequest extends FormRequest{
     /**
@@ -18,18 +19,27 @@ class MasterColorsStoreRequest extends FormRequest{
      *
      * @return array
      */
-    public function rules(Request $request){
-        // dd($this);
+    public function rules(){
+        $name = trim($this->input('name') ?? '');
+
         return [
-            'name' => 'required|unique:master_colors,name',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('master_colors', 'name')->where(function ($query) use ($name) {
+                    return $query->where('status', 1)
+                        ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower($name)]);
+                }),
+            ],
             'sku'    => 'nullable',
-            'status' =>'required',
+            'status' => 'required',
         ];
     }
 
     public function messages(){
         return [
-
+            'name.unique' => 'This color name already exists in the master list.',
         ];
     }
 

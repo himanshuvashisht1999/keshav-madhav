@@ -70,7 +70,53 @@
 </div>
 <script>
     $(document).ready(function() {
-        // Logic if any
+        var $input = $('input[name="name"]');
+        var $form = $input.closest('form');
+        var $submitBtn = $form.find('button[type="submit"]');
+
+        function checkDuplicateColor() {
+            var colorName = $input.val().trim();
+            var $formGroup = $input.closest('.form-group');
+
+            $formGroup.find('.color-duplicate-error').remove();
+
+            if (colorName) {
+                $.ajax({
+                    url: "{{ route('admin.master.colors.check-color-name') }}",
+                    type: "GET",
+                    data: { name: colorName },
+                    success: function (data) {
+                        if (data.exists) {
+                            $input.addClass('is-invalid');
+                            $formGroup.append('<span class="text-danger small color-duplicate-error font-weight-bold d-block mt-1"><i class="fas fa-exclamation-circle mr-1"></i> This color name already exists in the master list.</span>');
+                            $submitBtn.prop('disabled', true);
+                        } else {
+                            $input.removeClass('is-invalid');
+                            $submitBtn.prop('disabled', false);
+                        }
+                    }
+                });
+            } else {
+                $input.removeClass('is-invalid');
+                $submitBtn.prop('disabled', false);
+            }
+        }
+
+        $input.on('blur', checkDuplicateColor);
+
+        var typingTimer;
+        $input.on('keyup input', function () {
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(checkDuplicateColor, 400);
+        });
+
+        $form.on('submit', function(e) {
+            if ($input.hasClass('is-invalid')) {
+                e.preventDefault();
+                alert('Please resolve the duplicate color name before submitting.');
+                return false;
+            }
+        });
     });
 </script>
 

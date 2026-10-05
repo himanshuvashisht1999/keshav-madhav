@@ -35,7 +35,7 @@ class MasterColorsService {
         //     $image->move($destinationPath, $imgName);
         // }
         $save_data = new MasterColor;
-        $save_data->name = $request->name;
+        $save_data->name = strtoupper(trim($request->name));
         $save_data->sku = null;
         $save_data->status = $request->status ?? 1;
         $save_data->save();
@@ -63,7 +63,7 @@ class MasterColorsService {
         //     $image->move($destinationPath, $imgName);
         //     $update_data->image = $imgName;
         // }
-        $update_data->name = $request->name;
+        $update_data->name = strtoupper(trim($request->name));
         $update_data->sku = null;
         $update_data->status = $request->status;
         $update_data->save();

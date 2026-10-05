@@ -1031,6 +1031,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/index', [AdminMasterColorController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminMasterColorController::class, 'indexList'])->name('indexList');
             Route::get('/all_colors', [AdminMasterColorController::class, 'allColors'])->name('all_colors');
+            Route::get('/check-color-name', [AdminMasterColorController::class, 'checkColorName'])->name('check-color-name');
             Route::get('/create', [AdminMasterColorController::class, 'create'])->name('create');
             Route::post('/store', [AdminMasterColorController::class, 'store'])->name('store');
             Route::get('/edit', [AdminMasterColorController::class, 'edit'])->name('edit');
@@ -1848,6 +1849,80 @@ Route::prefix('/admin')->name('admin.')->middleware(['web', 'checkAdminLogin'])-
         Route::get('/delete-session/{type}/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'deleteSession'])->name('delete-session');
     });
 });
+
+// Tool to safely manage duplicate master colors in live / local without touching physical barcodes or box stickers
+// Accessible by logged-in admin OR ?key=km_merge_colors_live_2026
+Route::get('/admin/tools/merge-duplicate-colors', function (\Illuminate\Http\Request $request) {
+    if (!Auth::check() && $request->get('key') !== 'km_merge_colors_live_2026') {
+        return response()->json(['error' => 'Unauthorized. Please login as admin or pass key=km_merge_colors_live_2026.'], 403);
+    }
+
+    $results = [];
+
+    \DB::transaction(function () use (&$results) {
+        // Strategy:
+        // Physical box stickers printed with barcodes like D...C111 and D...C127 and existing PDFs MUST NOT BE BROKEN.
+        // Therefore, we keep barcodes and variant records intact, and set legacy duplicate master colors
+        // to status = 0 (Inactive) with their clean original names ('D.GREY', 'MIX').
+        // Because dropdowns only query `where('status', 1)`, users will NEVER see duplicates when creating
+        // new products or orders. And because MasterColor::find(111) returns 'D.GREY', warehouse scanners
+        // and PDFs will continue to resolve the color name seamlessly!
+
+        $colorConfigs = [
+            [
+                'active_id'   => 21,
+                'inactive_id' => 111,
+                'name'        => 'D.GREY',
+            ],
+            [
+                'active_id'   => 69,
+                'inactive_id' => 127,
+                'name'        => 'MIX',
+            ],
+        ];
+
+        foreach ($colorConfigs as $cfg) {
+            // 1. Keep primary active (status = 1)
+            \DB::table('master_colors')->where('id', $cfg['active_id'])->update([
+                'name'   => $cfg['name'],
+                'status' => 1,
+            ]);
+
+            // 2. Set duplicate to inactive (status = 0) with clean name so scanning & PDFs still resolve
+            \DB::table('master_colors')->where('id', $cfg['inactive_id'])->update([
+                'name'   => $cfg['name'],
+                'status' => 0,
+            ]);
+
+            $results[] = [
+                'color'       => $cfg['name'],
+                'active_id'   => $cfg['active_id'] . ' (status = 1, shown in dropdowns)',
+                'inactive_id' => $cfg['inactive_id'] . ' (status = 0, preserved for physical box barcodes & PDFs)',
+            ];
+        }
+
+        // 3. Ensure M.BLUE active (129) and deleted (35)
+        \DB::table('master_colors')->where('id', 129)->update([
+            'name'   => 'M.BLUE',
+            'status' => 1,
+        ]);
+        \DB::table('master_colors')->where('id', 35)->update([
+            'name'   => 'M.BLUE',
+            'status' => 3,
+        ]);
+        $results[] = [
+            'color'       => 'M.BLUE',
+            'active_id'   => '129 (status = 1, shown in dropdowns)',
+            'inactive_id' => '35 (status = 3, deleted)',
+        ];
+    });
+
+    return response()->json([
+        'status'  => 'success',
+        'message' => 'Duplicate colors deactivated safely without modifying any barcodes or physical box stickers.',
+        'details' => $results,
+    ]);
+})->middleware(['web'])->name('admin.tools.merge-duplicate-colors');
 
 
 
