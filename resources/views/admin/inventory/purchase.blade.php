@@ -445,6 +445,19 @@
 
                     <!-- Product List Table -->
                     <div class="card shadow-sm border-0 mb-4 animate-in">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="fas fa-list-ul mr-2"></i>Added Products List
+                            </h6>
+                            <div id="tableCountBadges" class="d-flex align-items-center" style="display: none !important;">
+                                <span class="badge badge-primary px-3 py-2 mr-2" style="font-size: 0.85rem;">
+                                    <i class="fas fa-boxes mr-1"></i> Total Boxes: <strong id="tableHeaderTotalBoxes">0</strong>
+                                </span>
+                                <span class="badge badge-success px-3 py-2" style="font-size: 0.85rem;">
+                                    <i class="fas fa-tshirt mr-1"></i> Total Pieces: <strong id="tableHeaderTotalPieces">0</strong>
+                                </span>
+                            </div>
+                        </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table table-hover mb-0" id="purchaseTable">
@@ -465,6 +478,25 @@
                                     <tbody id="itemsContainer">
                                         <!-- Table Rows Will Be Appended Here -->
                                     </tbody>
+                                    <tfoot class="bg-light font-weight-bold" id="purchaseTableFooter" style="display: none;">
+                                        <tr>
+                                            <th colspan="4" class="text-right pr-4 text-muted">Total:</th>
+                                            <th>
+                                                <span id="footerTotalBoxes" class="badge badge-primary px-2 py-1" style="font-size: 0.95rem;">0</span>
+                                                <div class="small text-muted font-weight-normal">Boxes</div>
+                                            </th>
+                                            <th>
+                                                <span id="footerTotalPieces" class="badge badge-success px-2 py-1" style="font-size: 0.95rem;">0</span>
+                                                <div class="small text-muted font-weight-normal">Pieces</div>
+                                            </th>
+                                            <th colspan="2"></th>
+                                            <th>
+                                                <span id="footerSubTotal" class="text-primary font-weight-bold" style="font-size: 1rem;">₹0.00</span>
+                                                <div class="small text-muted font-weight-normal">Sub Total</div>
+                                            </th>
+                                            <th></th>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
                             <div id="emptyState" class="p-5 text-center text-muted">
@@ -475,19 +507,39 @@
                     </div>
 
                     <div id="purchaseSummaryContainer" class="card mt-4 shadow-sm border-0" style="display: none;">
-                        <div class="card-header bg-soft-primary py-3">
+                        <div class="card-header bg-soft-primary py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <h5 class="mb-0 text-primary font-weight-bold"><i
                                     class="fas fa-file-invoice-dollar mr-2"></i>Purchase Summary (Complete)</h5>
+                            <div class="d-flex align-items-center">
+                                <span class="badge badge-primary px-3 py-2 mr-2" style="font-size: 0.9rem;">
+                                    <i class="fas fa-boxes mr-1"></i> Total Boxes: <strong id="summaryHeaderBoxes">0</strong>
+                                </span>
+                                <span class="badge badge-success px-3 py-2" style="font-size: 0.9rem;">
+                                    <i class="fas fa-tshirt mr-1"></i> Total Pieces: <strong id="summaryHeaderPieces">0</strong>
+                                </span>
+                            </div>
                         </div>
                         <div class="card-body bg-light-gray">
                             <div class="row">
-                                <div class="col-md-3 input-group-premium">
+                                <div class="col-md-2 input-group-premium">
+                                    <label class="label-premium text-primary font-weight-bold"><i class="fas fa-boxes mr-1"></i> Total Boxes</label>
+                                    <input type="number" id="global_total_boxes"
+                                        class="form-control form-control-premium bg-light font-weight-bold text-primary" value="0"
+                                        readonly>
+                                </div>
+                                <div class="col-md-2 input-group-premium">
+                                    <label class="label-premium text-success font-weight-bold"><i class="fas fa-tshirt mr-1"></i> Total Pieces</label>
+                                    <input type="number" id="global_total_pieces"
+                                        class="form-control form-control-premium bg-light font-weight-bold text-success" value="0"
+                                        readonly>
+                                </div>
+                                <div class="col-md-2 input-group-premium">
                                     <label class="label-premium">Sub Total</label>
                                     <input type="number" name="sub_total" id="global_sub_total"
                                         class="form-control form-control-premium bg-light" placeholder="0.00" step="0.01"
                                         readonly>
                                 </div>
-                                <div class="col-md-3 input-group-premium">
+                                <div class="col-md-2 input-group-premium">
                                     <label class="label-premium">GST</label>
                                     <div class="input-group">
                                         <input type="number" name="gst_value" id="global_gst_value"
@@ -504,20 +556,20 @@
                                     </div>
                                     <input type="hidden" name="gst" id="global_gst_amount">
                                 </div>
-                                <div class="col-md-2 input-group-premium">
-                                    <label class="label-premium">Other Amount</label>
+                                <div class="col-md-1 input-group-premium">
+                                    <label class="label-premium">Other</label>
                                     <input type="number" name="other_amount" id="global_other_amount"
                                         class="form-control form-control-premium" placeholder="Other" step="0.01" min="0">
                                 </div>
-                                <div class="col-md-2 input-group-premium">
+                                <div class="col-md-1 input-group-premium">
                                     <label class="label-premium">Discount</label>
                                     <input type="number" name="discount" id="global_discount"
                                         class="form-control form-control-premium" placeholder="Disc" step="0.01" min="0">
                                 </div>
-                                <div class="col-md-3 input-group-premium">
-                                    <label class="label-premium text-primary font-weight-bold">Grand Total Amount</label>
+                                <div class="col-md-2 input-group-premium">
+                                    <label class="label-premium text-primary font-weight-bold">Grand Total</label>
                                     <input type="number" name="total_amount" id="global_total_amount"
-                                        class="form-control form-control-premium bg-light" placeholder="0.00" step="0.01"
+                                        class="form-control form-control-premium bg-light font-weight-bold text-primary" placeholder="0.00" step="0.01"
                                         readonly>
                                 </div>
                             </div>
@@ -527,6 +579,14 @@
 
 
                     <div class="sticky-actions">
+                        <div class="mr-auto d-flex align-items-center">
+                            <span class="badge badge-pill badge-light border px-3 py-2 text-dark mr-2" style="font-size: 0.95rem;">
+                                <i class="fas fa-boxes text-primary mr-1"></i> Total Boxes: <strong id="stickyTotalBoxes" class="text-primary">0</strong>
+                            </span>
+                            <span class="badge badge-pill badge-light border px-3 py-2 text-dark" style="font-size: 0.95rem;">
+                                <i class="fas fa-tshirt text-success mr-1"></i> Total Pieces: <strong id="stickyTotalPieces" class="text-success">0</strong>
+                            </span>
+                        </div>
                         <a href="{{ route('admin.inventory.index') }}" class="btn-cancel">Cancel and Exit</a>
                         <button type="submit" class="btn btn-confirm">
                             <i class="fas fa-check-double mr-2"></i> Confirm and Upload Stock
@@ -921,13 +981,39 @@
 
                 function calculateGlobalTotal() {
                     let subTotal = 0;
+                    let totalBoxes = 0;
+                    let totalPieces = 0;
 
                     $('#itemsContainer tr').each(function () {
                         let boxes = parseFloat($(this).find('.row-boxes').val()) || 0;
                         let pcs = parseFloat($(this).find('.row-pcs').val()) || 0;
                         let rate = parseFloat($(this).find('.row-rate').val()) || 0;
+                        totalBoxes += boxes;
+                        totalPieces += (boxes * pcs);
                         subTotal += (boxes * pcs * rate);
                     });
+
+                    // Update Total Boxes and Total Pieces across all summary areas
+                    $('#global_total_boxes').val(totalBoxes);
+                    $('#global_total_pieces').val(totalPieces);
+                    $('#summaryHeaderBoxes').text(totalBoxes.toLocaleString());
+                    $('#summaryHeaderPieces').text(totalPieces.toLocaleString());
+                    $('#footerTotalBoxes').text(totalBoxes.toLocaleString());
+                    $('#footerTotalPieces').text(totalPieces.toLocaleString());
+                    $('#tableHeaderTotalBoxes').text(totalBoxes.toLocaleString());
+                    $('#tableHeaderTotalPieces').text(totalPieces.toLocaleString());
+                    $('#stickyTotalBoxes').text(totalBoxes.toLocaleString());
+                    $('#stickyTotalPieces').text(totalPieces.toLocaleString());
+                    $('#footerSubTotal').text('₹' + subTotal.toFixed(2));
+
+                    if ($('#itemsContainer tr').length > 0) {
+                        $('#purchaseTableFooter').show();
+                        $('#tableCountBadges').attr('style', 'display: flex !important;');
+                        $('#purchaseSummaryContainer').show();
+                    } else {
+                        $('#purchaseTableFooter').hide();
+                        $('#tableCountBadges').attr('style', 'display: none !important;');
+                    }
 
                     $('#global_sub_total').val(subTotal.toFixed(2));
 
