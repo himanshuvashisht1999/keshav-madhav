@@ -144,6 +144,14 @@
                                         <!-- Billing Math -->
                                         <div class="col-md-6">
                                             <div class="row mb-2 align-items-center">
+                                                <div class="col-6 text-right"><strong>Total Checked Pieces</strong></div>
+                                                <div class="col-6">
+                                                    <input type="text" id="calc_total_pcs"
+                                                        class="form-control form-control-sm text-right font-weight-bold text-success border-success" readonly value="0">
+                                                </div>
+                                            </div>
+
+                                            <div class="row mb-2 align-items-center">
                                                 <div class="col-6 text-right"><strong>Subtotal (Packed Value) (₹)</strong></div>
                                                 <div class="col-6">
                                                     <input type="text" id="calc_subtotal" name="subtotal_amount"
@@ -505,6 +513,9 @@
 
         function calculateDispatchTotals(changedField = 'default') {
             let subtotal = 0;
+            let totalCartonPcs = 0;
+            let totalPurchasePcs = 0;
+            let totalPurchaseBoxes = 0;
 
             // Map global prices
             let globalPrices = {};
@@ -515,28 +526,65 @@
             });
 
             // Use carton summaries
-            $('.carton-checkbox:checked').each(function () {
+            $('.carton-checkbox').each(function () {
                 let row = $(this).closest('tr');
+                let isChecked = $(this).is(':checked');
+                let cartonPcs = 0;
+                let cartonAmount = 0;
+
                 row.find('.carton-set-row').each(function () {
                     let setId = $(this).data('set-id');
                     let qty = parseFloat($(this).data('qty')) || 0;
+                    cartonPcs += qty;
                     let price = globalPrices[setId] || 0;
-                    if(!price) {
+                    if (!price) {
                          price = parseFloat($(this).data('price')) || 0;
                     }
-                    subtotal += (price * qty);
+                    cartonAmount += (price * qty);
                 });
+
+                if (cartonPcs === 0) {
+                    cartonPcs = parseFloat($(this).data('pcs')) || 0;
+                }
+
+                if (isChecked) {
+                    row.removeClass('text-muted').css('opacity', '1');
+                    subtotal += cartonAmount;
+                    totalCartonPcs += cartonPcs;
+                } else {
+                    row.addClass('text-muted').css('opacity', '0.5');
+                }
             });
 
             // Use purchase summaries
-            $('.purchase-item-checkbox:checked').each(function () {
-                let row = $(this).closest('tr');
-                let pcs = parseFloat(row.find('.pur-input-pcs').val()) || 0;
-                let price = parseFloat(row.find('.purchase-price-input').val()) || 0;
+            $('.purchase-row').each(function () {
+                let checkbox = $(this).find('.purchase-item-checkbox');
+                let isChecked = checkbox.is(':checked');
+                let pcs = parseFloat($(this).find('.pur-input-pcs').val()) || parseFloat(checkbox.data('pcs')) || 0;
+                let boxes = parseFloat($(this).find('.pur-input-boxes').val()) || parseFloat(checkbox.data('boxes')) || 0;
+                let price = parseFloat($(this).find('.purchase-price-input').val()) || parseFloat(checkbox.data('price')) || 0;
                 let itemTotal = pcs * price;
-                row.find('.pur-amount-display').text('₹' + itemTotal.toFixed(2));
-                subtotal += itemTotal;
+
+                if (isChecked) {
+                    $(this).find('.pur-amount-display').text('₹' + itemTotal.toFixed(2));
+                    $(this).removeClass('text-muted').css('opacity', '1');
+                    subtotal += itemTotal;
+                    totalPurchasePcs += pcs;
+                    totalPurchaseBoxes += boxes;
+                } else {
+                    $(this).find('.pur-amount-display').text('₹0.00');
+                    $(this).addClass('text-muted').css('opacity', '0.5');
+                }
             });
+
+            let grandTotalCheckedPcs = totalCartonPcs + totalPurchasePcs;
+
+            // Update Total Pieces displays
+            $('#carton_checked_pcs').text(totalCartonPcs);
+            $('#purchase_checked_pcs').text(totalPurchasePcs);
+            $('#purchase_checked_boxes').text(totalPurchaseBoxes + ' Box');
+            $('#header_checked_pcs').text(grandTotalCheckedPcs);
+            $('#calc_total_pcs').val(grandTotalCheckedPcs);
 
             $('#calc_subtotal').val(subtotal.toFixed(2));
 
@@ -681,7 +729,7 @@
                                     <div class="order-card-header">
                                         <div class="row align-items-center">
 
-                                            <div class="col-md-8">
+                                            <div class="col-md-7">
                                                 <div class="order-title">
                                                     Order No : <strong>${order.sku}</strong>
                                                 </div>
@@ -695,10 +743,14 @@
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-4 text-right">
-                                                <div class="qty-box">
-                                                    <div class="qty-label">TOTAL QTY</div>
+                                            <div class="col-md-5 text-right d-flex justify-content-end align-items-center">
+                                                <div class="qty-box mr-2">
+                                                    <div class="qty-label">TOTAL ORDER QTY</div>
                                                     <div class="qty-value">${order.total_quantity}</div>
+                                                </div>
+                                                <div class="qty-box border-success" style="background: #e7f6ee;">
+                                                    <div class="qty-label text-success">TOTAL CHECKED PCS</div>
+                                                    <div class="qty-value text-success" id="header_checked_pcs">0</div>
                                                 </div>
                                             </div>
 
@@ -779,11 +831,12 @@
                                                        name="cartons[]"
                                                        value="${carton.id}"
                                                        class="carton-checkbox"
+                                                       data-pcs="${carton.pcs_in_carton}"
                                                        checked>
                                             </td>
                                             <td class="align-middle">
                                                 <div class="font-weight-bold text-primary">Carton No: ${carton.carton_no || carton.id}</div>
-                                                <small class="text-muted">Total Boxes: ${carton.boxes_in_carton}</small>
+                                                <small class="text-muted">Total Boxes: ${carton.boxes_in_carton} | Total Pcs: ${carton.pcs_in_carton}</small>
                                             </td>
                                             <td class="p-0">
                                                 ${itemsHtml}
@@ -794,8 +847,8 @@
 
                     html += `
                                         <tr class="bg-light font-weight-bold">
-                                            <td colspan="2" class="text-right">Total Pcs</td>
-                                            <td>${pcs_in_carton}</td>
+                                            <td colspan="2" class="text-right text-dark" style="font-size: 15px;">Total Checked Pieces:</td>
+                                            <td class="text-success font-weight-bold" style="font-size: 16px;"><span id="carton_checked_pcs">0</span> pcs</td>
                                         </tr>
                                     `;
                 }
@@ -823,6 +876,9 @@
                                     <input type="checkbox"
                                            class="purchase-item-checkbox"
                                            data-idx="${idx}"
+                                           data-pcs="${pur.total_pieces}"
+                                           data-boxes="${pur.box_quantity}"
+                                           data-price="${pur.suggested_price}"
                                            checked>
                                     <input type="hidden" name="purchase_items[${idx}][history_id]" value="${pur.history_id}" class="pur-input-history">
                                     <input type="hidden" name="purchase_items[${idx}][boxes]" value="${pur.box_quantity}" class="pur-input-boxes">
@@ -903,9 +959,9 @@
                                     <tbody>
                                         ${purRowsHtml}
                                         <tr class="bg-light font-weight-bold">
-                                            <td colspan="3" class="text-right">Total Outsourced PO:</td>
-                                            <td class="text-center"><span class="badge badge-secondary p-1">${totalPurBoxes} Box</span></td>
-                                            <td class="text-center text-primary font-weight-bold">${totalPurPcs} pcs</td>
+                                            <td colspan="3" class="text-right">Total Checked Outsourced PO:</td>
+                                            <td class="text-center"><span class="badge badge-secondary p-1" id="purchase_checked_boxes">${totalPurBoxes} Box</span></td>
+                                            <td class="text-center text-primary font-weight-bold"><span id="purchase_checked_pcs">${totalPurPcs}</span> pcs</td>
                                             <td colspan="3"></td>
                                         </tr>
                                     </tbody>
@@ -1025,10 +1081,6 @@
                 calculateDispatchTotals('gst_amount');
             });
 
-            $(document).on('change', '.carton-checkbox, .select-all-cartons', function () {
-                calculateDispatchTotals('default');
-            });
-
             $('#customer_id').on('change', function () {
 
                 let customerId = $(this).val();
@@ -1038,6 +1090,8 @@
                 $('#orderContainer').html('');
                 $('#priceSetupContainer').html('');
                 $('#final_order_no').val('');
+                $('#summaryContainer').addClass('d-none');
+                $('#calc_total_pcs').val(0);
                 $('#submitDispatchBtn').prop('disabled', true);
 
                 $('#order_no').html('<option value="">Select Order No</option>');
@@ -1081,6 +1135,7 @@
             table.find('.carton-checkbox')
                 .prop('checked', this.checked);
 
+            calculateDispatchTotals('default');
             toggleSubmitButton();
         });
 
@@ -1095,6 +1150,7 @@
             table.find('.select-all-cartons')
                 .prop('checked', allChecked);
 
+            calculateDispatchTotals('default');
             toggleSubmitButton();
         });
 
@@ -1103,7 +1159,14 @@
         $(document).on('change', '.select-all-purchases', function () {
             let table = $(this).closest('table');
             let isChecked = $(this).is(':checked');
-            table.find('.purchase-item-checkbox').prop('checked', isChecked).trigger('change');
+
+            table.find('.purchase-item-checkbox').prop('checked', isChecked);
+            table.find('.purchase-row').each(function () {
+                $(this).find('input').not('.purchase-item-checkbox').prop('disabled', !isChecked);
+            });
+
+            calculateDispatchTotals('default');
+            toggleSubmitButton();
         });
 
         $(document).on('change', '.purchase-item-checkbox', function () {

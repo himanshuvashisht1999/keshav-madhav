@@ -744,7 +744,7 @@ class PackingController extends Controller
                 ->toArray();
 
             $sizeMeasurements = \App\Models\MasterSizeMeasurement::whereIn('id', $lots_size_set_ids)
-                ->where('status', 1)
+                ->whereIn('status', [1, 2])
                 ->get();
 
             $size_sets = [];
@@ -780,7 +780,18 @@ class PackingController extends Controller
                 ->unique()
                 ->toArray();
 
-            $allSizeMeasurements = \App\Models\MasterSizeMeasurement::where('status', 1)->get();
+            // Also check order's directly assigned size sets for these lots
+            $lots_size_set_ids = \Illuminate\Support\Facades\DB::table('order_lots')
+                ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
+                ->whereIn('order_lots.lot_no', $selected_lots)
+                ->where('order_products_sets.design_number', $design)
+                ->pluck('order_products_sets.set_size')
+                ->unique()
+                ->filter()
+                ->toArray();
+
+            // Include status 1 (standard) and status 2 (custom / updated ratio) size sets
+            $allSizeMeasurements = \App\Models\MasterSizeMeasurement::whereIn('status', [1, 2])->get();
             $size_sets = [];
             
             foreach ($allSizeMeasurements as $sm) {
@@ -788,27 +799,36 @@ class PackingController extends Controller
                 
                 $sizes = array_map(function($s) { return trim(strtoupper($s)); }, explode(',', $sm->size_group));
                 
+                $isDirectLotSet = in_array($sm->id, $lots_size_set_ids);
                 // Check if this size set is a subset of available_sizes
                 $canBeMade = empty(array_diff($sizes, $available_sizes));
                 
-                if ($canBeMade) {
+                if ($isDirectLotSet || $canBeMade) {
                     $size_sets[] = [
                         'id' => $sm->id,
                         'name' => $sm->name,
                         'required_sizes' => $sizes,
-                        'no_of_pcs' => $sm->no_of_pcs
+                        'no_of_pcs' => $sm->no_of_pcs,
+                        'is_direct' => $isDirectLotSet ? 1 : 0
                     ];
                 }
             }
 
+            // Remove duplicates and sort: direct order sets first, then by name and pcs
+            $unique_size_sets = collect($size_sets)->unique('id')->sortBy([
+                ['is_direct', 'desc'],
+                ['name', 'asc'],
+                ['no_of_pcs', 'asc']
+            ])->values()->all();
+
             return response()->json([
                 'status' => 'success',
-                'size_sets' => $size_sets
+                'size_sets' => $unique_size_sets
             ]);
         }
 
         if ($request->for_domestic) {
-            $allSizeMeasurements = \App\Models\MasterSizeMeasurement::where('status', 1)->orderBy('name')->get();
+            $allSizeMeasurements = \App\Models\MasterSizeMeasurement::whereIn('status', [1, 2])->orderBy('name')->get();
             foreach ($allSizeMeasurements as $sm) {
                 if (empty($sm->size_group)) continue;
                 $sizes = array_map('trim', explode(',', $sm->size_group));

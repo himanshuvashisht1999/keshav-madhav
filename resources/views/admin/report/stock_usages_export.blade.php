@@ -24,7 +24,7 @@
     <tbody>
         @foreach($data as $row)
         <tr>
-            <td>{{ $row->created_at->format('d M Y') }}</td>
+            <td>{{ $row->created_at instanceof \Carbon\Carbon ? $row->created_at->format('d M Y') : ($row->created_at ? \Carbon\Carbon::parse($row->created_at)->format('d M Y') : '-') }}</td>
             <td>{{ $row->roll_no }}</td>
             <td style="font-weight:bold">{{ $row->lot_no }}</td>
             <td>{{ $row->order_no }}</td>

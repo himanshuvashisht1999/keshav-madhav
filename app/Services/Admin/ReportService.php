@@ -499,12 +499,19 @@ class ReportService
             $fabricId = $request->fabric_id;
             $warehouseId = $request->warehouse_id;
 
-            $query = FabricReceiptDetail::with(['fabric_receipt.vendor', 'purchase_order', 'master_fabric_warehouse', 'returns'])
-                ->where('fabric_id', $fabricId)
-                ->when($warehouseId, function ($q) use ($warehouseId) {
-                    $q->whereIn('master_fabric_warehouse_id', (array) $warehouseId);
-                })
-                ->when($request->filled('qty_from'), function ($q) use ($request) {
+            $query = FabricReceiptDetail::with(['fabric_receipt.vendor', 'fabric_receipt.cutting_master', 'purchase_order', 'master_fabric_warehouse', 'returns'])
+                ->where('fabric_id', $fabricId);
+
+            if ($warehouseId) {
+                $whIds = (array) $warehouseId;
+                $query->where(function ($q) use ($whIds) {
+                    $q->whereHas('fabric_receipt', function ($fq) use ($whIds) {
+                        $fq->whereIn('master_fabric_warehouse_id', $whIds);
+                    })->orWhereIn('master_fabric_warehouse_id', $whIds);
+                });
+            }
+
+            $query->when($request->filled('qty_from'), function ($q) use ($request) {
                     $q->where('remaining_quantity', '>=', $request->qty_from);
                 })
                 ->when($request->filled('qty_to'), function ($q) use ($request) {
@@ -512,12 +519,35 @@ class ReportService
                 })
                 ->orderBy('created_at', 'desc');
 
-            $totalsQuery = clone $query;
-            $totals = (object) [
-                'sum_received' => $totalsQuery->sum('meter'),
-                'sum_remaining' => $totalsQuery->sum('remaining_quantity'),
-                'sum_issued' => $totalsQuery->sum(\DB::raw('meter - remaining_quantity'))
-            ];
+            if ($warehouseId) {
+                $whIds = array_map('intval', (array) $warehouseId);
+                $whIdsString = implode(',', $whIds);
+                $whStats = \DB::selectOne("
+                    SELECT 
+                        (
+                            COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = {$fabricId} AND fr.master_fabric_warehouse_id IN ({$whIdsString})), 0)
+                            +
+                            COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = {$fabricId} AND ft.to_warehouse_id IN ({$whIdsString})), 0)
+                        ) as total_received,
+                        COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = {$fabricId} AND frd.master_fabric_warehouse_id IN ({$whIdsString})), 0) as total_remaining
+                ");
+                $sumReceived = (float) ($whStats->total_received ?? 0);
+                $sumRemaining = (float) ($whStats->total_remaining ?? 0);
+                $sumIssued = $sumReceived - $sumRemaining;
+
+                $totals = (object) [
+                    'sum_received' => $sumReceived,
+                    'sum_remaining' => $sumRemaining,
+                    'sum_issued' => $sumIssued
+                ];
+            } else {
+                $totalsQuery = clone $query;
+                $totals = (object) [
+                    'sum_received' => $totalsQuery->sum('meter'),
+                    'sum_remaining' => $totalsQuery->sum('remaining_quantity'),
+                    'sum_issued' => $totalsQuery->sum(\DB::raw('meter - remaining_quantity'))
+                ];
+            }
 
             if ($request->has('is_export')) {
                 return [
@@ -539,20 +569,135 @@ class ReportService
             $fabricId = $request->fabric_id;
             $warehouseId = $request->warehouse_id;
 
-            // Find all roll numbers matching this fabric & warehouse
-            $rollQuery = FabricReceiptDetail::where('fabric_id', $fabricId);
-            if ($warehouseId) {
-                $rollQuery->whereIn('master_fabric_warehouse_id', (array) $warehouseId);
+            $unifiedUsages = collect();
+
+            // 1. Production Cutting Usages
+            $internalUsagesQuery = \App\Models\FabricRollAssigning::with(['orderProductSet.colors', 'stageMasterUnit', 'fabricReceiptDetail'])
+                ->whereHas('fabricReceiptDetail', function ($fq) use ($fabricId, $warehouseId) {
+                    $fq->where('fabric_id', $fabricId);
+                    if ($warehouseId) {
+                        $fq->whereIn('master_fabric_warehouse_id', (array) $warehouseId);
+                    }
+                });
+            $internalUsages = $internalUsagesQuery->orderBy('created_at', 'desc')->get();
+
+            foreach ($internalUsages as $u) {
+                $unifiedUsages->push((object) [
+                    'id' => 'cutting_' . $u->id,
+                    'created_at' => $u->created_at,
+                    'roll_no' => $u->roll_no,
+                    'lot_no' => $u->lot_no,
+                    'order_no' => $u->order_no,
+                    'meter' => $u->meter,
+                    'type_badge' => 'Cutting (Production)',
+                    'orderProductSet' => $u->orderProductSet,
+                    'stageMasterUnit' => $u->stageMasterUnit
+                ]);
             }
-            $rollIds = $rollQuery->pluck('id')->filter()->unique();
 
-            $internalUsages = \App\Models\FabricRollAssigning::with(['orderProductSet.colors', 'stageMasterUnit', 'fabricReceiptDetail'])
-                ->whereIn('fabric_receipt_detail_id', $rollIds->isEmpty() ? [0] : $rollIds)
-                ->orderBy('created_at', 'desc')
-                ->get();
+            // 2. Inter-Warehouse Transfers Out (Stock moved out of this warehouse)
+            if ($warehouseId) {
+                $transfersOut = \DB::table('fabric_transfer_items')
+                    ->join('fabric_transfers', 'fabric_transfer_items.fabric_transfer_id', '=', 'fabric_transfers.id')
+                    ->leftJoin('master_fabric_warehouse as to_wh', 'fabric_transfers.to_warehouse_id', '=', 'to_wh.id')
+                    ->leftJoin('fabric_receipt_details as frd', 'fabric_transfer_items.fabric_receipt_detail_id', '=', 'frd.id')
+                    ->where('fabric_transfer_items.fabric_id', $fabricId)
+                    ->whereIn('fabric_transfers.from_warehouse_id', (array) $warehouseId)
+                    ->select([
+                        'fabric_transfer_items.*',
+                        'fabric_transfers.transfer_no',
+                        'fabric_transfers.created_at as transfer_date',
+                        'to_wh.cutting_master_name as to_warehouse_name',
+                        'frd.roll_number'
+                    ])
+                    ->get();
 
-            $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.vendor', 'order.shop', 'roll'])
+                foreach ($transfersOut as $t) {
+                    $unifiedUsages->push((object) [
+                        'id' => 'transfer_' . $t->id,
+                        'created_at' => \Carbon\Carbon::parse($t->transfer_date ?? $t->created_at),
+                        'roll_no' => $t->roll_number ?? '-',
+                        'lot_no' => 'Transfer Out',
+                        'order_no' => $t->transfer_no ?? '-',
+                        'meter' => $t->meter,
+                        'type_badge' => 'Transfer Out',
+                        'orderProductSet' => (object) [
+                            'design_number' => 'To: ' . ($t->to_warehouse_name ?? 'Warehouse'),
+                            'colors' => (object) ['name' => '-']
+                        ],
+                        'stageMasterUnit' => (object) ['name' => 'Inter-Warehouse Transfer']
+                    ]);
+                }
+            }
+
+            // 3. Stock Disposals (Sample / Dead Stock / Loss)
+            $disposalsQuery = \DB::table('stock_disposal_items')
+                ->join('stock_disposal_mains', 'stock_disposal_items.stock_disposal_main_id', '=', 'stock_disposal_mains.id')
+                ->join('fabric_receipt_details as frd', 'stock_disposal_items.item_id', '=', 'frd.id')
+                ->where('frd.fabric_id', $fabricId);
+
+            if ($warehouseId) {
+                $disposalsQuery->whereIn('frd.master_fabric_warehouse_id', (array) $warehouseId);
+            }
+
+            $disposals = $disposalsQuery->select([
+                'stock_disposal_items.*',
+                'stock_disposal_mains.disposal_no',
+                'stock_disposal_mains.reason',
+                'stock_disposal_mains.remarks',
+                'frd.roll_number'
+            ])->get();
+
+            foreach ($disposals as $disp) {
+                $unifiedUsages->push((object) [
+                    'id' => 'disp_' . $disp->id,
+                    'created_at' => \Carbon\Carbon::parse($disp->created_at),
+                    'roll_no' => $disp->roll_number ?? '-',
+                    'lot_no' => 'Disposal (' . ($disp->reason ?? 'Disposed') . ')',
+                    'order_no' => $disp->disposal_no ?? '-',
+                    'meter' => $disp->quantity,
+                    'type_badge' => 'Stock Disposal',
+                    'orderProductSet' => (object) [
+                        'design_number' => 'Reason: ' . ($disp->reason ?? '-'),
+                        'colors' => (object) ['name' => 'Remarks: ' . ($disp->remarks ?? '-')]
+                    ],
+                    'stageMasterUnit' => (object) ['name' => 'Disposal / Loss']
+                ]);
+            }
+
+            // 4. Returns to Vendor
+            $returnsQuery = \App\Models\FabricReturnDetail::with(['fabric_return.receipt.vendor', 'receipt_detail'])
                 ->where('fabric_id', $fabricId);
+
+            if ($warehouseId) {
+                $returnsQuery->whereHas('receipt_detail', function ($rq) use ($warehouseId) {
+                    $rq->whereIn('master_fabric_warehouse_id', (array) $warehouseId);
+                });
+            }
+            $returns = $returnsQuery->get();
+
+            foreach ($returns as $ret) {
+                $vendorName = $ret->fabric_return?->receipt?->vendor?->name ?? 'Vendor';
+                $unifiedUsages->push((object) [
+                    'id' => 'return_' . $ret->id,
+                    'created_at' => $ret->created_at,
+                    'roll_no' => $ret->receipt_detail?->roll_number ?? '-',
+                    'lot_no' => 'Vendor Return',
+                    'order_no' => $ret->fabric_return?->return_number ?? '-',
+                    'meter' => $ret->return_meter,
+                    'type_badge' => 'Vendor Return',
+                    'orderProductSet' => (object) [
+                        'design_number' => 'Vendor: ' . $vendorName,
+                        'colors' => (object) ['name' => 'Remarks: ' . ($ret->fabric_return?->remarks ?? '-')]
+                    ],
+                    'stageMasterUnit' => (object) ['name' => 'Return']
+                ]);
+            }
+
+            // 5. Agent Orders (Direct Sales)
+            $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.vendor', 'order.shop', 'roll'])
+                ->where('fabric_id', $fabricId)
+                ->whereNotNull('agent_order_dispatch_id');
 
             if ($warehouseId) {
                 $agentUsagesQuery->whereHas('roll', function ($q) use ($warehouseId) {
@@ -562,30 +707,16 @@ class ReportService
 
             $agentUsages = $agentUsagesQuery->orderBy('created_at', 'desc')->get();
 
-            $unifiedUsages = collect();
-
-            foreach ($internalUsages as $u) {
-                $unifiedUsages->push((object) [
-                    'id' => $u->id,
-                    'created_at' => $u->created_at,
-                    'roll_no' => $u->roll_no,
-                    'lot_no' => $u->lot_no,
-                    'order_no' => $u->order_no,
-                    'meter' => $u->meter,
-                    'orderProductSet' => $u->orderProductSet,
-                    'stageMasterUnit' => $u->stageMasterUnit
-                ]);
-            }
-
             foreach ($agentUsages as $a) {
-                $partyName = $a->order?->shop_name ?? 'Unknown';
+                $partyName = $a->order?->shop_name ?? ($a->order?->party?->name ?? 'Unknown');
                 $unifiedUsages->push((object) [
-                    'id' => $a->id,
+                    'id' => 'agent_' . $a->id,
                     'created_at' => $a->created_at,
                     'roll_no' => $a->roll?->roll_number ?? '-',
                     'lot_no' => 'Agent Order',
                     'order_no' => $a->order?->sku ?? ('PO-' . $a->agent_order_id),
                     'meter' => $a->meter,
+                    'type_badge' => 'Direct Sale',
                     'orderProductSet' => (object) [
                         'design_number' => 'Selling Price: ' . number_format($a->selling_price, 2),
                         'colors' => (object) ['name' => 'Party: ' . $partyName]
@@ -597,12 +728,35 @@ class ReportService
             // Sort by created_at desc
             $unifiedUsages = $unifiedUsages->sortByDesc('created_at')->values();
 
-            $totalsQuery = clone $rollQuery;
-            $totals = (object) [
-                'sum_received' => $totalsQuery->sum('meter'),
-                'sum_remaining' => $totalsQuery->sum('remaining_quantity'),
-                'sum_issued' => $totalsQuery->sum(\DB::raw('meter - remaining_quantity'))
-            ];
+            if ($warehouseId) {
+                $whIds = array_map('intval', (array) $warehouseId);
+                $whIdsString = implode(',', $whIds);
+                $whStats = \DB::selectOne("
+                    SELECT 
+                        (
+                            COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = {$fabricId} AND fr.master_fabric_warehouse_id IN ({$whIdsString})), 0)
+                            +
+                            COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = {$fabricId} AND ft.to_warehouse_id IN ({$whIdsString})), 0)
+                        ) as total_received,
+                        COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = {$fabricId} AND frd.master_fabric_warehouse_id IN ({$whIdsString})), 0) as total_remaining
+                ");
+                $sumReceived = (float) ($whStats->total_received ?? 0);
+                $sumRemaining = (float) ($whStats->total_remaining ?? 0);
+                $sumIssued = $sumReceived - $sumRemaining;
+
+                $totals = (object) [
+                    'sum_received' => $sumReceived,
+                    'sum_remaining' => $sumRemaining,
+                    'sum_issued' => $sumIssued
+                ];
+            } else {
+                $rollQuery = FabricReceiptDetail::where('fabric_id', $fabricId);
+                $totals = (object) [
+                    'sum_received' => $rollQuery->sum('meter'),
+                    'sum_remaining' => $rollQuery->sum('remaining_quantity'),
+                    'sum_issued' => $rollQuery->sum(\DB::raw('meter - remaining_quantity'))
+                ];
+            }
 
             if ($request->has('is_export')) {
                 return [

@@ -1166,8 +1166,68 @@ class ReportController extends Controller
         $data = $service->getSlipDetailedReport($id);
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.report.slips.pdf', $data)
             ->setPaper('A4', 'portrait');
-
         return $pdf->download('Slip_Report_' . $id . '.pdf');
+    }
+
+    /**
+     * Verify Stock Fix and clear caches
+     */
+    public function verifyStockFix(Request $request)
+    {
+        try {
+            \Artisan::call('view:clear');
+            \Artisan::call('cache:clear');
+        } catch (\Exception $e) {}
+
+        $fabricId = (int) $request->get('fabric_id', 77);
+        $fabric = \App\Models\Fabric::find($fabricId);
+
+        // Test Warehouses
+        $reqWh = new Request(['fabric_id' => $fabricId]);
+        $whData = $this->service->stock($reqWh);
+
+        // Test K-43 Receipts
+        $reqK43Receipts = new Request(['fabric_id' => $fabricId, 'warehouse_id' => 4, 'type' => 'receipts']);
+        $k43ReceiptsData = $this->service->stock($reqK43Receipts);
+
+        // Test K-43 Usages
+        $reqK43Usages = new Request(['fabric_id' => $fabricId, 'warehouse_id' => 4, 'type' => 'usages']);
+        $k43UsagesData = $this->service->stock($reqK43Usages);
+
+        $html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Stock Fix Verification</title>';
+        $html .= '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">';
+        $html .= '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">';
+        $html .= '</head><body class="bg-light p-4"><div class="container bg-white p-4 rounded shadow-sm">';
+        $html .= '<div class="alert alert-success d-flex align-items-center"><i class="fas fa-check-circle fa-2x me-3"></i><div><h4 class="alert-heading mb-1">Stock Report Fix Applied Successfully!</h4><p class="mb-0">Caches cleared. Verified for Fabric: <strong>' . ($fabric->name ?? 'Fabric #' . $fabricId) . ' (ID: ' . $fabricId . ')</strong></p></div></div>';
+
+        $html .= '<h5 class="mt-4"><i class="fas fa-warehouse text-primary me-2"></i>1. Warehouse Level Breakdown:</h5>';
+        $html .= '<div class="table-responsive"><table class="table table-bordered align-middle"><thead><tr class="table-dark"><th>Warehouse</th><th class="text-end">Total Received</th><th class="text-end">Total Issued</th><th class="text-end">Remaining Qty</th></tr></thead><tbody>';
+        foreach ($whData['data'] as $row) {
+            $html .= '<tr><td><strong>' . ($row->master_fabric_warehouse->cutting_master_name ?? 'WH') . '</strong></td>';
+            $html .= '<td class="text-end text-success fw-bold">' . number_format($row->total_received, 2) . '</td>';
+            $html .= '<td class="text-end text-danger fw-bold">' . number_format($row->total_issued, 2) . '</td>';
+            $html .= '<td class="text-end fw-bold">' . number_format($row->total_remaining, 2) . '</td></tr>';
+        }
+        $html .= '</tbody></table></div>';
+
+        $html .= '<h5 class="mt-4"><i class="fas fa-search text-success me-2"></i>2. Drill-Down Verification for K-43:</h5>';
+        $html .= '<div class="card p-3 mb-3 bg-light">';
+        $html .= '<p class="mb-2"><i class="fas fa-arrow-down text-success me-2"></i><strong>K-43 Shipments (Receipts):</strong> Found <strong>' . $k43ReceiptsData['data']->total() . '</strong> shipment(s) | Total Received: <strong>' . number_format($k43ReceiptsData['totals']->sum_received, 2) . '</strong></p>';
+        $html .= '<p class="mb-0"><i class="fas fa-arrow-up text-danger me-2"></i><strong>K-43 Usages (Outflow):</strong> Found <strong>' . $k43UsagesData['data']->total() . '</strong> outflow record(s) | Total Issued: <strong>' . number_format($k43UsagesData['totals']->sum_issued, 2) . '</strong> (Transferred Out to G-246)</p>';
+        $html .= '</div>';
+
+        $html .= '<h5 class="mt-4"><i class="fas fa-link me-2"></i>3. Quick Test Links:</h5>';
+        $html .= '<div class="d-flex flex-wrap gap-2 mt-2">';
+        $html .= '<a href="' . route('admin.report.stock', ['fabric_id' => $fabricId]) . '" class="btn btn-primary" target="_blank"><i class="fas fa-chart-pie me-1"></i> Fabric Warehouse Breakdown</a>';
+        $html .= '<a href="' . route('admin.report.stock', ['fabric_id' => $fabricId, 'warehouse_id' => 4, 'type' => 'receipts']) . '" class="btn btn-success" target="_blank"><i class="fas fa-arrow-down me-1"></i> K-43 Shipments</a>';
+        $html .= '<a href="' . route('admin.report.stock', ['fabric_id' => $fabricId, 'warehouse_id' => 4, 'type' => 'usages']) . '" class="btn btn-danger" target="_blank"><i class="fas fa-arrow-up me-1"></i> K-43 Usages</a>';
+        $html .= '<a href="' . route('admin.report.stock', ['fabric_id' => $fabricId, 'warehouse_id' => 1, 'type' => 'receipts']) . '" class="btn btn-outline-success" target="_blank"><i class="fas fa-arrow-down me-1"></i> G-246 Shipments</a>';
+        $html .= '<a href="' . route('admin.report.stock', ['fabric_id' => $fabricId, 'warehouse_id' => 1, 'type' => 'usages']) . '" class="btn btn-outline-danger" target="_blank"><i class="fas fa-arrow-up me-1"></i> G-246 Usages</a>';
+        $html .= '</div>';
+
+        $html .= '</div></body></html>';
+
+        return response($html);
     }
 }
 

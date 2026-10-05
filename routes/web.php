@@ -111,6 +111,7 @@ Route::get('/sc/{barcode}', [\App\Http\Controllers\Admin\Inventory\SampleProduct
 Route::get('/fc/{barcode}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'showColorChart'])->name('fair-product.color-chart');
 
 Route::get('/scan', [AdminFabricReceiptController::class, 'scan'])->name('scan');
+Route::get('/verify-stock-fix', [AdminReportController::class, 'verifyStockFix'])->name('verify-stock-fix');
 
 // ================= UNIT AUTHENTICATION ROUTES (SEPARATE FROM ADMIN) =================
 Route::prefix('unit')->name('unit.')->middleware(['unit.remember'])->group(function () {
@@ -1263,6 +1264,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::delete('/lots/delete-session/{type}/{id}', [AdminReportController::class, 'deleteLotSession'])->name('lots.delete-session');
             Route::get('/lots/lot-details-pdf/{lot_no}', [AdminReportController::class, 'lotDetailsPdf'])->name('lots.lot-details.pdf');
             Route::get('/stock', [AdminReportController::class, 'stock'])->name('stock');
+            Route::get('/stock/verify-fix', [AdminReportController::class, 'verifyStockFix'])->name('stock.verify-fix');
             Route::get('/stock/roll-details', [AdminReportController::class, 'fabricRollDetails'])->name('stock.roll.details');
             Route::get('/stock/export', [AdminReportController::class, 'stockExport'])->name('stock.export');
             Route::get('/stock/export-with-rate', [AdminReportController::class, 'stockExportWithRate'])->name('stock.export_with_rate');

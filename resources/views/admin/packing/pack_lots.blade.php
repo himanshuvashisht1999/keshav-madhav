@@ -2328,8 +2328,13 @@
                     return;
                 }
                 
-                requiredDetails = requiredSizesArray.map(size => {
-                    return { size: size, total_quantity: 1 };
+                let sizeCounts = {};
+                requiredSizesArray.forEach(size => {
+                    let s = size.toString().trim();
+                    sizeCounts[s] = (sizeCounts[s] || 0) + 1;
+                });
+                requiredDetails = Object.keys(sizeCounts).map(size => {
+                    return { size: size, total_quantity: sizeCounts[size] };
                 });
             }
 
