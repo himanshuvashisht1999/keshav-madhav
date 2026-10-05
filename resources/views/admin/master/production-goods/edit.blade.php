@@ -287,7 +287,7 @@
                                                     <div class="color-items-container ml-4">
                                                         <h6>Colors & Images</h6>
                                                         @php $cIdx = 0; @endphp
-                                                        @foreach($variant->items as $item)
+                                                        @forelse($variant->items as $item)
                                                             <div
                                                                 class="color-item-row row mb-2 align-items-center border-bottom pb-2">
                                                                 <input type="hidden"
@@ -345,7 +345,41 @@
                                                                 </div>
                                                             </div>
                                                             @php $cIdx++; @endphp
-                                                        @endforeach
+                                                        @empty
+                                                            <div class="color-item-row row mb-2 align-items-center border-bottom pb-2">
+                                                                <input type="hidden"
+                                                                    name="variant_item_ids[{{ $sIdx }}][0]"
+                                                                    value="">
+                                                                <div class="col-md-4">
+                                                                    <label class="d-flex justify-content-between align-items-center mb-1 small text-uppercase">
+                                                                        <span>Color</span>
+                                                                        <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
+                                                                            <a href="{{ route('admin.master.colors.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i></a>
+                                                                            <a href="javascript:void(0)" class="text-info refreshColorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                                                        </span>
+                                                                    </label>
+                                                                    <select name="variant_colors[{{ $sIdx }}][0]"
+                                                                        class="form-control select2 color-select" style="width: 100%;">
+                                                                        <option value="">Select Color</option>
+                                                                        @foreach($colors as $color)
+                                                                            <option value="{{ $color->id }}">{{ $color->name }}</option>
+                                                                        @endforeach
+                                                                    </select>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <label class="small text-muted d-block">Upload Image</label>
+                                                                    <input type="file"
+                                                                        name="variant_images[{{ $sIdx }}][0]"
+                                                                        class="form-control-file d-inline variant-image-input"
+                                                                        accept="image/*" style="width: auto;">
+                                                                </div>
+                                                                <div class="col-md-2 text-right">
+                                                                    <button type="button"
+                                                                        class="btn btn-warning btn-sm remove-color-item" disabled><i
+                                                                            class="fa fa-times"></i></button>
+                                                                </div>
+                                                            </div>
+                                                        @endforelse
                                                     </div>
                                                     <div class="ml-4 mt-2">
                                                         <button type="button" class="btn btn-info btn-sm add-color-item"
@@ -355,8 +389,8 @@
                                                 </div>
                                                 @php $sIdx++; @endphp
                                             @empty
-                                                <div class="size-set-block mb-4 p-3 border rounded bg-light">
-                                                    <p class="text-muted">No variants defined. Click "Add More" to create one.
+                                                <div id="no-variants-message" class="mb-4 p-3 border rounded bg-light">
+                                                    <p class="text-muted mb-0">No variants defined. Click "Add More" to create one.
                                                     </p>
                                                 </div>
                                             @endforelse
@@ -731,6 +765,7 @@
                     $(this).find('.color-item-row').each(function (cIdx) {
                         $(this).find('input[name^="variant_item_ids"]').attr('name', `variant_item_ids[${sIdx}][${cIdx}]`);
                         $(this).find('.color-select').attr('name', `variant_colors[${sIdx}][${cIdx}]`);
+                        $(this).find('input[type="hidden"][name^="variant_colors"]').attr('name', `variant_colors[${sIdx}][${cIdx}]`);
                         $(this).find('.variant-image-input').attr('name', `variant_images[${sIdx}][${cIdx}]`);
                     });
                     let colorRows = $(this).find('.color-item-row');
@@ -743,12 +778,12 @@
                 updateColorOptions();
             }
 
-            // Run initial check
-            updateSizeSetOptions();
-            updateColorOptions();
+            // Run initial check and indexing
+            reindexAll();
 
             // Add Size Set
             $('.add-size-set').on('click', function () {
+                $('#no-variants-message').remove();
                 let sIdx = $('.size-set-block').length;
                 let blockHtml = `
                                     <div class="size-set-block mb-4 p-3 border rounded bg-light">
@@ -773,7 +808,7 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-3">
-                                                 <label>MRP</label>
+                                                 <label>MRP (for this set)</label>
                                                 <input type="number" name="mrps[]" class="form-control mrp-input" placeholder="0.00" step="0.01">
                                             </div>
                                             <div class="col-md-3">
@@ -803,7 +838,8 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <input type="file" name="variant_images[${sIdx}][0]" class="form-control-file variant-image-input" accept="image/*">
+                                                    <label class="small text-muted d-block">Upload Image</label>
+                                                    <input type="file" name="variant_images[${sIdx}][0]" class="form-control-file d-inline variant-image-input" accept="image/*" style="width: auto;">
                                                 </div>
                                                 <div class="col-md-2 text-right">
                                                     <button type="button" class="btn btn-warning btn-sm remove-color-item" disabled><i class="fa fa-times"></i></button>

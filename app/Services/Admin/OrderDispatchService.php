@@ -139,19 +139,27 @@ class OrderDispatchService
 
             // ================= UPDATE CARTONS (IF ANY) =================
             if (!empty($selectedCartons)) {
-                if (!empty($request->global_prices) || !empty($request->global_mrps)) {
-                    foreach ($request->global_prices ?? [] as $setId => $newPrice) {
-                        $newMrp = $request->global_mrps[$setId] ?? null;
+                $modifiedPrices = $request->modified_global_prices ?? [];
+                $modifiedMrps = $request->modified_global_mrps ?? [];
+
+                if (!empty($modifiedPrices) || !empty($modifiedMrps)) {
+                    $allModifiedSetIds = array_unique(array_merge($modifiedPrices, $modifiedMrps));
+                    foreach ($allModifiedSetIds as $setId) {
                         $detailIds = \App\Models\OrderProductSetDetail::where('order_products_set_id', $setId)->pluck('id');
-                        
-                        $updateData = ['selling_price' => (float)$newPrice];
-                        if ($newMrp !== null && $newMrp !== '') {
-                            $updateData['mrp'] = (float)$newMrp;
+                        $updateData = [];
+
+                        if (in_array($setId, $modifiedPrices) && isset($request->global_prices[$setId])) {
+                            $updateData['selling_price'] = (float)$request->global_prices[$setId];
                         }
-                        
-                        PackingItem::whereIn('packing_carton_id', $selectedCartons)
-                            ->whereIn('size_id', $detailIds)
-                            ->update($updateData);
+                        if (in_array($setId, $modifiedMrps) && isset($request->global_mrps[$setId])) {
+                            $updateData['mrp'] = (float)$request->global_mrps[$setId];
+                        }
+
+                        if (!empty($updateData)) {
+                            PackingItem::whereIn('packing_carton_id', $selectedCartons)
+                                ->whereIn('size_id', $detailIds)
+                                ->update($updateData);
+                        }
                     }
                 }
 

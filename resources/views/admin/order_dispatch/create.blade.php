@@ -517,14 +517,6 @@
             let totalPurchasePcs = 0;
             let totalPurchaseBoxes = 0;
 
-            // Map global prices
-            let globalPrices = {};
-            $('input[name^="global_prices"]').each(function () {
-                let name = $(this).attr('name');
-                let setId = name.match(/\[(.*?)\]/)[1];
-                globalPrices[setId] = parseFloat($(this).val()) || 0;
-            });
-
             // Use carton summaries
             $('.carton-checkbox').each(function () {
                 let row = $(this).closest('tr');
@@ -533,13 +525,9 @@
                 let cartonAmount = 0;
 
                 row.find('.carton-set-row').each(function () {
-                    let setId = $(this).data('set-id');
                     let qty = parseFloat($(this).data('qty')) || 0;
                     cartonPcs += qty;
-                    let price = globalPrices[setId] || 0;
-                    if (!price) {
-                         price = parseFloat($(this).data('price')) || 0;
-                    }
+                    let price = parseFloat($(this).data('price')) || 0;
                     cartonAmount += (price * qty);
                 });
 
@@ -1045,7 +1033,7 @@
                     let setId = name.match(/\[(.*?)\]/)[1];
                     let price = parseFloat($(this).val()) || 0;
                     $(`.carton-set-row[data-set-id="${setId}"]`).each(function() {
-                        $(this).data('price', price);
+                        $(this).data('price', price).attr('data-price', price);
                         $(this).find('.carton-price-display').text('₹' + price.toFixed(2));
                         let qty = parseFloat($(this).data('qty')) || 0;
                         $(this).find('.carton-amount-display').text('₹' + (price * qty).toFixed(2));
@@ -1057,12 +1045,34 @@
                     let setId = name.match(/\[(.*?)\]/)[1];
                     let mrp = parseFloat($(this).val()) || 0;
                     $(`.carton-set-row[data-set-id="${setId}"]`).each(function() {
-                        $(this).data('mrp', mrp);
+                        $(this).data('mrp', mrp).attr('data-mrp', mrp);
                         $(this).find('.carton-mrp-display').text('₹' + mrp.toFixed(2));
                     });
                 });
 
                 calculateDispatchTotals('default');
+            });
+
+            $(document).on('input', '.global-price-input', function () {
+                let name = $(this).attr('name');
+                let setIdMatch = name.match(/\[(.*?)\]/);
+                if (setIdMatch) {
+                    let setId = setIdMatch[1];
+                    if ($(`#modified_price_${setId}`).length === 0) {
+                        $('#priceSetupContainer').append(`<input type="hidden" name="modified_global_prices[]" id="modified_price_${setId}" value="${setId}">`);
+                    }
+                }
+            });
+
+            $(document).on('input', '.global-mrp-input', function () {
+                let name = $(this).attr('name');
+                let setIdMatch = name.match(/\[(.*?)\]/);
+                if (setIdMatch) {
+                    let setId = setIdMatch[1];
+                    if ($(`#modified_mrp_${setId}`).length === 0) {
+                        $('#priceSetupContainer').append(`<input type="hidden" name="modified_global_mrps[]" id="modified_mrp_${setId}" value="${setId}">`);
+                    }
+                }
             });
 
             $(document).on('input', '#calc_discount_p', function () {

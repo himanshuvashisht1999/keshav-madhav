@@ -204,11 +204,15 @@ class ProductionGoodsService
          * SAVE PRODUCT VARIANTS (Dynamic Size Sets + Colors + MRP)
          */
         if ($request->has('size_sets') && is_array($request->size_sets)) {
-            foreach ($request->size_sets as $index => $sizeSetId) {
+            $sizeSets = array_values($request->size_sets);
+            $mrps = array_values($request->mrps ?? []);
+            $variantColors = is_array($request->variant_colors) ? array_values($request->variant_colors) : [];
+            $allSetImages = $request->file('size_set_images');
+
+            foreach ($sizeSets as $index => $sizeSetId) {
                 if ($sizeSetId) {
-                    $mrp = $request->mrps[$index] ?? 0;
+                    $mrp = $mrps[$index] ?? ($request->mrps[$index] ?? 0);
                     $sizeSetImage = null;
-                    $allSetImages = $request->file('size_set_images');
                     if (is_array($allSetImages) && isset($allSetImages[$index])) {
                         $image = $allSetImages[$index];
                         $ext = $image->getClientOriginalExtension();
@@ -224,8 +228,10 @@ class ProductionGoodsService
                     ]);
 
                     // Nested Colors & Images for this Size Set
-                    if (isset($request->variant_colors[$index]) && is_array($request->variant_colors[$index])) {
-                        foreach ($request->variant_colors[$index] as $cIdx => $colorId) {
+                    $colorsForSet = $variantColors[$index] ?? ($request->variant_colors[$index] ?? null);
+                    if (isset($colorsForSet) && is_array($colorsForSet)) {
+                        $colorsForSet = array_values($colorsForSet);
+                        foreach ($colorsForSet as $cIdx => $colorId) {
                             if (!$colorId)
                                 continue;
 
@@ -358,16 +364,22 @@ class ProductionGoodsService
         $keepItemIds = [];
 
         if ($request->has('size_sets') && is_array($request->size_sets)) {
-            foreach ($request->size_sets as $index => $sizeSetId) {
+            $sizeSets = array_values($request->size_sets);
+            $variantIds = array_values($request->variant_ids ?? []);
+            $mrps = array_values($request->mrps ?? []);
+            $variantColors = is_array($request->variant_colors) ? array_values($request->variant_colors) : [];
+            $variantItemIds = is_array($request->variant_item_ids) ? array_values($request->variant_item_ids) : [];
+            $allSetImages = $request->file('size_set_images');
+
+            foreach ($sizeSets as $index => $sizeSetId) {
                 if (!$sizeSetId)
                     continue;
 
-                $variantId = $request->variant_ids[$index] ?? null;
-                $mrp = $request->mrps[$index] ?? 0;
+                $variantId = $variantIds[$index] ?? ($request->variant_ids[$index] ?? null);
+                $mrp = $mrps[$index] ?? ($request->mrps[$index] ?? 0);
 
                 // Handle Size Set Image
                 $sizeSetImage = null;
-                $allSetImages = $request->file('size_set_images');
                 if (is_array($allSetImages) && isset($allSetImages[$index])) {
                     $image = $allSetImages[$index];
                     $ext = $image->getClientOriginalExtension();
@@ -397,12 +409,16 @@ class ProductionGoodsService
                 $keepVariantIds[] = $variant->id;
 
                 // Nested Colors & Images
-                if (isset($request->variant_colors[$index]) && is_array($request->variant_colors[$index])) {
-                    foreach ($request->variant_colors[$index] as $cIdx => $colorId) {
+                $colorsForSet = $variantColors[$index] ?? ($request->variant_colors[$index] ?? null);
+                $itemIdsForSet = $variantItemIds[$index] ?? ($request->variant_item_ids[$index] ?? []);
+                if (isset($colorsForSet) && is_array($colorsForSet)) {
+                    $colorsForSet = array_values($colorsForSet);
+                    $itemIdsForSet = is_array($itemIdsForSet) ? array_values($itemIdsForSet) : [];
+                    foreach ($colorsForSet as $cIdx => $colorId) {
                         if (!$colorId)
                             continue;
 
-                        $itemId = $request->variant_item_ids[$index][$cIdx] ?? null;
+                        $itemId = $itemIdsForSet[$cIdx] ?? null;
 
                         $imagePath = null;
                         if ($request->hasFile("variant_images.$index.$cIdx")) {
