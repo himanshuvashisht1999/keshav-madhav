@@ -198,6 +198,7 @@ class ProductOrderController extends Controller
         $response['fabrics'] = $this->service->fabrics();
         // dd( $response['fabrics']);
         $response['fittings'] = $this->service->fittings();
+        $response['seasons'] = \App\Models\ProductSeason::where('status', 1)->orderBy('name')->get();
         $response['vendors'] = \App\Models\Vendor::where('status', 1)->get();
         $response['customers'] = \App\Models\MasterCustomer::where('status', 1)->get();
         return view('admin.product_order.index-order-set', $response);
@@ -255,6 +256,7 @@ class ProductOrderController extends Controller
         $response['sizes'] = $this->service->product_sizes();
         $response['colours'] = $this->service->getColours();
         $response['products'] = $this->service->products();
+        $response['seasons'] = \App\Models\ProductSeason::where('status', 1)->orderBy('name')->get();
         return view('admin.product_order.create_domestic', $response);
     }
 
@@ -870,6 +872,7 @@ class ProductOrderController extends Controller
             'cuttingMaster' => $data->stage_master_unit->name ?? ($firstAssignment->cutting_master->name ?? '-'),
             'cuttingMasterAddress' => $data->stage_master_unit->masterFabricWarehouse->address ?? ($firstAssignment->cutting_master->masterFabricWarehouse->address ?? '-'),
             'fitting' => $data->master_product_fitting?->name ?? ($firstAssignment->master_fitting?->name ?? '-'),
+            'season' => $data->season?->name ?? ($firstAssignment->season?->name ?? '-'),
             'remark' => $data->remark ?? ($firstAssignment->remarks ?? '-'),
             'belt' => $firstAssignment->belt ?? '-',
             'size_set' => $data->size_measurement?->name ?? '-',
@@ -931,18 +934,20 @@ class ProductOrderController extends Controller
         $firstAssignment = $assignments->first();
 
         // Check if all selected sets share the same assignment details
-        $firstCuttingMaster = $firstData->stage_master_unit_id ?? ($firstAssignment->cutting_master_id ?? null);
+        $firstCuttingMaster = $firstData->stage_master_unit_id ?? ($firstAssignment->to_assign_id ?? null);
         $firstFitting = $firstData->master_product_fitting_id ?? ($firstAssignment->master_fitting_id ?? null);
         $firstPattern = $firstData->master_design_pattern_id ?? ($firstAssignment->master_pattern_id ?? null);
+        $firstSeason = $firstData->product_season_id ?? ($firstAssignment->product_season_id ?? null);
 
         foreach ($sets as $set) {
             $setAssignment = $set->orderCuttingStages->first();
-            $cuttingMaster = $set->stage_master_unit_id ?? ($setAssignment->cutting_master_id ?? null);
+            $cuttingMaster = $set->stage_master_unit_id ?? ($setAssignment->to_assign_id ?? null);
             $fitting = $set->master_product_fitting_id ?? ($setAssignment->master_fitting_id ?? null);
             $pattern = $set->master_design_pattern_id ?? ($setAssignment->master_pattern_id ?? null);
+            $season = $set->product_season_id ?? ($setAssignment->product_season_id ?? null);
 
-            if ($cuttingMaster !== $firstCuttingMaster || $fitting !== $firstFitting || $pattern !== $firstPattern) {
-                throw new \Exception('You cannot download a combined PDF for sets that have different cutting assignments (e.g., different Cutting Masters, Fittings, or Patterns). Please select sets with identical assignment details.');
+            if ($cuttingMaster !== $firstCuttingMaster || $fitting !== $firstFitting || $pattern !== $firstPattern || $season !== $firstSeason) {
+                throw new \Exception('You cannot download a combined PDF for sets that have different cutting assignments (e.g., different Cutting Masters, Fittings, Patterns, or Seasons). Please select sets with identical assignment details.');
             }
         }
 
@@ -967,6 +972,7 @@ class ProductOrderController extends Controller
             'cuttingMaster' => $firstData->stage_master_unit->name ?? ($firstAssignment->cutting_master->name ?? '-'),
             'cuttingMasterAddress' => $firstData->stage_master_unit->masterFabricWarehouse->address ?? ($firstAssignment->cutting_master->masterFabricWarehouse->address ?? '-'),
             'fitting' => $firstData->master_product_fitting?->name ?? ($firstAssignment->master_fitting?->name ?? '-'),
+            'season' => $firstData->season?->name ?? ($firstAssignment->season?->name ?? '-'),
             'remark' => $firstData->remark ?? ($firstAssignment->remarks ?? '-'),
             'belt' => $firstAssignment->belt ?? '-',
             'size_set' => $sizesList,

@@ -27,7 +27,8 @@ class OrderCuttingStage extends Model
         'lot_no',
         'fabric_id',
         'master_fitting_id',
-        'master_pattern_id',    
+        'master_pattern_id',
+        'product_season_id',
         'quantity',
         'remaining_quantity',
         'till_allowed_time',
@@ -72,6 +73,9 @@ class OrderCuttingStage extends Model
     }
     public function master_fitting(){
         return $this->hasOne('App\Models\MasterProductFitting','id','master_fitting_id');
+    }
+    public function season(){
+        return $this->belongsTo('App\Models\ProductSeason', 'product_season_id');
     }
     public function vendor(){
         return $this->belongsTo('App\Models\Vendor','vendor_id','id');

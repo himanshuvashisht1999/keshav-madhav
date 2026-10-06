@@ -43,6 +43,7 @@ use App\Http\Controllers\Admin\OrderStagesController as AdminOrderStagesControll
 
 ////new master
 use App\Http\Controllers\Admin\Master\ProductNatureController as AdminProductNatureController;
+use App\Http\Controllers\Admin\Master\ProductSeasonController as AdminProductSeasonController;
 use App\Http\Controllers\Admin\Master\FabricTypeController as AdminFabricTypeController;
 use App\Http\Controllers\Admin\Master\MasterColorController as AdminMasterColorController;
 use App\Http\Controllers\Admin\Master\MasterOrderRemarkController as AdminMasterOrderRemarkController;
@@ -1059,6 +1060,17 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/edit', [AdminFabricTypeController::class, 'edit'])->name('edit');
             Route::post('/update', [AdminFabricTypeController::class, 'update'])->name('update');
             Route::get('/delete', [AdminFabricTypeController::class, 'delete'])->name('delete');
+        });
+
+        Route::prefix('master/product-season')->name('master.product-season.')->group(function () {
+            Route::get('/index', [AdminProductSeasonController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminProductSeasonController::class, 'indexList'])->name('indexList');
+            Route::get('/all_product_seasons', [AdminProductSeasonController::class, 'allProductSeasons'])->name('all_product_seasons');
+            Route::get('/create', [AdminProductSeasonController::class, 'create'])->name('create');
+            Route::post('/store', [AdminProductSeasonController::class, 'store'])->name('store');
+            Route::get('/edit', [AdminProductSeasonController::class, 'edit'])->name('edit');
+            Route::post('/update', [AdminProductSeasonController::class, 'update'])->name('update');
+            Route::get('/delete', [AdminProductSeasonController::class, 'delete'])->name('delete');
         });
         Route::prefix('master/series')->name('master.series.')->group(function () {
             Route::get('/index', [AdminMasterSeriesController::class, 'index'])->name('index');

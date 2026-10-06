@@ -36,6 +36,7 @@ class OrderProductSet extends Model
         'fabric_id',
         'master_product_fitting_id',
         'master_design_pattern_id',
+        'product_season_id',
         'remark',
         'is_printing',
         'printing_unit_id',
@@ -176,5 +177,10 @@ class OrderProductSet extends Model
     public function orderLots()
     {
         return $this->hasMany(OrderLot::class, 'order_products_set_id');
+    }
+
+    public function season()
+    {
+        return $this->belongsTo(ProductSeason::class, 'product_season_id');
     }
 }

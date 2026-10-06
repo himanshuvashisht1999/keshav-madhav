@@ -106,26 +106,26 @@
             <td class="meta-label">Pattern:</td>
             <td>{{ $header['pattern'] }}</td>
 
+            <td class="meta-label">Season:</td>
+            <td>{{ $header['season'] ?? '-' }}</td>
+        </tr>
+
+        <tr>
             <td class="meta-label">Printing Unit:</td>
             <td>{{ $header['printing_unit_name'] }}</td>
-        </tr>
-        <br>
-        <tr>
+
             <td class="meta-label">Warehouse:</td>
             <td>{{ $header['warehouse_name'] }}</td>
-
-            <td class="meta-label">Cutting Master:</td>
-            <td>{{ $header['cuttingMaster'] }}</td>
         </tr>
-        {{-- <tr>
-            <td class="meta-label">Address:</td>
-            <td>{{ $header['cuttingMasterAddress'] }}</td>
-        </tr> --}}
 
         <tr>
+            <td class="meta-label">Cutting Master:</td>
+            <td>{{ $header['cuttingMaster'] }}</td>
+
             <td class="meta-label">Belt:</td>
-            <td colspan="3">{{ $header['belt'] ?? '-' }}</td>
+            <td>{{ $header['belt'] ?? '-' }}</td>
         </tr>
+
         <tr>
             <td class="meta-label">Remark:</td>
             <td colspan="3">{{ $header['remark'] }}</td>

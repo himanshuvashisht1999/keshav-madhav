@@ -295,6 +295,7 @@ class ProductOrderDataTable
                         data-set-size="' . $set_size?->set_size . '"
                         data-set-size-group="' . $set_size?->size_group . '"
                         data-color="' . $color . '"
+                        data-season-id="' . ($queue->product_season_id ?? '') . '"
                         data-total="' . $queue->total_quantity . '"
                         data-remain="' . $queue->remain_total_quantity . '">
                         Assign

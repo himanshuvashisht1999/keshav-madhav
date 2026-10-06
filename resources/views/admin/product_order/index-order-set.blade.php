@@ -189,6 +189,19 @@
                         </select>
                     </div>
 
+                    <!-- SEASON -->
+                    <div class="form-group">
+                        <label>Season</label>
+                        <select name="product_season_id" id="modal_product_season_id" class="form-control select2">
+                            <option value="">Select Season</option>
+                            @if(isset($seasons))
+                                @foreach($seasons as $season)
+                                    <option value="{{ $season->id }}">{{ $season->name }}</option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
+
                     <!-- ASSIGN QTY -->
                     <div class="form-group" id="assign_qty_group">
                         <label>Total Pieces to Assign</label>
@@ -442,11 +455,18 @@ $(document).ready(function () {
         
         const total = $(this).data('total');
         const remain = $(this).data('remain');
+        const seasonId = $(this).data('season-id');
         
         $('#modal_total_qty').text(total);
         $('#current_remain_qty').text(remain);
         $('#assign_quantity').val(remain); // Default to full remaining
         $('#assign_qty_group').show();
+
+        if (seasonId) {
+            $('#modal_product_season_id').val(seasonId).trigger('change');
+        } else {
+            $('#modal_product_season_id').val('').trigger('change');
+        }
 
         $('#assignModal').modal('show');
     });
@@ -546,6 +566,7 @@ $(document).ready(function () {
         $('#modal_total_qty').text('-');
 
         $('#assign_qty_group').hide(); // Hide for bulk assignment for now
+        $('#modal_product_season_id').val('').trigger('change');
 
         $('#assignModal').modal('show');
     });

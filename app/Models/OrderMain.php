@@ -20,6 +20,7 @@ class OrderMain extends Model
         'order_type',
         'expected_delivery_date',
         'master_customer_id',
+        'product_season_id',
         'total_amount',
         'status',
         'is_paid',
@@ -33,6 +34,10 @@ class OrderMain extends Model
     public function customer()
     {
         return $this->hasOne('App\Models\MasterCustomer', 'id', 'master_customer_id');
+    }
+    public function season()
+    {
+        return $this->belongsTo('App\Models\ProductSeason', 'product_season_id');
     }
     public function orders()
     {

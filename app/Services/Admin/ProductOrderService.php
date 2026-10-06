@@ -847,6 +847,7 @@ class ProductOrderService
                     $cuttingStage->fabric_id = $fabricId ?? null;
                     $cuttingStage->master_fitting_id = $request->master_fitting_id;
                     $cuttingStage->master_pattern_id = $request->master_pattern_id;
+                    $cuttingStage->product_season_id = $request->product_season_id ?? null;
                     $cuttingStage->quantity = $assignQty;
                     $cuttingStage->remaining_quantity = $assignQty;
                     $cuttingStage->remarks = $request->remark ?? null;
@@ -879,6 +880,9 @@ class ProductOrderService
                     // Save Printing Preference
                     $data->is_printing = ($request->is_printing == 'yes' || $request->is_printing == 1) ? 1 : 0;
                     $data->printing_unit_id = ($data->is_printing == 1) ? $request->printing_unit_id : null;
+                    if ($request->filled('product_season_id')) {
+                        $data->product_season_id = $request->product_season_id;
+                    }
 
                     // If NO remaining quantity, mark as fully assigned (status 2)
                     if ($data->remain_total_quantity <= 0) {
@@ -1462,6 +1466,7 @@ class ProductOrderService
                 $save_data_main->order_type = 'domestic';
                 $save_data_main->expected_delivery_date = date('Y-m-d');
                 $save_data_main->master_customer_id = $customer->id;
+                $save_data_main->product_season_id = $request->product_season_id ?? null;
                 $save_data_main->status = 1;
                 $save_data_main->save();
 
@@ -1484,6 +1489,7 @@ class ProductOrderService
                 $save_orderProductSet->total_quantity = $orderQuantity * $size_data->no_of_pcs;
                 $save_orderProductSet->remain_total_quantity = $orderQuantity * $size_data->no_of_pcs;
                 $save_orderProductSet->remain_set_quantity = $orderQuantity;
+                $save_orderProductSet->product_season_id = $request->product_season_id ?? null;
                 $save_orderProductSet->status = 1;
                 
                 // Save Printing Preference
@@ -1520,6 +1526,7 @@ class ProductOrderService
                     $cuttingStage->fabric_id = $fabricId ?? null;
                     $cuttingStage->master_fitting_id = $request->master_fitting_id;
                     $cuttingStage->master_pattern_id = $request->master_pattern_id;
+                    $cuttingStage->product_season_id = $request->product_season_id ?? null;
                     $cuttingStage->quantity = $assignQty;
                     $cuttingStage->remaining_quantity = $assignQty;
                     $cuttingStage->belt = $request->belt ?? null;
@@ -1545,6 +1552,7 @@ class ProductOrderService
                     $save_orderProductSet->fabric_id = $fabricId ?? null;
                     $save_orderProductSet->master_product_fitting_id = $request->master_fitting_id;
                     $save_orderProductSet->master_design_pattern_id = $request->master_pattern_id;
+                    $save_orderProductSet->product_season_id = $request->product_season_id ?? null;
                     $save_orderProductSet->remark = $request->remark ?? null;
                     $save_orderProductSet->save();
                 }

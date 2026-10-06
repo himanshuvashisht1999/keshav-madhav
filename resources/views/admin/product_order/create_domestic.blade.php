@@ -142,31 +142,43 @@
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="form-group mb-3">
-                                                        <label>Fitting</label>
-                                                        <select name="master_fitting_id" id="master_fitting_id"
-                                                            class="form-control select2">
-                                                            <option value="">Select Fitting</option>
-                                                            @foreach($fittings as $fitting)
-                                                                <option value="{{ $fitting->id }}">{{ $fitting->name }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="form-group mb-3">
-                                                        <label>Product Style</label>
-                                                        <select name="master_pattern_id" id="master_pattern_id"
-                                                            class="form-control select2">
-                                                            <option value="">Select Pattern</option>
-                                                            @foreach($patterns as $pattern)
-                                                                <option value="{{ $pattern->id }}">{{ $pattern->name }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                </div>
+                                            <div class="form-group mb-3">
+                                                <label>Season</label>
+                                                <select name="product_season_id" id="product_season_id" class="form-control select2">
+                                                    <option value="">Select Season</option>
+                                                    @if(isset($seasons))
+                                                        @foreach($seasons as $season)
+                                                            <option value="{{ $season->id }}">{{ $season->name }}</option>
+                                                        @endforeach
+                                                    @endif
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label>Fitting</label>
+                                                <select name="master_fitting_id" id="master_fitting_id"
+                                                    class="form-control select2">
+                                                    <option value="">Select Fitting</option>
+                                                    @foreach($fittings as $fitting)
+                                                        <option value="{{ $fitting->id }}">{{ $fitting->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label>Product Style</label>
+                                                <select name="master_pattern_id" id="master_pattern_id"
+                                                    class="form-control select2">
+                                                    <option value="">Select Pattern</option>
+                                                    @foreach($patterns as $pattern)
+                                                        <option value="{{ $pattern->id }}">{{ $pattern->name }}</option>
+                                                    @endforeach
+                                                </select>
                                             </div>
                                         </div>
                                     </div>

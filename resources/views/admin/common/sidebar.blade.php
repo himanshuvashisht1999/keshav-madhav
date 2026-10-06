@@ -1139,6 +1139,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                             str_contains($page_url, 'admin/master/product-sub-stage') ||
                             str_contains($page_url, 'admin/master/design-pattern') ||
                             str_contains($page_url, 'admin/master/product-nature') ||
+                            str_contains($page_url, 'admin/master/product-season') ||
                             str_contains($page_url, 'admin/master/fabric-type')
                         ) ? 'nav-item menu-open' : 'nav-item' }}">
                                                     <a href="#" class="{{ (
@@ -1151,6 +1152,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                             str_contains($page_url, 'admin/master/product-sub-stage') ||
                             str_contains($page_url, 'admin/master/design-pattern') ||
                             str_contains($page_url, 'admin/master/product-nature') ||
+                            str_contains($page_url, 'admin/master/product-season') ||
                             str_contains($page_url, 'admin/master/fabric-type')
                         ) ? 'nav-link active' : 'nav-link' }}">
                                                         <i class="far fa-circle nav-icon"></i>
@@ -1245,6 +1247,14 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                                                 class="{{ str_contains($page_url, 'admin/master/brand') ? 'nav-link active' : 'nav-link' }}">
                                                                 <i class="fas fa-circle"></i>
                                                                 <p>Brand</p>
+                                                            </a>
+                                                        </li>
+
+                                                        <li class="nav-item">
+                                                            <a href="{{ route('admin.master.product-season.index') }}"
+                                                                class="{{ str_contains($page_url, 'admin/master/product-season') ? 'nav-link active' : 'nav-link' }}">
+                                                                <i class="fas fa-circle"></i>
+                                                                <p>Product Season</p>
                                                             </a>
                                                         </li>
                                                     </ul>
