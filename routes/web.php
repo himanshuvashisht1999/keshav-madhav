@@ -1924,6 +1924,135 @@ Route::get('/admin/tools/merge-duplicate-colors', function (\Illuminate\Http\Req
     ]);
 })->middleware(['web'])->name('admin.tools.merge-duplicate-colors');
 
+Route::get('/admin/tools/fix-orphaned-inventory-products', function () {
+    $results = [];
+
+    \DB::transaction(function () use (&$results) {
+        // 1. Fix domestic_inventories product_id 116 -> 12 (Design 17123)
+        $inv = \DB::table('domestic_inventories')->where('product_id', 116)->get();
+        foreach ($inv as $item) {
+            $newBarcode = 'D12S' . $item->size_set_id . 'C' . $item->color_id;
+            \DB::table('domestic_inventories')->where('id', $item->id)->update([
+                'product_id' => 12,
+                'barcode'    => $newBarcode,
+            ]);
+            $results['domestic_inventories'][] = [
+                'id' => $item->id,
+                'old_product_id' => 116,
+                'new_product_id' => 12,
+                'old_barcode' => $item->barcode,
+                'new_barcode' => $newBarcode,
+                'total_boxes' => $item->total_boxes
+            ];
+        }
+
+        // Ensure variant exists for Product 12 with Size Set 4 so MRP and variants resolve
+        $variant = \DB::table('production_goods_variants')
+            ->where('production_goods_id', 12)
+            ->where('master_size_measurement_id', 4)
+            ->first();
+
+        if (!$variant) {
+            $variantId = \DB::table('production_goods_variants')->insertGetId([
+                'production_goods_id' => 12,
+                'master_size_measurement_id' => 4,
+                'mrp' => 1120.00,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $results['created_variant'] = [
+                'production_goods_id' => 12,
+                'size_set_id' => 4,
+                'variant_id' => $variantId,
+                'mrp' => 1120.00
+            ];
+        } else {
+            $variantId = $variant->id;
+        }
+
+        // Ensure variant color exists for color 58
+        $variantColor = \DB::table('production_goods_variant_colors')
+            ->where('variant_id', $variantId)
+            ->where('master_color_id', 58)
+            ->first();
+
+        if (!$variantColor) {
+            \DB::table('production_goods_variant_colors')->insert([
+                'variant_id' => $variantId,
+                'master_color_id' => 58,
+                'barcode' => 'D12S4C58',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $results['created_variant_color'] = [
+                'variant_id' => $variantId,
+                'color_id' => 58,
+                'barcode' => 'D12S4C58'
+            ];
+        }
+
+        // 2. Fix order_products_sets orphaned production_goods_id by matching design_number
+        $orphanedOps = \DB::table('order_products_sets as ops')
+            ->leftJoin('production_goods as pg', 'ops.production_goods_id', '=', 'pg.id')
+            ->whereNull('pg.id')
+            ->whereNotNull('ops.production_goods_id')
+            ->select('ops.id', 'ops.production_goods_id', 'ops.design_number')
+            ->get();
+
+        foreach ($orphanedOps as $ops) {
+            $cleanDesign = trim(explode('(', $ops->design_number)[0]);
+            $matchedProduct = \DB::table('production_goods')
+                ->where('design_number', $ops->design_number)
+                ->orWhere('design_number', $cleanDesign)
+                ->first();
+
+            if ($matchedProduct) {
+                \DB::table('order_products_sets')->where('id', $ops->id)->update([
+                    'production_goods_id' => $matchedProduct->id
+                ]);
+                $results['order_products_sets'][] = [
+                    'id' => $ops->id,
+                    'design_number' => $ops->design_number,
+                    'old_product_id' => $ops->production_goods_id,
+                    'matched_product_id' => $matchedProduct->id,
+                ];
+            }
+        }
+
+        // 3. Fix agent_order_items orphaned product_id by matching design_number
+        $orphanedAoi = \DB::table('agent_order_items as aoi')
+            ->leftJoin('production_goods as pg', 'aoi.product_id', '=', 'pg.id')
+            ->whereNull('pg.id')
+            ->whereNotNull('aoi.product_id')
+            ->select('aoi.id', 'aoi.product_id', 'aoi.design_number')
+            ->get();
+
+        foreach ($orphanedAoi as $aoi) {
+            $matchedProduct = \DB::table('production_goods')
+                ->where('design_number', $aoi->design_number)
+                ->first();
+
+            if ($matchedProduct) {
+                \DB::table('agent_order_items')->where('id', $aoi->id)->update([
+                    'product_id' => $matchedProduct->id
+                ]);
+                $results['agent_order_items'][] = [
+                    'id' => $aoi->id,
+                    'design_number' => $aoi->design_number,
+                    'old_product_id' => $aoi->product_id,
+                    'matched_product_id' => $matchedProduct->id,
+                ];
+            }
+        }
+    });
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Orphaned products fixed and re-linked successfully.',
+        'details' => $results
+    ]);
+})->middleware(['web'])->name('admin.tools.fix-orphaned-inventory-products');
+
 
 
 
