@@ -137,14 +137,19 @@ class PackingController extends Controller
             })->values();
         }
 
-        $unit_lots = [];
+        $unit_lots = collect();
         if ($order) {
-            $unit_lots = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+            $rawLots = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                 ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
                 ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
                 ->leftJoin('master_size_measurements', 'order_products_sets.set_size', '=', 'master_size_measurements.id')
                 ->where('order_stage_transactions.to_stage_id', 11)
-                ->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
+                ->when($slip->stage_master_unit_id, function($q) use ($slip) {
+                    $q->where(function($sq) use ($slip) {
+                        $sq->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
+                          ->orWhereNull('order_stage_transactions.sub_stage_id_to');
+                    });
+                })
                 ->where('order_lots.order_main_id', $order->id)
                 ->groupBy(
                     'order_stage_transactions.lot_no',
@@ -152,16 +157,61 @@ class PackingController extends Controller
                     'order_products_sets.design_number',
                     'master_size_measurements.name'
                 )
-                ->havingRaw('SUM(order_stage_transactions.remaining_quantity) > 0')
                 ->select(
                     'order_stage_transactions.lot_no',
                     'order_products_sets.id as set_id',
                     'order_products_sets.design_number',
                     'master_size_measurements.name as size_set_name',
-                    DB::raw('SUM(order_stage_transactions.quantity) as quantity'),
-                    DB::raw('SUM(order_stage_transactions.remaining_quantity) as remaining_quantity')
+                    DB::raw('SUM(order_stage_transactions.quantity) as gross_quantity')
                 )
                 ->get();
+
+            $orderLotNos = $rawLots->pluck('lot_no')->toArray();
+
+            if (!empty($orderLotNos)) {
+                $orderPackedSummary = \DB::table('packing_items')
+                    ->whereIn('lot_no', $orderLotNos)
+                    ->when($packing, function($q) use ($packing) {
+                        $q->where('packing_main_id', '!=', $packing->id);
+                    })
+                    ->select('lot_no', DB::raw('SUM(quantity) as packed_qty'))
+                    ->groupBy('lot_no')
+                    ->pluck('packed_qty', 'lot_no')
+                    ->toArray();
+
+                $orderOutflowSummary = \DB::table('production_outflow_inventories')
+                    ->whereIn('lot_no', $orderLotNos)
+                    ->where('slip_id', '!=', $slip_id)
+                    ->select('lot_no', DB::raw('SUM(quantity) as outflow_qty'))
+                    ->groupBy('lot_no')
+                    ->pluck('outflow_qty', 'lot_no')
+                    ->toArray();
+
+                $orderLegacyReworkSummary = \DB::table('order_stage_transactions')
+                    ->whereIn('lot_no', $orderLotNos)
+                    ->where('from_stage_id', 11)
+                    ->where('type', 'rework')
+                    ->where('production_slip_digitization_id', '!=', $slip_id)
+                    ->select('lot_no', DB::raw('SUM(quantity) as rework_qty'))
+                    ->groupBy('lot_no')
+                    ->pluck('rework_qty', 'lot_no')
+                    ->toArray();
+
+                foreach ($rawLots as $rawLot) {
+                    $lno = $rawLot->lot_no;
+                    $gross = (int) $rawLot->gross_quantity;
+                    $packed = (int) ($orderPackedSummary[$lno] ?? 0);
+                    $outflow = (int) ($orderOutflowSummary[$lno] ?? 0) + (int) ($orderLegacyReworkSummary[$lno] ?? 0);
+
+                    $pending = max(0, $gross - $packed - $outflow);
+
+                    if ($pending > 0) {
+                        $rawLot->quantity = $gross;
+                        $rawLot->remaining_quantity = $pending;
+                        $unit_lots->push($rawLot);
+                    }
+                }
+            }
         }
 
         $storerooms = \App\Models\Storeroom::with('racks')->where('status', 1)->get();
@@ -263,36 +313,92 @@ class PackingController extends Controller
 
         // Both domestic and corporate handled in same view now
 
-        $active_orders = [];
+        // Fetch all incoming lot quantities to Packing (stage 11) for calculating active orders
+        $incomingLotsSummary = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+            ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
+            ->where('order_stage_transactions.to_stage_id', 11) // Packing
+            ->when($slip->stage_master_unit_id, function($q) use ($slip) {
+                $q->where(function($sq) use ($slip) {
+                    $sq->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
+                      ->orWhereNull('order_stage_transactions.sub_stage_id_to');
+                });
+            })
+            ->groupBy('order_lots.order_main_id', 'order_stage_transactions.lot_no')
+            ->select(
+                'order_lots.order_main_id',
+                'order_stage_transactions.lot_no',
+                DB::raw('SUM(order_stage_transactions.quantity) as gross_qty')
+            )
+            ->get();
+
+        $allIncomingLotNos = $incomingLotsSummary->pluck('lot_no')->unique()->toArray();
+        $currentPackingId = $packing ? $packing->id : 0;
+        $packedSummary = [];
+        $outflowSummary = [];
+        $legacyReworkSummary = [];
+
+        if (!empty($allIncomingLotNos)) {
+            $packedSummary = \DB::table('packing_items')
+                ->whereIn('lot_no', $allIncomingLotNos)
+                ->when($currentPackingId, function($q) use ($currentPackingId) {
+                    $q->where('packing_main_id', '!=', $currentPackingId);
+                })
+                ->select('lot_no', DB::raw('SUM(quantity) as packed_qty'))
+                ->groupBy('lot_no')
+                ->pluck('packed_qty', 'lot_no')
+                ->toArray();
+
+            $outflowSummary = \DB::table('production_outflow_inventories')
+                ->whereIn('lot_no', $allIncomingLotNos)
+                ->where('slip_id', '!=', $slip_id)
+                ->select('lot_no', DB::raw('SUM(quantity) as outflow_qty'))
+                ->groupBy('lot_no')
+                ->pluck('outflow_qty', 'lot_no')
+                ->toArray();
+
+            $legacyReworkSummary = \DB::table('order_stage_transactions')
+                ->whereIn('lot_no', $allIncomingLotNos)
+                ->where('from_stage_id', 11)
+                ->where('type', 'rework')
+                ->where('production_slip_digitization_id', '!=', $slip_id)
+                ->select('lot_no', DB::raw('SUM(quantity) as rework_qty'))
+                ->groupBy('lot_no')
+                ->pluck('rework_qty', 'lot_no')
+                ->toArray();
+        }
+
+        $validOrderIds = [];
+        foreach ($incomingLotsSummary as $row) {
+            $lno = $row->lot_no;
+            $gross = (int) $row->gross_qty;
+            $packed = (int) ($packedSummary[$lno] ?? 0);
+            $outflow = (int) ($outflowSummary[$lno] ?? 0) + (int) ($legacyReworkSummary[$lno] ?? 0);
+            if (($gross - $packed - $outflow) > 0) {
+                $validOrderIds[] = $row->order_main_id;
+            }
+        }
+        $validOrderIds = array_unique($validOrderIds);
+
+        $activeOrderIds = $validOrderIds;
+        if ($order) {
+            $activeOrderIds = array_unique(array_merge($activeOrderIds, [$order->id]));
+        }
+
+        // Fetch ALL active orders for dropdown (Corporate & Domestic)
+        $active_orders = \App\Models\OrderMain::with('customer')
+            ->whereIn('id', $activeOrderIds)
+            ->whereIn('status', [0, 1, 2]) // Pending, Confirmed, Partial
+            ->orderBy('id', 'desc')->get();
+
         $packed_quantities = [];
         $order_sets = collect();
         $unit_available = [];
         $unit_available_per_lot = [];
 
-        if (!$order) {
-            $validOrderIds = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
-                ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
-                ->where('order_stage_transactions.to_stage_id', 11) // Packing
-                ->when($slip->stage_master_unit_id, function($q) use ($slip) {
-                    $q->where(function($sq) use ($slip) {
-                        $sq->where('order_stage_transactions.sub_stage_id_to', $slip->stage_master_unit_id)
-                          ->orWhereNull('order_stage_transactions.sub_stage_id_to');
-                    });
-                })
-                ->where('order_stage_transactions.remaining_quantity', '>', 0)
-                ->pluck('order_lots.order_main_id')
-                ->unique()
-                ->toArray();
-
-            // Fetch ALL active orders for dropdown (Corporate & Domestic)
-            $active_orders = \App\Models\OrderMain::with('customer')
-                ->whereIn('id', $validOrderIds)
-                ->whereIn('status', [0, 1, 2]) // Pending, Confirmed, Partial
-                ->orderBy('id', 'desc')->get();
-        } else {
+        if ($order) {
             $packed_quantities = $this->service->getPackedQuantitiesForOrder($order->id);
             $unit_available = $this->service->getAvailableQuantitiesAtUnit($order->id, $slip->stage_master_unit_id);
-        $unit_available_per_lot = $this->service->getAvailableQuantitiesAtUnitPerLot($order->id, $slip->stage_master_unit_id);
+            $unit_available_per_lot = $this->service->getAvailableQuantitiesAtUnitPerLot($order->id, $slip->stage_master_unit_id);
             $unit_incoming = $this->service->getIncomingQuantitiesAtUnit($order->id, $slip->stage_master_unit_id);
 
             // Logic to prepare sets (duplicated from JSON method for initial load)
@@ -324,9 +430,9 @@ class PackingController extends Controller
             })->values();
         }
 
-        $unit_lots = [];
+        $unit_lots = collect();
         if ($order) {
-            $unit_lots = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+            $rawLots = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                 ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
                 ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
                 ->leftJoin('master_size_measurements', 'order_products_sets.set_size', '=', 'master_size_measurements.id')
@@ -344,16 +450,64 @@ class PackingController extends Controller
                     'order_products_sets.design_number',
                     'master_size_measurements.name'
                 )
-                ->havingRaw('SUM(order_stage_transactions.remaining_quantity) > 0')
                 ->select(
                     'order_stage_transactions.lot_no',
                     'order_products_sets.id as set_id',
                     'order_products_sets.design_number',
                     'master_size_measurements.name as size_set_name',
-                    DB::raw('SUM(order_stage_transactions.quantity) as quantity'),
-                    DB::raw('SUM(order_stage_transactions.remaining_quantity) as remaining_quantity')
+                    DB::raw('SUM(order_stage_transactions.quantity) as gross_quantity')
                 )
                 ->get();
+
+            $orderLotNos = $rawLots->pluck('lot_no')->toArray();
+
+            if (!empty($orderLotNos)) {
+                $orderPackedSummary = \DB::table('packing_items')
+                    ->whereIn('lot_no', $orderLotNos)
+                    ->when($currentPackingId, function($q) use ($currentPackingId) {
+                        $q->where('packing_main_id', '!=', $currentPackingId);
+                    })
+                    ->select('lot_no', DB::raw('SUM(quantity) as packed_qty'))
+                    ->groupBy('lot_no')
+                    ->pluck('packed_qty', 'lot_no')
+                    ->toArray();
+
+                $orderOutflowSummary = \DB::table('production_outflow_inventories')
+                    ->whereIn('lot_no', $orderLotNos)
+                    ->where('slip_id', '!=', $slip_id)
+                    ->select('lot_no', DB::raw('SUM(quantity) as outflow_qty'))
+                    ->groupBy('lot_no')
+                    ->pluck('outflow_qty', 'lot_no')
+                    ->toArray();
+
+                $orderLegacyReworkSummary = \DB::table('order_stage_transactions')
+                    ->whereIn('lot_no', $orderLotNos)
+                    ->where('from_stage_id', 11)
+                    ->where('type', 'rework')
+                    ->where('production_slip_digitization_id', '!=', $slip_id)
+                    ->select('lot_no', DB::raw('SUM(quantity) as rework_qty'))
+                    ->groupBy('lot_no')
+                    ->pluck('rework_qty', 'lot_no')
+                    ->toArray();
+
+                foreach ($rawLots as $rawLot) {
+                    $lno = $rawLot->lot_no;
+                    $gross = (int) $rawLot->gross_quantity;
+                    $packed = (int) ($orderPackedSummary[$lno] ?? 0);
+                    $outflow = (int) ($orderOutflowSummary[$lno] ?? 0) + (int) ($orderLegacyReworkSummary[$lno] ?? 0);
+
+                    $pending = max(0, $gross - $packed - $outflow);
+
+                    // Fully packed lots (pending <= 0) will NOT come.
+                    // Partially packed lots come with remaining pending unpacked pieces.
+                    // Untouched lots come with full pieces.
+                    if ($pending > 0) {
+                        $rawLot->quantity = $gross;
+                        $rawLot->remaining_quantity = $pending;
+                        $unit_lots->push($rawLot);
+                    }
+                }
+            }
         }
 
         $storerooms = \App\Models\Storeroom::with('racks')->where('status', 1)->get();
@@ -450,8 +604,16 @@ class PackingController extends Controller
 
         // Save new lots
         if (!empty($request->lots)) {
+            $orderLots = \App\Models\OrderLot::where('order_main_id', $request->order_id)
+                ->pluck('lot_no')
+                ->map(function($l) { return (string)$l; })
+                ->toArray();
+
             $unique_lots = array_unique($request->lots);
             foreach ($unique_lots as $lot_no) {
+                if (!empty($orderLots) && !in_array((string)$lot_no, $orderLots)) {
+                    continue;
+                }
                 \App\Models\PackingSelectedLot::create([
                     'packing_main_id' => $packing->id,
                     'slip_id' => $slip_id,
@@ -573,10 +735,48 @@ class PackingController extends Controller
             })
             ->groupBy('lot_no');
 
+        $other_packed_by_lot_size = \App\Models\PackingItem::join('order_products_set_details', 'packing_items.size_id', '=', 'order_products_set_details.id')
+            ->whereIn('packing_items.lot_no', $selected_lots)
+            ->where('packing_items.packing_main_id', '!=', $packing->id)
+            ->select('packing_items.lot_no', 'order_products_set_details.size', DB::raw('SUM(packing_items.quantity) as total'))
+            ->groupBy('packing_items.lot_no', 'order_products_set_details.size')
+            ->get()
+            ->map(function($item) {
+                $item->size = trim(strtoupper($item->size));
+                return $item;
+            })
+            ->groupBy('lot_no');
+
+        $other_outflow_by_lot_size = \App\Models\ProductionOutflowInventory::join('order_products_set_details', 'production_outflow_inventories.size_id', '=', 'order_products_set_details.id')
+            ->whereIn('production_outflow_inventories.lot_no', $selected_lots)
+            ->where('production_outflow_inventories.slip_id', '!=', $slip_id)
+            ->select('production_outflow_inventories.lot_no', 'order_products_set_details.size', DB::raw('SUM(production_outflow_inventories.quantity) as total'))
+            ->groupBy('production_outflow_inventories.lot_no', 'order_products_set_details.size')
+            ->get()
+            ->map(function($item) {
+                $item->size = trim(strtoupper($item->size));
+                return $item;
+            })
+            ->groupBy('lot_no');
+
+        $other_legacy_reworks = \App\Models\OrderStageTransactionDetail::join('order_stage_transactions', 'order_stage_transaction_details.order_stage_transaction_id', '=', 'order_stage_transactions.id')
+            ->whereIn('order_stage_transactions.lot_no', $selected_lots)
+            ->where('order_stage_transactions.production_slip_digitization_id', '!=', $slip_id)
+            ->where('order_stage_transactions.from_stage_id', 11)
+            ->where('order_stage_transactions.type', 'rework')
+            ->select('order_stage_transactions.lot_no', 'order_stage_transaction_details.size', DB::raw('SUM(order_stage_transaction_details.quantity) as total'))
+            ->groupBy('order_stage_transactions.lot_no', 'order_stage_transaction_details.size')
+            ->get()
+            ->map(function($item) {
+                $item->size = trim(strtoupper($item->size));
+                return $item;
+            })
+            ->groupBy('lot_no');
+
         foreach ($lots_data as $lot) {
             $lot_txs = $stage_transactions->get($lot->lot_no, collect());
-            $lot->remaining_quantity = (int) $lot_txs->sum('remaining_quantity');
-            $lot->quantity = (int) $lot_txs->sum('quantity');
+            $gross_qty = (int) $lot_txs->sum('quantity');
+            $lot->quantity = $gross_qty;
             $lot->transaction_id = $lot_txs->first() ? $lot_txs->first()->id : null;
 
             $incoming_sizes = [];
@@ -588,7 +788,56 @@ class PackingController extends Controller
                     }
                 }
             }
+
+            // Calculate total deductions from other slips directly for absolute consistency
+            $totalOtherPacked = (int) \App\Models\PackingItem::where('lot_no', $lot->lot_no)
+                ->where('packing_main_id', '!=', $packing->id)
+                ->sum('quantity');
+            $totalOtherOutflow = (int) \App\Models\ProductionOutflowInventory::where('lot_no', $lot->lot_no)
+                ->where('slip_id', '!=', $slip_id)
+                ->sum('quantity');
+            $totalOtherRework = (int) \App\Models\OrderStageTransaction::where('lot_no', $lot->lot_no)
+                ->where('from_stage_id', 11)
+                ->where('type', 'rework')
+                ->where('production_slip_digitization_id', '!=', $slip_id)
+                ->sum('quantity');
+
+            // True pending balance entering this session:
+            $pending_at_start = max(0, $gross_qty - $totalOtherPacked - $totalOtherOutflow - $totalOtherRework);
+
+            // Deduct pieces previously packed/outflowed in other slips from incoming_sizes
+            $otherPackedForLot = $other_packed_by_lot_size->get($lot->lot_no, collect());
+            $otherOutflowForLot = $other_outflow_by_lot_size->get($lot->lot_no, collect());
+            $otherReworkForLot = $other_legacy_reworks->get($lot->lot_no, collect());
+
+            foreach ($incoming_sizes as $sz => $grossSzQty) {
+                $prevPackedSz = (int) ($otherPackedForLot->where('size', $sz)->first()->total ?? 0);
+                $prevOutflowSz = (int) ($otherOutflowForLot->where('size', $sz)->first()->total ?? 0);
+                $prevReworkSz = (int) ($otherReworkForLot->where('size', $sz)->first()->total ?? 0);
+                $totalPrevForSz = $prevPackedSz + $prevOutflowSz + $prevReworkSz;
+
+                $incoming_sizes[$sz] = max(0, $grossSzQty - $totalPrevForSz);
+            }
+
+            // Ensure the sum of incoming sizes never exceeds the true pending balance
+            $currentIncomingSum = array_sum($incoming_sizes);
+            if ($currentIncomingSum > $pending_at_start) {
+                $excess = $currentIncomingSum - $pending_at_start;
+                foreach ($incoming_sizes as $sz => $qty) {
+                    if ($excess <= 0) break;
+                    $reduce = min($qty, $excess);
+                    $incoming_sizes[$sz] -= $reduce;
+                    $excess -= $reduce;
+                }
+            }
             $lot->incoming_sizes = $incoming_sizes;
+
+            // Deduct current session's live activity
+            $currentPacked = (int) ($packed_by_lot_size->get($lot->lot_no, collect())->sum('total'));
+            $currentRework = (int) ($rework_by_lot_size->get($lot->lot_no, collect())->sum('total'));
+            $currentOutflow = (int) ($outflow_by_lot_size->get($lot->lot_no, collect())->sum('total'));
+
+            $lot->remaining_quantity = max(0, $pending_at_start - $currentPacked - $currentRework - $currentOutflow);
         }
 
         $set_ids = $lots_data->pluck('set_id')->unique()->toArray();
@@ -1223,7 +1472,45 @@ class PackingController extends Controller
 
                 $totalAvailable = $lotTxs->sum('remaining_quantity');
                 if ($totalAvailable < $deductQty) {
-                    throw new \Exception("Insufficient overall quantity in lot {$lot_no}. Available: {$totalAvailable}, Required: {$deductQty}");
+                    $grossTotal = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                        ->whereRaw('BINARY lot_no = ?', [$lotNoStr])
+                        ->where('to_stage_id', 11)
+                        ->sum('quantity');
+                    $otherPacked = (int) \App\Models\PackingItem::where('lot_no', $lot_no)
+                        ->where('packing_main_id', '!=', $packing->id)
+                        ->sum('quantity');
+                    $otherOutflow = (int) \App\Models\ProductionOutflowInventory::where('lot_no', $lot_no)
+                        ->where('slip_id', '!=', $slip_id)
+                        ->sum('quantity');
+                    $trueAvailable = max(0, $grossTotal - $otherPacked - $otherOutflow);
+
+                    if ($trueAvailable < $deductQty) {
+                        throw new \Exception("Insufficient overall quantity in lot {$lot_no}. Available: {$trueAvailable}, Required: {$deductQty}");
+                    }
+
+                    // Replenish deficit on the latest stage transaction so deduction succeeds
+                    $deficit = $deductQty - $totalAvailable;
+                    $fallbackTx = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                        ->whereRaw('BINARY lot_no = ?', [$lotNoStr])
+                        ->where('to_stage_id', 11)
+                        ->orderBy('id', 'desc')
+                        ->first();
+                    if ($fallbackTx) {
+                        \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                            ->where('id', $fallbackTx->id)
+                            ->update([
+                                'remaining_quantity' => $fallbackTx->remaining_quantity + $deficit,
+                                'status' => 1
+                            ]);
+                    }
+
+                    $lotTxs = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+                        ->whereRaw('BINARY lot_no = ?', [$lotNoStr])
+                        ->where('to_stage_id', 11)
+                        ->where('remaining_quantity', '>', 0)
+                        ->orderBy('id', 'asc')
+                        ->lockForUpdate()
+                        ->get();
                 }
 
                 $remainingToDeduct = $deductQty;
@@ -2481,25 +2768,84 @@ class PackingController extends Controller
             return $set;
         });
 
-        $unit_lots = [];
+        $unit_lots = collect();
         if ($unit_id) {
-            $unit_lots = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
+            $slipId = $request->slip_id ?? 0;
+            $currentPacking = $slipId ? \App\Models\PackingMain::where('slip_id', $slipId)->first() : null;
+            $currentPackingId = $currentPacking ? $currentPacking->id : 0;
+
+            $rawLots = \Illuminate\Support\Facades\DB::table('order_stage_transactions')
                 ->join('order_lots', 'order_stage_transactions.lot_no', '=', 'order_lots.lot_no')
                 ->join('order_products_sets', 'order_lots.order_products_set_id', '=', 'order_products_sets.id')
                 ->leftJoin('master_size_measurements', 'order_products_sets.set_size', '=', 'master_size_measurements.id')
                 ->where('order_stage_transactions.to_stage_id', 11)
                 ->where('order_stage_transactions.sub_stage_id_to', $unit_id)
                 ->where('order_lots.order_main_id', $id)
-                ->where('order_stage_transactions.remaining_quantity', '>', 0)
+                ->groupBy(
+                    'order_stage_transactions.lot_no',
+                    'order_products_sets.id',
+                    'order_products_sets.design_number',
+                    'master_size_measurements.name'
+                )
                 ->select(
                     'order_stage_transactions.lot_no',
                     'order_products_sets.id as set_id',
                     'order_products_sets.design_number',
                     'master_size_measurements.name as size_set_name',
-                    'order_stage_transactions.quantity',
-                    'order_stage_transactions.remaining_quantity'
+                    DB::raw('SUM(order_stage_transactions.quantity) as gross_quantity')
                 )
                 ->get();
+
+            $orderLotNos = $rawLots->pluck('lot_no')->toArray();
+
+            if (!empty($orderLotNos)) {
+                $orderPackedSummary = \DB::table('packing_items')
+                    ->whereIn('lot_no', $orderLotNos)
+                    ->when($currentPackingId, function($q) use ($currentPackingId) {
+                        $q->where('packing_main_id', '!=', $currentPackingId);
+                    })
+                    ->select('lot_no', DB::raw('SUM(quantity) as packed_qty'))
+                    ->groupBy('lot_no')
+                    ->pluck('packed_qty', 'lot_no')
+                    ->toArray();
+
+                $orderOutflowSummary = \DB::table('production_outflow_inventories')
+                    ->whereIn('lot_no', $orderLotNos)
+                    ->when($slipId, function($q) use ($slipId) {
+                        $q->where('slip_id', '!=', $slipId);
+                    })
+                    ->select('lot_no', DB::raw('SUM(quantity) as outflow_qty'))
+                    ->groupBy('lot_no')
+                    ->pluck('outflow_qty', 'lot_no')
+                    ->toArray();
+
+                $orderLegacyReworkSummary = \DB::table('order_stage_transactions')
+                    ->whereIn('lot_no', $orderLotNos)
+                    ->where('from_stage_id', 11)
+                    ->where('type', 'rework')
+                    ->when($slipId, function($q) use ($slipId) {
+                        $q->where('production_slip_digitization_id', '!=', $slipId);
+                    })
+                    ->select('lot_no', DB::raw('SUM(quantity) as rework_qty'))
+                    ->groupBy('lot_no')
+                    ->pluck('rework_qty', 'lot_no')
+                    ->toArray();
+
+                foreach ($rawLots as $rawLot) {
+                    $lno = $rawLot->lot_no;
+                    $gross = (int) $rawLot->gross_quantity;
+                    $packed = (int) ($orderPackedSummary[$lno] ?? 0);
+                    $outflow = (int) ($orderOutflowSummary[$lno] ?? 0) + (int) ($orderLegacyReworkSummary[$lno] ?? 0);
+
+                    $pending = max(0, $gross - $packed - $outflow);
+
+                    if ($pending > 0) {
+                        $rawLot->quantity = $gross;
+                        $rawLot->remaining_quantity = $pending;
+                        $unit_lots->push($rawLot);
+                    }
+                }
+            }
         }
 
         return response()->json([
