@@ -228,15 +228,19 @@
 
                         @if(!$isFabric)
                         <div class="btn-group">
-                            <a href="{{ route('admin.agent-orders.dispatches.generate-prn', $dispatch->id) }}" class="btn btn-action bg-soft-primary text-primary" style="border-top-right-radius: 0; border-bottom-right-radius: 0;" title="Download Barcode (PRN)">
+                            <button type="button" class="btn btn-action bg-soft-primary text-primary" data-toggle="modal" data-target="#customPrnModal" style="border-top-right-radius: 0; border-bottom-right-radius: 0;" title="Download Barcode (PRN)">
                                 <i class="fas fa-barcode"></i> PRN
-                            </a>
+                            </button>
                             <button type="button" class="btn btn-action bg-soft-primary text-primary dropdown-toggle dropdown-toggle-split px-2" style="border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: 1px solid rgba(99, 102, 241, 0.2);" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Barcode Options">
                                 <span class="sr-only">Toggle Dropdown</span>
                             </button>
                             <div class="dropdown-menu dropdown-menu-right shadow-sm" style="border-radius: 8px;">
+                                <a class="dropdown-item py-2 font-weight-bold text-primary" href="#" data-toggle="modal" data-target="#customPrnModal">
+                                    <i class="fas fa-sliders-h text-primary mr-2"></i> Custom PRN (Boxes / Pieces / MRP)
+                                </a>
+                                <div class="dropdown-divider"></div>
                                 <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.dispatches.generate-prn', $dispatch->id) }}">
-                                    <i class="fas fa-barcode text-primary mr-2"></i> Download PRN (Thermal)
+                                    <i class="fas fa-barcode text-muted mr-2"></i> Default PRN (Boxes, Standard)
                                 </a>
                                 <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.dispatches.download-barcode-pdf', $dispatch->id) }}" target="_blank">
                                     <i class="fas fa-file-pdf text-danger mr-2"></i> Download Barcodes (PDF)
@@ -449,6 +453,92 @@
                 </div>
             </div>
         </div>
+
+        <!-- Custom PRN Modal -->
+        <div class="modal fade" id="customPrnModal" tabindex="-1" role="dialog" aria-labelledby="customPrnModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content shadow-lg border-0" style="border-radius: 16px; overflow: hidden;">
+                    <div class="modal-header bg-white border-bottom-0" style="padding: 1.5rem 1.5rem 0.5rem;">
+                        <h5 class="modal-title font-weight-bold text-dark" id="customPrnModalLabel">
+                            <i class="fas fa-barcode text-primary mr-2"></i> Download Barcodes (PRN)
+                        </h5>
+                        <button type="button" class="close text-muted" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form action="{{ route('admin.agent-orders.dispatches.generate-prn', $dispatch->id) }}" method="GET" target="_blank">
+                        <div class="modal-body px-4 pb-4">
+                            @php
+                                $dItems = DB::table('agent_order_items')->where('agent_order_dispatch_id', $dispatch->id)->get();
+                                $dTotalBoxes = $dItems->sum('box_qty') ?: $dItems->sum('scanned_box_qty');
+                                $dTotalPieces = $dItems->sum('quantity');
+                            @endphp
+                            
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <div class="p-3 border rounded text-center" style="background: #f8fafc; border-color: #e2e8f0 !important;">
+                                        <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 0.75rem; letter-spacing: 0.05em;">Total Boxes</small>
+                                        <strong class="text-primary font-weight-bold" style="font-size: 1.25rem;">{{ number_format($dTotalBoxes) }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 border rounded text-center" style="background: #f8fafc; border-color: #e2e8f0 !important;">
+                                        <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 0.75rem; letter-spacing: 0.05em;">Total Pieces</small>
+                                        <strong class="text-info font-weight-bold" style="font-size: 1.25rem;">{{ number_format($dTotalPieces) }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="stat-label mb-2">1. Select Barcode Quantity Mode</label>
+                                <div class="d-flex" style="gap: 12px;">
+                                    <label class="border rounded p-3 flex-fill d-flex align-items-center mb-0 prn-mode-card active-mode-card" style="cursor: pointer; border-color: #4f46e5 !important; background: #eef2ff;">
+                                        <input type="radio" name="mode" value="boxes" checked class="mr-2 prn-mode-radio">
+                                        <div>
+                                            <div class="font-weight-bold text-dark"><i class="fas fa-boxes text-primary mr-1"></i> Box Wise</div>
+                                            <small class="text-muted">1 label per box (Total: {{ $dTotalBoxes }} barcodes)</small>
+                                        </div>
+                                    </label>
+                                    <label class="border rounded p-3 flex-fill d-flex align-items-center mb-0 prn-mode-card" style="cursor: pointer; border-color: #e2e8f0; background: #fff;">
+                                        <input type="radio" name="mode" value="pieces" class="mr-2 prn-mode-radio">
+                                        <div>
+                                            <div class="font-weight-bold text-dark"><i class="fas fa-tshirt text-info mr-1"></i> Piece Wise</div>
+                                            <small class="text-muted">1 label per piece (Total: {{ $dTotalPieces }} barcodes)</small>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="stat-label mb-1" for="prnMultiplierInput">2. MRP Multiplier (Sales Price &times; Multiplier)</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-white" style="border-radius: 10px 0 0 10px; border-right: 0;"><i class="fas fa-times text-muted"></i></span>
+                                    </div>
+                                    <input type="number" step="any" min="0.1" name="multiplier" id="prnMultiplierInput" value="2" class="form-control font-weight-bold text-dark" style="border-radius: 0 10px 10px 0; height: 44px; font-size: 1.1rem;" required>
+                                </div>
+                                <small class="text-muted mt-2 d-block">
+                                    <i class="fas fa-info-circle text-primary mr-1"></i>
+                                    Printed MRP will be calculated as: <code>Sales Price &times; Multiplier</code>.<br>
+                                    <em>E.g., if Sales Price is ₹426.00 and Multiplier is 2 &rarr; <strong>Printed MRP will show ₹852.00</strong></em>.
+                                </small>
+                            </div>
+
+                            <div class="alert alert-light border mb-0 text-muted small" style="border-radius: 8px;">
+                                <i class="fas fa-shield-alt text-success mr-1"></i> <strong>Barcode Structure:</strong> Code-128 format and encoding remain identical and completely unchanged.
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-white border-top-0 px-4 pb-4">
+                            <button type="button" class="btn btn-action bg-white border text-muted" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-action bg-primary text-white font-weight-bold px-4">
+                                <i class="fas fa-download mr-1"></i> Download PRN
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
 
         <section class="content">
             <div class="container-fluid">
@@ -894,6 +984,12 @@
                 $('#waInvoiceBtn').attr('href', waInvoiceBase + params);
                 $('#retailInvoiceBtn').attr('href', retailInvoiceBase + params);
                 $('#retailInvoiceExcelBtn').attr('href', retailExcelBase + params);
+            });
+
+            // Toggle active styling on PRN mode radio selection
+            $(document).on('change', '.prn-mode-radio', function() {
+                $('.prn-mode-card').css({'border-color': '#e2e8f0', 'background': '#fff'});
+                $(this).closest('.prn-mode-card').css({'border-color': '#4f46e5', 'background': '#eef2ff'});
             });
         });
     </script>

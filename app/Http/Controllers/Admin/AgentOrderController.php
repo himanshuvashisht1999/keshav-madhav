@@ -3728,36 +3728,125 @@ class AgentOrderController extends Controller
         return view('admin.agent_orders.dispatches.show', compact('dispatch', 'groupedItems', 'fabricItems', 'isFabric', 'companies'));
     }
 
-    public function generateDispatchPrn($id)
+    public function generateDispatchPrn(Request $request, $id)
     {
+        $mode = strtolower(trim($request->input('mode', 'boxes')));
+        $multiplier = $request->filled('multiplier') ? (float)$request->input('multiplier') : null;
+
         $items = DB::table('agent_order_items')
+            ->leftJoin('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
             ->where('agent_order_dispatch_id', $id)
+            ->select('agent_order_items.*', 'production_goods.design_number as pg_design_number', 'production_goods.name_of_garment')
             ->get();
             
-        $barcodeList = [];
+        if ($items->isEmpty()) {
+            return back()->with('error', 'No barcodes found for this dispatch.');
+        }
+
+        $labels = [];
         foreach ($items as $item) {
             $barcode = $item->barcode;
             if (empty($barcode) && !empty($item->product_id) && !empty($item->size_set_id) && !empty($item->color_id)) {
                 $barcode = 'D' . $item->product_id . 'S' . $item->size_set_id . 'C' . $item->color_id;
             }
-            $boxCount = (int)($item->box_qty > 0 ? $item->box_qty : ($item->scanned_box_qty > 0 ? $item->scanned_box_qty : 1));
-            if (!empty($barcode)) {
-                for ($i = 0; $i < $boxCount; $i++) {
-                    $barcodeList[] = $barcode;
-                }
+            if (empty($barcode)) continue;
+
+            // Barcode structure stays EXACTLY the same (Code 128 format)
+            $compactBarcode = $barcode;
+            if (preg_match('/D(\d+)S(\d+)C(\d+)P(\d+)F(\d+)/', $barcode, $matches)) {
+                $compactBarcode = sprintf("10%05d%02d%03d%02d%02d", $matches[1], $matches[2], $matches[3], $matches[4], $matches[5]);
+            } elseif (preg_match('/D(\d+)S(\d+)C(\d+)/', $barcode, $matches)) {
+                $compactBarcode = sprintf("10%05d%02d%03d", $matches[1], $matches[2], $matches[3]);
+            }
+
+            // Calculate MRP: sales price multiplied by given multiplier
+            $basePrice = (float)($item->selling_price > 0 ? $item->selling_price : ($item->mrp ?? 0));
+            $showMrp = !is_null($multiplier) && $multiplier > 0;
+            $calculatedMrp = $showMrp ? round($basePrice * $multiplier, 2) : (float)($item->mrp ?? 0);
+
+            // Boxes vs Pieces mode
+            if ($mode === 'pieces') {
+                $count = max(1, (int)$item->quantity);
+                $pcsText = "1 PC";
+            } else {
+                $count = (int)($item->box_qty > 0 ? $item->box_qty : ($item->scanned_box_qty > 0 ? $item->scanned_box_qty : 1));
+                $pcsPerBox = ($count > 0 && $item->quantity > 0) ? round($item->quantity / $count) : $item->quantity;
+                $pcsText = $pcsPerBox . " PCS";
+            }
+
+            $colorText = $item->color_name ? ($item->color_name . ($item->color_id ? ' (' . $item->color_id . ')' : '')) : '';
+            $prodName = $item->product_name ?: ($item->name_of_garment ?? '');
+            $designNo = $item->design_number ?: ($item->pg_design_number ?? '');
+
+            for ($i = 0; $i < $count; $i++) {
+                $labels[] = (object) [
+                    'product_name' => $prodName,
+                    'size_group' => $item->size_set_name ?? '',
+                    'no_of_pcs' => $pcsText,
+                    'color_name' => $colorText,
+                    'fitting_name' => $item->fitting_name ?? '',
+                    'design_number' => $designNo,
+                    'mrp' => $calculatedMrp,
+                    'show_mrp' => $showMrp,
+                    'barcode' => $compactBarcode,
+                    'original_code' => $barcode,
+                ];
             }
         }
         
-        if (empty($barcodeList)) {
-            return back()->with('error', 'No barcodes found for this dispatch.');
-        }
-        
-        $tspl = generateBulkTsplByBarcodes($barcodeList);
-        if (empty($tspl)) {
-            return back()->with('error', 'Failed to generate PRN barcodes for this dispatch.');
+        if (empty($labels)) {
+            return back()->with('error', 'No valid barcodes found for this dispatch.');
         }
 
-        $fileName = 'dispatch_' . $id . '_barcodes_' . time() . '.prn';
+        // Build TSPL Content (100mm x 90mm label, 2 labels per row)
+        $tspl = "SIZE 100 mm,90 mm\nGAP 2 mm,0\nDIRECTION 1\nREFERENCE 0,0\nSPEED 2\nDENSITY 15\nCLS\n";
+
+        $chunks = array_chunk($labels, 2);
+        foreach ($chunks as $pair) {
+            $left = $pair[0] ?? null;
+            $right = $pair[1] ?? null;
+
+            $tspl .= "CLS\n";
+
+            if ($left) {
+                $tspl .= "TEXT 40,100,\"3\",0,2,2,\"{$left->product_name}\"\n";
+                $tspl .= "TEXT 40,165,\"3\",0,2,2,\"{$left->size_group}\"\n";
+                $tspl .= "TEXT 40,225,\"3\",0,2,2,\"{$left->no_of_pcs}\"\n";
+                $tspl .= "TEXT 40,285,\"2\",0,2,2,\"{$left->color_name}\"\n";
+                $tspl .= "TEXT 40,335,\"2\",0,2,2,\"{$left->fitting_name}\"\n";
+                $tspl .= "TEXT 40,380,\"2\",0,1,1,\"# {$left->design_number}\"\n";
+                if ($left->show_mrp) {
+                    $tspl .= "TEXT 40,420,\"3\",0,2,2,\"MRP: Rs. " . number_format($left->mrp, 2) . "\"\n";
+                    $tspl .= "BARCODE 20,465,\"128\",135,0,0,2,4,\"{$left->barcode}\"\n";
+                    $tspl .= "TEXT 40,620,\"2\",0,1,1,\"{$left->original_code}\"\n";
+                } else {
+                    $tspl .= "BARCODE 20,470,\"128\",140,0,0,2,4,\"{$left->barcode}\"\n";
+                    $tspl .= "TEXT 40,630,\"2\",0,1,1,\"{$left->original_code}\"\n";
+                }
+            }
+
+            if ($right) {
+                $tspl .= "TEXT 440,100,\"3\",0,2,2,\"{$right->product_name}\"\n";
+                $tspl .= "TEXT 440,165,\"3\",0,2,2,\"{$right->size_group}\"\n";
+                $tspl .= "TEXT 440,225,\"3\",0,2,2,\"{$right->no_of_pcs}\"\n";
+                $tspl .= "TEXT 440,285,\"2\",0,2,2,\"{$right->color_name}\"\n";
+                $tspl .= "TEXT 440,335,\"2\",0,2,2,\"{$right->fitting_name}\"\n";
+                $tspl .= "TEXT 440,380,\"2\",0,1,1,\"# {$right->design_number}\"\n";
+                if ($right->show_mrp) {
+                    $tspl .= "TEXT 440,420,\"3\",0,2,2,\"MRP: Rs. " . number_format($right->mrp, 2) . "\"\n";
+                    $tspl .= "BARCODE 420,465,\"128\",135,0,0,2,4,\"{$right->barcode}\"\n";
+                    $tspl .= "TEXT 440,620,\"2\",0,1,1,\"{$right->original_code}\"\n";
+                } else {
+                    $tspl .= "BARCODE 420,470,\"128\",140,0,0,2,4,\"{$right->barcode}\"\n";
+                    $tspl .= "TEXT 440,630,\"2\",0,1,1,\"{$right->original_code}\"\n";
+                }
+            }
+
+            $tspl .= "PRINT 1\n";
+        }
+
+        $multiplierSuffix = (!is_null($multiplier) && $multiplier > 0) ? '_mrp_x' . $multiplier : '';
+        $fileName = 'dispatch_' . $id . '_' . $mode . $multiplierSuffix . '_' . time() . '.prn';
         
         return response($tspl, 200, [
             'Content-Type' => 'application/octet-stream',
