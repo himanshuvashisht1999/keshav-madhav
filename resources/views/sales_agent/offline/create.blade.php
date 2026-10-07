@@ -112,7 +112,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <span class="badge badge-primary px-2 py-1 font-weight-bold" id="totalBoxesCount">0 Boxes</span>
-                <h5 class="mb-0 font-weight-bold text-success mt-1">₹<span id="grandTotalText">0</span></h5>
+                <h5 class="mb-0 font-weight-bold text-success mt-1" id="grandTotalContainer" style="{{ (isset($agent) && !$agent->see_price) ? 'display: none;' : '' }}">₹<span id="grandTotalText">0</span></h5>
             </div>
             <div class="d-flex align-items-center">
                 <button type="button" class="btn btn-outline-secondary btn-sm mr-2 rounded-pill px-3" id="btnOpenCartModal">
@@ -207,7 +207,7 @@
                 <!-- Dynamically populated -->
             </div>
             <div class="modal-footer p-2 bg-light border-0 flex-column align-items-stretch">
-                <div class="row no-gutters mb-2">
+                <div class="row no-gutters mb-2" id="offlinePricingInputs" style="{{ (isset($agent) && !$agent->see_price) ? 'display: none;' : '' }}">
                     <div class="col-6 pr-1">
                         <input type="number" id="offlineDiscount" class="form-control form-control-sm" placeholder="Discount ₹" min="0">
                     </div>
@@ -237,6 +237,16 @@ $(document).ready(function () {
     let scanner = null;
     let metaInfo = null;
     let activeModalKey = null;
+
+    // Check sales agent rate viewing permission
+    const agentSeePrice = {{ (isset($agent) && $agent->see_price) ? 'true' : 'false' }};
+    function canSeePrice() {
+        if (!agentSeePrice) return false;
+        if (metaInfo && typeof metaInfo.see_price !== 'undefined') {
+            return (metaInfo.see_price === true || metaInfo.see_price === 1 || metaInfo.see_price === '1');
+        }
+        return agentSeePrice;
+    }
 
     if ($.fn.select2) {
         $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
@@ -391,7 +401,7 @@ $(document).ready(function () {
         }
 
         const showStock = !metaInfo || !metaInfo.settings || metaInfo.settings.agent_app_show_stock !== 0;
-        const seePrice = !metaInfo || metaInfo.see_price !== false;
+        const seePrice = canSeePrice();
 
         let html = '';
         toRender.forEach(prod => {
@@ -476,11 +486,7 @@ $(document).ready(function () {
                                             <span class="text-primary font-weight-bold" style="font-size: 12px;">₹${Number(prod.unit_price).toLocaleString()}</span>
                                             ${prod.mrp > 0 ? `<small class="text-muted d-block" style="font-size: 9.5px; line-height: 1;">MRP: ₹${Number(prod.mrp).toLocaleString()}</small>` : ''}
                                         </div>
-                                    ` : `
-                                        <div class="text-right">
-                                            <small class="text-muted font-weight-bold" style="font-size: 10px;">Price Hidden</small>
-                                        </div>
-                                    `}
+                                    ` : `<div></div>`}
                                 </div>
                             </div>
 
@@ -663,6 +669,7 @@ $(document).ready(function () {
                             <td class="bg-light font-weight-bold text-muted">Available Stock</td>
                             <td class="font-weight-bold text-success">${prod.available_boxes} Boxes</td>
                         </tr>
+                        ${canSeePrice() ? `
                         <tr>
                             <td class="bg-light font-weight-bold text-muted">Unit Price</td>
                             <td class="font-weight-bold text-primary">₹${Number(prod.unit_price).toLocaleString()}</td>
@@ -672,6 +679,7 @@ $(document).ready(function () {
                                 <td class="bg-light font-weight-bold text-muted">MRP</td>
                                 <td class="text-muted">₹${Number(prod.mrp).toLocaleString()}</td>
                             </tr>
+                        ` : ''}
                         ` : ''}
                     </tbody>
                 </table>
@@ -693,6 +701,7 @@ $(document).ready(function () {
 
     // 6. Update Bottom Summary Bar
     function updateSummaryUI() {
+        const seePrice = canSeePrice();
         let totalBoxes = 0;
         let subtotal = 0;
         let itemsCount = cart.size;
@@ -709,9 +718,17 @@ $(document).ready(function () {
         const gst = Math.round(taxable * 0.05);
         const grandTotal = Math.round(taxable + gst + otherCharges);
 
-        $('#totalBoxesCount').text(totalBoxes + ' Boxes');
+        $('#totalBoxesCount').text(totalBoxes + (totalBoxes === 1 ? ' Box' : ' Boxes'));
         $('#cartItemsCount').text(itemsCount);
-        $('#grandTotalText').text(grandTotal.toLocaleString());
+
+        if (seePrice) {
+            $('#grandTotalContainer').show();
+            $('#grandTotalText').text(grandTotal.toLocaleString());
+            $('#offlinePricingInputs').show();
+        } else {
+            $('#grandTotalContainer').hide();
+            $('#offlinePricingInputs').hide();
+        }
 
         if (totalBoxes > 0) {
             $('#offlineSummaryBar').slideDown();
@@ -724,6 +741,7 @@ $(document).ready(function () {
 
     // 7. Cart Details Modal Rendering
     $('#btnOpenCartModal').click(function () {
+        const seePrice = canSeePrice();
         const list = $('#cartItemsList');
         if (cart.size === 0) {
             list.html('<p class="text-center text-muted py-3">Cart is empty</p>');
@@ -743,7 +761,7 @@ $(document).ready(function () {
                         <small class="text-muted"><i class="fas fa-palette mr-1 text-primary"></i>${p.color_name} | <i class="fas fa-ruler-combined mr-1 text-muted"></i>${p.size_set_name} (${val.qty} Boxes)</small>
                     </div>
                     <div class="text-right">
-                        <div class="font-weight-bold text-primary">₹${Math.round(itemTotal).toLocaleString()}</div>
+                        ${seePrice ? `<div class="font-weight-bold text-primary">₹${Math.round(itemTotal).toLocaleString()}</div>` : ''}
                         <button type="button" class="btn btn-xs text-danger btn-remove-cart" data-key="${key}">
                             <i class="fas fa-trash-alt"></i>
                         </button>
@@ -753,6 +771,11 @@ $(document).ready(function () {
         });
 
         list.html(html);
+        if (seePrice) {
+            $('#offlinePricingInputs').show();
+        } else {
+            $('#offlinePricingInputs').hide();
+        }
         $('#cartDetailsModal').modal('show');
     });
 
@@ -779,13 +802,23 @@ $(document).ready(function () {
         if (scanner) return;
         try {
             scanner = new Html5Qrcode("offlineReader");
-            const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+            const config = {
+                fps: 15,
+                qrbox: function (viewfinderWidth, viewfinderHeight) {
+                    const width = Math.min(Math.floor(viewfinderWidth * 0.88), 320);
+                    const height = Math.min(Math.floor(viewfinderHeight * 0.65), 220);
+                    return { width, height };
+                },
+                aspectRatio: 1.0
+            };
             scanner.start({ facingMode: "environment" }, config, onBarcodeScanned)
                 .catch(err => {
                     console.error('Camera error:', err);
+                    Swal.fire('Camera Error', 'Could not access camera. Please allow camera permissions in browser settings.', 'error');
                 });
         } catch (e) {
             console.error(e);
+            Swal.fire('Camera Error', 'Could not initialize camera scanner: ' + e.message, 'error');
         }
     }
 
@@ -809,19 +842,65 @@ $(document).ready(function () {
         }
     });
 
-    async function processBarcodeMatch(code) {
+    $('#manualBarcodeInput').on('keypress', function (e) {
+        if (e.which === 13) {
+            $('#btnManualBarcodeSubmit').click();
+        }
+    });
+
+    async function processBarcodeMatch(rawCode) {
+        if (!rawCode) return;
+        let code = String(rawCode).trim();
+
+        // 1. If scanned text is a URL (e.g. sample tag QR code: http://domain.com/fc/F123), extract barcode
+        if (code.includes('/fc/')) {
+            const parts = code.split('/fc/')[1];
+            code = parts.split('/')[0].split('?')[0].split('#')[0].trim();
+        } else if (code.startsWith('http://') || code.startsWith('https://')) {
+            const cleanUrl = code.split('?')[0].split('#')[0];
+            const parts = cleanUrl.split('/');
+            code = parts[parts.length - 1].trim();
+        }
+
         const match = await SnapKidOfflineDB.findVariationByBarcode(code);
         if (match) {
-            const current = cart.has(match.key) ? cart.get(match.key).qty : 0;
-            updateCartItem(match.key, current + 1);
+            if (match.type === 'multiple' && match.items && match.items.length > 1) {
+                // Multiple color variations exist for this product / size set
+                $('#offlineSearchInput').val(match.design_number);
+                $('#btnClearSearch').show();
+                filterAndRenderProducts(true);
 
-            Swal.fire({
-                icon: 'success',
-                title: 'Item Added!',
-                text: `#${match.design_number} (${match.color_name} - ${match.size_set_name}) added to cart. Total: ${current + 1} Boxes.`,
-                timer: 1600,
-                showConfirmButton: false
-            });
+                Swal.fire({
+                    icon: 'info',
+                    title: `Design #${match.design_number}`,
+                    text: `Found ${match.items.length} colors. Please select box quantities below.`,
+                    timer: 2200,
+                    showConfirmButton: false
+                });
+
+                $('html, body').animate({
+                    scrollTop: $("#productsGrid").offset().top - 70
+                }, 400);
+            } else {
+                // Single variation matched
+                const targetKey = match.key || (match.item ? match.item.key : null);
+                if (targetKey) {
+                    const current = cart.has(targetKey) ? cart.get(targetKey).qty : 0;
+                    updateCartItem(targetKey, current + 1);
+
+                    const designNo = match.design_number || (match.item ? match.item.design_number : '');
+                    const colorName = match.color_name || (match.item ? match.item.color_name : '');
+                    const sizeName = match.size_set_name || (match.item ? match.item.size_set_name : '');
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Item Added!',
+                        text: `#${designNo} (${colorName} - ${sizeName}) added to cart. Total: ${current + 1} Boxes.`,
+                        timer: 1600,
+                        showConfirmButton: false
+                    });
+                }
+            }
         } else {
             Swal.fire({
                 icon: 'warning',
@@ -895,10 +974,15 @@ $(document).ready(function () {
             await SnapKidOfflineDB.saveOfflineOrder(orderData);
             $('#cartDetailsModal').modal('hide');
 
+            const seePrice = canSeePrice();
+            const orderDesc = seePrice 
+                ? `Order for ${orderData.shop_name} (${totalBoxes} boxes, ₹${grandTotal.toLocaleString()}) is recorded on your phone.`
+                : `Order for ${orderData.shop_name} (${totalBoxes} boxes) is recorded on your phone.`;
+
             Swal.fire({
                 icon: 'success',
                 title: 'Order Saved Offline!',
-                text: `Order for ${orderData.shop_name} (${totalBoxes} boxes, ₹${grandTotal.toLocaleString()}) is recorded on your phone.`,
+                text: orderDesc,
                 confirmButtonText: 'Go to Offline Hub',
                 confirmButtonColor: '#16a34a'
             }).then(() => {

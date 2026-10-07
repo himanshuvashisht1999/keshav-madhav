@@ -16,6 +16,7 @@ use App\Models\SalesMan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class OfflineOrderController extends Controller
 {
@@ -163,7 +164,82 @@ class OfflineOrderController extends Controller
                 ];
             }
 
-            // 3. Settings & Salesmen
+            // 3. Build comprehensive barcode mapping for offline barcode scanner
+            $barcodeMap = [];
+
+            // 3a. Variant color barcodes (e.g. D2S3C4, D3S3C4P1F1)
+            if (Schema::hasTable('production_goods_variant_colors') && Schema::hasTable('production_goods_variants')) {
+                $variantColorRows = DB::table('production_goods_variant_colors')
+                    ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
+                    ->whereNotNull('production_goods_variant_colors.barcode')
+                    ->where('production_goods_variant_colors.barcode', '!=', '')
+                    ->select(
+                        'production_goods_variant_colors.barcode',
+                        'production_goods_variants.production_goods_id as product_id',
+                        'production_goods_variants.master_size_measurement_id as size_set_id',
+                        'production_goods_variant_colors.master_color_id as color_id'
+                    )
+                    ->get();
+
+                foreach ($variantColorRows as $vc) {
+                    $bc = trim($vc->barcode);
+                    if ($bc !== '') {
+                        $barcodeMap[$bc] = [
+                            'product_id' => (int) $vc->product_id,
+                            'size_set_id' => (int) $vc->size_set_id,
+                            'color_id' => (int) $vc->color_id,
+                        ];
+                    }
+                }
+            }
+
+            // 3b. Fair Products barcodes (e.g. F48, F49, FAIR-...)
+            if (Schema::hasTable('fair_products') && Schema::hasTable('fair_batches')) {
+                $fairProducts = DB::table('fair_products')
+                    ->join('fair_batches', 'fair_products.fair_batch_id', '=', 'fair_batches.id')
+                    ->where('fair_batches.status', 1)
+                    ->whereNotNull('fair_products.barcode')
+                    ->where('fair_products.barcode', '!=', '')
+                    ->select('fair_products.barcode', 'fair_products.product_id', 'fair_products.size_set_id', 'fair_batches.sales_agent_ids')
+                    ->get();
+
+                foreach ($fairProducts as $fp) {
+                    $bc = trim($fp->barcode);
+                    if ($bc !== '') {
+                        if (!$agent->is_master_agent) {
+                            $assigned = is_array($fp->sales_agent_ids) ? $fp->sales_agent_ids : json_decode($fp->sales_agent_ids, true) ?? [];
+                            if (!empty($assigned) && !in_array((string)$agent_id, $assigned, true) && !in_array((int)$agent_id, $assigned, true)) {
+                                continue;
+                            }
+                        }
+                        $barcodeMap[$bc] = [
+                            'product_id' => (int) $fp->product_id,
+                            'size_set_id' => (int) $fp->size_set_id,
+                        ];
+                    }
+                }
+            }
+
+            // 3c. Sample Products barcodes
+            if (Schema::hasTable('sample_products')) {
+                $sampleProducts = DB::table('sample_products')
+                    ->whereNotNull('barcode')
+                    ->where('barcode', '!=', '')
+                    ->select('barcode', 'product_id', 'size_set_id')
+                    ->get();
+
+                foreach ($sampleProducts as $sp) {
+                    $bc = trim($sp->barcode);
+                    if ($bc !== '') {
+                        $barcodeMap[$bc] = [
+                            'product_id' => (int) $sp->product_id,
+                            'size_set_id' => (int) $sp->size_set_id,
+                        ];
+                    }
+                }
+            }
+
+            // 4. Settings & Salesmen
             $settings = DB::table('settings')->first();
             $sales_men = SalesMan::where('status', 1)->get(['id', 'name', 'phone']);
 
@@ -171,6 +247,7 @@ class OfflineOrderController extends Controller
                 'success' => true,
                 'shops' => $shops,
                 'products' => $products,
+                'barcodes' => $barcodeMap,
                 'image_urls' => array_slice($imageUrls, 0, 300), // Pre-cache up to 300 images
                 'settings' => [
                     'gst_order' => $settings->gst_order ?? 5.00,
@@ -179,7 +256,7 @@ class OfflineOrderController extends Controller
                     'agent_app_allow_over_stock_sample' => $settings->agent_app_allow_over_stock_sample ?? 0,
                 ],
                 'sales_men' => $sales_men,
-                'see_price' => (bool) $agent->see_price,
+                'see_price' => (int) ($agent->see_price ?? 0) === 1,
                 'timestamp' => now()->toIso8601String()
             ]);
         } catch (\Exception $e) {

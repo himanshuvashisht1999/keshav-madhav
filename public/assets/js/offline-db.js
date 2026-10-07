@@ -72,10 +72,14 @@ const SnapKidOfflineDB = (function () {
             });
         }
 
-        // 3. Save Meta info
+        // 3. Save Meta info & Barcode index
         await new Promise((resolve, reject) => {
             const metaTx = db.transaction('meta', 'readwrite');
             const metaStore = metaTx.objectStore('meta');
+            metaStore.put({
+                key: 'barcodes',
+                map: data.barcodes || {}
+            });
             metaStore.put({
                 key: 'info',
                 last_synced: new Date().toISOString(),
@@ -83,7 +87,7 @@ const SnapKidOfflineDB = (function () {
                 products_count: data.products ? data.products.length : 0,
                 settings: data.settings || {},
                 sales_men: data.sales_men || [],
-                see_price: data.see_price !== undefined ? data.see_price : true
+                see_price: (data.see_price === true || data.see_price === 1)
             });
             metaTx.oncomplete = () => resolve();
             metaTx.onerror = (e) => reject(e.target.error);
@@ -129,6 +133,16 @@ const SnapKidOfflineDB = (function () {
         });
     }
 
+    async function getBarcodeMap() {
+        const db = await openDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction('meta', 'readonly');
+            const req = tx.objectStore('meta').get('barcodes');
+            req.onsuccess = () => resolve((req.result && req.result.map) ? req.result.map : {});
+            req.onerror = () => resolve({});
+        });
+    }
+
     async function getShops() {
         const db = await openDB();
         return new Promise((resolve) => {
@@ -150,26 +164,123 @@ const SnapKidOfflineDB = (function () {
     }
 
     async function findVariationByBarcode(barcode) {
-        const db = await openDB();
-        const catalog = await getCatalog();
-        
-        // Exact barcode match
-        let found = catalog.find(item => item.barcode === barcode);
-        if (found) return found;
+        if (!barcode) return null;
+        let code = String(barcode).trim();
+        if (!code) return null;
 
-        // Try regex match D{productId}S{sizeSetId}C{colorId}
-        const match = barcode.match(/^D(\d+)S(\d+)C(\d+)/i);
-        if (match) {
-            const pId = parseInt(match[1]);
-            const sId = parseInt(match[2]);
-            const cId = parseInt(match[3]);
-            found = catalog.find(item => item.product_id == pId && item.size_set_id == sId && item.color_id == cId);
-            if (found) return found;
+        // 1. If barcode is a URL (e.g. https://domain.com/fc/F123), extract the barcode value
+        if (code.includes('/fc/')) {
+            const parts = code.split('/fc/')[1];
+            code = parts.split('/')[0].split('?')[0].split('#')[0].trim();
+        } else if (code.startsWith('http://') || code.startsWith('https://')) {
+            const cleanUrl = code.split('?')[0].split('#')[0];
+            const parts = cleanUrl.split('/');
+            code = parts[parts.length - 1].trim();
         }
 
-        // Try design number match
-        found = catalog.find(item => item.design_number && item.design_number.toLowerCase() === barcode.toLowerCase());
-        return found || null;
+        const catalog = await getCatalog();
+        const barcodesMeta = await getBarcodeMap();
+
+        // 2. Direct exact barcode match in catalog (e.g. D116S4C2)
+        const exactMatch = catalog.find(item => item.barcode && item.barcode.toUpperCase() === code.toUpperCase());
+        if (exactMatch) {
+            return Object.assign({}, exactMatch, {
+                type: 'single',
+                item: exactMatch,
+                items: [exactMatch]
+            });
+        }
+
+        // 3. Lookup in barcodes mapping (Fair Products, Variant Colors, Sample Products)
+        const mapped = barcodesMeta[code] || barcodesMeta[code.toUpperCase()] || barcodesMeta[code.toLowerCase()];
+        if (mapped) {
+            // If mapped barcode specifies an exact color variation
+            if (mapped.color_id) {
+                const specificVar = catalog.find(item =>
+                    item.product_id == mapped.product_id &&
+                    item.size_set_id == mapped.size_set_id &&
+                    item.color_id == mapped.color_id
+                );
+                if (specificVar) {
+                    return Object.assign({}, specificVar, {
+                        type: 'single',
+                        item: specificVar,
+                        items: [specificVar]
+                    });
+                }
+            }
+
+            // If sample tag or fair product (which specifies product_id and size_set_id)
+            const matchingVars = catalog.filter(item =>
+                item.product_id == mapped.product_id &&
+                (!mapped.size_set_id || item.size_set_id == mapped.size_set_id)
+            );
+            if (matchingVars.length > 0) {
+                const isSingle = matchingVars.length === 1;
+                return Object.assign({}, matchingVars[0], {
+                    type: isSingle ? 'single' : 'multiple',
+                    item: matchingVars[0],
+                    items: matchingVars
+                });
+            }
+
+            // Fallback: match by product_id only
+            const productVars = catalog.filter(item => item.product_id == mapped.product_id);
+            if (productVars.length > 0) {
+                return Object.assign({}, productVars[0], {
+                    type: productVars.length === 1 ? 'single' : 'multiple',
+                    item: productVars[0],
+                    items: productVars
+                });
+            }
+        }
+
+        // 4. Try regex match: D{productId}S{sizeSetId}C{colorId} (e.g. D116S4C2 or D116S4C2P1F1)
+        const matchD = code.match(/^D(\d+)S(\d+)C(\d+)/i);
+        if (matchD) {
+            const pId = parseInt(matchD[1]);
+            const sId = parseInt(matchD[2]);
+            const cId = parseInt(matchD[3]);
+            const foundD = catalog.find(item => item.product_id == pId && item.size_set_id == sId && item.color_id == cId);
+            if (foundD) {
+                return Object.assign({}, foundD, {
+                    type: 'single',
+                    item: foundD,
+                    items: [foundD]
+                });
+            }
+        }
+
+        // 5. Try regex match: FAIR-{productId}-{sizeSetId}
+        const matchFair = code.match(/^FAIR-(\d+)-(\d+)/i);
+        if (matchFair) {
+            const pId = parseInt(matchFair[1]);
+            const sId = parseInt(matchFair[2]);
+            const fairVars = catalog.filter(item => item.product_id == pId && item.size_set_id == sId);
+            if (fairVars.length > 0) {
+                return Object.assign({}, fairVars[0], {
+                    type: fairVars.length === 1 ? 'single' : 'multiple',
+                    item: fairVars[0],
+                    items: fairVars
+                });
+            }
+        }
+
+        // 6. Try match by design number (e.g. 116, #116, D116)
+        const cleanDesign = code.replace(/^[#dD]/, '').trim();
+        const designMatches = catalog.filter(item =>
+            (item.design_number && item.design_number.toLowerCase() === code.toLowerCase()) ||
+            (cleanDesign && item.design_number && item.design_number.toLowerCase() === cleanDesign.toLowerCase())
+        );
+        if (designMatches.length > 0) {
+            return Object.assign({}, designMatches[0], {
+                type: designMatches.length === 1 ? 'single' : 'multiple',
+                item: designMatches[0],
+                items: designMatches
+            });
+        }
+
+        return null;
     }
 
     async function saveOfflineOrder(orderData) {
@@ -234,6 +345,7 @@ const SnapKidOfflineDB = (function () {
         openDB,
         saveCatalogData,
         getMeta,
+        getBarcodeMap,
         getShops,
         getCatalog,
         findVariationByBarcode,

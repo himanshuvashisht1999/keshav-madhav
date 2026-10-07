@@ -90,6 +90,18 @@
 <script src="{{ asset('assets/js/offline-db.js') }}"></script>
 <script>
 $(document).ready(function () {
+    const agentSeePrice = {{ (isset($agent) && $agent->see_price) ? 'true' : 'false' }};
+    async function canSeePrice() {
+        if (!agentSeePrice) return false;
+        try {
+            const meta = await SnapKidOfflineDB.getMeta();
+            if (meta && typeof meta.see_price !== 'undefined') {
+                return (meta.see_price === true || meta.see_price === 1 || meta.see_price === '1');
+            }
+        } catch (e) {}
+        return agentSeePrice;
+    }
+
     // 1. Monitor Online / Offline Status
     function updateOnlineStatus() {
         const isOnline = navigator.onLine;
@@ -209,6 +221,7 @@ $(document).ready(function () {
     // 4. Load Pending Orders from IndexedDB
     async function checkPendingOrders() {
         try {
+            const seePrice = await canSeePrice();
             const orders = await SnapKidOfflineDB.getPendingOrders();
             const listContainer = $('#ordersListContainer');
             const pendingOrders = orders.filter(o => o.status === 'pending_sync');
@@ -252,7 +265,7 @@ $(document).ready(function () {
                         </div>
                         <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded mb-2">
                             <span class="small font-weight-bold text-muted">${ord.variations.length} Items (${totalBoxes} Boxes)</span>
-                            <span class="font-weight-bold text-primary">₹${ord.grand_total ? ord.grand_total.toLocaleString() : '0'}</span>
+                            ${seePrice ? `<span class="font-weight-bold text-primary">₹${ord.grand_total ? ord.grand_total.toLocaleString() : '0'}</span>` : ''}
                         </div>
                         <div class="d-flex justify-content-end align-items-center">
                             ${isPending ? `
