@@ -225,6 +225,14 @@ Route::prefix('agent')->group(function () {
         Route::get('orders/{id}', [App\Http\Controllers\SalesAgent\OrderController::class, 'orderDetails'])->name('agent.orders.show');
         Route::get('orders/{id}/download-order', [App\Http\Controllers\SalesAgent\OrderController::class, 'downloadOrder'])->name('agent.orders.download-order');
         Route::get('orders/{id}/send-whatsapp-order', [App\Http\Controllers\SalesAgent\OrderController::class, 'sendWhatsappOrder'])->name('agent.orders.send-whatsapp-order');
+
+        // Offline Module (Without Internet)
+        Route::prefix('offline')->name('agent.offline.')->group(function () {
+            Route::get('/', [App\Http\Controllers\SalesAgent\OfflineOrderController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\SalesAgent\OfflineOrderController::class, 'create'])->name('create');
+            Route::get('/catalog-data', [App\Http\Controllers\SalesAgent\OfflineOrderController::class, 'catalogData'])->name('catalog-data');
+            Route::post('/sync', [App\Http\Controllers\SalesAgent\OfflineOrderController::class, 'sync'])->name('sync');
+        });
     });
 });
 

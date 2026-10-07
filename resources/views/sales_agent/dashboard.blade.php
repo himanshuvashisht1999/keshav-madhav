@@ -71,6 +71,23 @@
                 </a>
             </div>
             @endif
+
+            <div class="col-12 mt-3">
+                <a href="{{ route('agent.offline.index') }}" class="text-decoration-none">
+                    <div class="app-card mb-0 shadow-sm border p-3 quick-card d-flex align-items-center justify-content-between" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-color: #cbd5e1 !important; border-radius: 14px;">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-dark text-white p-2 rounded-circle mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="fas fa-wifi-slash"></i>
+                            </div>
+                            <div>
+                                <h6 class="font-weight-bold text-dark mb-0">Without Internet Orders</h6>
+                                <small class="text-muted">Take orders in shops with zero mobile signal</small>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right text-muted"></i>
+                    </div>
+                </a>
+            </div>
         </div>
 
     </div>

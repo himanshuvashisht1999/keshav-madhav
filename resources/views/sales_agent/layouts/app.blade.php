@@ -225,10 +225,13 @@
                 <img src="{{ asset('images/snapkid_logo.png') }}" alt="SnapKid" style="height: 36px; width: auto; object-fit: contain;" class="mr-2">
                 <span>{{ $title ?? 'SnapKid Agent' }}</span>
             </h1>
-            <div class="header-actions">
+            <div class="header-actions d-flex align-items-center">
+                <a href="{{ route('agent.offline.index') }}" class="btn btn-sm btn-light rounded-pill px-2 py-1 mr-2 border shadow-xs" title="Without Internet Mode" style="font-size: 11px;">
+                    <i class="fas fa-wifi-slash text-danger mr-1"></i> <span>Offline Mode</span>
+                </a>
                 <form action="{{ route('agent.logout') }}" method="POST" id="logout-form">
                     @csrf
-                    <button type="submit" class="btn btn-link text-muted" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+                    <button type="submit" class="btn btn-link text-muted p-0" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
                 </form>
             </div>
         </div>
@@ -269,6 +272,13 @@
                 <span>Add Customer</span>
             </a>
             @endif
+
+            <a href="{{ route('agent.offline.index') }}"
+                class="nav-item position-relative {{ request()->routeIs('agent.offline.*') ? 'active' : '' }}">
+                <i class="fas fa-wifi-slash"></i>
+                <span>Offline</span>
+                <span id="navOfflineBadge" class="badge badge-danger rounded-pill position-absolute" style="top: 0; right: 18%; font-size: 9px; display: none;">0</span>
+            </a>
 
             <a href="{{ route('agent.orders.index') }}"
                 class="nav-item {{ request()->routeIs('agent.orders.index') ? 'active' : '' }}">
@@ -358,6 +368,30 @@
                     }
                 }, 10);
             });
+        });
+    </script>
+    
+    <script src="{{ asset('assets/js/offline-db.js') }}"></script>
+    <script>
+        // Register Service Worker for offline capability
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/agent-sw.js').catch(function(err) {
+                    console.log('ServiceWorker note:', err);
+                });
+            });
+        }
+
+        // Global offline badge update
+        $(function() {
+            if (window.SnapKidOfflineDB) {
+                SnapKidOfflineDB.getPendingOrders().then(function(orders) {
+                    const pending = (orders || []).filter(o => o.status === 'pending_sync');
+                    if (pending.length > 0) {
+                        $('#navOfflineBadge').text(pending.length).show();
+                    }
+                }).catch(function() {});
+            }
         });
     </script>
     
