@@ -1499,7 +1499,18 @@ class OrderDigitalizationService
         $query = OrderLot::query();
 
         if ($stage_id == 1) {
-            $query->where('is_printing', 0);
+            // For printing: lot either hasn't been sent to printing (is_printing = 0)
+            // OR it was returned to cutting with pending remaining quantity (e.g. printing didn't work)
+            $query->where(function ($q) use ($slip) {
+                $q->where('is_printing', 0)
+                  ->orWhereIn('lot_no', function ($sq) use ($slip) {
+                      $sq->select('lot_no')
+                          ->from('order_stage_transactions')
+                          ->where('to_stage_id', 3)
+                          ->where('sub_stage_id_to', $slip->stage_master_unit_id)
+                          ->where('remaining_quantity', '>', 0);
+                  });
+            });
         } else {
             $query->where('is_stitching', 0);
         }
@@ -1518,6 +1529,10 @@ class OrderDigitalizationService
         $rolls = FabricRollAssigning::where('lot_no', $lot_no)
             ->where('production_slip_digitization_id', $slip_id)
             ->get();
+
+        if ($rolls->isEmpty()) {
+            $rolls = FabricRollAssigning::where('lot_no', $lot_no)->get();
+        }
 
         $details = [];
         foreach ($rolls as $roll) {
@@ -1768,6 +1783,25 @@ class OrderDigitalizationService
                 ]);
             }
 
+            // Check if it was returned to cutting from another stage (e.g. printing)
+            $returnTxIds = OrderStageTransaction::where('lot_no', $request->lot_no)
+                ->where('to_stage_id', 3)
+                ->where('sub_stage_id_to', $slip->stage_master_unit_id)
+                ->where('remaining_quantity', '>', 0)
+                ->pluck('id');
+
+            if ($returnTxIds->isNotEmpty()) {
+                OrderStageTransaction::whereIn('id', $returnTxIds)->update([
+                    'remaining_quantity' => 0,
+                    'status' => 2,
+                    'complete_date' => $request->production_datetime ?: now()
+                ]);
+
+                OrderStageTransactionDetail::whereIn('order_stage_transaction_id', $returnTxIds)->update([
+                    'remaining_quantity' => 0
+                ]);
+            }
+
             $this->createTransactionWithDetails($request->lot_no, $from_stage_id, 4, $slip->id, $fab_roll_assigning->order_products_set_id, $sub_stage_id_from, $request->to_stage_unit_id, $fab_roll_assigning->id, $request->production_datetime);
 
             $totalPieces = $request->filled('total_pieces') ? (int)$request->total_pieces : ($slip->total_pieces ?? null);
@@ -1889,6 +1923,25 @@ class OrderDigitalizationService
                 }
             }
             
+            // Check if it was returned to cutting from another stage
+            $returnTxIds = OrderStageTransaction::where('lot_no', $request->lot_no)
+                ->where('to_stage_id', 3)
+                ->where('sub_stage_id_to', $slip->stage_master_unit_id)
+                ->where('remaining_quantity', '>', 0)
+                ->pluck('id');
+
+            if ($returnTxIds->isNotEmpty()) {
+                OrderStageTransaction::whereIn('id', $returnTxIds)->update([
+                    'remaining_quantity' => 0,
+                    'status' => 2,
+                    'complete_date' => $request->production_datetime ?: now()
+                ]);
+
+                OrderStageTransactionDetail::whereIn('order_stage_transaction_id', $returnTxIds)->update([
+                    'remaining_quantity' => 0
+                ]);
+            }
+
             // Create Transaction with Details (Cutting -> Printing)
             // Stage 3 is Cutting. Stage 1 is Printing.
             $this->createTransactionWithDetails($request->lot_no, 3, 1, $slip->id, $fab_roll_assigning->order_products_set_id, $slip->stage_master_unit_id, $request->to_stage_unit_id, $fab_roll_assigning->id, $request->production_datetime, $request->sizes);
@@ -2156,12 +2209,12 @@ class OrderDigitalizationService
 
         // Cutting specific (Stage 3): Pull cut quantities from FabricRollAssigning details for this unit
         if ($current_stage_id == 3) {
-            $cuttingQuery = \App\Models\FabricRollAssigningsDetail::join('production_fabric_roll_assigning', 'production_fabric_roll_assigning.id', '=', 'fabric_roll_assignings_detail.production_fabric_roll_assigning_id')
+            $cuttingQuery = \App\Models\FabricRollAssigningsDetail::join('production_fabric_roll_assigning', 'production_fabric_roll_assigning.id', '=', 'production_fabric_roll_assigning_details.production_fabric_roll_assigning_id')
                 ->where('production_fabric_roll_assigning.lot_no', $lot_no);
             if ($unit_id) {
                 $cuttingQuery->where('production_fabric_roll_assigning.stage_master_unit_id', $unit_id);
             }
-            $inflowData = $inflowData->concat($cuttingQuery->select('fabric_roll_assignings_detail.size', 'fabric_roll_assignings_detail.quantity')->get());
+            $inflowData = $inflowData->concat($cuttingQuery->select('production_fabric_roll_assigning_details.size', 'production_fabric_roll_assigning_details.quantity')->get());
         }
 
         /*

@@ -945,6 +945,31 @@ class UnitAuthController extends Controller
             if ($customerSearch) $query->whereHas('productSet.orderMain', function ($q) use ($customerSearch) { $q->where('sku', 'like', '%' . $orderNo . '%'); });
 
             $assignments = ($view === 'closed') ? $query->where('is_closed_for_unit', 1)->get() : $query->where(function ($q) { $q->whereNull('is_closed_for_unit')->orWhere('is_closed_for_unit', 0); })->get();
+
+            // Include any returned transactions back to this cutting unit
+            $returnQuery = \App\Models\OrderStageTransaction::where('sub_stage_id_to', $unitId)
+                ->where('to_stage_id', 3)
+                ->with(['from_stage', 'getFromUnitMaster', 'orderProduct.orderProductSet.order_cutting_stage']);
+
+            if ($lotNo) {
+                $returnQuery->where('lot_no', 'like', '%' . $lotNo . '%');
+            }
+            if ($customerSearch) {
+                $returnQuery->where(function($sq) use ($orderNo) { 
+                    $sq->where('sku', 'like', '%' . $orderNo . '%')
+                       ->orWhereHas('orderProduct.orderMain', function ($q) use ($orderNo) { $q->where('sku', 'like', '%' . $orderNo . '%'); }); 
+                });
+            }
+
+            if ($view === 'closed') {
+                $returns = $returnQuery->where('is_closed_for_unit', 1)->get();
+            } else {
+                $returns = $returnQuery->where(function ($q) { 
+                    $q->whereNull('is_closed_for_unit')->orWhere('is_closed_for_unit', 0); 
+                })->get();
+            }
+            $returns = $returns->map(function ($item) { $item->transaction_type = 'stage'; return $item; });
+            $assignments = $assignments->concat($returns);
         } else {
             $type = 'other';
             $ass1Query = \App\Models\OrderStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster', 'orderProduct.orderProductSet.order_cutting_stage']);
