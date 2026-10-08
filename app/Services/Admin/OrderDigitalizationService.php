@@ -1796,10 +1796,6 @@ class OrderDigitalizationService
                     'status' => 2,
                     'complete_date' => $request->production_datetime ?: now()
                 ]);
-
-                OrderStageTransactionDetail::whereIn('order_stage_transaction_id', $returnTxIds)->update([
-                    'remaining_quantity' => 0
-                ]);
             }
 
             $this->createTransactionWithDetails($request->lot_no, $from_stage_id, 4, $slip->id, $fab_roll_assigning->order_products_set_id, $sub_stage_id_from, $request->to_stage_unit_id, $fab_roll_assigning->id, $request->production_datetime);
@@ -1935,10 +1931,6 @@ class OrderDigitalizationService
                     'remaining_quantity' => 0,
                     'status' => 2,
                     'complete_date' => $request->production_datetime ?: now()
-                ]);
-
-                OrderStageTransactionDetail::whereIn('order_stage_transaction_id', $returnTxIds)->update([
-                    'remaining_quantity' => 0
                 ]);
             }
 
