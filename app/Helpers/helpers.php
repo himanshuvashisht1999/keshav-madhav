@@ -570,7 +570,7 @@ function generateFairBulkTspl($samples, $type = 'barcode')
                 'pattern_name' => $sample->product->pattern->name ?? '',
                 'size_group' => $sample->sizeSet->name,
                 'no_of_pcs' => $sample->sizeSet->no_of_pcs ?? '',
-                'wsp' => 'Rs. ' . number_format($final_price, 2),
+                'wsp' => number_format($final_price),
                 'barcode' => $sample->barcode,
                 'url' => route('fair-product.color-chart', ['barcode' => $sample->barcode])
             ];

@@ -3759,10 +3759,10 @@ class AgentOrderController extends Controller
                 $compactBarcode = sprintf("10%05d%02d%03d", $matches[1], $matches[2], $matches[3]);
             }
 
-            // Calculate MRP: sales price multiplied by given multiplier
+            // Calculate MRP: sales price multiplied by given multiplier (ceil any decimal e.g. 700.01 -> 701)
             $basePrice = (float)($item->selling_price > 0 ? $item->selling_price : ($item->mrp ?? 0));
             $showMrp = !is_null($multiplier) && $multiplier > 0;
-            $calculatedMrp = $showMrp ? round($basePrice * $multiplier, 2) : (float)($item->mrp ?? 0);
+            $calculatedMrp = $showMrp ? (int)ceil($basePrice * $multiplier) : (int)ceil((float)($item->mrp ?? 0));
 
             // Boxes vs Pieces mode
             if ($mode === 'pieces') {
@@ -3816,7 +3816,7 @@ class AgentOrderController extends Controller
                 $tspl .= "TEXT 40,335,\"2\",0,2,2,\"{$left->fitting_name}\"\n";
                 $tspl .= "TEXT 40,380,\"2\",0,1,1,\"# {$left->design_number}\"\n";
                 if ($left->show_mrp) {
-                    $tspl .= "TEXT 40,420,\"3\",0,2,2,\"MRP: Rs. " . number_format($left->mrp, 2) . "\"\n";
+                    $tspl .= "TEXT 40,420,\"3\",0,2,2,\"MRP: " . number_format($left->mrp) . "\"\n";
                     $tspl .= "BARCODE 20,465,\"128\",135,0,0,2,4,\"{$left->barcode}\"\n";
                     $tspl .= "TEXT 40,620,\"2\",0,1,1,\"{$left->original_code}\"\n";
                 } else {
@@ -3833,7 +3833,7 @@ class AgentOrderController extends Controller
                 $tspl .= "TEXT 440,335,\"2\",0,2,2,\"{$right->fitting_name}\"\n";
                 $tspl .= "TEXT 440,380,\"2\",0,1,1,\"# {$right->design_number}\"\n";
                 if ($right->show_mrp) {
-                    $tspl .= "TEXT 440,420,\"3\",0,2,2,\"MRP: Rs. " . number_format($right->mrp, 2) . "\"\n";
+                    $tspl .= "TEXT 440,420,\"3\",0,2,2,\"MRP: " . number_format($right->mrp) . "\"\n";
                     $tspl .= "BARCODE 420,465,\"128\",135,0,0,2,4,\"{$right->barcode}\"\n";
                     $tspl .= "TEXT 440,620,\"2\",0,1,1,\"{$right->original_code}\"\n";
                 } else {
