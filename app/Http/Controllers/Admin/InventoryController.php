@@ -563,7 +563,14 @@ class InventoryController extends Controller
         $vendors = \App\Models\Vendor::where('status', '1')->get();
         $customers = \App\Models\MasterCustomer::where('status', '1')->get();
 
-        return view('admin.inventory.consume', compact('products', 'colors', 'fittings', 'patterns', 'size_sets', 'storerooms', 'vendors', 'customers'));
+        $sourceStockTotals = \App\Models\DomesticInventory::where('order_main_id', 0)
+            ->where('total_boxes', '>', 0)
+            ->select('product_id', \Illuminate\Support\Facades\DB::raw('SUM(total_boxes) as total_boxes'), \Illuminate\Support\Facades\DB::raw('SUM(total_boxes * quantity) as total_pieces'))
+            ->groupBy('product_id')
+            ->get()
+            ->keyBy('product_id');
+
+        return view('admin.inventory.consume', compact('products', 'colors', 'fittings', 'patterns', 'size_sets', 'storerooms', 'vendors', 'customers', 'sourceStockTotals'));
     }
 
     public function getMasterData()
@@ -679,12 +686,16 @@ class InventoryController extends Controller
                         $model = DomesticInventory::find($sourceId);
                         if ($model) {
                             $sourceQuantity = $model->quantity > 0 ? $model->quantity : 1;
-                            $consumedSources[$sourceId] = [
-                                'model' => $model,
-                                'boxes_to_deduct' => $boxes,
-                                'total_pieces_consumed' => $boxes * $sourceQuantity,
-                                'generated_items' => []
-                            ];
+                            if (!isset($consumedSources[$sourceId])) {
+                                $consumedSources[$sourceId] = [
+                                    'model' => $model,
+                                    'boxes_to_deduct' => 0,
+                                    'total_pieces_consumed' => 0,
+                                    'generated_items' => []
+                                ];
+                            }
+                            $consumedSources[$sourceId]['boxes_to_deduct'] += $boxes;
+                            $consumedSources[$sourceId]['total_pieces_consumed'] += ($boxes * $sourceQuantity);
                         }
                     }
                 }
@@ -719,7 +730,7 @@ class InventoryController extends Controller
                     if (!isset($sizeSetCache[$sizeSetId])) {
                         $sizeSet = \App\Models\MasterSizeMeasurement::find($sizeSetId);
                         if ($sizeSet && $sizeSet->size_group) {
-                            $sizes = explode(',', $sizeSet->size_group);
+                            $sizes = array_values(array_filter(array_map('trim', explode(',', $sizeSet->size_group)), 'strlen'));
                             $piecesPerSize = count($sizes) > 0 ? $sizeSet->no_of_pcs / count($sizes) : 0;
                             $sizeSetCache[$sizeSetId] = ['sizes' => $sizes, 'pieces_per_size' => $piecesPerSize];
                         } else {
@@ -1338,6 +1349,54 @@ class InventoryController extends Controller
         }
 
         return response()->json(['success' => false, 'message' => 'No matching inventory found']);
+    }
+
+    public function getSourceStockTree(Request $request)
+    {
+        $productId = $request->product_id;
+        if (!$productId) {
+            return response()->json(['success' => false, 'tree' => []]);
+        }
+
+        $product = ProductionGoods::with(['fitting', 'pattern'])->find($productId);
+
+        $stocks = DomesticInventory::where('order_main_id', 0)
+            ->where('total_boxes', '>', 0)
+            ->where('product_id', $productId)
+            ->with(['rack.storeroom', 'sizeSet', 'color'])
+            ->get();
+
+        $tree = [];
+        foreach ($stocks as $s) {
+            if (!$s->rack || !$s->rack->storeroom || !$s->sizeSet || !$s->color) continue;
+
+            $boxes = (int) $s->total_boxes;
+            $qty = (int) $s->quantity;
+
+            $tree[] = [
+                'inventory_id' => $s->id,
+                'warehouse_id' => $s->rack->storeroom_id,
+                'warehouse_name' => $s->rack->storeroom->name,
+                'rack_id' => $s->rack_id,
+                'rack_name' => $s->rack->name,
+                'size_set_id' => $s->size_set_id,
+                'size_set_name' => $s->sizeSet->name,
+                'color_id' => $s->color_id,
+                'color_name' => $s->color->name,
+                'boxes' => $boxes,
+                'quantity' => $qty,
+                'total_pieces' => $boxes * $qty,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'pattern_id' => $product ? $product->master_pattern_id : null,
+            'pattern_name' => $product && $product->pattern ? $product->pattern->name : '',
+            'fitting_id' => $product ? $product->master_product_fitting_id : null,
+            'fitting_name' => $product && $product->fitting ? $product->fitting->name : '',
+            'tree' => $tree
+        ]);
     }
 
     public function purchaseHistory()

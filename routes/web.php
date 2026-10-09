@@ -867,6 +867,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/get-pricing-info', [AdminInventoryController::class, 'getPricingInfo'])->name('get_pricing_info');
             Route::get('/get-locations', [AdminInventoryController::class, 'getLocations'])->name('get_locations');
             Route::get('/get-domestic-inventory-for-consume', [AdminInventoryController::class, 'getDomesticInventoryForConsume'])->name('get_domestic_inventory_for_consume');
+            Route::get('/get-source-stock-tree', [AdminInventoryController::class, 'getSourceStockTree'])->name('get_source_stock_tree');
             Route::get('/barcode-generator', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'index'])->name('barcode-generator.index');
             Route::post('/barcode-generator/generate', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generate'])->name('barcode-generator.generate');
             Route::post('/barcode-generator/generate-tspl', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateTspl'])->name('barcode-generator.generate-tspl');

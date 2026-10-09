@@ -372,7 +372,7 @@
     <div class="content-wrapper">
         <section class="content pt-2">
             <div class="container-fluid px-2">
-                <form action="{{ route('admin.inventory.store') }}" method="POST" id="addStockForm">
+                <form action="{{ route('admin.inventory.store') }}" method="POST" id="addStockForm" novalidate>
                     @csrf
                     <input type="hidden" name="source_type" id="sourceType" value="consume">
 
@@ -661,11 +661,34 @@
             });
         }
 
-        // Pre-rendered master options
+        const sourceStockTotals = @json($sourceStockTotals ?? []);
+
+        function formatDesignLabel(p, boxes = null) {
+            let parts = [];
+            if (p.series && p.series.name) parts.push(p.series.name);
+            if (p.name_of_garment && p.name_of_garment !== 'null') parts.push(p.name_of_garment);
+            let sub = parts.join(' ').trim();
+            let label = sub ? `${p.design_number} (${sub})` : `${p.design_number}`;
+            if (boxes !== null) {
+                label += ` (${boxes} Bx)`;
+            }
+            return label;
+        }
+
+        // Source Design options (simple list with total boxes in brackets, no optgroups)
+        let sourceDesignOptionsHtml = '<option value="">Select Design</option>';
+        productsMaster.forEach(p => {
+            let sInfo = sourceStockTotals[p.id];
+            let boxes = sInfo ? parseInt(sInfo.total_boxes) : 0;
+            let label = formatDesignLabel(p, boxes);
+            sourceDesignOptionsHtml += `<option value="${p.id}" data-name="${p.name_of_garment || ''}" data-boxes="${boxes}">${label}</option>`;
+        });
+
+        // Pre-rendered master options for Target stock creation
         let designOptionsHtml = '<option value="">Select Design</option>';
         productsMaster.forEach(p => {
-            let sName = p.series ? p.series.name : '';
-            designOptionsHtml += `<option value="${p.id}" data-name="${p.name_of_garment}">${p.design_number} (${sName} ${p.name_of_garment})</option>`;
+            let label = formatDesignLabel(p);
+            designOptionsHtml += `<option value="${p.id}" data-name="${p.name_of_garment || ''}">${label}</option>`;
         });
 
         let warehouseOptionsHtml = '<option value="">Warehouse</option>';
@@ -690,8 +713,8 @@
                         <input type="hidden" class="source-fitting-val" value="">
                     </td>
                     <td>
-                        <select class="form-control select2 source-design-select" required>
-                            ${designOptionsHtml}
+                        <select class="form-control select2 source-design-select">
+                            ${sourceDesignOptionsHtml}
                         </select>
                     </td>
                     <td>
@@ -700,22 +723,22 @@
                         </div>
                     </td>
                     <td>
-                        <select class="form-control select2 source-warehouse-select" required>
-                            ${warehouseOptionsHtml}
+                        <select class="form-control select2 source-warehouse-select">
+                            <option value="">Select Warehouse</option>
                         </select>
                     </td>
                     <td>
-                        <select class="form-control select2 source-rack-select" required>
+                        <select class="form-control select2 source-rack-select">
                             <option value="">Select Rack</option>
                         </select>
                     </td>
                     <td>
-                        <select class="form-control select2 source-size-set-select" required>
+                        <select class="form-control select2 source-size-set-select">
                             <option value="">Select Size Set</option>
                         </select>
                     </td>
                     <td>
-                        <select class="form-control select2 source-color-select" required>
+                        <select class="form-control select2 source-color-select">
                             <option value="">Select Color</option>
                         </select>
                     </td>
@@ -725,7 +748,7 @@
                     <td class="text-center">
                         <input type="number" name="consumed_sources[${sIdx}][boxes]"
                             class="form-control erp-input source-boxes-input font-weight-bold text-center text-primary"
-                            style="min-width: 65px;" min="1" placeholder="Qty" required>
+                            style="min-width: 65px;" min="1" placeholder="Qty">
                     </td>
                     <td class="text-right font-weight-bold text-primary">
                         <span class="source-pieces-display">-</span>
@@ -748,12 +771,6 @@
 
             if (values) {
                 populateSourceRow(newRow, values);
-            } else {
-                // Auto-select first warehouse if available
-                let wSelect = newRow.find('.source-warehouse-select');
-                if (wSelect.find('option').length > 1) {
-                    wSelect.val(wSelect.find('option:eq(1)').val()).trigger('change');
-                }
             }
 
             updateSourceCounters();
@@ -774,7 +791,7 @@
 
         function populateSourceRow(row, values) {
             if (!values.product_id) return;
-            row.find('.source-design-select').val(values.product_id).trigger('change');
+            row.find('.source-design-select').val(values.product_id).trigger('change.select2');
 
             if (values.pattern_id) {
                 row.find('.source-pattern-val').val(values.pattern_id);
@@ -789,44 +806,46 @@
                 `);
             }
 
-            if (values.variants) {
-                row.data('variants', values.variants);
-                let sizeSelect = row.find('.source-size-set-select');
-                sizeSelect.empty().append('<option value="">Select Size Set</option>');
-                let uniqueSizeSets = [];
-                values.variants.forEach(function (v) {
-                    if (!uniqueSizeSets.includes(v.size_set_id)) {
-                        sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
-                        uniqueSizeSets.push(v.size_set_id);
+            if (values.stockTree && values.stockTree.length > 0) {
+                row.data('stockTree', values.stockTree);
+                updateSourceWarehouseOptions(row, values.warehouse_id);
+                updateSourceRackOptions(row, values.rack_id);
+                updateSourceSizeSetOptions(row, values.size_set_id);
+                updateSourceColorOptions(row, values.color_id);
+            } else {
+                // Fetch stock tree if not present
+                $.get("{{ route('admin.inventory.get_source_stock_tree') }}", { product_id: values.product_id }, function (data) {
+                    if (data && data.success && data.tree) {
+                        row.data('stockTree', data.tree);
+                        updateSourceWarehouseOptions(row, values.warehouse_id);
+                        updateSourceRackOptions(row, values.rack_id);
+                        updateSourceSizeSetOptions(row, values.size_set_id);
+                        updateSourceColorOptions(row, values.color_id);
                     }
                 });
-                sizeSelect.val(values.size_set_id).trigger('change');
-
-                let colorSelect = row.find('.source-color-select');
-                colorSelect.empty().append('<option value="">Select Color</option>');
-                let variant = values.variants.find(v => v.size_set_id == values.size_set_id);
-                if (variant) {
-                    variant.colors.forEach(function (c) {
-                        colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
-                    });
-                }
-                colorSelect.val(values.color_id).trigger('change');
             }
 
-            if (values.warehouse_id) {
-                row.find('.source-warehouse-select').val(values.warehouse_id).trigger('change');
-                let rackSelect = row.find('.source-rack-select');
-                rackSelect.empty().append('<option value="">Select Rack</option>');
-                if (values.racks) {
-                    values.racks.forEach(function (r) {
-                        rackSelect.append(`<option value="${r.id}" ${r.id == values.rack_id ? 'selected' : ''}>${r.name}</option>`);
-                    });
-                    rackSelect.trigger('change');
-                }
+            if (values.inventory_id) {
+                row.find('.source-inventory-id').val(values.inventory_id);
             }
-
+            if (values.pcs_per_box) {
+                row.find('.source-pcs-per-box').val(values.pcs_per_box);
+            }
+            if (values.avail_badge_text) {
+                row.find('.source-avail-badge')
+                    .attr('class', values.avail_badge_class || 'source-avail-badge badge badge-success text-white')
+                    .text(values.avail_badge_text);
+            }
+            if (values.max_boxes) {
+                row.find('.source-boxes-input').attr('max', values.max_boxes);
+            }
             if (values.boxes) {
                 row.find('.source-boxes-input').val(values.boxes);
+                let pcs = parseInt(values.pcs_per_box) || 0;
+                let b = parseInt(values.boxes) || 0;
+                if (b > 0 && pcs > 0) {
+                    row.find('.source-pieces-display').text(b * pcs);
+                }
             }
         }
 
@@ -845,7 +864,7 @@
                         <input type="hidden" name="products[${gIdx}][fitting_id]" class="gen-fitting-val">
                     </td>
                     <td>
-                        <select name="products[${gIdx}][product_id]" class="form-control select2 gen-design-select" required>
+                        <select name="products[${gIdx}][product_id]" class="form-control select2 gen-design-select">
                             ${designOptionsHtml}
                         </select>
                     </td>
@@ -855,29 +874,29 @@
                         </div>
                     </td>
                     <td>
-                        <select name="products[${gIdx}][warehouse_id]" class="form-control select2 gen-warehouse-select" required>
+                        <select name="products[${gIdx}][warehouse_id]" class="form-control select2 gen-warehouse-select">
                             ${warehouseOptionsHtml}
                         </select>
                     </td>
                     <td>
-                        <select name="products[${gIdx}][rack_id]" class="form-control select2 gen-rack-select" required>
+                        <select name="products[${gIdx}][rack_id]" class="form-control select2 gen-rack-select">
                             <option value="">Select Rack</option>
                         </select>
                     </td>
                     <td>
-                        <select name="products[${gIdx}][size_set_id]" class="form-control select2 gen-size-set-select" required>
+                        <select name="products[${gIdx}][size_set_id]" class="form-control select2 gen-size-set-select">
                             <option value="">Select Size Set</option>
                         </select>
                     </td>
                     <td>
-                        <select name="products[${gIdx}][color_id]" class="form-control select2 gen-color-select" required>
+                        <select name="products[${gIdx}][color_id]" class="form-control select2 gen-color-select">
                             <option value="">Select Color</option>
                         </select>
                     </td>
                     <td class="text-center">
                         <input type="number" name="products[${gIdx}][total_boxes]"
                             class="form-control erp-input gen-boxes-input font-weight-bold text-center"
-                            style="min-width: 65px;" min="1" placeholder="Qty" required>
+                            style="min-width: 65px;" min="1" placeholder="Qty">
                     </td>
                     <td class="text-center">
                         <input type="number" name="products[${gIdx}][pieces_per_box]"
@@ -890,7 +909,7 @@
                     <td class="text-right">
                         <input type="number" name="products[${gIdx}][mrp]"
                             class="form-control erp-input gen-mrp-input text-right"
-                            style="min-width: 70px;" step="0.01" readonly required>
+                            style="min-width: 70px;" step="0.01">
                     </td>
                     <td class="text-center">
                         <div class="d-inline-flex gap-1">
@@ -935,7 +954,7 @@
 
         function populateGeneratedRow(row, values) {
             if (!values.product_id) return;
-            row.find('.gen-design-select').val(values.product_id).trigger('change');
+            row.find('.gen-design-select').val(values.product_id).trigger('change.select2');
 
             if (values.pattern_id) {
                 row.find('.gen-pattern-val').val(values.pattern_id);
@@ -961,7 +980,7 @@
                         uniqueSizeSets.push(v.size_set_id);
                     }
                 });
-                sizeSelect.val(values.size_set_id).trigger('change');
+                sizeSelect.val(values.size_set_id).trigger('change.select2');
 
                 let colorSelect = row.find('.gen-color-select');
                 colorSelect.empty().append('<option value="">Select Color</option>');
@@ -971,18 +990,18 @@
                         colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
                     });
                 }
-                colorSelect.val(values.color_id).trigger('change');
+                colorSelect.val(values.color_id).trigger('change.select2');
             }
 
             if (values.warehouse_id) {
-                row.find('.gen-warehouse-select').val(values.warehouse_id).trigger('change');
+                row.find('.gen-warehouse-select').val(values.warehouse_id).trigger('change.select2');
                 let rackSelect = row.find('.gen-rack-select');
                 rackSelect.empty().append('<option value="">Select Rack</option>');
                 if (values.racks) {
                     values.racks.forEach(function (r) {
                         rackSelect.append(`<option value="${r.id}" ${r.id == values.rack_id ? 'selected' : ''}>${r.name}</option>`);
                     });
-                    rackSelect.trigger('change');
+                    rackSelect.val(values.rack_id).trigger('change.select2');
                 }
             }
 
@@ -1182,142 +1201,291 @@
                 fitting_id: row.find('.source-fitting-val').val(),
                 pattern_name: row.find('.source-pattern-fit-badges .font-weight-bold').text(),
                 fitting_name: row.find('.source-pattern-fit-badges .text-muted').text(),
-                size_set_id: row.find('.source-size-set-select').val(),
-                color_id: row.find('.source-color-select').val(),
+                stockTree: row.data('stockTree'),
                 warehouse_id: row.find('.source-warehouse-select').val(),
                 rack_id: row.find('.source-rack-select').val(),
+                size_set_id: row.find('.source-size-set-select').val(),
+                color_id: row.find('.source-color-select').val(),
                 boxes: row.find('.source-boxes-input').val(),
-                variants: row.data('variants')
+                inventory_id: row.find('.source-inventory-id').val(),
+                pcs_per_box: row.find('.source-pcs-per-box').val(),
+                avail_badge_text: row.find('.source-avail-badge').text(),
+                avail_badge_class: row.find('.source-avail-badge').attr('class'),
+                max_boxes: row.find('.source-boxes-input').attr('max')
             };
-
-            let racks = [];
-            row.find('.source-rack-select option').each(function () {
-                if ($(this).val()) racks.push({ id: $(this).val(), name: $(this).text() });
-            });
-            values.racks = racks;
 
             addSourceRow(values);
         });
 
-        $(document).on('change', '.source-warehouse-select', function () {
-            let warehouseId = $(this).val();
-            let row = $(this).closest('.source-table-row');
-            let rackSelect = row.find('.source-rack-select');
-            rackSelect.empty().append('<option value="">Select Rack</option>');
+        // =========================================================================
+        // STOCK-GUIDED CASCADING HELPERS
+        // =========================================================================
+        function updateSourceWarehouseOptions(row, selectedWarehouseId = null) {
+            let tree = row.data('stockTree') || [];
+            let wSelect = row.find('.source-warehouse-select');
+            wSelect.empty().append('<option value="">Select Warehouse</option>');
 
-            if (warehouseId) {
-                $.get("{{ url('admin/inventory/warehouse-stock/racks') }}/" + warehouseId, function (data) {
-                    data.forEach(function (rack) {
-                        rackSelect.append(`<option value="${rack.id}">${rack.name}</option>`);
-                    });
-                    rackSelect.trigger('change');
-                    if (data.length > 0) {
-                        rackSelect.val(data[0].id).trigger('change');
-                    }
-                });
+            let warehouseTally = {};
+            tree.forEach(item => {
+                if (!warehouseTally[item.warehouse_id]) {
+                    warehouseTally[item.warehouse_id] = { id: item.warehouse_id, name: item.warehouse_name, boxes: 0 };
+                }
+                warehouseTally[item.warehouse_id].boxes += item.boxes;
+            });
+
+            let wList = Object.values(warehouseTally);
+            wList.forEach(w => {
+                wSelect.append(`<option value="${w.id}">${w.name} (${w.boxes} Bx)</option>`);
+            });
+
+            if (selectedWarehouseId) {
+                wSelect.val(selectedWarehouseId).trigger('change.select2');
+            } else if (wList.length === 1) {
+                wSelect.val(wList[0].id).trigger('change');
+            } else {
+                wSelect.trigger('change.select2');
             }
-        });
+        }
 
+        function updateSourceRackOptions(row, selectedRackId = null) {
+            let tree = row.data('stockTree') || [];
+            let wId = row.find('.source-warehouse-select').val();
+            let rSelect = row.find('.source-rack-select');
+            rSelect.empty().append('<option value="">Select Rack</option>');
+
+            if (!wId) {
+                rSelect.trigger('change.select2');
+                return;
+            }
+
+            let rackTally = {};
+            tree.filter(item => item.warehouse_id == wId).forEach(item => {
+                if (!rackTally[item.rack_id]) {
+                    rackTally[item.rack_id] = { id: item.rack_id, name: item.rack_name, boxes: 0 };
+                }
+                rackTally[item.rack_id].boxes += item.boxes;
+            });
+
+            let rList = Object.values(rackTally);
+            rList.forEach(r => {
+                rSelect.append(`<option value="${r.id}">${r.name} (${r.boxes} Bx)</option>`);
+            });
+
+            if (selectedRackId) {
+                rSelect.val(selectedRackId).trigger('change.select2');
+            } else if (rList.length === 1) {
+                rSelect.val(rList[0].id).trigger('change');
+            } else {
+                rSelect.trigger('change.select2');
+            }
+        }
+
+        function updateSourceSizeSetOptions(row, selectedSizeSetId = null) {
+            let tree = row.data('stockTree') || [];
+            let wId = row.find('.source-warehouse-select').val();
+            let rId = row.find('.source-rack-select').val();
+            let sSelect = row.find('.source-size-set-select');
+            sSelect.empty().append('<option value="">Select Size Set</option>');
+
+            if (!wId || !rId) {
+                sSelect.trigger('change.select2');
+                return;
+            }
+
+            let sizeTally = {};
+            tree.filter(item => item.warehouse_id == wId && item.rack_id == rId).forEach(item => {
+                if (!sizeTally[item.size_set_id]) {
+                    sizeTally[item.size_set_id] = { id: item.size_set_id, name: item.size_set_name, boxes: 0 };
+                }
+                sizeTally[item.size_set_id].boxes += item.boxes;
+            });
+
+            let sList = Object.values(sizeTally);
+            sList.forEach(s => {
+                sSelect.append(`<option value="${s.id}">${s.name} (${s.boxes} Bx)</option>`);
+            });
+
+            if (selectedSizeSetId) {
+                sSelect.val(selectedSizeSetId).trigger('change.select2');
+            } else if (sList.length === 1) {
+                sSelect.val(sList[0].id).trigger('change');
+            } else {
+                sSelect.trigger('change.select2');
+            }
+        }
+
+        function updateSourceColorOptions(row, selectedColorId = null) {
+            let tree = row.data('stockTree') || [];
+            let wId = row.find('.source-warehouse-select').val();
+            let rId = row.find('.source-rack-select').val();
+            let sId = row.find('.source-size-set-select').val();
+            let cSelect = row.find('.source-color-select');
+            cSelect.empty().append('<option value="">Select Color</option>');
+
+            if (!wId || !rId || !sId) {
+                cSelect.trigger('change.select2');
+                return;
+            }
+
+            let colorTally = {};
+            tree.filter(item => item.warehouse_id == wId && item.rack_id == rId && item.size_set_id == sId).forEach(item => {
+                if (!colorTally[item.color_id]) {
+                    colorTally[item.color_id] = { id: item.color_id, name: item.color_name, boxes: 0 };
+                }
+                colorTally[item.color_id].boxes += item.boxes;
+            });
+
+            let cList = Object.values(colorTally);
+            cList.forEach(c => {
+                cSelect.append(`<option value="${c.id}">${c.name} (${c.boxes} Bx)</option>`);
+            });
+
+            if (selectedColorId) {
+                cSelect.val(selectedColorId).trigger('change.select2');
+            } else if (cList.length === 1) {
+                cSelect.val(cList[0].id).trigger('change');
+            } else {
+                cSelect.trigger('change.select2');
+            }
+        }
+
+        // When Source Design Changes
         $(document).on('change', '.source-design-select', function () {
             let productId = $(this).val();
             let row = $(this).closest('.source-table-row');
 
-            let sizeSelect = row.find('.source-size-set-select');
-            let colorSelect = row.find('.source-color-select');
-            let patternFitContainer = row.find('.source-pattern-fit-badges');
-
-            sizeSelect.empty().append('<option value="">Select Size Set</option>').trigger('change');
-            colorSelect.empty().append('<option value="">Select Color</option>').trigger('change');
-            patternFitContainer.html('<span class="text-muted small font-italic">-</span>');
+            // Reset downstream fields
+            row.find('.source-warehouse-select').empty().append('<option value="">Select Warehouse</option>').trigger('change.select2');
+            row.find('.source-rack-select').empty().append('<option value="">Select Rack</option>').trigger('change.select2');
+            row.find('.source-size-set-select').empty().append('<option value="">Select Size Set</option>').trigger('change.select2');
+            row.find('.source-color-select').empty().append('<option value="">Select Color</option>').trigger('change.select2');
+            row.find('.source-inventory-id').val('');
+            row.find('.source-pcs-per-box').val('0');
+            row.find('.source-avail-badge').removeClass('badge-success badge-danger text-white').addClass('badge-light text-muted border').text('-');
+            row.find('.source-boxes-input').val('').removeAttr('max');
+            row.find('.source-pieces-display').text('-');
+            row.find('.source-pattern-fit-badges').html('<span class="text-muted small font-italic">-</span>');
+            row.data('stockTree', []);
+            recalculateAll();
 
             if (productId) {
-                $.get("{{ route('admin.inventory.get_product_full_details') }}", { product_id: productId }, function (data) {
-                    let pName = data.pattern_name || '';
-                    let fName = data.fitting_name || '';
-                    row.find('.source-pattern-val').val(data.pattern_id || '');
-                    row.find('.source-fitting-val').val(data.fitting_id || '');
+                row.find('.source-pattern-fit-badges').html('<span class="text-muted small"><i class="fas fa-spinner fa-spin mr-1"></i>Loading stock...</span>');
+                $.get("{{ route('admin.inventory.get_source_stock_tree') }}", { product_id: productId }, function (data) {
+                    if (data && data.success) {
+                        let pName = data.pattern_name || '';
+                        let fName = data.fitting_name || '';
+                        row.find('.source-pattern-val').val(data.pattern_id || '');
+                        row.find('.source-fitting-val').val(data.fitting_id || '');
 
-                    patternFitContainer.html(`
-                        <span class="erp-badge-info font-weight-bold text-dark" title="Pattern: ${pName}">${pName}</span>
-                        <span class="erp-badge-info text-muted" title="Fitting: ${fName}">${fName}</span>
-                    `);
-
-                    row.data('variants', data.variants);
-                    let uniqueSizeSets = [];
-                    data.variants.forEach(function (v) {
-                        if (!uniqueSizeSets.includes(v.size_set_id)) {
-                            sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
-                            uniqueSizeSets.push(v.size_set_id);
+                        if (pName || fName) {
+                            row.find('.source-pattern-fit-badges').html(`
+                                <span class="erp-badge-info font-weight-bold text-dark" title="Pattern: ${pName}">${pName}</span>
+                                <span class="erp-badge-info text-muted" title="Fitting: ${fName}">${fName}</span>
+                            `);
+                        } else {
+                            row.find('.source-pattern-fit-badges').html('<span class="text-muted small font-italic">-</span>');
                         }
-                    });
-                    sizeSelect.trigger('change');
-                    if (uniqueSizeSets.length === 1) {
-                        sizeSelect.val(uniqueSizeSets[0]).trigger('change');
+
+                        row.data('stockTree', data.tree || []);
+                        if (!data.tree || data.tree.length === 0) {
+                            toastr.warning('No available domestic inventory stock found for this design.');
+                        } else {
+                            updateSourceWarehouseOptions(row);
+                        }
                     }
                 });
             }
         });
 
+        // When Source Warehouse Changes
+        $(document).on('change', '.source-warehouse-select', function () {
+            let row = $(this).closest('.source-table-row');
+            // Reset downstream FIRST before cascading
+            row.find('.source-size-set-select').empty().append('<option value="">Select Size Set</option>').trigger('change.select2');
+            row.find('.source-color-select').empty().append('<option value="">Select Color</option>').trigger('change.select2');
+            row.find('.source-inventory-id').val('');
+            row.find('.source-pcs-per-box').val('0');
+            row.find('.source-avail-badge').removeClass('badge-success badge-danger text-white').addClass('badge-light text-muted border').text('-');
+            row.find('.source-boxes-input').val('').removeAttr('max');
+            row.find('.source-pieces-display').text('-');
+            recalculateAll();
+
+            // Now update rack options (can auto-cascade to size-set/color if unique)
+            updateSourceRackOptions(row);
+        });
+
+        // When Source Rack Changes
+        $(document).on('change', '.source-rack-select', function () {
+            let row = $(this).closest('.source-table-row');
+            // Reset downstream FIRST before cascading
+            row.find('.source-color-select').empty().append('<option value="">Select Color</option>').trigger('change.select2');
+            row.find('.source-inventory-id').val('');
+            row.find('.source-pcs-per-box').val('0');
+            row.find('.source-avail-badge').removeClass('badge-success badge-danger text-white').addClass('badge-light text-muted border').text('-');
+            row.find('.source-boxes-input').val('').removeAttr('max');
+            row.find('.source-pieces-display').text('-');
+            recalculateAll();
+
+            // Now update size set options
+            updateSourceSizeSetOptions(row);
+        });
+
+        // When Source Size Set Changes
         $(document).on('change', '.source-size-set-select', function () {
             let row = $(this).closest('.source-table-row');
-            let sizeSetId = $(this).val();
-            let colorSelect = row.find('.source-color-select');
-            colorSelect.empty().append('<option value="">Select Color</option>');
+            // Reset downstream FIRST before cascading
+            row.find('.source-inventory-id').val('');
+            row.find('.source-pcs-per-box').val('0');
+            row.find('.source-avail-badge').removeClass('badge-success badge-danger text-white').addClass('badge-light text-muted border').text('-');
+            row.find('.source-boxes-input').val('').removeAttr('max');
+            row.find('.source-pieces-display').text('-');
+            recalculateAll();
 
-            let variants = row.data('variants') || [];
-            let variant = variants.find(v => v.size_set_id == sizeSetId);
-            if (variant) {
-                variant.colors.forEach(function (c) {
-                    colorSelect.append(`<option value="${c.id}">${c.name}</option>`);
-                });
-            }
-            colorSelect.trigger('change');
-            if (variant && variant.colors.length === 1) {
-                colorSelect.val(variant.colors[0].id).trigger('change');
-            }
+            // Now update color options
+            updateSourceColorOptions(row);
         });
 
-        // Domestic stock lookup when all attributes are selected
-        $(document).on('change', '.source-design-select, .source-warehouse-select, .source-rack-select, .source-size-set-select, .source-color-select', function () {
+        // When Source Color Changes
+        $(document).on('change', '.source-color-select', function () {
             let row = $(this).closest('.source-table-row');
-            let productId = row.find('.source-design-select').val();
-            let warehouseId = row.find('.source-warehouse-select').val();
-            let rackId = row.find('.source-rack-select').val();
-            let sizeSetId = row.find('.source-size-set-select').val();
-            let colorId = row.find('.source-color-select').val();
+            let tree = row.data('stockTree') || [];
+            let wId = row.find('.source-warehouse-select').val();
+            let rId = row.find('.source-rack-select').val();
+            let sId = row.find('.source-size-set-select').val();
+            let cId = $(this).val();
 
-            if (productId && warehouseId && rackId && sizeSetId && colorId) {
-                $.get("{{ route('admin.inventory.get_domestic_inventory_for_consume') }}", {
-                    product_id: productId,
-                    warehouse_id: warehouseId,
-                    rack_id: rackId,
-                    size_set_id: sizeSetId,
-                    color_id: colorId
-                }, function (data) {
-                    if (data && data.total_boxes > 0) {
-                        row.find('.source-inventory-id').val(data.inventory_id);
-                        row.find('.source-avail-badge').removeClass('badge-light badge-danger text-muted').addClass('badge-success text-white')
-                            .text(`${data.total_boxes} Bx (${data.total_pieces} Pcs)`);
-                        row.find('.source-pcs-per-box').val(data.pieces_per_box);
-                        row.find('.source-boxes-input').attr('max', data.total_boxes);
+            if (wId && rId && sId && cId) {
+                let match = tree.find(item => item.warehouse_id == wId && item.rack_id == rId && item.size_set_id == sId && item.color_id == cId);
+                if (match && match.boxes > 0) {
+                    row.find('.source-inventory-id').val(match.inventory_id);
+                    row.find('.source-pcs-per-box').val(match.quantity);
+                    row.find('.source-avail-badge')
+                        .removeClass('badge-light badge-danger text-muted')
+                        .addClass('badge-success text-white font-weight-bold')
+                        .text(`${match.boxes} Bx (${match.total_pieces} Pcs)`);
+                    row.find('.source-boxes-input').attr('max', match.boxes);
 
-                        let curBoxes = parseInt(row.find('.source-boxes-input').val()) || 0;
-                        if (curBoxes <= 0) {
-                            row.find('.source-boxes-input').val(1).trigger('input');
-                        } else {
-                            row.find('.source-boxes-input').trigger('input');
-                        }
+                    let curBoxes = parseInt(row.find('.source-boxes-input').val()) || 0;
+                    if (curBoxes <= 0 || curBoxes > match.boxes) {
+                        row.find('.source-boxes-input').val(1).trigger('input');
                     } else {
-                        row.find('.source-inventory-id').val('');
-                        row.find('.source-avail-badge').removeClass('badge-success text-white').addClass('badge-danger text-white')
-                            .text('0 Bx');
-                        row.find('.source-pcs-per-box').val('0');
-                        row.find('.source-boxes-input').val('').removeAttr('max');
-                        row.find('.source-pieces-display').text('-');
-                        toastr.warning('No available domestic inventory found for this combination.');
-                        recalculateAll();
+                        row.find('.source-boxes-input').trigger('input');
                     }
-                });
+                } else {
+                    row.find('.source-inventory-id').val('');
+                    row.find('.source-pcs-per-box').val('0');
+                    row.find('.source-avail-badge').removeClass('badge-success text-white').addClass('badge-danger text-white').text('0 Bx');
+                    row.find('.source-boxes-input').val('').removeAttr('max');
+                    row.find('.source-pieces-display').text('-');
+                    recalculateAll();
+                }
+            } else {
+                row.find('.source-inventory-id').val('');
+                row.find('.source-pcs-per-box').val('0');
+                row.find('.source-avail-badge').removeClass('badge-success text-white').addClass('badge-light text-muted border').text('-');
+                row.find('.source-boxes-input').val('').removeAttr('max');
+                row.find('.source-pieces-display').text('-');
+                recalculateAll();
             }
         });
 
@@ -1504,11 +1672,11 @@
                     if (data && data.products) {
                         let html = '<option value="">Select Design</option>';
                         data.products.forEach(function (p) {
-                            let sName = p.series ? p.series.name : '';
-                            html += `<option value="${p.id}" data-name="${p.name_of_garment}">${p.design_number} (${sName} ${p.name_of_garment})</option>`;
+                            let label = formatDesignLabel(p);
+                            html += `<option value="${p.id}" data-name="${p.name_of_garment || ''}">${label}</option>`;
                         });
                         designOptionsHtml = html;
-                        $('.gen-design-select, .source-design-select').each(function() {
+                        $('.gen-design-select').each(function() {
                             let cur = $(this).val();
                             $(this).html(html).val(cur).trigger('change.select2');
                         });
@@ -1524,7 +1692,7 @@
                             html += `<option value="${s.id}">${s.name}</option>`;
                         });
                         warehouseOptionsHtml = html;
-                        $('.gen-warehouse-select, .source-warehouse-select').each(function() {
+                        $('.gen-warehouse-select').each(function() {
                             let cur = $(this).val();
                             $(this).html(html).val(cur).trigger('change.select2');
                         });
@@ -1606,6 +1774,166 @@
         $('#addStockForm').on('submit', function (e) {
             e.preventDefault();
 
+            // Clear any previous error styling
+            $('.is-invalid').removeClass('is-invalid');
+            $('.border-danger').removeClass('border-danger');
+
+            // 1. Clean up or validate empty rows
+            let sourceRows = $('.source-table-row');
+            let genRows = $('.gen-table-row');
+
+            // Auto-clean completely empty source rows if more than 1 row exists
+            if (sourceRows.length > 1) {
+                sourceRows.each(function () {
+                    let d = $(this).find('.source-design-select').val();
+                    let b = $(this).find('.source-boxes-input').val();
+                    if (!d && (!b || parseInt(b) <= 0)) {
+                        $(this).remove();
+                    }
+                });
+                updateSourceCounters();
+                recalculateAll();
+                sourceRows = $('.source-table-row');
+            }
+
+            // Auto-clean completely empty generated rows if more than 1 row exists
+            if (genRows.length > 1) {
+                genRows.each(function () {
+                    let d = $(this).find('.gen-design-select').val();
+                    let b = $(this).find('.gen-boxes-input').val();
+                    if (!d && (!b || parseInt(b) <= 0)) {
+                        $(this).remove();
+                    }
+                });
+                updateGeneratedCounters();
+                recalculateAll();
+                genRows = $('.gen-table-row');
+            }
+
+            // 2. Validate every Source row
+            let sourceError = null;
+            let scrollToElement = null;
+
+            sourceRows.each(function (idx) {
+                let rowNum = idx + 1;
+                let design = $(this).find('.source-design-select').val();
+                let warehouse = $(this).find('.source-warehouse-select').val();
+                let rack = $(this).find('.source-rack-select').val();
+                let sizeSet = $(this).find('.source-size-set-select').val();
+                let color = $(this).find('.source-color-select').val();
+                let boxes = parseInt($(this).find('.source-boxes-input').val()) || 0;
+                let invId = $(this).find('.source-inventory-id').val();
+
+                if (!design) {
+                    sourceError = `Source Row #${rowNum}: Please select Design No.`;
+                    scrollToElement = $(this);
+                    return false;
+                }
+                if (!warehouse) {
+                    sourceError = `Source Row #${rowNum}: Please select Warehouse.`;
+                    scrollToElement = $(this);
+                    return false;
+                }
+                if (!rack) {
+                    sourceError = `Source Row #${rowNum}: Please select Rack.`;
+                    scrollToElement = $(this);
+                    return false;
+                }
+                if (!sizeSet) {
+                    sourceError = `Source Row #${rowNum}: Please select Size Set.`;
+                    scrollToElement = $(this);
+                    return false;
+                }
+                if (!color) {
+                    sourceError = `Source Row #${rowNum}: Please select Color.`;
+                    scrollToElement = $(this);
+                    return false;
+                }
+                if (boxes <= 0) {
+                    sourceError = `Source Row #${rowNum}: Please enter valid Box quantity.`;
+                    scrollToElement = $(this).find('.source-boxes-input');
+                    return false;
+                }
+                if (!invId) {
+                    sourceError = `Source Row #${rowNum}: No domestic inventory available in stock for this combination.`;
+                    scrollToElement = $(this);
+                    return false;
+                }
+            });
+
+            if (sourceError) {
+                toastr.error(sourceError);
+                if (scrollToElement) {
+                    scrollToElement.find('.select2-selection').addClass('border-danger');
+                    $('html, body').animate({ scrollTop: scrollToElement.offset().top - 120 }, 300);
+                }
+                return;
+            }
+
+            // 3. Validate every Generated row
+            let genError = null;
+            genRows.each(function (idx) {
+                let rowNum = idx + 1;
+                let design = $(this).find('.gen-design-select').val();
+                let warehouse = $(this).find('.gen-warehouse-select').val();
+                let rack = $(this).find('.gen-rack-select').val();
+                let sizeSet = $(this).find('.gen-size-set-select').val();
+                let color = $(this).find('.gen-color-select').val();
+                let boxes = parseInt($(this).find('.gen-boxes-input').val()) || 0;
+                let pcs = parseInt($(this).find('.gen-pcs-input').val()) || 0;
+                let mrp = parseFloat($(this).find('.gen-mrp-input').val());
+
+                if (!design) {
+                    genError = `Generated Row #${rowNum}: Please select Design No.`;
+                    scrollToElement = $(this);
+                    return false;
+                }
+                if (!warehouse) {
+                    genError = `Generated Row #${rowNum}: Please select Warehouse.`;
+                    scrollToElement = $(this);
+                    return false;
+                }
+                if (!rack) {
+                    genError = `Generated Row #${rowNum}: Please select Rack.`;
+                    scrollToElement = $(this);
+                    return false;
+                }
+                if (!sizeSet) {
+                    genError = `Generated Row #${rowNum}: Please select Size Set.`;
+                    scrollToElement = $(this);
+                    return false;
+                }
+                if (!color) {
+                    genError = `Generated Row #${rowNum}: Please select Color.`;
+                    scrollToElement = $(this);
+                    return false;
+                }
+                if (boxes <= 0) {
+                    genError = `Generated Row #${rowNum}: Please enter valid Box quantity.`;
+                    scrollToElement = $(this).find('.gen-boxes-input');
+                    return false;
+                }
+                if (pcs <= 0) {
+                    genError = `Generated Row #${rowNum}: Pieces per box is missing. Please re-select Size Set.`;
+                    scrollToElement = $(this);
+                    return false;
+                }
+                if (isNaN(mrp) || mrp < 0) {
+                    genError = `Generated Row #${rowNum}: MRP is required.`;
+                    scrollToElement = $(this).find('.gen-mrp-input');
+                    return false;
+                }
+            });
+
+            if (genError) {
+                toastr.error(genError);
+                if (scrollToElement) {
+                    scrollToElement.find('.select2-selection').addClass('border-danger');
+                    $('html, body').animate({ scrollTop: scrollToElement.offset().top - 120 }, 300);
+                }
+                return;
+            }
+
             let totalSourcePieces = parseInt($('#hudSourcePieces').text()) || 0;
             let totalGenPieces = parseInt($('#hudGenPieces').text()) || 0;
 
@@ -1682,6 +2010,16 @@
                 error: function (xhr) {
                     btnHud.prop('disabled', false).html(origHudText);
                     btnBottom.prop('disabled', false).html(origBottomText);
+
+                    if (xhr.status === 419) {
+                        toastr.error('Session timed out. Please refresh the page and try again.');
+                        return;
+                    }
+                    if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                        let errors = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                        toastr.error(errors);
+                        return;
+                    }
                     let error = xhr.responseJSON ? xhr.responseJSON.message : 'Error processing stock consume.';
                     toastr.error(error);
                 }
