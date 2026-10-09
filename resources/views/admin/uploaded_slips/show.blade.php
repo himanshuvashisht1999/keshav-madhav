@@ -1,127 +1,126 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="content-wrapper">
-
-        {{-- HEADER --}}
-
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h2 class="mb-0">Production Slip Details</h2>
-                <!-- <small class="text-muted">Read-only audit view</small> -->
-            </div>
-
-            <div>
-                <a href="{{ route('admin.uploaded-slips.index') }}" class="btn btn-outline-secondary">
-                    ← Back
-                </a>
-                <a href="{{ route('admin.uploaded-slips.download', $slip->id) }}" class="btn btn-outline-primary ms-2">
-                    ⬇ Download PDF
-                </a>
-            </div>
+<div class="content-wrapper erp-page p-2">
+    <!-- 1. SLIM ERP HEADER BAR -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title d-flex align-items-center flex-wrap" style="gap: 8px;">
+            <i class="fas fa-file-invoice" style="color: var(--erp-green-primary);"></i>
+            <span>Production Slip:</span>
+            <span class="erp-badge-yellow px-2 py-0.5 rounded font-weight-bold" style="font-size: 0.95rem;">#{{ $slip->id }}</span>
+            @if($slip->status == 1)
+                <span class="badge px-2 py-1 font-weight-bold" style="font-size: 0.72rem; border-radius: 4px; background: #edf7e4; color: #05421c; border: 1px solid #c3e6cb;">
+                    <i class="fas fa-check-circle mr-1"></i> Digitized
+                </span>
+            @elseif($slip->status == 2)
+                <span class="badge px-2 py-1 font-weight-bold" style="font-size: 0.72rem; border-radius: 4px; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">
+                    <i class="fas fa-ban mr-1"></i> Skipped
+                </span>
+            @else
+                <span class="badge px-2 py-1 font-weight-bold" style="font-size: 0.72rem; border-radius: 4px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
+                    <i class="fas fa-clock mr-1"></i> Pending
+                </span>
+            @endif
         </div>
+        <div class="erp-header-actions d-flex align-items-center flex-wrap" style="gap: 6px;">
+            <a href="{{ route('admin.uploaded-slips.index') }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left mr-1"></i> Back
+            </a>
+            <a href="{{ route('admin.uploaded-slips.download', $slip->id) }}" class="btn-erp btn-erp-primary">
+                <i class="fas fa-file-pdf mr-1"></i> Download PDF
+            </a>
+        </div>
+    </div>
 
-        <section class="content">
-            <div class="container-fluid">
-                @php
-                    function is_lot_deletable($lot, $printings, $stage_transactions) {
-                        // Check if any printing records for this lot have moved forward
-                        $lp = $printings->where('lot_no', $lot->lot_no);
-                        foreach($lp as $p) {
-                            if ($p->remaining_quantity != $p->quantity) return false;
-                        }
+    @php
+        function is_lot_deletable($lot, $printings, $stage_transactions) {
+            $lp = $printings->where('lot_no', $lot->lot_no);
+            foreach($lp as $p) {
+                if ($p->remaining_quantity != $p->quantity) return false;
+            }
+            $lt = $stage_transactions->where('lot_no', $lot->lot_no)->where('from_stage_id', 3);
+            foreach($lt as $t) {
+                if ($t->remaining_quantity != $t->quantity) return false;
+            }
+            return true;
+        }
+        function is_transaction_deletable($tx) {
+            return ($tx->remaining_quantity == $tx->quantity);
+        }
 
-                        // Check if any stage transactions from Cutting (stage 3) for this lot have moved forward
-                        $lt = $stage_transactions->where('lot_no', $lot->lot_no)->where('from_stage_id', 3);
-                        foreach($lt as $t) {
-                            if ($t->remaining_quantity != $t->quantity) return false;
-                        }
+        $all_sizes = [];
+        foreach($rolls as $r) { foreach($r->fabricRollAssigningsDetail as $sd) { $all_sizes[] = $sd->size; } }
+        foreach($printings as $p) { foreach($p->details as $rs) { $all_sizes[] = $rs->size; } }
+        foreach($stage_transactions as $st) { foreach($st->details as $rs) { $all_sizes[] = $rs->size; } }
+        $all_sizes = array_unique(array_filter($all_sizes));
+        if (count($all_sizes) > 0) {
+            natsort($all_sizes);
+            $all_sizes = array_values($all_sizes);
+            $actual_range = $all_sizes[0] . '-' . $all_sizes[count($all_sizes)-1];
+        } else {
+            $actual_range = '-';
+        }
 
-                        return true;
-                    }
-                    function is_transaction_deletable($tx) {
-                        return ($tx->remaining_quantity == $tx->quantity);
-                    }
-                @endphp
+        $toDestinations = collect();
+        foreach($printings as $p) {
+            $stageName = $p->to_stage ? $p->to_stage->name : null;
+            $unitName = $p->getToUnitMaster ? $p->getToUnitMaster->name : null;
+            if ($stageName) {
+                $toDestinations->push($stageName . ($unitName ? ' (' . $unitName . ')' : ''));
+            }
+        }
+        foreach($stage_transactions as $st) {
+            $stageName = $st->to_stage ? $st->to_stage->name : null;
+            $unitName = $st->getToUnitMaster ? $st->getToUnitMaster->name : null;
+            if ($stageName) {
+                $toDestinations->push($stageName . ($unitName ? ' (' . $unitName . ')' : ''));
+            }
+        }
+        $toDisplay = $toDestinations->unique()->filter()->implode(' / ') ?: '-';
+    @endphp
 
-                @php
-                    $all_sizes = [];
-                    foreach($rolls as $r) { foreach($r->fabricRollAssigningsDetail as $sd) { $all_sizes[] = $sd->size; } }
-                    foreach($printings as $p) { foreach($p->details as $rs) { $all_sizes[] = $rs->size; } }
-                    foreach($stage_transactions as $st) { foreach($st->details as $rs) { $all_sizes[] = $rs->size; } }
-                    $all_sizes = array_unique(array_filter($all_sizes));
-                    if (count($all_sizes) > 0) {
-                        natsort($all_sizes);
-                        $all_sizes = array_values($all_sizes);
-                        $actual_range = $all_sizes[0] . '-' . $all_sizes[count($all_sizes)-1];
-                    } else {
-                        $actual_range = '-';
-                    }
-                @endphp
-
-                {{-- ================= SLIP SUMMARY ================= --}}
-                <div class="card shadow-sm mb-4 border-0" style="border-radius: 16px; overflow: hidden; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0;">
-                    <div class="card-body p-0">
-                        <div class="d-flex flex-wrap align-items-stretch">
-                            
-                            <!-- Slip ID Block -->
-                            <div class="p-4 d-flex align-items-center border-end" style="flex: 1; min-width: 220px; background: rgba(99, 102, 241, 0.05);">
-                                <div class="text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm me-3" style="width: 54px; height: 54px; background: linear-gradient(135deg, #6366f1, #4f46e5);">
-                                    <i class="fas fa-hashtag fs-4"></i>
-                                </div>
-                                <div>
-                                    <div class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 0.5px;">Slip ID</div>
-                                    <div class="h3 mb-0 fw-bolder" style="color: #4f46e5;">#{{ $slip->id }}</div>
-                                </div>
-                            </div>
-
-                            @php
-                                $toDestinations = collect();
-                                foreach($printings as $p) {
-                                    $stageName = $p->to_stage ? $p->to_stage->name : null;
-                                    $unitName = $p->getToUnitMaster ? $p->getToUnitMaster->name : null;
-                                    if ($stageName) {
-                                        $toDestinations->push($stageName . ($unitName ? ' (' . $unitName . ')' : ''));
-                                    }
-                                }
-                                foreach($stage_transactions as $st) {
-                                    $stageName = $st->to_stage ? $st->to_stage->name : null;
-                                    $unitName = $st->getToUnitMaster ? $st->getToUnitMaster->name : null;
-                                    if ($stageName) {
-                                        $toDestinations->push($stageName . ($unitName ? ' (' . $unitName . ')' : ''));
-                                    }
-                                }
-                                $toDisplay = $toDestinations->unique()->filter()->implode(' / ') ?: '-';
-                            @endphp
-
-                            <!-- From Stage Block -->
-                            <div class="p-4 d-flex align-items-center border-end" style="flex: 1.5; min-width: 250px;">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center me-3 shadow-xs" style="width: 54px; height: 54px; background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe;">
-                                    <i class="fas fa-layer-group fs-4"></i>
-                                </div>
-                                <div>
-                                    <div class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 0.5px;">From Stage</div>
-                                    <div class="h5 mb-0 fw-bold text-dark">{{ $slip->fromStage?->name ?? '-' }}</div>
-                                    @if($slip->getUnitMaster)
-                                        <div class="text-muted mt-1" style="font-size: 0.85rem;"><i class="fas fa-user-tie me-1 text-secondary"></i> {{ $slip->getUnitMaster->name }}</div>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <!-- To Stage Block -->
-                            <div class="p-4 d-flex align-items-center" style="flex: 2; min-width: 300px;">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center me-3 shadow-xs" style="width: 54px; height: 54px; background: #ecfdf5; color: #10b981; border: 1px solid #a7f3d0;">
-                                    <i class="fas fa-industry fs-4"></i>
-                                </div>
-                                <div>
-                                    <div class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 0.5px;">To Stage</div>
-                                    <div class="h5 mb-0 fw-bold text-dark">{{ $toDisplay }}</div>
-                                </div>
-                            </div>
-
-                        </div>
+    <!-- 2. SLIP METADATA STRIP -->
+    <div class="erp-card mb-3" style="border-top: 3px solid var(--erp-green-primary); background: #ffffff;">
+        <div class="erp-card-body p-2 px-3">
+            <div class="row align-items-center">
+                <div class="col-md-3 col-sm-6 py-1">
+                    <div class="text-uppercase font-weight-bold" style="font-size: var(--erp-font-xs); color: var(--erp-text-muted);">
+                        <i class="fas fa-hashtag mr-1" style="color: var(--erp-green-primary);"></i> Slip ID & Date
+                    </div>
+                    <div class="font-weight-bold mt-1" style="font-size: var(--erp-font-sm); color: var(--erp-green-primary);">
+                        #{{ $slip->id }} <span class="text-muted font-normal text-xs ml-1">({{ $slip->created_at->format('d M, Y') }})</span>
                     </div>
                 </div>
+                <div class="col-md-3 col-sm-6 py-1">
+                    <div class="text-uppercase font-weight-bold" style="font-size: var(--erp-font-xs); color: var(--erp-text-muted);">
+                        <i class="fas fa-layer-group mr-1" style="color: var(--erp-green-primary);"></i> From Stage & Unit
+                    </div>
+                    <div class="font-weight-bold mt-1 text-truncate" style="font-size: var(--erp-font-sm); color: var(--erp-text-heading);">
+                        {{ $slip->fromStage?->name ?? '-' }}
+                        @if($slip->getUnitMaster)
+                            <span class="text-muted text-xs ml-1">({{ $slip->getUnitMaster->name }})</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6 py-1">
+                    <div class="text-uppercase font-weight-bold" style="font-size: var(--erp-font-xs); color: var(--erp-text-muted);">
+                        <i class="fas fa-industry mr-1" style="color: var(--erp-green-primary);"></i> To Stage & Unit
+                    </div>
+                    <div class="font-weight-bold mt-1 text-truncate" style="font-size: var(--erp-font-sm); color: var(--erp-text-heading);" title="{{ $toDisplay }}">
+                        {{ $toDisplay }}
+                    </div>
+                </div>
+                <div class="col-md-2 col-sm-6 py-1 text-md-right">
+                    <div class="text-uppercase font-weight-bold" style="font-size: var(--erp-font-xs); color: var(--erp-text-muted);">
+                        <i class="fas fa-bullseye mr-1" style="color: var(--erp-green-primary);"></i> Slip Target
+                    </div>
+                    <div class="font-weight-bold mt-1" style="font-size: var(--erp-font-sm); color: var(--erp-green-primary);">
+                        {{ $slip->total_pieces ?? '-' }} <span class="text-xs text-muted">pcs</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
                 {{-- ================= TYPE 1 : ROLLS ================= --}}
                 @if(count($lots) > 0)
@@ -243,72 +242,72 @@
                 {{-- ================= TYPE 2 : PRINTING ================= --}}
                 @if(count($printings) > 0)
                     @foreach($printings as $index => $printing)
-                        <div class="mb-5 p-4 border rounded bg-white shadow-sm" style="border-top: 5px solid #3b82f6 !important;">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h4 class="fw-bold text-dark mb-0">Digitization Session #{{ $index + 1 }}</h4>
+                        <div class="mb-4 p-3 border rounded bg-white shadow-sm" style="border-top: 4px solid var(--erp-green-primary) !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold text-dark mb-0">Digitization Session #{{ $index + 1 }}</h5>
                                 <div>
                                     @if(is_transaction_deletable($printing))
                                         <a href="{{ route('admin.uploaded-slips.delete-session', ['type' => 'printing', 'id' => $printing->id]) }}" 
-                                           class="btn btn-sm btn-outline-danger border shadow-xs me-2"
+                                           class="btn-erp btn-erp-outline text-danger mr-2"
                                            onclick="return confirm('Are you sure you want to delete this session and restore quantities?')">
-                                            <i class="fas fa-trash-alt me-1"></i> Delete
+                                            <i class="fas fa-trash-alt mr-1"></i> Delete
                                         </a>
                                     @else
-                                        <span class="badge bg-light text-muted border py-2 me-2" title="Quantity has been moved to further stages">
-                                            <i class="fas fa-lock me-1"></i> Read-only
+                                        <span class="badge px-2 py-1 text-muted border mr-2" style="background: #f8fafc;" title="Quantity has been moved to further stages">
+                                            <i class="fas fa-lock mr-1"></i> Read-only
                                         </span>
                                     @endif
-                                    <span class="badge bg-primary fs-6 px-3 py-2">Stage: Printing</span>
+                                    <span class="badge px-2.5 py-1 font-weight-bold" style="background: #edf7e4; color: #05421c; border: 1px solid #c3e6cb; font-size: 0.85rem;">Stage: Printing</span>
                                 </div>
                             </div>
 
                             {{-- Specific Order Info for this Printing Session --}}
                             @if($printing->orderProduct?->orderProductSet)
                             @php $ops = $printing->orderProduct->orderProductSet; @endphp
-                            <div class="row g-3 mb-4 p-3 rounded" style="background: #eff6ff; border: 1px solid #bfdbfe;">
+                            <div class="row g-2 mb-3 p-2.5 rounded" style="background: #edf7e4; border: 1px solid #c3e6cb;">
                                 <div class="col-md-2">
-                                    <div class="text-muted small text-uppercase fw-bold">Lot No</div>
-                                    <div class="fw-bold">#{{ $printing->lot_no }}</div>
+                                    <div class="text-muted small text-uppercase font-weight-bold" style="font-size: 11px;">Lot No</div>
+                                    <div class="font-weight-bold text-dark">#{{ $printing->lot_no }}</div>
                                 </div>
                                 <div class="col-md-2">
-                                    <div class="text-muted small text-uppercase fw-bold">Order No</div>
-                                    <div class="fw-bold text-primary">{{ $ops->orderMain?->sku ?? '-' }}</div>
+                                    <div class="text-muted small text-uppercase font-weight-bold" style="font-size: 11px;">Order No</div>
+                                    <div class="font-weight-bold" style="color: var(--erp-green-primary);">{{ $ops->orderMain?->sku ?? '-' }}</div>
                                 </div>
                                 <div class="col-md-2 border-start ps-3">
-                                    <div class="text-muted small text-uppercase">Design</div>
-                                    <div class="fw-semibold">{{ $ops->design_number ?? '-' }}</div>
+                                    <div class="text-muted small text-uppercase font-weight-bold" style="font-size: 11px;">Design</div>
+                                    <div class="font-weight-bold text-dark">{{ $ops->design_number ?? '-' }}</div>
                                 </div>
                                 <div class="col-md-2 border-start ps-3">
-                                    <div class="text-muted small text-uppercase">Fabric</div>
-                                    <div class="fw-semibold">{{ $ops->fabric?->name ?? '-' }}</div>
+                                    <div class="text-muted small text-uppercase font-weight-bold" style="font-size: 11px;">Fabric</div>
+                                    <div class="font-weight-bold text-dark">{{ $ops->fabric?->name ?? '-' }}</div>
                                 </div>
                                 <div class="col-md-2 border-start ps-3">
-                                    <div class="text-muted small text-uppercase">Color</div>
-                                    <div class="fw-semibold">{{ $ops->colors?->name ?? '-' }}</div>
+                                    <div class="text-muted small text-uppercase font-weight-bold" style="font-size: 11px;">Color</div>
+                                    <div class="font-weight-bold text-dark">{{ $ops->colors?->name ?? '-' }}</div>
                                 </div>
-                                <div class="col-md-2 text-end">
-                                    <div class="text-muted small text-uppercase">Production Date</div>
-                                    <div class="small">{{ getformatDateTime($printing->production_datetime) }}</div>
+                                <div class="col-md-2 text-md-right">
+                                    <div class="text-muted small text-uppercase font-weight-bold" style="font-size: 11px;">Production Date</div>
+                                    <div class="small font-weight-bold text-dark">{{ getformatDateTime($printing->production_datetime) }}</div>
                                 </div>
                             </div>
                             @endif
                             
                             {{-- PRINTING DETAILS (Unified Layout) --}}
-                            <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px; border-top: 4px solid #007bff !important;">
-                                <div class="card-header bg-white py-3">
-                                    <h6 class="mb-0 text-primary fw-bold uppercase"><i class="fas fa-print me-2"></i> Printing Allocation Summary</h6>
+                            <div class="erp-card bg-white mb-2" style="border-top: 3px solid var(--erp-green-primary) !important;">
+                                <div class="card-header bg-white py-2 px-3 border-bottom">
+                                    <h6 class="mb-0 font-weight-bold" style="color: #05421c;"><i class="fas fa-print mr-2 text-warning"></i> Printing Allocation Summary</h6>
                                 </div>
-                                <div class="card-body">
-                                    <div class="row mb-4">
-                                        <div class="col-md-2"><strong>Lot No:</strong> <span class="text-dark">#{{ $printing->lot_no }}</span></div>
-                                        <div class="col-md-3"><strong>Date:</strong> <span class="small">{{ \Carbon\Carbon::parse($printing->production_datetime)->format('d M Y') }}</span></div>
+                                <div class="card-body p-3">
+                                    <div class="row mb-3 align-items-center">
+                                        <div class="col-md-2"><strong>Lot No:</strong> <span class="text-dark font-weight-bold">#{{ $printing->lot_no }}</span></div>
+                                        <div class="col-md-3"><strong>Date:</strong> <span class="text-dark">{{ \Carbon\Carbon::parse($printing->production_datetime)->format('d M Y') }}</span></div>
                                         <div class="col-md-5"><strong>Transfer:</strong> 
-                                            <span class="text-primary fw-bold">{{ $printing->to_stage?->name }}</span> 
+                                            <span class="font-weight-bold" style="color: var(--erp-green-primary);">{{ $printing->to_stage?->name }}</span> 
                                             @if($printing->getToUnitMaster && !empty(trim($printing->getToUnitMaster->name)))
                                                 <span class="text-muted small">({{ $printing->getToUnitMaster->name }})</span>
                                             @endif
                                         </div>
-                                        <div class="col-md-2 text-end"><strong>Total Pieces:</strong> <span class="badge bg-primary px-3 fs-6">{{ $printing->quantity }}</span></div>
+                                        <div class="col-md-2 text-md-right"><strong>Total Pieces:</strong> <span class="badge px-2.5 py-1 font-weight-bold" style="background: #edf7e4; color: #05421c; border: 1px solid #c3e6cb;">{{ $printing->quantity }} pcs</span></div>
                                     </div>
 
                                     @php
@@ -319,16 +318,15 @@
                                     @endphp
 
                                     @if(count($consolidated) > 0)
-                                        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3">
+                                        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-6 g-2">
                                             @foreach($consolidated as $sz => $qty)
-                                                <div class="col">
-                                                    <div class="text-center p-3 bg-white border rounded h-100 shadow-xs" style="border-top: 3 solid #007bff !important;">
-                                                        <div class="text-black small uppercase fw-black mb-1" style="font-size: 11px;">SIZE {{ $sz }}</div>
-                                                        <div class="fw-bold text-dark fs-3">{{ $qty }}</div>
+                                                <div class="col mb-2">
+                                                    <div class="text-center p-2 bg-white border rounded shadow-xs" style="border-top: 3px solid var(--erp-green-primary) !important;">
+                                                        <div class="text-muted small text-uppercase font-weight-bold mb-1" style="font-size: 11px;">SIZE {{ $sz }}</div>
+                                                        <div class="font-weight-bold text-dark h4 mb-0">{{ $qty }}</div>
                                                     </div>
                                                 </div>
                                             @endforeach
-
                                         </div>
                                     @endif
                                 </div>
@@ -340,9 +338,9 @@
                 {{-- ================= TYPE 3 : OTHER ================= --}}
                 @if(count($stage_transactions) > 0)
                     @foreach($stage_transactions as $index => $transaction)
-                        <div class="mb-5 p-4 border rounded bg-white shadow-sm" style="border-top: 5px solid #f59e0b !important;">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h4 class="fw-bold text-dark mb-0">Digitization Session #{{ $index + 1 }}</h4>
+                        <div class="mb-4 p-3 border rounded bg-white shadow-sm" style="border-top: 4px solid var(--erp-yellow-bright) !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold text-dark mb-0">Digitization Session #{{ $index + 1 }}</h5>
                                 <div>
                                     @php 
                                         if ($transaction instanceof \App\Models\OrderPrintingToStichingTransaction) {
@@ -355,66 +353,66 @@
                                     @endphp
                                     @if(is_transaction_deletable($transaction))
                                         <a href="{{ route('admin.uploaded-slips.delete-session', ['type' => $type, 'id' => $transaction->id]) }}" 
-                                           class="btn btn-sm btn-outline-danger border shadow-xs me-2"
+                                           class="btn-erp btn-erp-outline text-danger mr-2"
                                            onclick="return confirm('Are you sure you want to delete this session and restore quantities?')">
-                                            <i class="fas fa-trash-alt me-1"></i> Delete
+                                            <i class="fas fa-trash-alt mr-1"></i> Delete
                                         </a>
                                     @else
-                                        <span class="badge bg-light text-muted border py-2 me-2" title="Quantity has been moved to further stages">
-                                            <i class="fas fa-lock me-1"></i> Read-only
+                                        <span class="badge px-2 py-1 text-muted border mr-2" style="background: #f8fafc;" title="Quantity has been moved to further stages">
+                                            <i class="fas fa-lock mr-1"></i> Read-only
                                         </span>
                                     @endif
-                                    <span class="badge bg-warning text-dark fs-6 px-3 py-2">Stage: Transfer</span>
+                                    <span class="badge px-2.5 py-1 font-weight-bold" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 0.85rem;">Stage: Transfer</span>
                                 </div>
                             </div>
 
                             {{-- Specific Order Info for this Transfer --}}
                             @if($transaction->orderProduct?->orderProductSet)
                             @php $ops = $transaction->orderProduct->orderProductSet; @endphp
-                            <div class="row g-3 mb-4 p-3 rounded" style="background: #fffbeb; border: 1px solid #fef3c7;">
+                            <div class="row g-2 mb-3 p-2.5 rounded" style="background: #fef3c7; border: 1px solid #fde68a;">
                                 <div class="col-md-2">
-                                    <div class="text-muted small text-uppercase fw-bold">Lot No</div>
-                                    <div class="fw-bold">#{{ $transaction->lot_no }}</div>
+                                    <div class="text-muted small text-uppercase font-weight-bold" style="font-size: 11px;">Lot No</div>
+                                    <div class="font-weight-bold text-dark">#{{ $transaction->lot_no }}</div>
                                 </div>
                                 <div class="col-md-2">
-                                    <div class="text-muted small text-uppercase fw-bold">Order No</div>
-                                    <div class="fw-bold text-warning">{{ $ops->orderMain?->sku ?? '-' }}</div>
+                                    <div class="text-muted small text-uppercase font-weight-bold" style="font-size: 11px;">Order No</div>
+                                    <div class="font-weight-bold text-dark">{{ $ops->orderMain?->sku ?? '-' }}</div>
                                 </div>
                                 <div class="col-md-2 border-start ps-3">
-                                    <div class="text-muted small text-uppercase">Design</div>
-                                    <div class="fw-semibold">{{ $ops->design_number ?? '-' }}</div>
+                                    <div class="text-muted small text-uppercase font-weight-bold" style="font-size: 11px;">Design</div>
+                                    <div class="font-weight-bold text-dark">{{ $ops->design_number ?? '-' }}</div>
                                 </div>
                                 <div class="col-md-2 border-start ps-3">
-                                    <div class="text-muted small text-uppercase">Fabric</div>
-                                    <div class="fw-semibold">{{ $ops->fabric?->name ?? '-' }}</div>
+                                    <div class="text-muted small text-uppercase font-weight-bold" style="font-size: 11px;">Fabric</div>
+                                    <div class="font-weight-bold text-dark">{{ $ops->fabric?->name ?? '-' }}</div>
                                 </div>
                                 <div class="col-md-2 border-start ps-3">
-                                    <div class="text-muted small text-uppercase">Color</div>
-                                    <div class="fw-semibold">{{ $ops->colors?->name ?? '-' }}</div>
+                                    <div class="text-muted small text-uppercase font-weight-bold" style="font-size: 11px;">Color</div>
+                                    <div class="font-weight-bold text-dark">{{ $ops->colors?->name ?? '-' }}</div>
                                 </div>
-                                <div class="col-md-2 text-end">
-                                    <div class="text-muted small text-uppercase">Production Date</div>
-                                    <div class="small">{{ getformatDateTime($transaction->production_datetime) }}</div>
+                                <div class="col-md-2 text-md-right">
+                                    <div class="text-muted small text-uppercase font-weight-bold" style="font-size: 11px;">Production Date</div>
+                                    <div class="small font-weight-bold text-dark">{{ getformatDateTime($transaction->production_datetime) }}</div>
                                 </div>
                             </div>
                             @endif
                             
                             {{-- STAGE MOVEMENT DETAILS (Unified Layout) --}}
-                            <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px; border-top: 4px solid #ffc107 !important;">
-                                <div class="card-header bg-white py-3">
-                                    <h6 class="mb-0 text-warning fw-bold uppercase"><i class="fas fa-exchange-alt me-2"></i> Stage Movement Summary</h6>
+                            <div class="erp-card bg-white mb-2" style="border-top: 3px solid var(--erp-yellow-bright) !important;">
+                                <div class="card-header bg-white py-2 px-3 border-bottom">
+                                    <h6 class="mb-0 font-weight-bold" style="color: #92400e;"><i class="fas fa-exchange-alt mr-2 text-warning"></i> Stage Movement Summary</h6>
                                 </div>
-                                <div class="card-body">
-                                    <div class="row mb-4">
-                                        <div class="col-md-2"><strong>Lot No:</strong> <span class="text-dark">#{{ $transaction->lot_no }}</span></div>
-                                        <div class="col-md-3"><strong>Date:</strong> <span class="small">{{ \Carbon\Carbon::parse($transaction->production_datetime)->format('d M Y') }}</span></div>
+                                <div class="card-body p-3">
+                                    <div class="row mb-3 align-items-center">
+                                        <div class="col-md-2"><strong>Lot No:</strong> <span class="text-dark font-weight-bold">#{{ $transaction->lot_no }}</span></div>
+                                        <div class="col-md-3"><strong>Date:</strong> <span class="text-dark">{{ \Carbon\Carbon::parse($transaction->production_datetime)->format('d M Y') }}</span></div>
                                         <div class="col-md-5"><strong>Transfer:</strong> 
-                                            <span class="text-warning fw-bold">{{ $transaction->to_stage?->name }}</span> 
+                                            <span class="font-weight-bold" style="color: #92400e;">{{ $transaction->to_stage?->name }}</span> 
                                             @if($transaction->getToUnitMaster && !empty(trim($transaction->getToUnitMaster->name)))
                                                 <span class="text-muted small">({{ $transaction->getToUnitMaster->name }})</span>
                                             @endif
                                         </div>
-                                        <div class="col-md-2 text-end"><strong>Total Pieces:</strong> <span class="badge bg-warning text-dark px-3 fs-6">{{ $transaction->quantity }}</span></div>
+                                        <div class="col-md-2 text-md-right"><strong>Total Pieces:</strong> <span class="badge px-2.5 py-1 font-weight-bold" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">{{ $transaction->quantity }} pcs</span></div>
                                     </div>
 
                                     @php
@@ -425,16 +423,15 @@
                                     @endphp
 
                                     @if(count($consolidated) > 0)
-                                        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6 g-3">
+                                        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-6 g-2">
                                             @foreach($consolidated as $sz => $qty)
-                                                <div class="col">
-                                                    <div class="text-center p-3 bg-white border rounded h-100 shadow-xs" style="border-top: 3px solid #ffc107 !important;">
-                                                        <div class="text-black small uppercase fw-black mb-1" style="font-size: 11px;">SIZE {{ $sz }}</div>
-                                                        <div class="fw-bold text-dark fs-3">{{ $qty }}</div>
+                                                <div class="col mb-2">
+                                                    <div class="text-center p-2 bg-white border rounded shadow-xs" style="border-top: 3px solid var(--erp-yellow-bright) !important;">
+                                                        <div class="text-muted small text-uppercase font-weight-bold mb-1" style="font-size: 11px;">SIZE {{ $sz }}</div>
+                                                        <div class="font-weight-bold text-dark h4 mb-0">{{ $qty }}</div>
                                                     </div>
                                                 </div>
                                             @endforeach
-
                                         </div>
                                     @endif
                                 </div>
@@ -445,68 +442,67 @@
 
                 {{-- ================= UNIT MOVEMENT & LOSSES (Packing Slips) ================= --}}
                 @if($outflows->isNotEmpty() || $reworks->isNotEmpty())
-                    <div class="card shadow-sm mb-4 border-0" style="border-radius: 12px; border-top: 5px solid #ef4444 !important;">
-                        <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                    <div class="erp-card bg-white mb-4" style="border-top: 4px solid #ef4444 !important; border-radius: 8px;">
+                        <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
                             <div>
-                                <h5 class="mb-0 text-dark fw-bold">
-                                    <i class="fas fa-exchange-alt me-2 text-danger"></i> 
+                                <h6 class="mb-0 font-weight-bold" style="color: #991b1b;">
+                                    <i class="fas fa-exchange-alt mr-2 text-danger"></i> 
                                     Unit Movement & Losses Log
-                                </h5>
+                                </h6>
                                 <p class="mb-0 text-muted small">Items categorized as Rework, Dead pcs, Sampling or Debits linked to this slip session.</p>
                             </div>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="bg-light">
+                                <table class="table erp-table align-middle mb-0 text-sm">
+                                    <thead>
                                         <tr>
-                                            <th class="ps-4 py-3 text-muted small text-uppercase fw-bold">Type</th>
-                                            <th class="py-3 text-muted small text-uppercase fw-bold">Item / Color / Size</th>
-                                            <th class="py-3 text-muted small text-uppercase text-center fw-bold">Qty</th>
-                                            <th class="py-3 text-muted small text-uppercase fw-bold">Destination / Reason</th>
-                                            <th class="py-3 text-muted small text-uppercase fw-bold">Remarks</th>
-                                            <th class="pe-4 py-3 text-muted small text-uppercase text-end fw-bold">Timestamp</th>
+                                            <th class="ps-3 py-2 text-muted small text-uppercase">Type</th>
+                                            <th class="py-2 text-muted small text-uppercase">Item / Color / Size</th>
+                                            <th class="py-2 text-muted small text-uppercase text-center">Qty</th>
+                                            <th class="py-2 text-muted small text-uppercase">Destination / Reason</th>
+                                            <th class="py-2 text-muted small text-uppercase">Remarks</th>
+                                            <th class="pe-3 py-2 text-muted small text-uppercase text-right">Timestamp</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {{-- Outflows: Dead, Sampling, Debit --}}
                                         @foreach($outflows as $o)
                                             <tr class="align-middle border-bottom">
-                                                <td class="ps-4">
+                                                <td class="ps-3">
                                                     @php
-                                                        $badge = 'bg-danger'; $icon = 'fa-skull-crossbones';
-                                                        if($o->type == 'sampling') { $badge = 'bg-primary'; $icon = 'fa-flask'; }
-                                                        if($o->type == 'debit') { $badge = 'bg-warning text-dark'; $icon = 'fa-minus-circle'; }
+                                                        $style = 'background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;'; $icon = 'fa-skull-crossbones';
+                                                        if($o->type == 'sampling') { $style = 'background: #edf7e4; color: #05421c; border: 1px solid #c3e6cb;'; $icon = 'fa-flask'; }
+                                                        if($o->type == 'debit') { $style = 'background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;'; $icon = 'fa-minus-circle'; }
                                                     @endphp
-                                                    <span class="badge {{ $badge }} text-uppercase px-2 py-1 shadow-sm" style="font-size: 10px;">
-                                                        <i class="fas {{ $icon }} me-1"></i> {{ $o->type }}
+                                                    <span class="badge text-uppercase px-2 py-1 font-weight-bold" style="font-size: 10px; border-radius: 4px; {{ $style }}">
+                                                        <i class="fas {{ $icon }} mr-1"></i> {{ $o->type }}
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <div class="fw-bold text-dark">{{ $o->product->design_number ?? 'N/A' }}</div>
+                                                    <div class="font-weight-bold text-dark">{{ $o->product->design_number ?? 'N/A' }}</div>
                                                     <div class="text-muted small">{{ $o->color->name ?? 'N/A' }} | <strong>{{ $o->size->size ?? 'N/A' }}</strong></div>
                                                 </td>
-                                                <td class="text-center">
-                                                    <div class="h6 mb-0 fw-bold text-dark">{{ $o->quantity }}</div>
-                                                    <small class="text-muted small">pcs</small>
+                                                <td class="text-center font-weight-bold" style="color: var(--erp-green-primary);">
+                                                    {{ $o->quantity }} <span class="text-muted font-normal text-xs">pcs</span>
                                                 </td>
                                                 <td>
                                                     @if($o->type == 'debit')
                                                         <div class="small">
                                                             <strong>{{ $o->responsibleStage->name ?? '' }}</strong> <span class="text-muted mx-1">→</span> <strong>{{ $o->responsibleUnit->name ?? 'N/A' }}</strong>
                                                         </div>
-                                                        <div class="badge bg-soft-danger text-danger mt-1">Rs. {{ number_format($o->total_amount, 2) }}</div>
+                                                        <span class="badge px-1.5 py-0.5 mt-1" style="background: #fee2e2; color: #991b1b; font-size: 10px;">Rs. {{ number_format($o->total_amount, 2) }}</span>
                                                     @else
                                                         <div class="small text-muted">{{ $o->rack->storeroom->name ?? 'N/A' }} / Rack: {{ $o->rack->name ?? 'N/A' }}</div>
-                                                        <div class="badge bg-light text-muted mt-1 px-2 py-0 border" style="font-size: 9px;">Location: {{ $o->responsibleUnit->name ?? 'Main' }}</div>
+                                                        <span class="badge border px-1.5 py-0.5 mt-1 text-dark" style="background: #f8fafc; font-size: 10px;">Location: {{ $o->responsibleUnit->name ?? 'Main' }}</span>
                                                     @endif
                                                 </td>
                                                 <td><div class="text-muted small italic">{{ $o->remarks ?: '—' }}</div></td>
-                                                <td class="pe-4 text-end">
-                                                    <div class="fw-bold small text-dark">{{ $o->created_at->format('d M, Y') }}</div>
+                                                <td class="pe-3 text-right">
+                                                    <div class="font-weight-bold small text-dark">{{ $o->created_at->format('d M, Y') }}</div>
                                                     <div class="text-muted small mb-1" style="font-size: 10px;">{{ $o->created_at->format('h:i A') }}</div>
-                                                    <a href="{{ route('admin.uploaded-slips.outflow-receipt', $o->id) }}" target="_blank" class="btn btn-xs btn-outline-dark px-2 rounded-pill shadow-xs" style="font-size: 9px; padding-top: 1px; padding-bottom: 1px;">
-                                                        <i class="fas fa-print me-1"></i> Receipt
+                                                    <a href="{{ route('admin.uploaded-slips.outflow-receipt', $o->id) }}" target="_blank" class="btn-erp btn-erp-outline btn-sm py-0 px-2" style="font-size: 10px;">
+                                                        <i class="fas fa-print mr-1"></i> Receipt
                                                     </a>
                                                 </td>
                                             </tr>
@@ -516,18 +512,17 @@
                                         @foreach($reworks as $r)
                                             @foreach($r->details as $rd)
                                                 <tr class="align-middle border-bottom" style="background-color: #fafbfc;">
-                                                    <td class="ps-4">
-                                                        <span class="badge bg-info text-uppercase px-2 py-1 shadow-sm" style="font-size: 10px;">
-                                                            <i class="fas fa-tools me-1"></i> REWORK
+                                                    <td class="ps-3">
+                                                        <span class="badge text-uppercase px-2 py-1 font-weight-bold" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 10px; border-radius: 4px;">
+                                                            <i class="fas fa-tools mr-1"></i> REWORK
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <div class="fw-bold text-info italic">Defect/Repair Alteration</div>
+                                                        <div class="font-weight-bold text-dark">Defect/Repair Alteration</div>
                                                         <div class="text-muted small">Size: <strong>{{ $rd->size }}</strong></div>
                                                     </td>
-                                                    <td class="text-center">
-                                                        <div class="h6 mb-0 fw-bold text-info">{{ $rd->quantity }}</div>
-                                                        <small class="text-muted small">pcs</small>
+                                                    <td class="text-center font-weight-bold text-danger">
+                                                        {{ $rd->quantity }} <span class="text-muted font-normal text-xs">pcs</span>
                                                     </td>
                                                     <td>
                                                         <div class="small">
@@ -535,10 +530,10 @@
                                                         </div>
                                                     </td>
                                                     <td><div class="text-muted small italic">{{ $r->remarks ?: 'Defect rework order' }}</div></td>
-                                                    <td class="pe-4 text-end">
-                                                        <div class="fw-bold small text-dark">{{ $r->created_at->format('d M, Y') }}</div>
+                                                    <td class="pe-3 text-right">
+                                                        <div class="font-weight-bold small text-dark">{{ $r->created_at->format('d M, Y') }}</div>
                                                         <div class="text-muted small mb-1" style="font-size: 10px;">{{ $r->created_at->format('h:i A') }}</div>
-                                                        <span class="badge bg-soft-secondary text-muted px-2" style="font-size: 8px;">Slip Ref #{{ $r->id }}</span>
+                                                        <span class="badge border px-1.5 py-0.5 text-muted" style="background: #f8fafc; font-size: 9px;">Slip Ref #{{ $r->id }}</span>
                                                     </td>
                                                 </tr>
                                             @endforeach
@@ -557,12 +552,12 @@
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="fw-bold mb-0 text-dark">Digitization Session #{{ $index + 1 }} - Packing</h5>
                                 @if(strtolower(trim($packing->order?->order_type)) == 'domestic')
-                                    <a href="{{ route('admin.packing.downloadSlipBarcode', $packing->id) }}" class="btn btn-sm btn-primary px-3 shadow-xs" style="border-radius: 6px;">
-                                        <i class="fas fa-barcode mr-1"></i> Download Barcode TXT
+                                    <a href="{{ route('admin.packing.downloadSlipBarcode', $packing->id) }}" class="btn-erp btn-erp-outline btn-sm">
+                                        <i class="fas fa-barcode mr-1"></i> Barcodes (TXT)
                                     </a>
                                 @else
-                                    <button type="button" class="btn btn-sm btn-success px-3 shadow-xs" data-toggle="modal" data-target="#corpExcelModal{{ $packing->id }}" style="border-radius: 6px;">
-                                        <i class="fas fa-file-excel me-1"></i> Corporate Excel
+                                    <button type="button" class="btn-erp btn-erp-primary btn-sm" data-toggle="modal" data-target="#corpExcelModal{{ $packing->id }}">
+                                        <i class="fas fa-file-excel mr-1 text-warning"></i> Corporate Excel
                                     </button>
 
                                     <!-- Excel Config Modal -->
@@ -570,41 +565,41 @@
                                         <div class="modal-dialog modal-lg">
                                             <form action="{{ route('admin.uploaded-slips.corporate-excel', $packing->id) }}" method="POST">
                                                 @csrf
-                                                <div class="modal-content">
-                                                    <div class="modal-header bg-success text-white">
-                                                        <h5 class="modal-title">Excel Export Configuration</h5>
+                                                <div class="modal-content" style="border-radius: 12px; overflow: hidden;">
+                                                    <div class="modal-header" style="background: #05421c; color: #fff;">
+                                                        <h5 class="modal-title font-weight-bold"><i class="fas fa-file-excel mr-2 text-warning"></i> Excel Export Configuration</h5>
                                                         <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                                             <span aria-hidden="true">&times;</span>
                                                         </button>
                                                     </div>
-                                                    <div class="modal-body">
+                                                    <div class="modal-body p-4">
                                                         <div class="row g-3 mb-4 text-left">
                                                             <div class="col-md-6 mb-3">
-                                                                <label class="form-label small fw-bold">PO NUMBER</label>
-                                                                <input type="text" name="po_no" class="form-control" value="{{ $packing->order?->sku }}" required>
+                                                                <label class="form-label small font-weight-bold text-muted text-uppercase">PO NUMBER</label>
+                                                                <input type="text" name="po_no" class="form-control form-control-sm erp-input" value="{{ $packing->order?->sku }}" required>
                                                             </div>
                                                             <div class="col-md-3 mb-3">
-                                                                <label class="form-label small fw-bold">VENDOR CODE (V CD)</label>
-                                                                <input type="text" name="v_cd" class="form-control" value="200337">
+                                                                <label class="form-label small font-weight-bold text-muted text-uppercase">VENDOR CODE</label>
+                                                                <input type="text" name="v_cd" class="form-control form-control-sm erp-input" value="200337">
                                                             </div>
                                                             <div class="col-md-3 mb-3">
-                                                                <label class="form-label small fw-bold">V NM</label>
-                                                                <input type="text" name="v_nm" class="form-control" value="KESHAV MADHAV ENT.">
+                                                                <label class="form-label small font-weight-bold text-muted text-uppercase">VENDOR NAME</label>
+                                                                <input type="text" name="v_nm" class="form-control form-control-sm erp-input" value="KESHAV MADHAV ENT.">
                                                             </div>
                                                             <div class="col-md-4 mb-3">
-                                                                <label class="form-label small fw-bold">CONTRACT NO (CONT NO)</label>
-                                                                <input type="text" name="cont_no" class="form-control" value="9413544380">
+                                                                <label class="form-label small font-weight-bold text-muted text-uppercase">CONTRACT NO</label>
+                                                                <input type="text" name="cont_no" class="form-control form-control-sm erp-input" value="9413544380">
                                                             </div>
                                                             <div class="col-md-8 mb-3">
-                                                                <label class="form-label small fw-bold">BORA DESCRIPTION</label>
-                                                                <input type="text" name="bora_desc" class="form-control" value="BOYS_JEANS" required>
+                                                                <label class="form-label small font-weight-bold text-muted text-uppercase">BORA DESCRIPTION</label>
+                                                                <input type="text" name="bora_desc" class="form-control form-control-sm erp-input" value="BOYS_JEANS" required>
                                                             </div>
                                                         </div>
 
-                                                        <h6 class="fw-bold border-bottom pb-2 mb-3 text-left">Carton Weights (BORA/HU WT-V2)</h6>
+                                                        <h6 class="font-weight-bold border-bottom pb-2 mb-3 text-left" style="color: #05421c;">Carton Weights (BORA/HU WT-V2)</h6>
                                                         <div class="table-responsive">
-                                                            <table class="table table-sm table-hover align-middle border">
-                                                                <thead class="bg-light">
+                                                            <table class="table erp-table table-sm align-middle">
+                                                                <thead>
                                                                     <tr>
                                                                         <th width="30%">Carton #</th>
                                                                         <th width="40%">Weight (KG)</th>
@@ -614,20 +609,20 @@
                                                                 <tbody>
                                                                     @foreach($packing->cartons as $carton)
                                                                         <tr>
-                                                                            <td><strong>#{{ $carton->carton_no }}</strong></td>
+                                                                            <td><strong style="color: var(--erp-green-primary);">#{{ $carton->carton_no }}</strong></td>
                                                                             <td>
-                                                                                <input type="number" step="0.01" name="weights[{{ $carton->id }}]" class="form-control form-control-sm" placeholder="e.g. 17.15" required>
+                                                                                <input type="number" step="0.01" name="weights[{{ $carton->id }}]" class="form-control form-control-sm erp-input" placeholder="e.g. 17.15" required>
                                                                             </td>
-                                                                            <td>{{ $carton->items->sum('quantity') }} Pcs</td>
+                                                                            <td class="font-weight-bold">{{ $carton->items->sum('quantity') }} Pcs</td>
                                                                         </tr>
                                                                     @endforeach
                                                                 </tbody>
                                                             </table>
                                                         </div>
                                                     </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                                        <button type="submit" class="btn btn-success px-4">Generate Excel</button>
+                                                    <div class="modal-footer bg-light p-3">
+                                                        <button type="button" class="btn-erp btn-erp-outline" data-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn-erp btn-erp-primary">Generate Excel</button>
                                                     </div>
                                                 </div>
                                             </form>
@@ -637,18 +632,18 @@
                             </div>
                             <div class="row">
                                 @foreach($packing->cartons as $carton)
-                                    <div class="col-md-6 mb-4">
-                                        <div class="card shadow-sm border-0 h-100"
-                                            style="border-radius: 12px; border-left: 5px solid #007bff !important; background: #fafbfc;">
-                                            <div class="card-header bg-white py-3 border-bottom-0 pb-0">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="erp-card bg-white h-100 shadow-sm"
+                                            style="border-radius: 8px; border-left: 4px solid var(--erp-green-primary) !important;">
+                                            <div class="card-header bg-white py-2 px-3 border-bottom-0 pb-0">
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <div>
-                                                        <h6 class="mb-0 fw-bold text-dark" style="font-size: 1.1rem;">Carton #{{ $carton->carton_no }}</h6>
+                                                        <h6 class="mb-0 font-weight-bold" style="color: var(--erp-green-primary);">Carton #{{ $carton->carton_no }}</h6>
                                                         <span class="text-muted small">ID: {{ $carton->id }}</span>
                                                     </div>
-                                                    <div class="text-end">
-                                                        <div class="h4 mb-0 fw-bold text-primary">{{ $carton->items->sum('quantity') }}</div>
-                                                        <div class="text-uppercase text-muted fw-bold" style="font-size: 10px; letter-spacing: 1px;">Total Items</div>
+                                                    <div class="text-right">
+                                                        <div class="h4 mb-0 font-weight-bold" style="color: var(--erp-green-primary);">{{ $carton->items->sum('quantity') }}</div>
+                                                        <div class="text-uppercase text-muted font-weight-bold" style="font-size: 10px; letter-spacing: 0.5px;">Total Items</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -664,14 +659,14 @@
                                                 @if(count($summary) > 0)
                                                     <div class="p-3 bg-white rounded border mb-3">
                                                         <label class="text-uppercase text-muted fw-bold d-block mb-3" style="font-size: 11px; letter-spacing: 0.5px;">
-                                                            <i class="fas fa-boxes me-1 text-primary"></i> Contents
+                                                             <i class="fas fa-boxes me-1 text-success"></i> Contents
                                                         </label>
                                                         <div class="row g-2">
                                                             @foreach($summary as $name => $total_qty)
                                                                 <div class="col-6">
-                                                                    <div class="d-flex justify-content-between align-items-center p-2 rounded bg-light border-start border-primary" style="border-left-width: 3px !important;">
+                                                                    <div class="d-flex justify-content-between align-items-center p-2 rounded bg-light" style="border-left: 3px solid #05421c !important;">
                                                                         <span class="fw-bold text-dark small">{{ $name }}</span>
-                                                                        <span class="badge bg-white text-primary border px-2 py-1">{{ number_format($total_qty, 0) }} Pcs</span>
+                                                                        <span class="badge px-2 py-1 font-weight-bold" style="background:#edf7e4; color:#05421c; border:1px solid #c3e6cb;">{{ number_format($total_qty, 0) }} Pcs</span>
                                                                     </div>
                                                                 </div>
                                                             @endforeach
@@ -709,7 +704,5 @@
                     </div>
                 @endif
 
-            </div>
-        </section>
-    </div>
+</div>
 @endsection

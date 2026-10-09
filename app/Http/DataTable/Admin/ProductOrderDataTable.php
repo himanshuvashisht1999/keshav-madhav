@@ -149,18 +149,18 @@ class ProductOrderDataTable
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
 
-                $view = '<a href="' . route('admin.product_order.indexOrderSet', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="View"><i class="fas fa-eye text-muted" title="View"></i></a>';
-                $report = '<a href="' . route('admin.report.order-summary.view', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Report" data-original-title="Report"><i class="fas fa-chart-bar text-muted" title="Report"></i></a>';
+                $view = '<a href="' . route('admin.product_order.indexOrderSet', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-view" data-toggle="tooltip" data-placement="top" title="View Sets"><i class="fas fa-eye"></i></a>';
+                $report = '<a href="' . route('admin.report.order-summary.view', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-pdf" data-toggle="tooltip" data-placement="top" title="Order Summary"><i class="fas fa-chart-bar"></i></a>';
 
                 $edit = '';
                 $delete = '';
 
                 if ($queue->orderLots()->count() == 0) {
-                    $edit = '<a href="' . route('admin.product_order.editOrderMain', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted" title="Edit"></i></a>';
-                    $delete = '<a href="javascript:void(0);" onclick="deleteOrder(' . $parameter . ')" class="" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger" title="Delete"></i></a>';
+                    $edit = '<a href="' . route('admin.product_order.editOrderMain', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit"></i></a>';
+                    $delete = '<a href="javascript:void(0);" onclick="deleteOrder(' . $parameter . ')" class="erp-action-btn erp-btn-delete" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash"></i></a>';
                 }
 
-                return $view . ' ' . $edit . ' ' . $report . ' ' . $delete;
+                return '<div class="d-flex align-items-center justify-content-center">' . $view . ' ' . $edit . ' ' . $report . ' ' . $delete . '</div>';
             })
 
             ->rawColumns(['action', 'master_customer_id', 'total_pcs', 'dispatch_pcs', 'created_at', 'status', 'design_number'])
@@ -279,17 +279,17 @@ class ProductOrderDataTable
                     $cuttingStage = $queue->order_cutting_stage;
                     if ($cuttingStage && $cuttingStage->is_po) {
                         $entity = $cuttingStage->vendor_id ? ($cuttingStage->vendor->name ?? 'Vendor') : ($cuttingStage->customer->name ?? 'Customer');
-                        return '<span class="badge badge-info">PO: ' . $entity . '</span>
-                                ';
+                        return '<span class="badge badge-info" style="font-size: 11px; padding: 3px 6px;">PO: ' . $entity . '</span>';
                     }
-                    return '<span class="badge badge-success">Fully Assigned</span>';
+                    return '<span class="badge badge-success" style="font-size: 11px; padding: 3px 6px;">Fully Assigned</span>';
                 }
 
                 $color = $queue->colors->name ?? '';
                 $set_size = $queue->size_measurement;
                 $btns = '
                     <button 
-                        class="btn btn-sm btn-primary assign-btn"
+                        class="btn-erp btn-erp-primary assign-btn"
+                        style="font-size: 11px !important; padding: 2px 8px !important;"
                         data-id="' . $queue->id . '"
                         data-design="' . $queue->design_number . '"
                         data-set-size="' . $set_size?->set_size . '"
@@ -298,7 +298,7 @@ class ProductOrderDataTable
                         data-season-id="' . ($queue->product_season_id ?? '') . '"
                         data-total="' . $queue->total_quantity . '"
                         data-remain="' . $queue->remain_total_quantity . '">
-                        Assign
+                        <i class="fas fa-user-plus mr-1"></i> Assign
                     </button>';
 
                 if ($queue->remain_total_quantity == $queue->total_quantity) {
@@ -310,11 +310,11 @@ class ProductOrderDataTable
 
             ->addColumn('status', function ($queue) {
                 if ($queue->remain_total_quantity <= 0) {
-                    return '<span class="badge badge-success">Assigned</span>';
+                    return '<span class="badge badge-success" style="font-size: 11px; padding: 3px 6px;">Assigned</span>';
                 } elseif ($queue->remain_total_quantity < $queue->total_quantity) {
-                    return '<span class="badge badge-warning">Partial</span>';
+                    return '<span class="badge badge-warning" style="font-size: 11px; padding: 3px 6px;">Partial</span>';
                 } else {
-                    return '<span class="badge badge-primary">Not Assigned</span>';
+                    return '<span class="badge badge-primary" style="font-size: 11px; padding: 3px 6px;">Not Assigned</span>';
                 }
             })
 
@@ -327,18 +327,18 @@ class ProductOrderDataTable
 
                 // Show View/Download if at least some quantity has been assigned
                 if ($queue->remain_total_quantity < $queue->total_quantity || $queue->status == 2) {
-                    $view = '<a href="' . route('admin.product_order.viewCuttingSlip', ['id' => $parameter]) . '" class="mr-2" data-toggle="tooltip" title="View Assignments"><i class="fas fa-eye text-primary" style="font-size: 16px;"></i></a>';
+                    $view = '<a href="' . route('admin.product_order.viewCuttingSlip', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-view" data-toggle="tooltip" title="View Assignments"><i class="fas fa-eye"></i></a>';
 
                     // Add Delete Assignment button if no lots exist
                     $lotExists = \App\Models\OrderLot::where('order_products_set_id', $parameter)->exists();
                     if (!$lotExists) {
-                        $view .= '<a href="javascript:void(0)" class="delete-assign-btn" data-id="' . $parameter . '" data-toggle="tooltip" title="Delete Assignment"><i class="fas fa-trash text-danger" style="font-size: 16px;"></i></a>';
+                        $view .= '<a href="javascript:void(0)" class="erp-action-btn erp-btn-delete delete-assign-btn" data-id="' . $parameter . '" data-toggle="tooltip" title="Delete Assignment"><i class="fas fa-trash"></i></a>';
                     }
                 } else {
                     $view = '';
                 }
 
-                return $view;
+                return '<div class="d-flex align-items-center justify-content-center">' . $view . '</div>';
             })
 
             ->rawColumns(['select', 'action', 'design_number', 'size_set', 'size_group', 'assign_to', 'total_qty', 'status'])

@@ -1,103 +1,69 @@
 @extends('admin.layouts.app')
 @section('content')
-    <div class="content-wrapper">
-        <!-- PAGE HEADER -->
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-3 align-items-center">
-                    <div class="col-sm-6">
-                        <h1 class="m-0 font-weight-bold text-dark">Packing Dashboard</h1>
-                        <small class="text-muted">Monitor and manage order packing sessions</small>
-                    </div>
-                    <div class="col-sm-6 text-right">
-                        <a href="{{ route('admin.packing.reworkList') }}" class="btn btn-outline-danger px-3 shadow-sm mr-2">
-                            <i class="fas fa-tools mr-1"></i> Defect / Rework List
-                        </a>
-                        <a href="{{ route('admin.uploaded-slips.index') }}" class="btn btn-primary px-4 shadow-sm">
-                            <i class="fas fa-plus mr-1"></i> Start New Packing
-                        </a>
-                    </div>
+    <div class="content-wrapper erp-page p-2">
+        <!-- 1. HEADER SECTION -->
+        <div class="erp-header-bar mb-3">
+            <div>
+                <h1 class="erp-header-title">Packing Dashboard</h1>
+                <p class="erp-header-subtitle">Monitor and manage order packing sessions & carton barcodes</p>
+            </div>
+            <div class="erp-header-actions d-flex flex-wrap" style="gap: 8px;">
+                <a href="{{ route('admin.packing.reworkList') }}" class="btn-erp btn-erp-outline" style="color: #fff; border-color: rgba(255,255,255,0.4);">
+                    <i class="fas fa-tools text-warning"></i> Defect / Rework List
+                </a>
+                <a href="{{ route('admin.uploaded-slips.index') }}" class="btn-erp btn-erp-primary" style="background: #fcee21; color: #05421c; border-color: #fcee21; font-weight: 700;">
+                    <i class="fas fa-plus"></i> Start New Packing
+                </a>
+            </div>
+        </div>
+
+        <!-- 2. FILTER BAR -->
+        <div class="erp-filter-bar mb-3">
+            <div class="row align-items-end">
+                <div class="col-md mb-2">
+                    <label class="erp-label">Order No</label>
+                    <input type="text" id="order_no" class="form-control erp-input" placeholder="Search Order...">
+                </div>
+                <div class="col-md mb-2">
+                    <label class="erp-label">Customer Name</label>
+                    <input type="text" id="customer_name" class="form-control erp-input" placeholder="Search Customer...">
+                </div>
+                <div class="col-md mb-2">
+                    <label class="erp-label">Start Date</label>
+                    <input type="date" id="start_date" class="form-control erp-input">
+                </div>
+                <div class="col-md mb-2">
+                    <label class="erp-label">End Date</label>
+                    <input type="date" id="end_date" class="form-control erp-input">
+                </div>
+                <div class="col-md-auto mb-2 text-right">
+                    <button id="resetFilters" class="btn-erp btn-erp-outline">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- CONTENT -->
-        <section class="content">
-            <div class="container-fluid">
-                <!-- FILTER CARD -->
-                <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px;">
-                    <div class="card-body bg-light rounded p-2">
-                        <div class="row align-items-end">
-                            <div class="col-md mb-2">
-                                <label class="small font-weight-bold text-muted mb-1">Order No</label>
-                                <input type="text" id="order_no" class="form-control form-control-sm" placeholder="Search Order...">
-                            </div>
-                            <div class="col-md mb-2">
-                                <label class="small font-weight-bold text-muted mb-1">Customer Name</label>
-                                <input type="text" id="customer_name" class="form-control form-control-sm" placeholder="Search Customer...">
-                            </div>
-                            <div class="col-md mb-2">
-                                <label class="small font-weight-bold text-muted mb-1">Start Date</label>
-                                <input type="date" id="start_date" class="form-control form-control-sm">
-                            </div>
-                            <div class="col-md mb-2">
-                                <label class="small font-weight-bold text-muted mb-1">End Date</label>
-                                <input type="date" id="end_date" class="form-control form-control-sm">
-                            </div>
-                            <div class="col-md-auto mb-2 text-right">
-                                <button id="resetFilters" class="btn btn-sm btn-outline-secondary px-3 shadow-sm">
-                                    <i class="fas fa-undo"></i> Reset
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TABLE CARD -->
-                <div class="card shadow border-0" style="border-radius: 12px; overflow: hidden;">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table id="packingTable" class="table table-hover mb-0">
-                                <thead class="bg-light contrast-text">
-                                    <tr>
-                                        <th width="5%" class="text-center py-3">#</th>
-                                        <th class="py-3">Order No</th>
-                                        <th class="py-3">Customer</th>
-                                        <th class="py-3">Slip ID</th>
-                                        <th class="py-3">Packing Date</th>
-                                        <th class="text-center py-3">Status</th>
-                                        <th class="text-right py-3 px-4">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+        <!-- 3. TABLE CARD -->
+        <div class="erp-card">
+            <div class="table-responsive">
+                <table id="packingTable" class="table erp-table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th width="5%" class="text-center">#</th>
+                            <th>Order No</th>
+                            <th>Customer</th>
+                            <th>Slip ID</th>
+                            <th>Packing Date</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center" width="10%">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
-        </section>
+        </div>
     </div>
-
-    <style>
-        .contrast-text th {
-            color: #444;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 0.5px;
-        }
-
-        .table tbody td {
-            vertical-align: middle;
-            padding: 1rem 0.75rem;
-        }
-
-        .badge {
-            padding: 0.5em 0.8em;
-            border-radius: 6px;
-        }
-        .form-control { border-radius: 8px; }
-    </style>
 
     <script>
         $(function () {
@@ -117,16 +83,16 @@
                 },
                 columns: [
                     { data: 'DT_RowIndex', name: 'id', className: 'text-center text-muted' },
-                    { data: 'order_no', name: 'order_no', className: 'font-weight-bold text-primary' },
+                    { data: 'order_no', name: 'order_no', className: 'font-weight-bold text-dark' },
                     { data: 'customer', name: 'customer' },
-                    { data: 'slip_id', name: 'slip_id' },
+                    { data: 'slip_id', name: 'slip_id', className: 'font-weight-bold' },
                     { data: 'packing_date', name: 'packing_date' },
                     { data: 'status', name: 'status', className: 'text-center' },
-                    { data: 'action', name: 'action', className: 'text-right px-4' }
+                    { data: 'action', name: 'action', className: 'text-center' }
                 ],
                 language: {
                     emptyTable: "No packing sessions found",
-                    processing: '<i class="fas fa-spinner fa-spin fa-2x text-primary"></i>'
+                    processing: '<i class="fas fa-spinner fa-spin fa-2x" style="color: #05421c;"></i>'
                 }
             });
 

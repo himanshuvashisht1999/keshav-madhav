@@ -2,209 +2,311 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Production Purchase Order</title>
-
+    <title>Production Purchase Order - {{ $po->sku }}</title>
     <style>
+        @page {
+            margin: 8mm 8mm 8mm 8mm;
+            size: A4 portrait;
+        }
+
         body {
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 15px;
-            color: #222;
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 10px;
+            color: #05421c;
+            line-height: 1.35;
             margin: 0;
-            padding: 18px;
+            padding: 0;
+            background: #ffffff;
         }
 
-        /* HEADER */
-        .header {
-            position: relative;
-            text-align: center;
-            border-bottom: 3px solid #000;
-            padding-bottom: 12px;
-            margin-bottom: 18px;
+        .voucher-sheet {
+            border: 1px solid #cbd5e1;
+            border-top: 4px solid #fcee21;
+            border-radius: 4px;
+            padding: 12px 14px;
+            background: #ffffff;
         }
 
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            letter-spacing: 1.2px;
+        .company-header {
+            width: 100%;
+            border-bottom: 2px solid #05421c;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
         }
 
-        .slip-no {
-            position: absolute;
-            top: -20px;
-            left: 0;
-            font-size: 14px;
-            font-weight: bold;
+        .company-name {
+            font-size: 17px;
+            font-weight: 800;
+            color: #05421c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0 0 3px 0;
         }
 
-        /* SECTION TITLE */
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin: 20px 0 8px;
-            border-bottom: 2px solid #aaa;
-            padding-bottom: 4px;
+        .company-meta {
+            font-size: 9.5px;
+            color: #05421c;
+            line-height: 1.4;
+            font-weight: 600;
         }
 
-        /* INFO TABLE */
-        table.info {
+        .info-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            background: #ffffff;
+        }
+
+        .info-card-header {
+            background: #edf7e4;
+            border-bottom: 1px solid #8bc63e;
+            padding: 4px 8px;
+            font-size: 9.5px;
+            font-weight: 800;
+            color: #05421c;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .info-card-body {
+            padding: 6px 8px;
+        }
+
+        .info-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 16px;
         }
 
-        table.info td {
-            padding: 7px;
+        .info-table td {
+            padding: 2.5px 0;
+            font-size: 9.5px;
             vertical-align: top;
         }
 
-        .label {
-            font-weight: bold;
-            width: 30%;
+        .info-label {
+            width: 32%;
+            font-weight: 700;
+            color: #074e22;
+            text-transform: uppercase;
+            font-size: 8.5px;
         }
 
-        /* PRODUCT TABLE */
-        table.products {
+        .info-val {
+            color: #05421c;
+            font-weight: bold;
+        }
+
+        .sku-badge {
+            display: inline-block;
+            background: #fcee21;
+            color: #05421c;
+            border: 1px solid #e2d514;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-weight: 800;
+            font-size: 9.5px;
+        }
+
+        .section-title {
+            font-size: 10.5px;
+            font-weight: 800;
+            color: #05421c;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin: 10px 0 5px 0;
+        }
+
+        .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 16px;
+            margin-top: 4px;
         }
 
-        table.products th,
-        table.products td {
-            border: 1.5px solid #000;
-            padding: 8px;
+        .items-table th {
+            background: #edf7e4;
+            color: #05421c;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            padding: 5px 6px;
+            border-top: 1px solid #05421c;
+            border-bottom: 2px solid #05421c;
+            border-right: 1px solid #cbd5e1;
+            border-left: 1px solid #cbd5e1;
             text-align: center;
         }
 
-        table.products th {
-            background: #f2f2f2;
+        .items-table td {
+            padding: 5px 6px;
+            font-size: 9.5px;
+            color: #05421c;
+            border: 1px solid #e2e8f0;
+            vertical-align: middle;
+            font-weight: 600;
         }
 
-        .total-row td {
+        .items-table tfoot td {
+            background: #edf7e4;
+            color: #05421c;
+            font-weight: 800;
+            font-size: 10px;
+            border-top: 2px solid #05421c;
+            border-bottom: 2px solid #05421c;
+            padding: 6px;
+        }
+
+        .signoff-table {
+            width: 100%;
+            margin-top: 25px;
+            border-collapse: collapse;
+        }
+
+        .signoff-box {
+            border-top: 1px solid #05421c;
+            display: inline-block;
+            width: 160px;
+            text-align: center;
+            padding-top: 4px;
+            font-size: 9px;
             font-weight: bold;
-            background: #fafafa;
-            font-size: 17px;
+            color: #05421c;
+            text-transform: uppercase;
         }
 
-        /* SIGNATURE */
-        table.sign {
-            width: 100%;
-            margin-top: 45px;
-            font-size: 14px;
-        }
-
-        table.sign td {
+        .print-date {
             text-align: center;
-            padding-top: 30px;
+            font-size: 8px;
+            color: #457855;
+            margin-top: 15px;
         }
 
-        /* FOOTER */
-        .footer {
-            position: fixed;
-            bottom: 10px;
-            left: 0;
-            width: 100%;
-            font-size: 13px;
-            text-align: center;
-            color: #555;
-        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
     </style>
 </head>
 <body>
+    <div class="voucher-sheet">
+        <!-- Header -->
+        <table class="company-header" cellpadding="0" cellspacing="0">
+            <tr>
+                <td width="70%" valign="top">
+                    <div class="company-name">SNAPKID</div>
+                    <div class="company-meta">
+                        <div>Production Purchase Order</div>
+                    </div>
+                </td>
+                <td width="30%" align="right" valign="top">
+                    <span class="sku-badge">{{ $po->sku }}</span>
+                </td>
+            </tr>
+        </table>
 
-<!-- HEADER -->
-<div class="header">
-    <div class="slip-no">
-        PO SKU: {{ $po->sku }}
+        <!-- PO Assigned To & Information -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 5px;">
+            <tr>
+                <td width="48.5%" valign="top">
+                    <div class="info-card">
+                        <div class="info-card-header">PO Assigned To</div>
+                        <div class="info-card-body">
+                            <table class="info-table" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td class="info-label">Entity Name</td>
+                                    <td class="info-val">: {{ $po->vendor_id ? ($po->vendor->name ?? '-') : ($po->customer->name ?? '-') }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="info-label">Type</td>
+                                    <td class="info-val">: {{ $po->vendor_id ? 'Vendor' : 'Customer' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="info-label">Delivery Date</td>
+                                    <td class="info-val">: {{ $po->till_allowed_time ? date('d-m-Y', strtotime($po->till_allowed_time)) : '-' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </td>
+                <td width="3%"></td>
+                <td width="48.5%" valign="top">
+                    <div class="info-card">
+                        <div class="info-card-header">PO Details</div>
+                        <div class="info-card-body">
+                            <table class="info-table" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td class="info-label">PO SKU</td>
+                                    <td class="info-val">: <span class="sku-badge">{{ $po->sku }}</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="info-label">Date</td>
+                                    <td class="info-val">: {{ date('d-m-Y', strtotime($po->created_at)) }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Product Table -->
+        <div class="section-title">Product & Quantity Details</div>
+        <table class="items-table" cellpadding="0" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>DESIGN NO</th>
+                    <th>COLOUR</th>
+                    <th>SIZE</th>
+                    <th>PCS IN SET</th>
+                    <th>QUANTITY</th>
+                    <th>RATE</th>
+                    <th>AMOUNT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-center font-weight-bold">{{ $po->productSet->design_number ?? '-' }}</td>
+                    <td class="text-center">{{ $po->productSet->colors->name ?? '-' }}</td>
+                    <td class="text-center">{{ $po->productSet->set_size ?? '-' }}</td>
+                    <td class="text-center">{{ $po->productSet->no_of_pcs ?? 0 }}</td>
+                    <td class="text-center" style="font-weight: bold;">{{ $po->quantity }}</td>
+                    <td class="text-right">{{ number_format($po->rate, 2) }}</td>
+                    <td class="text-right" style="font-weight: bold;">{{ number_format($po->quantity * $po->rate, 2) }}</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" class="text-right">TOTAL:</td>
+                    <td class="text-center">{{ $po->quantity }} Pcs</td>
+                    <td></td>
+                    <td class="text-right">Rs. {{ number_format($po->quantity * $po->rate, 2) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        @if(!empty($po->remarks))
+            <div style="margin-top: 10px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; background: #ffffff;">
+                <b style="font-size: 8.5px; text-transform: uppercase; color: #05421c;">Remarks:</b>
+                <span style="font-size: 9px; color: #05421c;">{{ $po->remarks }}</span>
+            </div>
+        @endif
+
+        <!-- Sign-off Block -->
+        <table class="signoff-table">
+            <tr>
+                <td width="33%" align="center">
+                    <div class="signoff-box">Prepared By</div>
+                </td>
+                <td width="34%" align="center">
+                    <div class="signoff-box">Receiver Sign</div>
+                </td>
+                <td width="33%" align="center">
+                    <div class="signoff-box">Authorized Sign</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="print-date">
+            This is a system generated production purchase order.
+        </div>
     </div>
-
-    <h1>PRODUCTION PURCHASE ORDER</h1>
-
-    <table style="width:100%; margin-top:12px; font-size:18px;">
-        <tr>
-            <td style="text-align:left;">
-                <strong>Company:</strong> Keshav Madhav
-            </td>
-            <td style="text-align:right; font-size:15px;">
-                <strong>Date:</strong> {{ date('d-m-Y', strtotime($po->created_at)) }}
-            </td>
-        </tr>
-    </table>
-</div>
-
-<!-- PO TO -->
-<div class="section-title">PO TO</div>
-
-<table class="info">
-    <tr>
-        <td class="label">Entity Name</td>
-        <td>{{ $po->vendor_id ? ($po->vendor->name ?? '-') : ($po->customer->name ?? '-') }}</td>
-    </tr>
-    <tr>
-        <td class="label">Type</td>
-        <td>{{ $po->vendor_id ? 'Vendor' : 'Customer' }}</td>
-    </tr>
-    <tr>
-        <td class="label">Delivery Date</td>
-        <td>{{ $po->till_allowed_time ? date('d-m-Y', strtotime($po->till_allowed_time)) : '-' }}</td>
-    </tr>
-</table>
-
-<!-- PRODUCT DETAILS -->
-<div class="section-title">Product & Quantity Details</div>
-
-<table class="products">
-    <thead>
-        <tr>
-            <th>Design No</th>
-            <th>Colour</th>
-            <th>Size</th>
-            <th>Pcs in Set</th>
-            <th>Quantity</th>
-            <th>Rate</th>
-            <th>Amount</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>{{ $po->productSet->design_number ?? '-' }}</td>
-            <td>{{ $po->productSet->colors->name ?? '-' }}</td>
-            <td>{{ $po->productSet->set_size ?? '-' }}</td>
-            <td>{{ $po->productSet->no_of_pcs ?? 0 }}</td>
-            <td>{{ $po->quantity }}</td>
-            <td>{{ number_format($po->rate, 2) }}</td>
-            <td>{{ number_format($po->quantity * $po->rate, 2) }}</td>
-        </tr>
-        <tr class="total-row">
-            <td colspan="4" style="text-align:right;">Total</td>
-            <td>{{ $po->quantity }}</td>
-            <td></td>
-            <td>{{ number_format($po->quantity * $po->rate, 2) }}</td>
-        </tr>
-    </tbody>
-</table>
-
-<!-- REMARKS -->
-@if(!empty($po->remarks))
-<div class="section-title">Remarks</div>
-<div style="padding: 10px; background: #f9f9f9; border-left: 4px solid #000;">
-    {{ $po->remarks }}
-</div>
-@endif
-
-<!-- SIGNATURE -->
-<table class="sign">
-    <tr>
-        <td>_______________________<br>Prepared By</td>
-        <td>_______________________<br>Receiver Sign</td>
-        <td>_______________________<br>Authorized Sign</td>
-    </tr>
-</table>
-
-<div class="footer">
-    This is a system generated production purchase order.
-</div>
-
 </body>
 </html>

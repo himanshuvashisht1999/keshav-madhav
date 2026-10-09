@@ -1,35 +1,26 @@
 @extends('admin.layouts.app')
 @section('content')
 <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-12">
-                    <h1 class="text-center">Production Slip Digitalization</h1>
-                </div>
-                {{-- <div class="col-sm-12">
-                    <h4 class="text-center">Order ID - ({{$order_main->sku}})</h4>
-                </div> --}}
-                {{-- <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Production Order</li>
-                    </ol>
-                </div> --}}
+    <div class="erp-page p-2">
+
+        <!-- HEADER BAR -->
+        <div class="erp-header-bar mb-2">
+            <div class="erp-header-title d-flex align-items-center">
+                <i class="fas fa-file-invoice mr-2 text-success"></i>
+                <span>Production Slip Digitalization</span>
+                <span class="badge badge-light border ml-2 text-xs font-weight-normal text-muted">Legacy Listing</span>
+            </div>
+            <div class="erp-header-actions">
+                <a href="{{ route('admin.uploaded-slips.index') }}" class="btn-erp btn-erp-primary">
+                    <i class="fas fa-list mr-1"></i> Go to Uploaded Slips
+                </a>
             </div>
         </div>
-    </section>
 
-    <!-- Main content -->
-    <section class="content">
-        <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default ">
-                
-                
-                <div class="card-body table-responsive">
-                <table id="customers" class="table table-bordered table-hover">
+        <!-- MAIN TABLE CARD -->
+        <div class="erp-card bg-white p-3">
+            <div class="table-responsive">
+                <table id="customers" class="table erp-table table-hover w-100 mb-0">
                   <thead>
                     <tr role="row" class="filter">
                         <td>
@@ -77,10 +68,10 @@
                   </tbody>
                   
                 </table>
-              </div>
             </div>
         </div>
-    </section>
+
+    </div>
 </div>
 
 <!-- Modal -->

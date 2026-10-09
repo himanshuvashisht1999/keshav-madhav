@@ -28,7 +28,7 @@ class TimeAllocationDataTable  {
             })
             ->addColumn('action', function ($queue) {
 				$parameter = $queue->id;
-                $edit = '<a href="' . route('admin.time_allocation.edit',['id' => $parameter]) . '" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i> Edit</a>';
+                $edit = '<a href="' . route('admin.time_allocation.edit',['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" title="Edit Allocation"><i class="fas fa-edit"></i></a>';
                 
                 return $edit;
             })

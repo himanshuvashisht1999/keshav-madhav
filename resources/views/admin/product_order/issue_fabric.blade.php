@@ -1,84 +1,89 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper">
-
-    <!-- Page Header -->
-    <section class="content-header border-bottom pb-2">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">
-                Issue Fabric to {{ $data->first_stage->stage->name }}
-            </h4>
-            <a href="{{ route('admin.product_order.index') }}" class="btn btn-outline-secondary btn-sm">
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim Header Bar -->
+    <div class="erp-header-bar mb-2 d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <h5 class="erp-header-title mb-0">
+                <i class="fas fa-layer-group text-warning mr-1"></i> Issue Fabric to <span class="text-primary">{{ $data->first_stage->stage->name ?? 'Cutting' }}</span>
+            </h5>
+        </div>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.product_order.index') }}" class="btn btn-xs btn-outline-secondary">
                 <i class="fas fa-arrow-left mr-1"></i> Back
             </a>
         </div>
-    </section>
+    </div>
 
     <!-- Main Content -->
-    <section class="content mt-4">
-        <div class="container-fluid">
-
-            <form id="fabricIssueForm" action="{{ route('admin.product_order.issueFabricPost') }}" method="POST">
-                @csrf
-                <input type="hidden" name="order_product_id" value="{{ $data->id }}">
-                <div class="col-md-12">
-                    <div class="form-group">
-                        <label>Select Unit</label>
-                        <select name="sub_stage_id" class="form-control select2" style="width: 100%;" required>
-                            @foreach($sub_stages_cutting as $single_data)
-                            <option value="{{$single_data->id}}">{{$single_data->name}}</option>
-                            @endforeach
-                            
-                        </select>
+    <div class="erp-card p-3">
+        <form id="fabricIssueForm" action="{{ route('admin.product_order.issueFabricPost') }}" method="POST">
+            @csrf
+            <input type="hidden" name="order_product_id" value="{{ $data->id }}">
+            
+            <div class="bg-light p-2 rounded border mb-3">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-0">
+                            <label class="erp-filter-label" style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Select Cutting Unit <span class="text-danger">*</span></label>
+                            <select name="sub_stage_id" class="form-control form-control-sm erp-input select2" style="width: 100%;" required>
+                                @foreach($sub_stages_cutting as $single_data)
+                                    <option value="{{$single_data->id}}">{{$single_data->name}}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                @foreach($data->product_details as $index => $detail)
-                <input type="hidden" name="order_product_detail_ids[]" value="{{ $detail->id }}">
+            @foreach($data->product_details as $index => $detail)
+            <input type="hidden" name="order_product_detail_ids[]" value="{{ $detail->id }}">
 
-                
+            <div class="bg-white p-3 rounded border mb-3 shadow-none" style="border: 1px solid #e2e8f0 !important;">
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                    <span class="font-weight-bold text-dark" style="font-size: 13px;">
+                        Fabric: <strong class="text-primary">{{ $detail->fabric_sku }}</strong>
+                    </span>
+                    <span class="badge badge-warning text-dark font-weight-bold" style="font-size: 11px;">
+                        Required: {{ $detail->total_meter }} m
+                    </span>
+                </div>
 
-                <div class="bg-white p-3 rounded border mb-4">
-                    <h6 class="mb-3 text-primary">
-                        Fabric: <strong>{{ $detail->fabric_sku }}</strong>
-                        <small class="text-muted">(Required: {{ $detail->total_meter }} m)</small>
-                    </h6>
-
-                    <table class="table table-sm mb-0" id="fabric-table-{{ $index }}">
-                        <thead class="thead-light">
+                <div class="table-responsive">
+                    <table class="table table-sm erp-table mb-0" id="fabric-table-{{ $index }}">
+                        <thead>
                             <tr>
-                                <th>Fabric Roll</th>
-                                <th width="25%">Meter to Issue</th>
-                                <th width="10%">Action</th>
+                                <th>FABRIC ROLL</th>
+                                <th style="width: 200px;">METER TO ISSUE</th>
+                                <th style="width: 70px;" class="text-center">ACTION</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
                     </table>
-
-                    <!-- Hidden stock options for cloning -->
-                    <div id="fabric-options-{{ $index }}" class="d-none">
-                        <option value="">-- Select Roll --</option>
-                        @foreach($detail->fabric_stocks->where('meter','>',0) as $stock)
-                            <option value="{{ $stock->id }}" data-meter="{{ $stock->meter }}">
-                                {{ $stock->unique_number }} (Available: {{ $stock->meter }} m)
-                            </option>
-                        @endforeach
-                    </div>
-
-                    <input type="hidden" class="total-meter" value="{{ $detail->total_meter }}">
                 </div>
-                @endforeach
 
-                <div class="text-right mb-4">
-                    <button type="submit" class="btn btn-primary px-4">
-                        <i class="fas fa-save mr-1"></i> Submit Fabric Issue
-                    </button>
+                <!-- Hidden stock options for cloning -->
+                <div id="fabric-options-{{ $index }}" class="d-none">
+                    <option value="">-- Select Roll --</option>
+                    @foreach($detail->fabric_stocks->where('meter','>',0) as $stock)
+                        <option value="{{ $stock->id }}" data-meter="{{ $stock->meter }}">
+                            {{ $stock->unique_number }} (Available: {{ $stock->meter }} m)
+                        </option>
+                    @endforeach
                 </div>
-            </form>
 
-        </div>
-    </section>
+                <input type="hidden" class="total-meter" value="{{ $detail->total_meter }}">
+            </div>
+            @endforeach
+
+            <div class="d-flex justify-content-end align-items-center pt-2">
+                <button type="submit" class="btn btn-sm btn-erp-primary px-3">
+                    <i class="fas fa-save mr-1"></i> Submit Fabric Issue
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
@@ -93,18 +98,18 @@ document.addEventListener('DOMContentLoaded', function() {
         let newRow = `
             <tr>
                 <td>
-                    <select name="fabric_roll[${index}][]" class="form-control form-control-sm">
+                    <select name="fabric_roll[${index}][]" class="form-control form-control-sm erp-input">
                         ${stockOptions}
                     </select>
                 </td>
                 <td>
                     <input type="number" name="meter[${index}][]" 
-                        class="form-control form-control-sm meter-input" 
+                        class="form-control form-control-sm erp-input meter-input" 
                         min="0" step="0.01" placeholder="Enter meter" 
                         data-index="${index}">
                 </td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-danger btn-sm remove-row">
+                <td class="text-center align-middle">
+                    <button type="button" class="erp-action-btn erp-btn-delete remove-row" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -176,10 +181,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     // First row: Add button | others: Delete button
                     const actionButton = isFirstRow
-                        ? `<button type="button" class="btn btn-success btn-sm add-row" data-index="${index}">
+                        ? `<button type="button" class="btn btn-xs btn-erp-primary add-row" data-index="${index}" title="Add Roll">
                                <i class="fas fa-plus"></i>
                            </button>`
-                        : `<button type="button" class="btn btn-danger btn-sm remove-row">
+                        : `<button type="button" class="erp-action-btn erp-btn-delete remove-row" title="Delete">
                                <i class="fas fa-trash"></i>
                            </button>`;
                     isFirstRow = false;
@@ -187,15 +192,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     const newRow = `
                         <tr>
                             <td>
-                                <select name="fabric_roll[${index}][]" class="form-control form-control-sm roll-select">
+                                <select name="fabric_roll[${index}][]" class="form-control form-control-sm erp-input roll-select">
                                     ${stockOptions}
                                 </select>
                             </td>
                             <td>
-                                <input type="number" name="meter[${index}][]" class="form-control form-control-sm meter-input"
+                                <input type="number" name="meter[${index}][]" class="form-control form-control-sm erp-input meter-input"
                                     min="0" step="0.01" value="${used.toFixed(2)}" data-index="${index}">
                             </td>
-                            <td class="text-center">${actionButton}</td>
+                            <td class="text-center align-middle">${actionButton}</td>
                         </tr>`;
 
                     tableBody.append(newRow);
@@ -208,12 +213,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 </script>
-
-<style>
-.table th, .table td { vertical-align: middle !important; }
-.bg-white { background: #fff !important; }
-.table-sm th { color: #555; font-weight: 600; }
-h6 { font-size: 15px; }
-.btn-sm i { font-size: 13px; }
-</style>
 @endsection

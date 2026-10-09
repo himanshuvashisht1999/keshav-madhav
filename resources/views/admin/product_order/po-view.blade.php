@@ -2,105 +2,84 @@
 
 @section('content')
 <style>
-    .invoice-box {
-        background: #fff;
-        padding: 30px;
-        border: 1px solid #e0e0e0;
-        box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.05);
-        font-size: 14px;
-        line-height: 20px;
-        color: #333;
-    }
-
-    .invoice-header {
-        border-bottom: 2px solid #007bff;
-        padding-bottom: 15px;
-        margin-bottom: 20px;
-    }
-
-    .company-details h2 {
-        margin: 0;
-        font-weight: bold;
-        color: #007bff;
-    }
-
-    .vendor-box,
-    .po-box {
-        background: #f9f9f9;
-        padding: 15px;
-        border-radius: 6px;
-        margin-top: 15px;
-    }
-
-    table.invoice-table th {
-        background: #007bff;
-        color: #fff;
-        text-align: center;
-    }
-
-    table.invoice-table td {
-        text-align: center;
-        vertical-align: middle;
-    }
-
-    .grand-total {
-        font-size: 18px;
-        font-weight: bold;
-        background: #f1f1f1;
-    }
-
     @media print {
-        .action-buttons {
+        .erp-header-bar,
+        .action-buttons,
+        .main-sidebar,
+        .main-header {
             display: none !important;
+        }
+        .content-wrapper {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
+        }
+        .erp-voucher-sheet {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
         }
     }
 </style>
 
-<div class="content-wrapper">
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Production Purchase Order ({{ $po->po_number }})</h1>
-                </div>
-                <div class="col-sm-6 text-right action-buttons">
-                    <a href="{{ route('admin.product_order.poList') }}" class="btn btn-secondary">
-                        <i class="fa fa-arrow-left"></i> Back to List
-                    </a>
-                    <a href="{{ route('admin.product_order.downloadBulkPO', $po->id) }}" class="btn btn-success">
-                        <i class="fa fa-file-pdf"></i> Download PDF
-                    </a>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar">
+        <div class="erp-header-title">
+            <i class="fas fa-file-invoice text-primary"></i> Production Purchase Order:
+            <span class="erp-badge-yellow px-2 py-1 ml-1 rounded font-weight-bold">{{ $po->po_number }}</span>
+        </div>
+        <div class="erp-header-actions action-buttons">
+            <a href="{{ route('admin.product_order.poList') }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+            <a href="{{ route('admin.product_order.editBulkPO', $po->id) }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-edit text-primary"></i> Edit PO
+            </a>
+            <a href="{{ route('admin.product_order.downloadBulkPO', $po->id) }}" class="btn-erp btn-erp-primary">
+                <i class="fas fa-file-pdf mr-1"></i> Download PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="erp-voucher-sheet">
+        <!-- Header Row: Company & Logo -->
+        <div class="row erp-voucher-header align-items-center">
+            <div class="col-8">
+                <h4 class="erp-voucher-title">{{ $general_setting->website_name ?? 'SNAPKID' }}</h4>
+                <div class="erp-company-meta">
+                    <div>{{ $general_setting->address ?? '' }}</div>
+                    <div>
+                        @if($general_setting->phone)<span><b>Phone:</b> {{ $general_setting->phone }}</span>@endif
+                        @if($general_setting->email)<span class="ml-2"><b>Email:</b> {{ $general_setting->email }}</span>@endif
+                    </div>
                 </div>
             </div>
+            <div class="col-4 text-right">
+                @if($general_setting && $general_setting->logo)
+                    <img src="{{ $general_setting->logo }}" height="55" alt="Logo" style="object-fit: contain;">
+                @endif
+            </div>
         </div>
-    </section>
 
-    <section class="content">
-        <div class="container-fluid">
-            <div class="invoice-box">
-                {{-- Header --}}
-                <div class="row invoice-header">
-                    <div class="col-md-6 company-details">
-                        <h2>{{ $general_setting->website_name ?? 'SNAPKID' }}</h2>
-                        <p class="mb-0">{{ $general_setting->address ?? '' }}</p>
-                        <p class="mb-0">{{ $general_setting->email ?? '' }}</p>
-                        <p class="mb-0"><b>Phone:</b> {{ $general_setting->phone ?? '' }}</p>
+        <!-- Two-Column Voucher Details -->
+        <div class="row mb-3">
+            <div class="col-md-6 mb-2">
+                <div class="erp-card h-100 mb-0">
+                    <div class="erp-card-header py-1">
+                        <span class="erp-card-title">
+                            <i class="fas fa-user-tie text-primary mr-1"></i> PO Assigned To
+                        </span>
                     </div>
-                    <div class="col-md-6 text-right">
-                        @if($general_setting && $general_setting->logo)
-                            <img src="{{ $general_setting->logo }}" height="80" alt="Logo">
-                        @endif
-                    </div>
-                </div>
-
-                {{-- Vendor & PO Info --}}
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="vendor-box h-100" style="border: 1px solid #dee2e6;">
-                            <h5 class="text-primary border-bottom pb-2 mb-3"><b><i class="fas fa-user-tie"></i> PO TO</b></h5>
-                            <div class="row mb-2">
-                                <div class="col-4"><b>Name</b></div>
-                                <div class="col-8"><b>: 
+                    <div class="erp-card-body p-2">
+                        <table class="erp-info-table">
+                            <tr>
+                                <td class="label-col">Party Type</td>
+                                <td class="val-col">: {{ $po->vendor_id ? 'Vendor' : 'Customer' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Name</td>
+                                <td class="val-col font-weight-bold">: 
                                     @if($po->vendor)
                                         {{ $po->vendor->name }}
                                     @elseif($po->customer)
@@ -108,23 +87,23 @@
                                     @else
                                         N/A
                                     @endif
-                                </b></div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-4"><b>Mobile</b></div>
-                                <div class="col-8"><b>: 
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Mobile</td>
+                                <td class="val-col">: 
                                     @if($po->vendor)
-                                        {{ $po->vendor->mobile ?? 'N/A' }}
+                                        {{ $po->vendor->mobile ?? $po->vendor->phone ?? 'N/A' }}
                                     @elseif($po->customer)
                                         {{ $po->customer->mobile ?? 'N/A' }}
                                     @else
                                         N/A
                                     @endif
-                                </b></div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-4"><b>Address</b></div>
-                                <div class="col-8"><b>: 
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Address</td>
+                                <td class="val-col">: 
                                     @if($po->vendor)
                                         {{ $po->vendor->address ?? 'N/A' }}
                                     @elseif($po->customer)
@@ -132,120 +111,135 @@
                                     @else
                                         N/A
                                     @endif
-                                </b></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="po-box h-100" style="border: 1px solid #dee2e6;">
-                            <h5 class="text-primary border-bottom pb-2 mb-3 text-right"><b>PO INFO <i class="fas fa-info-circle"></i></b></h5>
-                            <div class="row mb-2">
-                                <div class="col-5 text-right"><b>PO Number</b></div>
-                                <div class="col-7"><b>: {{ $po->po_number }}</b></div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-5 text-right"><b>Order No</b></div>
-                                <div class="col-7"><b>: {{ $po->orderMain->sku ?? 'N/A' }}</b></div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-5 text-right"><b>Date</b></div>
-                                <div class="col-7"><b>: {{ $po->created_at->format('j M Y') }}</b></div>
-                            </div>
-                            <div class="row mb-2">
-                                <div class="col-5 text-right"><b>Delivery Date</b></div>
-                                <div class="col-7"><b>: {{ $po->delivery_date ? \Carbon\Carbon::parse($po->delivery_date)->format('j M Y') : 'N/A' }}</b></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Items --}}
-                <h5 class="mt-4 mb-3 text-primary">Order Items</h5>
-                <table class="table table-bordered invoice-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Design</th>
-                            <th>Product Details</th>
-                            <th>Quantity</th>
-                            <th>Rate</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @php $totalQty = 0; $totalAmount = 0; @endphp
-                        @foreach($po->items as $index => $item)
-                            @php 
-                                $subtotal = $item->quantity * $item->rate;
-                                $totalQty += $item->quantity;
-                                $totalAmount += $subtotal;
-                            @endphp
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td><strong>{{ $item->productSet->design_number ?? 'N/A' }}</strong></td>
-                                <td class="text-left" style="text-align: left !important;">
-                                    <small>
-                                        @php
-                                            $ratioStr = '-';
-                                            if(!empty($item->productSet->size_measurement->size_group)) {
-                                                $sizes = array_map('trim', explode(',', $item->productSet->size_measurement->size_group));
-                                                $counts = array_count_values($sizes);
-                                                $parts = [];
-                                                foreach($counts as $s => $c) {
-                                                    $parts[] = $s . ':' . $c;
-                                                }
-                                                $ratioStr = implode(', ', $parts);
-                                            }
-                                        @endphp
-                                        <b>Color:</b> {{ $item->productSet->colors->name ?? 'N/A' }} | <b>Size:</b> {{ $item->productSet->size_set_name ?? 'N/A' }} | <b>Ratio:</b> {{ $ratioStr }}<br>
-                                        <b>Fabric:</b> {{ $item->fabric_names }}<br>
-                                        <b>Pattern:</b> {{ $item->pattern->name ?? '-' }} | <b>Fitting:</b> {{ $item->master_fitting->name ?? '-' }}<br>
-                                        <b>Belt:</b> {{ $item->belt ?? '-' }}
-                                    </small>
                                 </td>
-                                <td>{{ $item->quantity }}</td>
-                                <td>{{ number_format($item->rate, 2) }}</td>
-                                <td>{{ number_format($subtotal, 2) }}</td>
                             </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot>
-                        <tr class="grand-total">
-                            <td colspan="3" class="text-right">Total</td>
-                            <td>{{ $totalQty }}</td>
-                            <td></td>
-                            <td>{{ number_format($totalAmount, 2) }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-
-                <div class="row mt-4">
-                    <div class="col-md-12">
-                        <h5 class="text-primary"><b>Remark</b></h5>
-                        <div style="background:#f1f1f1; padding:12px; border-radius:6px;">
-                            {{ $po->remark ?? 'N/A' }}
-                        </div>
+                        </table>
                     </div>
                 </div>
+            </div>
 
-                {{-- Footer --}}
-                <div class="row mt-5">
-                    <div class="col-md-6">
-                        <p><b>Authorized Signature</b></p>
-                        <br><br>
-                        <p>____________________</p>
+            <div class="col-md-6 mb-2">
+                <div class="erp-card h-100 mb-0">
+                    <div class="erp-card-header py-1">
+                        <span class="erp-card-title">
+                            <i class="fas fa-file-invoice text-primary mr-1"></i> PO Information
+                        </span>
                     </div>
-                    <div class="col-md-6 text-right">
-                        <p class="text-primary"><b>Thank you for your business!</b></p>
-                        <small>Processed By: {{ $po->items->first()->creator->name ?? 'System' }}</small>
+                    <div class="erp-card-body p-2">
+                        <table class="erp-info-table">
+                            <tr>
+                                <td class="label-col">PO Number</td>
+                                <td class="val-col text-primary font-weight-bold">: {{ $po->po_number }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Sales Order</td>
+                                <td class="val-col font-weight-bold">: {{ $po->orderMain->sku ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">PO Date</td>
+                                <td class="val-col">: {{ $po->created_at->format('j M Y') }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Delivery Date</td>
+                                <td class="val-col">: {{ $po->delivery_date ? \Carbon\Carbon::parse($po->delivery_date)->format('j M Y') : 'N/A' }}</td>
+                            </tr>
+                        </table>
                     </div>
-                </div>
-
-                <div class="mt-4 text-right action-buttons">
-                    <button onclick="window.print()" class="btn btn-primary"><i class="fa fa-print"></i> Print</button>
                 </div>
             </div>
         </div>
-    </section>
+
+        <!-- Order Items Table -->
+        <h6 class="font-weight-bold text-uppercase border-bottom pb-1 mb-2" style="font-size: var(--erp-font-sm); color: var(--erp-text-heading);">
+            <i class="fas fa-boxes mr-1 text-primary"></i> Order Items
+        </h6>
+
+        <div class="table-responsive mb-3">
+            <table class="erp-table table table-bordered table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 45px;" class="text-center">#</th>
+                        <th style="width: 130px;">Design</th>
+                        <th>Product Details</th>
+                        <th style="width: 100px;" class="text-right">Quantity</th>
+                        <th style="width: 110px;" class="text-right">Rate (Rs.)</th>
+                        <th style="width: 120px;" class="text-right font-weight-bold">Total (Rs.)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php $totalQty = 0; $totalAmount = 0; @endphp
+                    @foreach($po->items as $index => $item)
+                        @php 
+                            $subtotal = $item->quantity * $item->rate;
+                            $totalQty += $item->quantity;
+                            $totalAmount += $subtotal;
+
+                            $ratioStr = '-';
+                            if(!empty($item->productSet->size_measurement->size_group)) {
+                                $sizes = array_map('trim', explode(',', $item->productSet->size_measurement->size_group));
+                                $counts = array_count_values($sizes);
+                                $parts = [];
+                                foreach($counts as $s => $c) {
+                                    $parts[] = $s . ':' . $c;
+                                }
+                                $ratioStr = implode(', ', $parts);
+                            }
+                        @endphp
+                        <tr>
+                            <td class="text-center">{{ $index + 1 }}</td>
+                            <td class="font-weight-bold">{{ $item->productSet->design_number ?? 'N/A' }}</td>
+                            <td>
+                                <div style="font-size: 11.5px; line-height: 1.4;">
+                                    <b>Color:</b> {{ $item->productSet->colors->name ?? 'N/A' }} &nbsp;|&nbsp; 
+                                    <b>Size:</b> {{ $item->productSet->size_set_name ?? 'N/A' }} &nbsp;|&nbsp; 
+                                    <b>Ratio:</b> <span class="text-success font-weight-bold">{{ $ratioStr }}</span><br>
+                                    <b>Fabric:</b> {{ $item->fabric_names ?: 'N/A' }}<br>
+                                    <b>Pattern:</b> {{ $item->pattern->name ?? '-' }} &nbsp;|&nbsp; 
+                                    <b>Fitting:</b> {{ $item->master_fitting->name ?? '-' }}
+                                    @if($item->belt) &nbsp;|&nbsp; <b>Belt:</b> {{ $item->belt }} @endif
+                                </div>
+                            </td>
+                            <td class="text-right font-weight-bold">{{ number_format($item->quantity) }}</td>
+                            <td class="text-right">{{ number_format($item->rate, 2) }}</td>
+                            <td class="text-right font-weight-bold text-primary">{{ number_format($subtotal, 2) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr class="bg-light font-weight-bold">
+                        <td colspan="3" class="text-right">TOTAL:</td>
+                        <td class="text-right font-weight-bold text-primary">{{ number_format($totalQty) }} Pcs</td>
+                        <td></td>
+                        <td class="text-right font-weight-bold text-primary">Rs. {{ number_format($totalAmount, 2) }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        @if(!empty($po->remark))
+            <div class="mb-3 p-2 border rounded bg-light" style="font-size: var(--erp-font-sm);">
+                <strong class="text-dark">Remark:</strong> {{ $po->remark }}
+            </div>
+        @endif
+
+        <!-- Signatures & Footer -->
+        <div class="row pt-4 mt-3 border-top">
+            <div class="col-6 text-center">
+                <div class="pt-4" style="border-top: 1px dashed #aaa; width: 60%; margin: 0 auto;">
+                    <strong>Prepared By</strong>
+                    <div class="small text-muted">{{ $po->items->first()->creator->name ?? 'System' }}</div>
+                </div>
+            </div>
+            <div class="col-6 text-center">
+                <div class="pt-4" style="border-top: 1px dashed #aaa; width: 60%; margin: 0 auto;">
+                    <strong>Authorized Signatory</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center text-muted small mt-3">
+            Thank you for your business! This is a system generated purchase order.
+        </div>
+    </div>
 </div>
 @endsection

@@ -1,269 +1,238 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper">
-
-    <!-- Page Header -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <h1 class="text-center">Cutting Master Production Order</h1>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar">
+        <div class="erp-header-title">
+            <i class="fas fa-file-invoice text-primary"></i> Cutting Master Production Order (CMPO: ID-{{ $header['cmpo_id'] }})
         </div>
-        <!-- Download Button -->
-            <div class="col-sm-12 text-right">
-                <a href="{{ route('admin.product_order.indexOrderSetDownload', ['id' => $header['cmpo_id']]) }}"
-                   class="btn btn-primary">
-                    <i class="fas fa-download"></i> Download
-                </a>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.product_order.indexOrderSetDownload', ['id' => $header['cmpo_id']]) }}" class="btn-erp btn-erp-primary" title="Download Cutting Slip PDF">
+                <i class="fas fa-download"></i> Download Slip
+            </a>
+            <button type="button" class="btn-erp btn-erp-yellow no-print" id="btnOpenEditFabrics" title="Update Assigned Fabrics">
+                <i class="fas fa-edit"></i> Edit Fabrics
+            </button>
+            <button type="button" class="btn-erp btn-erp-outline no-print" onclick="window.print()" title="Print Slip">
+                <i class="fas fa-print"></i> Print
+            </button>
+            <a href="javascript:history.back()" class="btn-erp btn-erp-outline no-print">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <!-- ERP Voucher Sheet -->
+    <div class="erp-voucher-sheet">
+        <!-- Header Section -->
+        <div class="erp-voucher-header d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="erp-voucher-title mb-1">Cutting Master Production Order</h4>
+                <div class="erp-company-meta text-muted">
+                    <b>Sales Order:</b> {{ $header['order_no'] }} &nbsp;|&nbsp; <b>Customer:</b> {{ $header['customer'] }}
+                </div>
             </div>
-    </section>
-
-    <!-- Main content -->
-    <section class="content">
-        <div class="container-fluid">
-
-            <style>
-                .cmpo-title {
-                    text-align: center;
-                    font-size: 22px;
-                    font-weight: bold;
-                    margin-bottom: 20px;
-                }
-
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                }
-
-                .meta-table td {
-                    padding: 6px;
-                    vertical-align: top;
-                }
-
-                .meta-label {
-                    font-weight: bold;
-                    width: 160px;
-                }
-
-                .section-title {
-                    text-align: center;
-                    font-weight: bold;
-                    font-size: 16px;
-                    margin: 25px 0 10px;
-                    text-transform: uppercase;
-                }
-
-                .data-table th,
-                .data-table td {
-                    border: 1px solid #000;
-                    padding: 6px;
-                    text-align: center;
-                }
-
-                .data-table th {
-                    background: #f2f2f2;
-                }
-
-                .signature-table td {
-                    padding-top: 40px;
-                    text-align: center;
-                }
-
-                .footer-note {
-                    margin-top: 15px;
-                    text-align: center;
-                    font-size: 12px;
-                    color: #555;
-                }
-
-                @media print {
-                    .no-print {
-                        display: none !important;
-                    }
-                }
-            </style>
-
-           
-            <!-- ================= HEADER DETAILS ================= -->
-            <table class="meta-table">
-                <tr>
-                    <td class="meta-label">ID:</td>
-                    <td>ID-{{ $header['cmpo_id'] }}</td>
-
-                    <td class="meta-label">Date:</td>
-                    <td>{{ $header['date'] }}</td>
-                </tr>
-
-                <tr>
-                    <td class="meta-label">Sales Order No:</td>
-                    <td>{{ $header['order_no'] }}</td>
-
-                    <td class="meta-label">Customer:</td>
-                    <td>{{ $header['customer'] }}</td>
-                </tr>
-
-                <tr>
-                    <td class="meta-label">Fabric:</td>
-                    <td>
-                        <div class="d-flex align-items-center justify-content-between">
-                            <span id="display-fabric-names">{{ $header['fabric'] }}</span>
-                            <button type="button" class="btn btn-xs btn-outline-primary ml-2 no-print" id="btnOpenEditFabrics" title="Update Assigned Fabrics">
-                                <i class="fas fa-edit"></i> Edit Fabrics
-                            </button>
-                        </div>
-                    </td>
-
-                    <td class="meta-label">Fitting:</td>
-                    <td>{{ $header['fitting'] }}</td>
-                </tr>
-
-                <tr>
-                    <td class="meta-label">Pattern:</td>
-                    <td>{{ $header['pattern'] }}</td>
-
-                    <td class="meta-label">Season:</td>
-                    <td>{{ $header['season'] ?? '-' }}</td>
-                </tr>
-
-                <tr>
-                    <td class="meta-label">Printing Unit:</td>
-                    <td>{{ $header['printing_unit_name'] }}</td>
-
-                    <td class="meta-label">Warehouse:</td>
-                    <td>{{ $header['warehouse_name'] }}</td>
-                </tr>
-
-                <tr>
-                    <td class="meta-label">Cutting Master:</td>
-                    <td>{{ $header['cuttingMaster'] }}</td>
-
-                    <td class="meta-label">Belt:</td>
-                    <td>{{ $header['belt'] ?? '-' }}</td>
-                </tr>
-
-                <tr>
-                    <td class="meta-label">Remark:</td>
-                    <td colspan="3">{{ $header['remark'] }}</td>
-                </tr>
-            </table>
-
-            <!-- ================= PRODUCT TABLE ================= -->
-            <div class="section-title">
-                Product & Quantity Details
+            <div class="text-right">
+                <span class="badge erp-badge-yellow px-2 py-1 font-weight-bold" style="font-size: 13px;">
+                    ID-{{ $header['cmpo_id'] }}
+                </span>
+                <div class="text-muted small mt-1 font-weight-bold">
+                    Date: {{ $header['date'] }}
+                </div>
             </div>
+        </div>
 
-            <table class="data-table">
+        <!-- Voucher Info Details -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <table class="erp-info-table">
+                    <tr>
+                        <td class="label-col">CMPO ID:</td>
+                        <td class="val-col font-weight-bold">ID-{{ $header['cmpo_id'] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label-col">Sales Order:</td>
+                        <td class="val-col">{{ $header['order_no'] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label-col">Customer:</td>
+                        <td class="val-col font-weight-bold">{{ $header['customer'] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label-col">Fabric:</td>
+                        <td class="val-col">
+                            <span id="display-fabric-names" class="font-weight-bold text-dark">{{ $header['fabric'] }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label-col">Fitting:</td>
+                        <td class="val-col">{{ $header['fitting'] }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="erp-info-table">
+                    <tr>
+                        <td class="label-col">Warehouse:</td>
+                        <td class="val-col">{{ $header['warehouse_name'] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label-col">Cutting Master:</td>
+                        <td class="val-col font-weight-bold">{{ $header['cuttingMaster'] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label-col">Pattern:</td>
+                        <td class="val-col">{{ $header['pattern'] }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label-col">Season:</td>
+                        <td class="val-col">{{ $header['season'] ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label-col">Printing Unit:</td>
+                        <td class="val-col">{{ $header['printing_unit_name'] }}</td>
+                    </tr>
+                </table>
+            </div>
+            @if(!empty($header['belt']) || !empty($header['remark']))
+                <div class="col-12 mt-2 pt-2 border-top">
+                    <div class="row">
+                        @if(!empty($header['belt']))
+                            <div class="col-md-6">
+                                <span class="text-muted font-weight-bold small text-uppercase">Belt:</span>
+                                <span class="font-weight-bold text-dark ml-1">{{ $header['belt'] }}</span>
+                            </div>
+                        @endif
+                        @if(!empty($header['remark']))
+                            <div class="col-md-6">
+                                <span class="text-muted font-weight-bold small text-uppercase">Remark:</span>
+                                <span class="font-weight-bold text-dark ml-1">{{ $header['remark'] }}</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+        </div>
+
+        <!-- Product Table -->
+        <h6 class="font-weight-bold text-uppercase border-bottom pb-1 mb-2" style="font-size: var(--erp-font-sm); color: var(--erp-text-heading);">
+            <i class="fas fa-boxes mr-1 text-primary"></i> Product & Quantity Details
+        </h6>
+
+        <div class="table-responsive mb-4">
+            <table class="erp-table table table-bordered table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>#</th>
+                        <th style="width: 45px;" class="text-center">#</th>
                         <th>Design No</th>
-                        <th>Color</th>
-                        <th>Size</th>
-                        <th>Ratio</th>
-                        <th>QTY (Per Size)</th>
+                        <th style="width: 140px;">Color</th>
+                        <th style="width: 120px;">Size</th>
+                        <th style="width: 100px;" class="text-center">Ratio</th>
+                        <th style="width: 140px;" class="text-right">QTY (Per Size)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @php 
-                        $totalHeaderPcs = 0; 
-                    @endphp
+                    @php $totalHeaderPcs = 0; @endphp
                     @foreach ($sizeData as $row)
                         @php $totalHeaderPcs += $row['pcs']; @endphp
                         <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $row['design_no'] }}</td>
+                            <td class="text-center">{{ $loop->iteration }}</td>
+                            <td class="font-weight-bold">{{ $row['design_no'] }}</td>
                             <td>{{ $row['color'] }}</td>
                             <td>{{ $row['size'] }}</td>
-                            <td>{{ $row['ratio'] ?? '-' }}</td>
-                            <td>{{ number_format($row['pcs'], 0) }}</td>
+                            <td class="text-center">{{ $row['ratio'] ?? '-' }}</td>
+                            <td class="text-right font-weight-bold text-primary">{{ number_format($row['pcs'], 0) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
-                    <tr>
-                        <th colspan="4" style="text-align:right;">Total</th>
-                        <th>{{ number_format(array_sum(array_column($sizeData, 'ratio')), 0) }}</th>
-                        <th>{{ number_format($totalHeaderPcs, 0) }}</th>
+                    <tr class="bg-light font-weight-bold">
+                        <th colspan="4" class="text-right">Total:</th>
+                        <th class="text-center">{{ number_format(array_sum(array_column($sizeData, 'ratio')), 0) }}</th>
+                        <th class="text-right text-primary font-weight-bold">{{ number_format($totalHeaderPcs, 0) }} pcs</th>
                     </tr>
                 </tfoot>
             </table>
+        </div>
 
-            <!-- ================= ASSIGNMENTS HISTORY ================= -->
-            @if(count($assignments) > 0)
-                <div class="section-title">
-                    Assignments History
-                </div>
+        <!-- Assignments History -->
+        @if(count($assignments) > 0)
+            <h6 class="font-weight-bold text-uppercase border-bottom pb-1 mb-2" style="font-size: var(--erp-font-sm); color: var(--erp-text-heading);">
+                <i class="fas fa-history mr-1 text-primary"></i> Assignments History
+            </h6>
 
-                <table class="data-table">
+            <div class="table-responsive mb-4">
+                <table class="erp-table table table-bordered table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>CMPO</th>
+                            <th style="width: 45px;" class="text-center">#</th>
+                            <th style="width: 120px;">CMPO ID</th>
                             <th>Cutting Master</th>
-                            <th>Assigned QTY</th>
-                            <th>Assigned Date</th>
+                            <th style="width: 130px;" class="text-right">Assigned QTY</th>
+                            <th style="width: 140px;" class="text-center">Assigned Date</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($assignments as $assignment)
                             <tr>
-                                <td>{{ $loop->iteration }}</td>
-                                <td>{{ $assignment->id }}</td>
+                                <td class="text-center">{{ $loop->iteration }}</td>
+                                <td class="font-weight-bold">ID-{{ $assignment->id }}</td>
                                 <td>{{ $assignment->cutting_master->name ?? '-' }} ({{ $assignment->cutting_master->masterFabricWarehouse->cutting_master_name ?? '-' }})</td>
-                                <td>{{ $assignment->quantity }}</td>
-                                <td>{{ $assignment->created_at->format('d-m-Y') }}</td>
+                                <td class="text-right font-weight-bold text-primary">{{ $assignment->quantity }}</td>
+                                <td class="text-center">{{ $assignment->created_at->format('d-m-Y') }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                     <tfoot>
-                        <tr>
-                            <th colspan="3" style="text-align:right;">Total Assigned</th>
-                            <th>{{ $assignments->sum('quantity') }}</th>
+                        <tr class="bg-light font-weight-bold">
+                            <th colspan="3" class="text-right">Total Assigned:</th>
+                            <th class="text-right text-primary font-weight-bold">{{ $assignments->sum('quantity') }}</th>
                             <th></th>
                         </tr>
                     </tfoot>
                 </table>
-            @endif
-
-            <!-- ================= SIGNATURE ================= -->
-            <table class="signature-table" width="100%">
-                <tr>
-                    <td>
-                        _______________________<br>
-                        <strong>Prepared By</strong>
-                    </td>
-                    <td>
-                        _______________________<br>
-                        <strong>Authorized Sign</strong>
-                    </td>
-                </tr>
-            </table>
-
-            <div class="footer-note">
-                This is a system generated sales order slip.
             </div>
+        @endif
 
+        <!-- Signatures -->
+        <div class="row pt-4 mt-3 border-top">
+            <div class="col-6 text-center">
+                <div class="pt-4" style="border-top: 1px dashed #aaa; width: 60%; margin: 0 auto;">
+                    <strong>Prepared By</strong>
+                </div>
+            </div>
+            <div class="col-6 text-center">
+                <div class="pt-4" style="border-top: 1px dashed #aaa; width: 60%; margin: 0 auto;">
+                    <strong>Authorized Signatory</strong>
+                </div>
+            </div>
         </div>
-    </section>
+
+        <div class="text-center text-muted small mt-3">
+            This is a system generated cutting slip from SNAPKID ERP.
+        </div>
+    </div>
 </div>
 
-<!-- ================= EDIT ASSIGNED FABRICS MODAL ================= -->
+<!-- EDIT ASSIGNED FABRICS MODAL -->
 <div class="modal fade" id="editFabricsModal" tabindex="-1" role="dialog" aria-labelledby="editFabricsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-        <div class="modal-content">
+        <div class="modal-content" style="border-radius: 6px; overflow: hidden; border: 1px solid var(--erp-border);">
             <form id="editFabricsForm">
                 @csrf
                 <input type="hidden" name="id" value="{{ $header['cmpo_id'] }}">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title font-weight-bold" id="editFabricsModalLabel">
-                        <i class="fas fa-layer-group text-primary mr-1"></i> Update Assigned Fabrics (CMPO: ID-{{ $header['cmpo_id'] }})
+                <div class="modal-header py-2 px-3" style="background: var(--erp-green-primary); color: #fff;">
+                    <h5 class="modal-title font-weight-bold" style="font-size: var(--erp-font-md);" id="editFabricsModalLabel">
+                        <i class="fas fa-layer-group mr-1"></i> Update Assigned Fabrics (CMPO: ID-{{ $header['cmpo_id'] }})
                     </h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.9;">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body p-3">
                     <div id="fabrics-modal-loader" class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
+                        <div class="spinner-border text-success" role="status">
                             <span class="sr-only">Loading...</span>
                         </div>
                         <p class="text-muted mt-2 mb-0">Loading fabric details...</p>
@@ -275,28 +244,28 @@
                             <strong>Policy:</strong> Fabrics marked as 
                             <span class="badge badge-warning text-dark"><i class="fas fa-lock"></i> Used in Lot (Locked)</span> 
                             cannot be removed because production lots have already used them. 
-                            Unused fabrics can be removed, and additional fabrics can be added below.
+                            Unused fabrics can be unchecked to remove, and additional fabrics can be added below.
                         </div>
 
-                        <div class="form-group mb-3">
-                            <label class="font-weight-bold mb-2">Currently Assigned Fabrics:</label>
+                        <div class="erp-form-group mb-3">
+                            <label class="erp-filter-label mb-2">Currently Assigned Fabrics:</label>
                             <div id="assigned-fabrics-container" class="border rounded p-3 bg-light">
                                 <!-- Populated dynamically via AJAX -->
                             </div>
                         </div>
 
-                        <div class="form-group mb-2">
-                            <label class="font-weight-bold mb-1">Add More Fabrics:</label>
-                            <select id="select_additional_fabrics" class="form-control select2" multiple="multiple" style="width: 100%;">
+                        <div class="erp-form-group mb-2">
+                            <label class="erp-filter-label mb-1">Add More Fabrics:</label>
+                            <select id="select_additional_fabrics" class="form-control select2 erp-input" multiple="multiple" style="width: 100%;">
                                 <!-- Populated dynamically via AJAX -->
                             </select>
                             <small class="form-text text-muted">Select new fabrics to add to this cutting order.</small>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary" id="btnSaveFabrics">
+                <div class="modal-footer py-2 px-3 bg-light">
+                    <button type="button" class="btn-erp btn-erp-outline" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn-erp btn-erp-primary" id="btnSaveFabrics">
                         <i class="fas fa-save mr-1"></i> Save Changes
                     </button>
                 </div>
@@ -309,7 +278,6 @@
 @section('scripts')
 <script>
 $(document).ready(function() {
-    // Open Edit Fabrics Modal
     $('#btnOpenEditFabrics').on('click', function() {
         $('#editFabricsModal').modal('show');
         $('#fabrics-modal-loader').show();
@@ -349,7 +317,7 @@ $(document).ready(function() {
                                     <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
                                         <div class="custom-control custom-checkbox">
                                             <input type="checkbox" class="custom-control-input assigned-fab-chk" name="fabric_ids[]" id="fab_chk_${fab.id}" value="${fab.id}" checked>
-                                            <label class="custom-control-label" for="fab_chk_${fab.id}">${fab.name}</label>
+                                            <label class="custom-control-label font-weight-bold text-dark" for="fab_chk_${fab.id}">${fab.name}</label>
                                         </div>
                                         <div>
                                             <span class="badge badge-success px-2 py-1">
@@ -365,7 +333,6 @@ $(document).ready(function() {
                     }
                     $('#assigned-fabrics-container').html(assignedHtml);
 
-                    // Populate additional fabrics dropdown (exclude already assigned)
                     let availableHtml = '';
                     if (res.available_fabrics && res.available_fabrics.length > 0) {
                         res.available_fabrics.forEach(function(avail) {
@@ -383,29 +350,25 @@ $(document).ready(function() {
                     $('#fabrics-modal-loader').hide();
                     $('#fabrics-modal-content').show();
                 } else {
-                    alert(res.message || 'Failed to fetch fabrics');
+                    Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'Failed to fetch fabrics' });
                     $('#editFabricsModal').modal('hide');
                 }
             },
             error: function() {
-                alert('Error loading fabric data.');
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Error loading fabric data.' });
                 $('#editFabricsModal').modal('hide');
             }
         });
     });
 
-    // Handle Form Submission
     $('#editFabricsForm').on('submit', function(e) {
         e.preventDefault();
 
         let selectedIds = [];
-
-        // 1. Gather all checked or locked fabric IDs from assigned container
         $('#assigned-fabrics-container input[name="fabric_ids[]"]:checked, #assigned-fabrics-container input[type="hidden"][name="fabric_ids[]"]').each(function() {
             selectedIds.push($(this).val());
         });
 
-        // 2. Gather all newly selected additional fabric IDs
         let additionalSelected = $('#select_additional_fabrics').val();
         if (additionalSelected && additionalSelected.length > 0) {
             additionalSelected.forEach(function(id) {

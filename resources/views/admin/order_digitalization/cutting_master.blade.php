@@ -110,97 +110,78 @@
         }
     </style>
     <style>
-        /* default look */
+        .action-btn-group {
+            display: inline-flex;
+            background: #fff;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            padding: 3px;
+            gap: 4px;
+        }
         .action-btn {
-            color: #fff;
+            color: #4b5563;
+            background: transparent;
             border: none;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 4px;
+            transition: all 0.2s ease;
         }
-
-        /* individual colors */
-        .btn-rolls {
-            background: #6f42c1;
-        }
-
-        /* Purple */
-        .btn-time {
-            background: #20c997;
-        }
-
-        /* Teal/Green */
-        .btn-stitching {
-            background: #fd7e14;
-        }
-
-        /* Orange */
-        .btn-printing {
-            background: #17a2b8;
-        }
-
-        /* Cyan */
-        .btn-emb {
-            background: #e83e8c;
-        }
-
-        /* Pink */
-
-        /* highlight when active */
-        .action-btn.active {
-            box-shadow: 0 0 0 3px rgba(0, 0, 0, .08);
-            filter: brightness(1.05);
-        }
-
-        /* hover */
         .action-btn:hover {
-            filter: brightness(1.1);
+            background: #f1f8ed;
+            color: #05421c;
+        }
+        .action-btn.active {
+            background: #05421c !important;
+            color: #fff !important;
+            box-shadow: 0 2px 4px rgba(5,66,28,0.2);
         }
     </style>
 
     <div class="content-wrapper">
 
-        {{-- HEADER --}}
-        <section class="content-header">
-            <div class="container-fluid text-center">
-                <h2 class="mb-3">Production Slip – Cutting Master
-                    @if($cutting_slip && $cutting_slip->status == 1)
-                        <span class="badge badge-warning" style="font-size: 14px; vertical-align: middle;">Partially
-                            Digitized</span>
+        <div class="erp-page p-2">
+            <!-- HEADER BAR -->
+            <div class="erp-header-bar mb-2">
+                <div class="erp-header-title d-flex align-items-center flex-wrap">
+                    <i class="fas fa-cut mr-2 text-success"></i>
+                    <span>Cutting Master Digitalization</span>
+                    @if($cutting_slip)
+                        <span class="badge ml-2 px-2 py-1 font-weight-bold" style="background:#edf7e4; color:#05421c; border:1px solid #c3e6cb; font-size:12px;">
+                            Slip #{{ $cutting_slip->id }}
+                        </span>
+                        @if($cutting_slip->status == 1)
+                            <span class="badge badge-warning ml-2 px-2 py-1" style="font-size: 11px;">Partially Digitized</span>
+                        @endif
                     @endif
-                </h2>
+                </div>
 
-
-
-                {{-- ACTION BUTTONS --}}
-                <div class="action-btn-group mb-3">
-                    <button class="btn action-btn btn-rolls active" data-target="rolls">
-                        Rolls Allot
+                <!-- TABS (Rolls Allot / Send to Stitching / Send to Printing) -->
+                <div class="action-btn-group my-1 my-md-0">
+                    <button type="button" class="action-btn btn-rolls active" data-target="rolls">
+                        <i class="fas fa-scroll mr-1"></i> Rolls Allot
                     </button>
-
-                    <button class="btn action-btn btn-stitching" data-target="stitching">
-                        Send to Stitching
+                    <button type="button" class="action-btn btn-stitching" data-target="stitching">
+                        <i class="fas fa-tshirt mr-1"></i> Send to Stitching
                     </button>
-
-                    <button class="btn action-btn btn-printing" data-target="printing">
-                        Send to Printing
+                    <button type="button" class="action-btn btn-printing" data-target="printing">
+                        <i class="fas fa-print mr-1"></i> Send to Printing
                     </button>
+                </div>
 
-                    @if(request('is_skip') == 1)
-                        <!-- <a href="{{ route('admin.order_digitalization.cutting-master') }}"
-                                                                                                                                                                                                                        class="btn btn-secondary">
-                                                                                                                                                                                                                            View Normal Slips
-                                                                                                                                                                                                                        </a> -->
-
-
-                    @else
-                        <!-- <a href="{{ route('admin.order_digitalization.cutting-master', ['is_skip' => 1]) }}"
-                                                                                                                                                                                                                        class="btn btn-secondary">
-                                                                                                                                                                                                                            View Skipped Slips
-                                                                                                                                                                                                                        </a> -->
+                <div class="erp-header-actions">
+                    <a href="{{ route('admin.uploaded-slips.index') }}" class="btn-erp btn-erp-outline">
+                        <i class="fas fa-arrow-left mr-1"></i> Back to Slips
+                    </a>
+                    @if($cutting_slip)
+                        <a href="{{ route('admin.uploaded-slips.show', $cutting_slip->id) }}" target="_blank" class="btn-erp btn-erp-outline ml-2">
+                            <i class="fas fa-eye mr-1"></i> View Slip Details
+                        </a>
                     @endif
-
-
                 </div>
             </div>
-        </section>
+            
 
         {{-- MAIN CONTENT --}}
         <section class="content">
@@ -283,7 +264,7 @@
                                                 <div class="col-md-6">
                                                     <div class="card p-2 mt-3 border">
                                                         <label class="font-weight-bold text-dark">Total Pieces <span class="text-danger">*</span></label>
-                                                        <input type="number" min="1" name="total_pieces" id="slip_total_pieces_rolls" class="form-control font-weight-bold text-primary" placeholder="Enter Slip Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}" required>
+                                                        <input type="number" min="1" name="total_pieces" id="slip_total_pieces_rolls" class="form-control font-weight-bold" style="color: #05421c;" placeholder="Enter Slip Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}" required>
                                                     </div>
                                                 </div>
                                             </div>
@@ -293,23 +274,23 @@
                                             @endphp
                                             @if(!empty($cuttingDigitizedPieces) || !empty($cuttingTargetPieces))
                                                 <div class="mt-2 mb-2">
-                                                    <div class="p-2 px-3 rounded border d-flex justify-content-between align-items-center flex-wrap shadow-xs" style="background-color: #f8fafc; border-color: #cbd5e1 !important;">
+                                                    <div class="p-2 px-3 rounded border d-flex justify-content-between align-items-center flex-wrap" style="background-color: #fafdf8; border-color: #c3e6cb !important;">
                                                         <div class="d-flex align-items-center">
-                                                            <i class="fas fa-layer-group text-primary mr-2" style="font-size: 15px;"></i>
-                                                            <span class="text-dark font-weight-bold" style="font-size: 13px;">Digitized so far:</span>
-                                                            <span class="badge badge-primary px-2 py-1 ml-2 font-weight-bold" style="font-size: 13px;">{{ $cuttingDigitizedPieces }} pcs</span>
+                                                            <i class="fas fa-layer-group mr-2" style="color: #05421c; font-size: 14px;"></i>
+                                                            <span class="text-dark font-weight-bold" style="font-size: 12px;">Digitized so far:</span>
+                                                            <span class="badge px-2 py-1 ml-2 font-weight-bold" style="background:#05421c; color:#fff; font-size: 12px;">{{ $cuttingDigitizedPieces }} pcs</span>
                                                         </div>
                                                         @if(!empty($cuttingTargetPieces))
                                                             <div class="d-flex align-items-center mt-1 mt-sm-0">
-                                                                <span class="text-dark font-weight-bold mr-1" style="font-size: 13px;">Target:</span>
-                                                                <span class="badge badge-secondary px-2 py-1 mr-2 font-weight-bold" style="font-size: 13px;">{{ $cuttingTargetPieces }} pcs</span>
+                                                                <span class="text-muted font-weight-bold mr-1" style="font-size: 12px;">Target:</span>
+                                                                <span class="badge badge-light border px-2 py-1 mr-2 font-weight-bold" style="font-size: 12px;">{{ $cuttingTargetPieces }} pcs</span>
                                                                 @php $rem = (int)$cuttingTargetPieces - (int)$cuttingDigitizedPieces; @endphp
                                                                 @if($rem > 0)
-                                                                    <span class="badge badge-warning text-dark px-2 py-1 font-weight-bold" style="font-size: 12px;"><i class="fas fa-hourglass-half mr-1"></i> {{ $rem }} pcs remaining</span>
+                                                                    <span class="badge px-2 py-1 font-weight-bold" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; font-size: 11px;"><i class="fas fa-hourglass-half mr-1"></i> {{ $rem }} pcs remaining</span>
                                                                 @elseif($rem == 0)
-                                                                    <span class="badge badge-success px-2 py-1 font-weight-bold" style="font-size: 12px;"><i class="fas fa-check mr-1"></i> Exact Match</span>
+                                                                    <span class="badge px-2 py-1 font-weight-bold" style="background:#edf7e4; color:#05421c; border:1px solid #c3e6cb; font-size: 11px;"><i class="fas fa-check mr-1"></i> Exact Match</span>
                                                                 @else
-                                                                    <span class="badge badge-danger px-2 py-1 font-weight-bold" style="font-size: 12px;"><i class="fas fa-exclamation-triangle mr-1"></i> {{ abs($rem) }} pcs excess</span>
+                                                                    <span class="badge badge-danger px-2 py-1 font-weight-bold" style="font-size: 11px;"><i class="fas fa-exclamation-triangle mr-1"></i> {{ abs($rem) }} pcs excess</span>
                                                                 @endif
                                                             </div>
                                                         @endif
@@ -426,7 +407,7 @@
 
                                     {{-- STITCHING FORM --}}
                                     <div class="form-section" id="form-stitching">
-                                        <h5 class="mb-4 text-primary font-weight-bold">Send to Stitching</h5>
+                                        <h5 class="mb-4 font-weight-bold" style="color: #05421c;"><i class="fas fa-tshirt text-success mr-2"></i>Send to Stitching</h5>
 
                                         <form method="POST" id="stitchingForm"
                                             action="{{ route('admin.order_digitalization.store-stitching') }}">
@@ -478,7 +459,7 @@
                                                 <div class="col-md-6">
                                                     <div class="form-group border p-2 mt-2">
                                                         <label class="font-weight-bold text-dark">Total Pieces <span class="text-danger">*</span></label>
-                                                        <input type="number" min="1" name="total_pieces" class="form-control font-weight-bold text-primary" placeholder="Enter Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}" required>
+                                                        <input type="number" min="1" name="total_pieces" class="form-control font-weight-bold" style="color: #05421c;" placeholder="Enter Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}" required>
                                                     </div>
                                                 </div>
                                             </div>
@@ -510,7 +491,7 @@
                                                 </div>
                                                 <div class="col-md-6 mb-2">
                                                     <button type="submit" onclick="setFinal(this,1)"
-                                                        class="btn btn-success btn-lg w-100 shadow-sm">
+                                                        class="btn btn-success btn-lg w-100 shadow-sm" style="background:#05421c; border-color:#05421c;">
                                                         <i class="fas fa-check-double mr-2"></i> Final Submission
                                                     </button>
                                                 </div>
@@ -519,7 +500,7 @@
                                     </div>
                                     {{-- PRINTING FORM --}}
                                     <div class="form-section" id="form-printing">
-                                        <h5 class="mb-4 text-primary font-weight-bold">Send to Printing</h5>
+                                        <h5 class="mb-4 font-weight-bold" style="color: #05421c;"><i class="fas fa-print text-success mr-2"></i>Send to Printing</h5>
 
                                         <form method="POST" id="printingForm"
                                             action="{{ route('admin.order_digitalization.store-printing') }}">
@@ -571,7 +552,7 @@
                                                 <div class="col-md-6">
                                                     <div class="form-group border p-2 mt-2">
                                                         <label class="font-weight-bold text-dark">Total Pieces <span class="text-danger">*</span></label>
-                                                        <input type="number" min="1" name="total_pieces" class="form-control font-weight-bold text-primary" placeholder="Enter Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}" required>
+                                                        <input type="number" min="1" name="total_pieces" class="form-control font-weight-bold" style="color: #05421c;" placeholder="Enter Total Pieces" value="{{ old('total_pieces', $cutting_slip->total_pieces ?? '') }}" required>
                                                     </div>
                                                 </div>
                                             </div>
@@ -635,9 +616,9 @@
                                             Skip Slip
                                         </button> --}}
                                     </form>
-                                    <button type="button" class="btn btn-primary btn-sm position-absolute rotate-btn"
+                                    <button type="button" class="btn-erp btn-erp-primary btn-sm position-absolute rotate-btn"
                                         onclick="rotateImage()">
-                                        Rotate ↻
+                                        <i class="fas fa-redo-alt mr-1"></i> Rotate ↻
                                     </button>
                                     {{-- <img id="slipImage"
                                         src="{{ asset('assets/production_slips/' . ($cutting_slip->slip_file ?? '')) }}"
@@ -700,6 +681,7 @@
                     </div>
         </section>
 
+        </div> {{-- End erp-page --}}
     </div>
 
     {{-- SCRIPT --}}
@@ -1162,11 +1144,11 @@
 
                 // Show loading
                 detailsContainer.html(`
-                                                                                                                <div class="text-center py-3">
-                                                                                                                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-                                                                                                                    <p class="mt-2">Loading lot details...</p>
-                                                                                                                </div>
-                                                                                                            `).show();
+                    <div class="text-center py-3">
+                        <i class="fas fa-spinner fa-spin fa-2x" style="color: #05421c;"></i>
+                        <p class="mt-2 text-muted">Loading lot details...</p>
+                    </div>
+                `).show();
 
                 // Fetch lot details
                 $.ajax({
@@ -1181,20 +1163,20 @@
                             displayLotDetails(data, detailsContainer);
                         } else {
                             detailsContainer.html(`
-                                                                                                                            <div class="alert alert-warning">
-                                                                                                                                <i class="fas fa-exclamation-triangle mr-2"></i>
-                                                                                                                                No details found for this lot.
-                                                                                                                            </div>
-                                                                                                                        `);
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    No details found for this lot.
+                                </div>
+                            `);
                         }
                     },
                     error: function () {
                         detailsContainer.html(`
-                                                                                                                        <div class="alert alert-danger">
-                                                                                                                            <i class="fas fa-times-circle mr-2"></i>
-                                                                                                                            Error loading lot details. Please try again.
-                                                                                                                        </div>
-                                                                                                                    `);
+                            <div class="alert alert-danger">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                Error loading lot details. Please try again.
+                            </div>
+                        `);
                     }
                 });
             });
@@ -1224,7 +1206,7 @@
                 let orderBadges = '';
                 if (data.order_numbers && data.order_numbers.length > 0) {
                     orderBadges = data.order_numbers.map(sku =>
-                        `<span class="badge badge-soft-primary mr-1 mb-1">${sku}</span>`
+                        `<span class="badge mr-1 mb-1 font-weight-bold" style="background:#edf7e4; color:#05421c; border:1px solid #c3e6cb;">${sku}</span>`
                     ).join('');
                 } else {
                     orderBadges = '<span class="text-muted small">No order data</span>';
@@ -1235,11 +1217,11 @@
                 if (data.size_wise_quantities && Object.keys(data.size_wise_quantities).length > 0) {
                     for (const [size, qty] of Object.entries(data.size_wise_quantities)) {
                         sizeModalRows += `
-                                                                                                            <tr>
-                                                                                                                <td class="font-weight-bold text-primary">${size}</td>
-                                                                                                                <td>${qty} pcs</td>
-                                                                                                            </tr>
-                                                                                                        `;
+                            <tr>
+                                <td class="font-weight-bold" style="color: #05421c;">${size}</td>
+                                <td>${qty} pcs</td>
+                            </tr>
+                        `;
                     }
                 }
 

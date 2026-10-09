@@ -70,12 +70,12 @@ class PackingService
             })
             ->addColumn('status', function ($row) {
                 if ($row->status == 1) {
-                    return '<span class="badge badge-success">Finalized</span>';
+                    return '<span class="badge px-2 py-1 font-weight-bold" style="background: #edf7e4; color: #05421c; border: 1px solid #c3e6cb; border-radius: 4px;">Finalized</span>';
                 }
-                return '<span class="badge badge-warning">In-Progress</span>';
+                return '<span class="badge px-2 py-1 font-weight-bold" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; border-radius: 4px;">In-Progress</span>';
             })
             ->addColumn('action', function ($row) {
-                $btn = '<a href="' . route('admin.packing.view', $row->id) . '" class="btn btn-info btn-sm mr-1"><i class="fas fa-eye"></i> View Details</a>';
+                $btn = '<div class="d-flex align-items-center justify-content-center"><a href="' . route('admin.packing.view', $row->id) . '" class="erp-action-btn erp-btn-view" title="View Details"><i class="fas fa-eye"></i></a></div>';
                 return $btn;
             })
             ->rawColumns(['status', 'action'])

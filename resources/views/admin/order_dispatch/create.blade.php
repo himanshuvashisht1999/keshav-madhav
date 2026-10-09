@@ -1,72 +1,70 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim Header Bar -->
+    <div class="erp-header-bar mb-2 d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <h5 class="erp-header-title mb-0">
+                <i class="fas fa-truck text-warning mr-1"></i> Create Corporate Order Dispatch
+            </h5>
+        </div>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.order-dispatch.index') }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Dispatches
+            </a>
+        </div>
+    </div>
 
-        <!-- PAGE HEADER -->
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row align-items-center">
-                    <div class="col-sm-6">
-                        <h1 class="mb-0">Order Dispatch</h1>
-                        <small class="text-muted">Search order, verify cartons & dispatch</small>
+    <form method="POST" action="{{ route('admin.order-dispatch.store') }}">
+        @csrf
+
+        <!-- SEARCH SUMMARY -->
+        <div class="erp-card mb-2">
+            <div class="erp-card-header py-2 px-3">
+                <span class="erp-card-title mb-0 font-weight-bold" style="font-size: 13px;">
+                    <i class="fas fa-search text-muted mr-1"></i> Search Order for Dispatch
+                </span>
+            </div>
+            <div class="card-body p-3">
+                <div class="row align-items-end">
+                    <div class="col-md-3 mb-2">
+                        <label class="erp-filter-label" style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Order No</label>
+                        <select id="search_order_no" name="search_order_no" class="form-control form-control-sm erp-input select2">
+                            <option value="">Select Order No</option>
+                            @foreach ($orders as $order)
+                                <option value="{{ $order->id }}">
+                                    {{ $order->order_no }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-1 mb-2 text-center text-muted font-weight-bold" style="font-size: 11px; line-height: 30px;">
+                        OR
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <label class="erp-filter-label" style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Customer</label>
+                        <select id="customer_id" class="form-control form-control-sm erp-input select2">
+                            <option value="">Select Customer</option>
+                            @foreach($customers as $customer)
+                                <option value="{{ $customer->id }}">
+                                    {{ $customer->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <label class="erp-filter-label" style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Order No</label>
+                        <select id="order_no" name="order_no" class="form-control form-control-sm erp-input select2">
+                            <option value="">Select Order No</option>
+                        </select>
                     </div>
                 </div>
             </div>
-        </section>
-
-        <!-- CONTENT -->
-        <section class="content">
-            <div class="container-fluid">
-
-                <form method="POST" action="{{ route('admin.order-dispatch.store') }}">
-                    @csrf
-
-                    <!-- SEARCH SUMMARY -->
-                    <div class="card shadow-sm mb-3">
-                        <div class="card-body">
-                            <div class="row align-items-end">
-
-                                <div class="col-md-3">
-                                    <label class="font-weight-semibold">Order No</label>
-                                    {{-- <input type="text" id="search_order_no" name="search_order_no" class="form-control"
-                                        placeholder="Enter Order Number"> --}}
-                                    <select id="search_order_no" name="search_order_no" class="form-control select2">
-                                        <option value="">Select Order No</option>
-                                        @foreach ($orders as $order)
-                                            <option value="{{ $order->id }}">
-                                                {{ $order->order_no }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-1 text-center text-muted font-weight-bold">
-                                    OR
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="font-weight-semibold">Customer</label>
-                                    <select id="customer_id" class="form-control select2">
-                                        <option value="">Select Customer</option>
-                                        @foreach($customers as $customer)
-                                            <option value="{{ $customer->id }}">
-                                                {{ $customer->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="font-weight-semibold">Order No</label>
-                                    <select id="order_no" name="order_no" class="form-control select2">
-                                        <option value="">Select Order No</option>
-                                    </select>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
+        </div>
 
                     <!-- DOCUMENT TOGGLE -->
                     <div class="text-right mb-2 d-none" id="docToggleWrapper">
@@ -225,17 +223,14 @@
                         <div class="col-12 text-right">
                             <input type="hidden" name="final_order_no" id="final_order_no">
                             <input type="hidden" name="final_customer_id" id="final_customer_id">
-                            <button class="btn btn-success btn-lg px-4" id="submitDispatchBtn" disabled>
-                                <i class="fas fa-truck mr-1"></i> Submit
+                            <button class="btn btn-sm btn-erp-primary px-4 py-2 font-weight-bold" id="submitDispatchBtn" disabled>
+                                <i class="fas fa-truck mr-1"></i> Submit Dispatch
                             </button>
                         </div>
                     </div>
 
                 </form>
-
             </div>
-        </section>
-    </div>
 
     {{-- ================= STYLES ================= --}}
     <style>

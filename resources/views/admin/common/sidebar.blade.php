@@ -35,8 +35,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                         @endphp
                         <li class="{{ $isFabricActive ? 'nav-item menu-open' : 'nav-item' }}">
                             <a href="#"
-                                class="{{ $isFabricActive ? 'nav-link active' : 'nav-link' }} border_class"
-                                style="position:static;">
+                                class="{{ $isFabricActive ? 'nav-link active' : 'nav-link' }} border_class">
                                 <i class="nav-icon fas fa-layer-group"></i>
                                 <p>
                                     FABRIC
@@ -122,24 +121,69 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                             <p>Sales Order</p>
                         </a>
                     </li> -->
-                    @can('manage-sales-order')
-                        <li class="nav-item">
-                            <a href="{{ route('admin.product_order.indexOrder') }}"
-                                class="{{ str_contains($page_url, 'admin/production-order') && !str_contains($page_url, 'po-list') ? 'nav-link active' : 'nav-link' }} border_class"
-                                style="position:static;">
-                                <i class="nav-icon fas fa-industry"></i>
-                                <p>CORPORATE ORDER</p>
+                    @if(auth()->user()->can('manage-sales-order') || auth()->user()->can('manage-packing-module') || auth()->user()->can('manage-order-dispatch'))
+                        @php
+                            $isPackingActive = (str_contains($page_url, 'admin/packing') && !str_contains($page_url, 'admin/packing/rework-list'));
+                            $isReworkActive = str_contains($page_url, 'admin/packing/rework-list');
+                            $isDispatchActive = str_contains($page_url, 'admin/order-dispatch');
+                            $isPoListActive = (str_contains($page_url, 'admin/production-order/po-list') || str_contains($page_url, 'admin/production-order/po/') || str_contains($page_url, 'admin/production-order/bulk-po'));
+                            $isOrderActive = ((str_contains($page_url, 'admin/production-order') || str_contains($page_url, 'admin/sales-order') || str_contains($page_url, 'admin/report/order-summary')) && !$isPoListActive);
+                            $isCorporateActive = ($isOrderActive || $isPoListActive || $isPackingActive || $isReworkActive || $isDispatchActive);
+                        @endphp
+                        <li class="{{ $isCorporateActive ? 'nav-item menu-open' : 'nav-item' }}">
+                            <a href="#"
+                                class="{{ $isCorporateActive ? 'nav-link active' : 'nav-link' }} border_class">
+                                <i class="nav-icon fas fa-building"></i>
+                                <p>
+                                    CORPORATE
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
                             </a>
+                            <ul class="nav nav-treeview">
+                                @can('manage-sales-order')
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.product_order.indexOrder') }}"
+                                            class="{{ $isOrderActive ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Corporate Order</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.product_order.poList') }}"
+                                            class="{{ $isPoListActive ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Production PO List</p>
+                                        </a>
+                                    </li>
+                                @endcan
+                                @can('manage-packing-module')
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.packing.index') }}"
+                                            class="{{ $isPackingActive ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Packing Module</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.packing.reworkList') }}"
+                                            class="{{ $isReworkActive ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Defect / Rework List</p>
+                                        </a>
+                                    </li>
+                                @endcan
+                                @can('manage-order-dispatch')
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.order-dispatch.index') }}"
+                                            class="{{ $isDispatchActive ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Corporate Order Dispatch</p>
+                                        </a>
+                                    </li>
+                                @endcan
+                            </ul>
                         </li>
-                        <li class="nav-item">
-                            <a href="{{ route('admin.product_order.poList') }}"
-                                class="{{ str_contains($page_url, 'admin/production-order/po-list') ? 'nav-link active' : 'nav-link' }} border_class"
-                                style="position:static;">
-                                <i class="nav-icon fas fa-list-alt"></i>
-                                <p>PRODUCTION PO LIST</p>
-                            </a>
-                        </li>
-                    @endcan
+                    @endif
                     <!-- <li class="nav-item">
                         <a href="{{ route('admin.order_digitalization.cutting-master') }}"
                             class="{{ str_contains($page_url, 'admin/order_digitalization/cutting-master') ? 'nav-link active' : 'nav-link' }} border_class"
@@ -149,34 +193,51 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                             <p>Cutting Master Slip</p>
                         </a>
                     </li> -->
-                    @can('manage-uploaded-slips')
-                        <li class="nav-item">
-                            <a href="{{ route('admin.uploaded-slips.index') }}"
-                                class="{{ (str_contains($page_url, 'admin/uploaded-slips') && !str_contains($page_url, 'admin/uploaded-slips/packing')) || str_contains($page_url, 'admin/packing/process') || str_contains($page_url, 'admin/order_digitalization/create-slips-production') || str_contains($page_url, 'admin/order_digitalization/cutting-master') ? 'nav-link active' : 'nav-link' }} border_class"
-                                style="position:static;">
-                                <i class="fas fa-file-upload"></i>
-                                <p>UPLOADED SLIPS</p>
+                    @if(auth()->user()->can('manage-uploaded-slips') || auth()->user()->can('manage-time-allocation'))
+                        @php
+                            $isSlipsActive = ((str_contains($page_url, 'admin/uploaded-slips') && !str_contains($page_url, 'admin/uploaded-slips/packing')) || str_contains($page_url, 'admin/order_digitalization/create-slips-production') || str_contains($page_url, 'admin/order_digitalization/cutting-master'));
+                            $isSlipPackingActive = str_contains($page_url, 'admin/uploaded-slips/packing');
+                            $isTimeAllocActive = str_contains($page_url, 'admin/time-allocation');
+                            $isDigitizedSlipsActive = ($isSlipsActive || $isSlipPackingActive || $isTimeAllocActive);
+                        @endphp
+                        <li class="{{ $isDigitizedSlipsActive ? 'nav-item menu-open' : 'nav-item' }}">
+                            <a href="#"
+                                class="{{ $isDigitizedSlipsActive ? 'nav-link active' : 'nav-link' }} border_class">
+                                <i class="nav-icon fas fa-file-invoice"></i>
+                                <p>
+                                    DIGITIZED SLIPS
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
                             </a>
+                            <ul class="nav nav-treeview">
+                                @can('manage-uploaded-slips')
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.uploaded-slips.index') }}"
+                                            class="{{ $isSlipsActive ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Uploaded Slips</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.uploaded-slips.packing') }}"
+                                            class="{{ $isSlipPackingActive ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Uploaded Slip Packing</p>
+                                        </a>
+                                    </li>
+                                @endcan
+                                @can('manage-time-allocation')
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.time_allocation.index') }}"
+                                            class="{{ $isTimeAllocActive ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Time Allocation</p>
+                                        </a>
+                                    </li>
+                                @endcan
+                            </ul>
                         </li>
-                        <li class="nav-item">
-                            <a href="{{ route('admin.uploaded-slips.packing') }}"
-                                class="{{ str_contains($page_url, 'admin/uploaded-slips/packing') ? 'nav-link active' : 'nav-link' }} border_class"
-                                style="position:static;">
-                                <i class="fas fa-box-open"></i>
-                                <p>UPLOADED SLIP PACKING</p>
-                            </a>
-                        </li>
-                    @endcan
-                    @can('manage-time-allocation')
-                        <li class="nav-item">
-                            <a href="{{ route('admin.time_allocation.index') }}"
-                                class="{{ str_contains($page_url, 'admin/time-allocation') ? 'nav-link active' : 'nav-link' }} border_class"
-                                style="position:static;">
-                                <i class="fas fa-clock"></i>
-                                <p>TIME ALLOCATION</p>
-                            </a>
-                        </li>
-                    @endcan
+                    @endif
                     <!-- <li class="nav-item">
                         <a href="{{ route('admin.order_digitalization.create-slips-production') }}"
                             class="{{ str_contains($page_url, 'admin/order_digitalization/create-slips-production') ? 'nav-link active' : 'nav-link' }} border_class"
@@ -195,24 +256,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                             <p>PACKING IN CARTON</p>
                         </a>
                     </li> -->
-                    @can('manage-packing-module')
-                        <li class="nav-item">
-                            <a href="{{ route('admin.packing.index') }}"
-                                class="{{ (str_contains($page_url, 'admin/packing') && !str_contains($page_url, 'admin/packing/rework-list')) ? 'nav-link active' : 'nav-link' }} border_class"
-                                style="position:static;">
-                                <i class="nav-icon fas fa-box-open"></i>
-                                <p>PACKING MODULE</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('admin.packing.reworkList') }}"
-                                class="{{ str_contains($page_url, 'admin/packing/rework-list') ? 'nav-link active' : 'nav-link' }} border_class"
-                                style="position:static;">
-                                <i class="nav-icon fas fa-tools"></i>
-                                <p>DEFECT / REWORK LIST</p>
-                            </a>
-                        </li>
-                    @endcan
+
 
                     @can('manage-inventory')
                         <li
@@ -389,17 +433,6 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                 </li>
 
                             </ul>
-                        </li>
-                    @endcan
-
-                    @can('manage-order-dispatch')
-                        <li class="nav-item">
-                            <a href="{{ route('admin.order-dispatch.index') }}"
-                                class="{{ str_contains($page_url, 'admin/order-dispatch') ? 'nav-link active' : 'nav-link' }} border_class"
-                                style="position:static;">
-                                <i class="fas fa-truck"></i>
-                                <p>CORPORATE ORDER DISPATCH</p>
-                            </a>
                         </li>
                     @endcan
 

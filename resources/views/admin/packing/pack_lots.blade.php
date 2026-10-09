@@ -7,114 +7,269 @@
         --erp-bg: #f4f6f9;
         --erp-card-bg: #ffffff;
         --erp-border: #e0e4e8;
-        --erp-primary: #0056b3;
-        --erp-text-main: #333333;
-        --erp-text-muted: #6c757d;
-        --erp-header-bg: #f8f9fa;
+        --erp-green-primary: #05421c;
+        --erp-green-dark: #043617;
+        --erp-green-light: #edf7e4;
+        --erp-green-border: #c3e6cb;
+        --erp-yellow: #fcee21;
+        --erp-text-main: #1e293b;
+        --erp-text-muted: #64748b;
         --erp-radius: 4px;
-        --erp-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        --erp-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
 
     .content-wrapper {
         background-color: var(--erp-bg);
     }
 
-    .erp-header {
+    /* 1. Header Bar */
+    .erp-header-bar {
+        background: linear-gradient(135deg, #05421c 0%, #0a5c28 100%);
+        border-radius: 6px;
+        padding: 0.55rem 1rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 1.5rem;
-        background: var(--erp-card-bg);
-        border-bottom: 1px solid var(--erp-border);
-        margin-bottom: 1rem;
+        color: #ffffff;
     }
-
-    .erp-header h1 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--erp-text-main);
+    .erp-header-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #ffffff;
         margin: 0;
+        display: flex;
+        align-items: center;
     }
 
+    /* 2. Cards */
     .erp-card {
         background: var(--erp-card-bg);
         border: 1px solid var(--erp-border);
         border-radius: var(--erp-radius);
         box-shadow: var(--erp-shadow);
-        margin-bottom: 1.5rem;
+        margin-bottom: 0.75rem;
     }
-
     .erp-card-header {
-        background-color: var(--erp-header-bg);
+        background-color: #ffffff;
         border-bottom: 1px solid var(--erp-border);
-        padding: 0.75rem 1.25rem;
+        padding: 0.65rem 1rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
 
-    .erp-card-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--erp-text-main);
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
+    /* 3. Tables */
     .erp-table {
         width: 100%;
         margin-bottom: 0;
         border-collapse: collapse;
     }
-
     .erp-table th {
-        background-color: #f1f3f5;
-        color: #495057;
-        font-size: 0.8rem;
-        font-weight: 600;
+        background-color: #edf7e4 !important;
+        color: #05421c !important;
+        font-size: 0.78rem;
+        font-weight: 700;
         text-transform: uppercase;
-        padding: 0.75rem;
-        border-bottom: 2px solid #dee2e6;
+        padding: 0.6rem 0.75rem;
+        border-bottom: 2px solid #c3e6cb !important;
         border-top: none;
+        letter-spacing: 0.4px;
     }
-
     .erp-table td {
-        padding: 0.75rem;
-        font-size: 0.9rem;
+        padding: 0.65rem 0.75rem;
+        font-size: 0.88rem;
         vertical-align: middle;
         border-top: 1px solid #e9ecef;
-        color: #333;
+        color: #1e293b;
     }
 
-    .erp-badge {
-        padding: 0.25em 0.6em;
-        font-size: 0.75rem;
-        font-weight: 700;
-        border-radius: 0.25rem;
+    /* 4. Tabs Strip */
+    .erp-tabs-bar {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 4px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-bottom: 0.75rem;
+    }
+    .erp-tab-item {
+        padding: 6px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+        border-radius: 4px;
+        color: #475569;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease-in-out;
+        border: 1px solid transparent;
+        cursor: pointer;
+    }
+    .erp-tab-item:hover {
+        color: #05421c;
+        background: #edf7e4;
+    }
+    .erp-tab-item.active {
+        background: #05421c !important;
+        color: #ffffff !important;
+        border-color: #05421c !important;
+        box-shadow: 0 1px 3px rgba(5,66,28,0.25);
+    }
+    .erp-tab-item.active i {
+        color: #fcee21 !important;
+    }
+    .erp-tab-item .badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background: #edf7e4;
+        color: #05421c;
+    }
+    .erp-tab-item.active .badge {
+        background: #ffffff !important;
+        color: #05421c !important;
     }
 
-    .erp-badge-success {
-        background-color: #d1e7dd;
-        color: #0f5132;
-        border: 1px solid #badbcc;
-    }
-    
+    /* 5. Buttons */
     .btn-erp {
-        font-size: 0.875rem;
-        padding: 0.375rem 0.75rem;
+        font-size: 0.82rem;
+        padding: 0.35rem 0.75rem;
         border-radius: var(--erp-radius);
-        font-weight: 500;
+        font-weight: 600;
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
-        transition: background-color 0.15s ease-in-out;
+        transition: all 0.15s ease-in-out;
+        cursor: pointer;
+        line-height: 1.4;
+    }
+    .btn-erp-primary {
+        background-color: #05421c !important;
+        border: 1px solid #05421c !important;
+        color: #ffffff !important;
+    }
+    .btn-erp-primary:hover:not(:disabled), .btn-erp-primary:focus:not(:disabled) {
+        background-color: #043617 !important;
+        color: #fcee21 !important;
+    }
+    .btn-erp-outline {
+        background-color: #ffffff !important;
+        border: 1px solid #c3e6cb !important;
+        color: #05421c !important;
+    }
+    .btn-erp-outline:hover:not(:disabled) {
+        background-color: #edf7e4 !important;
+        color: #05421c !important;
+    }
+    .btn-erp-danger {
+        background-color: #ffffff !important;
+        border: 1px solid #fca5a5 !important;
+        color: #dc3545 !important;
+    }
+    .btn-erp-danger:hover:not(:disabled) {
+        background-color: #dc3545 !important;
+        color: #ffffff !important;
+    }
+    .btn-erp-success {
+        background-color: #05421c !important;
+        border: 1px solid #05421c !important;
+        color: #ffffff !important;
+    }
+    .btn-erp-success:hover:not(:disabled) {
+        background-color: #043617 !important;
+        color: #fcee21 !important;
     }
     .btn-erp-default {
-        background-color: #f8f9fa;
+        background-color: #f8f9fa !important;
+        border: 1px solid #ced4da !important;
+        color: #333 !important;
+    }
+    .btn-erp:disabled, .btn-erp.disabled {
+        opacity: 0.6 !important;
+        cursor: not-allowed !important;
+    }
+
+    /* 6. Form Controls */
+    .erp-filter-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 4px;
+        display: block;
+        letter-spacing: 0.4px;
+    }
+    .erp-input, .form-control-sm {
+        height: 31px !important;
+        font-size: 12.5px !important;
         border: 1px solid #ced4da;
-        color: #333;
+        border-radius: var(--erp-radius);
+    }
+    .erp-input:focus, .form-control-sm:focus {
+        border-color: #05421c;
+        box-shadow: 0 0 0 0.15rem rgba(5,66,28,0.15);
+    }
+    .select2-container--default .select2-selection--single {
+        height: 31px !important;
+        font-size: 12.5px !important;
+        border: 1px solid #ced4da !important;
+        border-radius: var(--erp-radius) !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 29px !important;
+        padding-left: 8px !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 29px !important;
+    }
+
+    /* 7. Action Buttons & Badges */
+    .erp-action-btn {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        font-size: 12px;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+        background: transparent;
+        cursor: pointer;
+    }
+    .erp-btn-delete {
+        color: #ef4444;
+        border-color: #fee2e2;
+        background-color: #fef2f2;
+    }
+    .erp-btn-delete:hover {
+        background-color: #ef4444;
+        color: #ffffff;
+        border-color: #ef4444;
+    }
+    .badge-info, .erp-badge-info {
+        background-color: #edf7e4 !important;
+        color: #05421c !important;
+        border: 1px solid #c3e6cb !important;
+    }
+    .btn-primary {
+        background-color: #05421c !important;
+        border-color: #05421c !important;
+        color: #ffffff !important;
+    }
+    .btn-primary:hover, .btn-primary:focus {
+        background-color: #043617 !important;
+        border-color: #043617 !important;
+        color: #fcee21 !important;
+    }
+    .text-primary, .text-info {
+        color: #05421c !important;
     }
     .carton-pricing-modified {
         border-color: #ffc107 !important;
@@ -131,137 +286,143 @@
     }
 </style>
 
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
     <!-- Top Header Bar -->
-    <div class="erp-header shadow-sm">
-        <h1>
-            <i class="fas fa-box-open mr-2 text-primary"></i> 
-            Step 2: Pack Selected Lots | <span class="text-muted" style="font-size: 1rem; font-weight: normal;">Slip #{{ $slip_id }}</span>
-        </h1>
-        <div class="d-flex" style="gap: 8px;">
+    <div class="erp-header-bar mb-2 d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
+        <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+            <h5 class="erp-header-title mb-0">
+                <i class="fas fa-boxes mr-2" style="color: #fcee21;"></i> 
+                <span>Step 2: Pack Selected Lots</span>
+            </h5>
+            <span class="badge px-2.5 py-1 font-weight-bold" style="background:#fcee21; color:#05421c; font-size: 11px; border-radius: 4px;">
+                Slip #{{ $slip_id }}
+            </span>
+        </div>
+        <div class="erp-header-actions d-flex align-items-center flex-wrap" style="gap: 6px;">
             @php $slip = \App\Models\ProductionSlipDigitization::find($slip_id); @endphp
             @if($slip && $slip->slip_file)
-                <button type="button" class="btn btn-erp btn-info text-white" data-toggle="modal" data-target="#slipModal">
+                <button type="button" class="btn-erp btn-erp-outline" style="color:#fff; border-color:rgba(255,255,255,0.4);" data-toggle="modal" data-target="#slipModal">
                     <i class="fas fa-image mr-1"></i> View Production Slip
                 </button>
             @endif
-            <button type="button" id="btnResetSlip" class="btn btn-erp btn-outline-danger">
+            <button type="button" id="btnResetSlip" class="btn-erp btn-erp-danger" style="background:#fff; border-color:#fca5a5; color:#dc3545;">
                 <i class="fas fa-trash-restore mr-1"></i> Reset Slip
             </button>
-            <button type="button" id="btnFinalizePacking" class="btn btn-erp btn-success text-white">
+            <button type="button" id="btnFinalizePacking" class="btn-erp" style="background:#fcee21; color:#05421c; border:1px solid #fcee21; font-weight:700;">
                 <i class="fas fa-check-circle mr-1"></i> Finalize Packing
             </button>
-            <button type="button" class="btn btn-erp btn-erp-default" onclick="handleBackToSelection()">
-                <i class="fas fa-arrow-left text-muted"></i> Back to Selection
+            <button type="button" class="btn-erp btn-erp-outline" style="color:#fff; border-color:rgba(255,255,255,0.4);" onclick="handleBackToSelection()">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Selection
             </button>
         </div>
     </div>
 
-    <div class="container-fluid px-3">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        @endif
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show mb-2 py-2 px-3" role="alert" style="font-size: 13px;">
+            <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
+            <button type="button" class="close py-2" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
 
-        @php
-            $consolidated_sizes = [];
-            foreach ($lots_data as $lot) {
-                if (isset($set_details[$lot->set_id])) {
-                    $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
+    @php
+        $consolidated_sizes = [];
+        foreach ($lots_data as $lot) {
+            if (isset($set_details[$lot->set_id])) {
+                $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
+                
+                // Sum up deductions for this lot in the current slip session first
+                $packed_for_lot = 0;
+                if (isset($packed_by_lot_size[$lot->lot_no])) {
+                    $packed_for_lot = $packed_by_lot_size[$lot->lot_no]->sum('total');
+                }
+                $rework_for_lot = 0;
+                if (isset($rework_by_lot_size[$lot->lot_no])) {
+                    $rework_for_lot = $rework_by_lot_size[$lot->lot_no]->sum('total');
+                }
+                $outflow_for_lot = 0;
+                if (isset($outflow_by_lot_size[$lot->lot_no])) {
+                    $outflow_for_lot = $outflow_by_lot_size[$lot->lot_no]->sum('total');
+                }
+                
+                $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
+                
+                foreach ($set_details[$lot->set_id] as $detail) {
+                    $sizeName = trim(strtoupper($detail->size));
                     
-                    // Sum up deductions for this lot in the current slip session first
-                    $packed_for_lot = 0;
+                    $incoming_qty = !empty($lot->incoming_sizes) 
+                        ? (int) ($lot->incoming_sizes[$sizeName] ?? 0) 
+                        : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
+                    
+                    $packed_qty = 0;
                     if (isset($packed_by_lot_size[$lot->lot_no])) {
-                        $packed_for_lot = $packed_by_lot_size[$lot->lot_no]->sum('total');
+                        $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                        if ($item) $packed_qty = $item->total;
                     }
-                    $rework_for_lot = 0;
+
+                    $rework_qty = 0;
                     if (isset($rework_by_lot_size[$lot->lot_no])) {
-                        $rework_for_lot = $rework_by_lot_size[$lot->lot_no]->sum('total');
+                        $item = $rework_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                        if ($item) $rework_qty = $item->total;
                     }
-                    $outflow_for_lot = 0;
+
+                    $outflow_qty = 0;
                     if (isset($outflow_by_lot_size[$lot->lot_no])) {
-                        $outflow_for_lot = $outflow_by_lot_size[$lot->lot_no]->sum('total');
+                        $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                        if ($item) $outflow_qty = $item->total;
                     }
-                    
-                    $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
-                    
-                    foreach ($set_details[$lot->set_id] as $detail) {
-                        $sizeName = trim(strtoupper($detail->size));
-                        
-                        $incoming_qty = !empty($lot->incoming_sizes) 
-                            ? (int) ($lot->incoming_sizes[$sizeName] ?? 0) 
-                            : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
-                        
-                        $packed_qty = 0;
-                        if (isset($packed_by_lot_size[$lot->lot_no])) {
-                            $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                            if ($item) $packed_qty = $item->total;
-                        }
 
-                        $rework_qty = 0;
-                        if (isset($rework_by_lot_size[$lot->lot_no])) {
-                            $item = $rework_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                            if ($item) $rework_qty = $item->total;
-                        }
+                    $live_remaining_for_size = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
 
-                        $outflow_qty = 0;
-                        if (isset($outflow_by_lot_size[$lot->lot_no])) {
-                            $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                            if ($item) $outflow_qty = $item->total;
-                        }
-
-                        $live_remaining_for_size = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
-
-                        if (!isset($consolidated_sizes[$sizeName])) {
-                            $consolidated_sizes[$sizeName] = [
-                                'size' => $detail->size,
-                                'breakdown' => 0,
-                                'live' => 0
-                            ];
-                        }
-                        $consolidated_sizes[$sizeName]['breakdown'] += $live_remaining_for_size;
-                        $consolidated_sizes[$sizeName]['live'] += $live_remaining_for_size;
+                    if (!isset($consolidated_sizes[$sizeName])) {
+                        $consolidated_sizes[$sizeName] = [
+                            'size' => $detail->size,
+                            'breakdown' => 0,
+                            'live' => 0
+                        ];
                     }
+                    $consolidated_sizes[$sizeName]['breakdown'] += $live_remaining_for_size;
+                    $consolidated_sizes[$sizeName]['live'] += $live_remaining_for_size;
                 }
             }
-            ksort($consolidated_sizes);
-        @endphp
+        }
+        ksort($consolidated_sizes);
+    @endphp
 
-        <!-- Permanent Consolidated Size Breakdown Bar (Sticky Page-level) -->
-        <div class="card border shadow-sm mb-3" style="position: sticky; top: 0; z-index: 1040; background-color: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);">
-            <div class="card-body px-3 py-2">
-                <div class="d-flex align-items-center flex-wrap" style="gap: 12px; font-size: 0.82rem;">
-                    <span class="font-weight-bold text-secondary"><i class="fas fa-chart-pie mr-1 text-info"></i> Consolidated Size Wise Stocks:</span>
-                    <div class="d-flex flex-wrap" style="gap: 8px;">
-                        @foreach($consolidated_sizes as $szName => $data)
-                        @php
-                            $cleanSize = str_replace([' ', '.'], '-', trim(strtoupper($data['size'])));
-                        @endphp
-                        <div class="border rounded px-2 py-1 bg-light d-flex align-items-center" style="gap: 5px;">
-                            <span class="font-weight-bold text-dark">{{ strtoupper($data['size']) }}:</span>
-                            <span class="badge badge-light text-primary border py-0 px-1">Lot: <span class="consolidated-lot-val" data-size="{{ $szName }}">{{ $data['breakdown'] }}</span></span>
-                        </div>
-                        @endforeach
+    <!-- Consolidated Stocks & Selected Lots Summary Integrated Card -->
+    <div class="erp-card mb-2" style="border-top: 3px solid #05421c;">
+        <!-- Consolidated Size Breakdown Strip -->
+        <div class="px-3 py-2 border-bottom" style="background: #fafdf8;">
+            <div class="d-flex align-items-center flex-wrap" style="gap: 10px; font-size: 0.82rem;">
+                <span class="font-weight-bold" style="color: #05421c;">
+                    <i class="fas fa-chart-pie mr-1 text-success"></i> Consolidated Size Wise Stocks:
+                </span>
+                <div class="d-flex flex-wrap" style="gap: 6px;">
+                    @foreach($consolidated_sizes as $szName => $data)
+                    @php
+                        $cleanSize = str_replace([' ', '.'], '-', trim(strtoupper($data['size'])));
+                    @endphp
+                    <div class="border rounded px-2 py-0.5 bg-white d-flex align-items-center" style="gap: 5px; font-size: 11px; border-color: #c3e6cb !important;">
+                        <span class="font-weight-bold text-dark">{{ strtoupper($data['size']) }}:</span>
+                        <span class="badge py-0 px-1 font-weight-bold" style="background:#edf7e4; color:#05421c; border:1px solid #c3e6cb;">Lot: <span class="consolidated-lot-val" data-size="{{ $szName }}">{{ $data['breakdown'] }}</span></span>
                     </div>
+                    @endforeach
                 </div>
             </div>
         </div>
 
-        <div class="card erp-card border shadow-sm mb-3">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center py-2 px-3" data-toggle="collapse" data-target="#collapseLotsTable" aria-expanded="false" aria-controls="collapseLotsTable" style="cursor: pointer;">
-                <span class="font-weight-bold text-dark" style="font-size: 0.95rem;">
-                    <i class="fas fa-list mr-1 text-primary"></i> 
-                    Selected Lots Summary ({{ count($lots_data) }} Lots Selected — Total Pending: {{ collect($lots_data)->sum('remaining_quantity') }} pcs)
-                </span>
-                <span class="btn btn-sm btn-link text-primary font-weight-bold p-0 text-decoration-none">
-                    <i class="fas fa-chevron-down mr-1"></i> Toggle Detailed Breakdown
-                </span>
-            </div>
-            <div id="collapseLotsTable" class="collapse">
+        <!-- Selected Lots Summary (Collapsible) -->
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-2 px-3" data-toggle="collapse" data-target="#collapseLotsTable" aria-expanded="false" aria-controls="collapseLotsTable" style="cursor: pointer;">
+            <span class="font-weight-bold" style="font-size: 13px; color: #05421c;">
+                <i class="fas fa-list mr-1 text-success"></i> 
+                Selected Lots Summary ({{ count($lots_data) }} Lots Selected — Total Pending: {{ collect($lots_data)->sum('remaining_quantity') }} pcs)
+            </span>
+            <span class="btn btn-sm btn-link font-weight-bold p-0 text-decoration-none" style="color: #05421c; font-size: 12px;">
+                <i class="fas fa-chevron-down mr-1"></i> Toggle Detailed Breakdown
+            </span>
+        </div>
+        <div id="collapseLotsTable" class="collapse border-top">
                 <div class="card-body p-0" style="max-height: 250px; overflow-y: auto;">
                     <div class="table-responsive">
                         <table class="table erp-table table-sm table-bordered mb-0" style="font-size: 0.85rem;">
@@ -361,9 +522,9 @@
                                 @if(!empty($sizes_data))
                                     <div class="d-flex flex-wrap" style="gap: 6px;">
                                         @foreach($sizes_data as $sd)
-                                        <div class="border rounded px-2 py-1 bg-white border-secondary d-flex align-items-center" style="gap: 5px; font-size: 0.8rem; line-height: 1.2;">
+                                        <div class="border rounded px-2 py-1 bg-white d-flex align-items-center" style="gap: 5px; font-size: 0.8rem; line-height: 1.2; border-color: #c3e6cb !important;">
                                             <span class="font-weight-bold text-dark">{{ strtoupper($sd['size']) }}:</span>
-                                            <span class="badge badge-light text-primary border py-0 px-1" title="Lot Qty Breakdown">Lot: {{ $sd['breakdown'] }}</span>
+                                            <span class="badge py-0 px-1 font-weight-bold" style="background:#edf7e4; color:#05421c; border:1px solid #c3e6cb;" title="Lot Qty Breakdown">Lot: {{ $sd['breakdown'] }}</span>
                                         </div>
                                         @endforeach
                                     </div>
@@ -371,7 +532,7 @@
                                     <div class="w-100 mt-1 border-top pt-1 d-flex justify-content-between align-items-center" style="font-size: 0.75rem;">
                                         <span class="text-muted">Sizes: {{ count($sizes_data) }}</span>
                                         <div class="d-flex align-items-center" style="gap: 10px;">
-                                            <span>Total Breakdown: <strong class="text-primary">{{ $total_breakdown_qty }} pcs</strong></span>
+                                            <span>Total Breakdown: <strong style="color: #05421c;">{{ $total_breakdown_qty }} pcs</strong></span>
                                         </div>
                                     </div>
                                 @else
@@ -389,7 +550,7 @@
                             </td>
                             <td class="align-middle">
                                 <div class="d-flex justify-content-end align-items-center" style="gap: 15px;">
-                                    <span>Grand Total Breakdown: <strong class="text-primary" style="font-size: 0.95rem;">{{ $grand_total_breakdown }} pcs</strong></span>
+                                    <span>Grand Total Breakdown: <strong style="color: #05421c; font-size: 0.95rem;">{{ $grand_total_breakdown }} pcs</strong></span>
                                 </div>
                             </td>
                         </tr>
@@ -416,62 +577,52 @@
             $saved_dead_total = isset($saved_dead) && !empty($saved_dead) ? (int) $saved_dead->sum('quantity') : 0;
             $saved_sampling_total = isset($saved_sampling) && !empty($saved_sampling) ? (int) $saved_sampling->sum('quantity') : 0;
             $saved_debit_total = isset($saved_debit) && !empty($saved_debit) ? (int) $saved_debit->sum('quantity') : 0;
+
+            $default_start_carton = (isset($saved_cartons) && $saved_cartons->count() > 0 ? ($saved_cartons->max('carton_no') ?? 0) : 0) + 1;
+            $last_carton = isset($saved_cartons) ? $saved_cartons->last() : null;
+            $last_mrp = ($last_carton && $last_carton->items->first() && $last_carton->items->first()->mrp > 0) ? $last_carton->items->first()->mrp : '';
+            $last_price = ($last_carton && $last_carton->items->first() && $last_carton->items->first()->selling_price > 0) ? $last_carton->items->first()->selling_price : '';
+            $last_barcode = $last_carton ? ($last_carton->barcode ?? '') : '';
         @endphp
 
         <!-- Packing Action Tabs -->
-        <div class="erp-card mt-4">
-            <div class="card-header bg-white p-0" style="border-bottom: 2px solid var(--erp-border);">
-                <ul class="nav nav-tabs border-0" id="packingTabs" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link active font-weight-bold" id="tab-packing-tab" data-toggle="tab" href="#tab-packing" role="tab">
-                            <i class="fas fa-box text-primary"></i> {{ $isDomesticOrder ? 'Domestic Packing' : 'Packing' }}
-                        </a>
-                    </li>
-                    @if(!$isDomesticOrder)
-                    <li class="nav-item">
-                        <a class="nav-link font-weight-bold" id="tab-domestic-tab" data-toggle="tab" href="#tab-domestic" role="tab">
-                            <i class="fas fa-random text-info"></i> Divert to Domestic
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link font-weight-bold" id="tab-planner-tab" data-toggle="tab" href="#tab-planner" role="tab">
-                            <i class="fas fa-layer-group text-info"></i> Multi-Carton Planner
-                        </a>
-                    </li>
-                    @endif
-                    <li class="nav-item">
-                        <a class="nav-link font-weight-bold d-flex align-items-center" id="tab-rework-tab" data-toggle="tab" href="#tab-rework" role="tab">
-                            <i class="fas fa-exclamation-triangle text-danger mr-1"></i> Defect / Rework
-                            <span id="reworkTabBadge" class="badge badge-danger ml-1 font-weight-bold" style="{{ $saved_rework_total > 0 ? '' : 'display:none;' }} font-size: 0.72rem; padding: 2px 6px;">{{ $saved_rework_total > 0 ? $saved_rework_total . ' Pcs' : '0 Pcs' }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link font-weight-bold d-flex align-items-center" id="tab-damage-tab" data-toggle="tab" href="#tab-damage" role="tab">
-                            <i class="fas fa-skull-crossbones text-dark mr-1"></i> Dead / Damage
-                            <span id="damageTabBadge" class="badge badge-dark ml-1 font-weight-bold" style="{{ $saved_dead_total > 0 ? '' : 'display:none;' }} font-size: 0.72rem; padding: 2px 6px;">{{ $saved_dead_total > 0 ? $saved_dead_total . ' Pcs' : '0 Pcs' }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link font-weight-bold d-flex align-items-center" id="tab-sampling-tab" data-toggle="tab" href="#tab-sampling" role="tab">
-                            <i class="fas fa-flask text-primary mr-1"></i> Sampling
-                            <span id="samplingTabBadge" class="badge badge-primary ml-1 font-weight-bold" style="{{ $saved_sampling_total > 0 ? '' : 'display:none;' }} font-size: 0.72rem; padding: 2px 6px;">{{ $saved_sampling_total > 0 ? $saved_sampling_total . ' Pcs' : '0 Pcs' }}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link font-weight-bold d-flex align-items-center" id="tab-debit-tab" data-toggle="tab" href="#tab-debit" role="tab">
-                            <i class="fas fa-minus-circle text-warning mr-1"></i> Debit
-                            <span id="debitTabBadge" class="badge badge-warning text-dark ml-1 font-weight-bold" style="{{ $saved_debit_total > 0 ? '' : 'display:none;' }} font-size: 0.72rem; padding: 2px 6px;">{{ $saved_debit_total > 0 ? $saved_debit_total . ' Pcs' : '0 Pcs' }}</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            <div class="card-body p-4">
-                <div class="tab-content" id="packingTabsContent">
+        <div class="nav erp-tabs-bar mb-2" id="packingTabs" role="tablist">
+            <a class="nav-item nav-link erp-tab-item active" id="tab-packing-tab" data-toggle="tab" href="#tab-packing" role="tab">
+                <i class="fas fa-boxes mr-1"></i> {{ $isDomesticOrder ? 'Domestic Packing' : 'Packing' }}
+            </a>
+            @if(!$isDomesticOrder)
+            <a class="nav-item nav-link erp-tab-item" id="tab-domestic-tab" data-toggle="tab" href="#tab-domestic" role="tab">
+                <i class="fas fa-random mr-1 text-success"></i> Divert to Domestic
+            </a>
+            <a class="nav-item nav-link erp-tab-item" id="tab-planner-tab" data-toggle="tab" href="#tab-planner" role="tab">
+                <i class="fas fa-layer-group mr-1 text-success"></i> Multi-Carton Planner
+            </a>
+            @endif
+            <a class="nav-item nav-link erp-tab-item" id="tab-rework-tab" data-toggle="tab" href="#tab-rework" role="tab">
+                <i class="fas fa-exclamation-triangle mr-1 text-danger"></i> Defect / Rework
+                <span id="reworkTabBadge" class="badge ml-1 font-weight-bold" style="{{ $saved_rework_total > 0 ? '' : 'display:none;' }}">{{ $saved_rework_total > 0 ? $saved_rework_total . ' Pcs' : '0 Pcs' }}</span>
+            </a>
+            <a class="nav-item nav-link erp-tab-item" id="tab-damage-tab" data-toggle="tab" href="#tab-damage" role="tab">
+                <i class="fas fa-skull-crossbones mr-1 text-dark"></i> Dead / Damage
+                <span id="damageTabBadge" class="badge ml-1 font-weight-bold" style="{{ $saved_dead_total > 0 ? '' : 'display:none;' }}">{{ $saved_dead_total > 0 ? $saved_dead_total . ' Pcs' : '0 Pcs' }}</span>
+            </a>
+            <a class="nav-item nav-link erp-tab-item" id="tab-sampling-tab" data-toggle="tab" href="#tab-sampling" role="tab">
+                <i class="fas fa-flask mr-1" style="color: #05421c;"></i> Sampling
+                <span id="samplingTabBadge" class="badge ml-1 font-weight-bold" style="{{ $saved_sampling_total > 0 ? '' : 'display:none;' }}">{{ $saved_sampling_total > 0 ? $saved_sampling_total . ' Pcs' : '0 Pcs' }}</span>
+            </a>
+            <a class="nav-item nav-link erp-tab-item" id="tab-debit-tab" data-toggle="tab" href="#tab-debit" role="tab">
+                <i class="fas fa-minus-circle mr-1 text-warning"></i> Debit
+                <span id="debitTabBadge" class="badge ml-1 font-weight-bold" style="{{ $saved_debit_total > 0 ? '' : 'display:none;' }}">{{ $saved_debit_total > 0 ? $saved_debit_total . ' Pcs' : '0 Pcs' }}</span>
+            </a>
+        </div>
+
+        <div class="erp-card p-3 mb-3">
+            <div class="tab-content" id="packingTabsContent">
                     <div class="tab-pane fade show active" id="tab-packing" role="tabpanel">
                         @if($isDomesticOrder)
                             @include('admin.packing.partials.domestic_packing_form')
                         @else
-                            <h5 class="text-primary border-bottom pb-2 mb-3"><i class="fas fa-box"></i> Packing Operations</h5>
+                            <h5 class="border-bottom pb-2 mb-3" style="color: #05421c;"><i class="fas fa-box text-success mr-1"></i> Packing Operations</h5>
                             <p class="text-muted">Standard packing interface (Create Carton) will be implemented here.</p>
                         @endif
                     </div>
@@ -479,12 +630,15 @@
                     <div class="tab-pane fade" id="tab-domestic" role="tabpanel">
                         @include('admin.packing.partials.domestic_packing_form')
                     </div>
-                    @endif
                     <div class="tab-pane fade" id="tab-planner" role="tabpanel">
-                        <h5 class="text-info border-bottom pb-2 mb-3"><i class="fas fa-layer-group"></i> Multi-Carton Planner</h5>
-                        
-                        <div class="card bg-light border-0 shadow-sm mb-4">
-                            <div class="card-body p-3">
+                        <!-- Range Quick Add Card -->
+                        <div class="erp-card mb-3">
+                            <div class="erp-card-header d-flex justify-content-between align-items-center">
+                                <span class="font-weight-bold" style="color: #05421c; font-size: 13px;">
+                                    <i class="fas fa-layer-group mr-1 text-success"></i> Multi-Carton Planner — Range Quick Add
+                                </span>
+                            </div>
+                            <div class="erp-card-body p-3">
                                 @php
                                     $default_start_carton = ($saved_cartons->max('carton_no') ?? 0) + 1;
                                     $last_carton = $saved_cartons->last();
@@ -492,68 +646,65 @@
                                     $last_price = ($last_carton && $last_carton->items->first() && $last_carton->items->first()->selling_price > 0) ? $last_carton->items->first()->selling_price : '';
                                     $last_barcode = $last_carton ? ($last_carton->barcode ?? '') : '';
                                 @endphp
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="font-weight-bold mb-0 small text-uppercase text-primary">Range Quick Add</h6>
-                                </div>
-                                <div class="row align-items-end">
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Start Carton NO</label>
-                                        <input type="number" id="plannerStart" class="form-control form-control-sm" placeholder="e.g. 1" value="{{ $default_start_carton }}">
+                                <div class="row align-items-end" style="row-gap: 8px;">
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Start Carton NO</label>
+                                        <input type="number" id="plannerStart" class="form-control form-control-sm erp-input" placeholder="e.g. 1" value="{{ $default_start_carton }}">
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">End Carton NO</label>
-                                        <input type="number" id="plannerEnd" class="form-control form-control-sm" placeholder="e.g. 10">
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">End Carton NO</label>
+                                        <input type="number" id="plannerEnd" class="form-control form-control-sm erp-input" placeholder="e.g. 10">
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Type</label>
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Type</label>
                                         <select id="plannerType" class="form-control form-control-sm select2">
                                             <option value="Box" selected>Box</option>
                                             <option value="Loose">Loose</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Design</label>
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Design</label>
                                         <select id="plannerDesign" class="form-control form-control-sm select2">
                                             @if(count($unique_designs) > 1)
-                                            <option value="">Select Design</option>
+                                             <option value="">Select Design</option>
                                             @endif
                                             @foreach($unique_designs as $design)
                                             <option value="{{ $design }}" {{ count($unique_designs) === 1 ? 'selected' : '' }}>{{ $design }}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-2 mb-2" id="sizeSetCol">
-                                        <label class="small font-weight-bold">Size Set</label>
+                                    <div class="col-md-2" id="sizeSetCol">
+                                        <label class="erp-filter-label">Size Set</label>
                                         <select id="plannerSizeSet" class="form-control form-control-sm select2" disabled>
                                             <option value="">Select Size Set</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2 mb-2" id="singleSizeCol" style="display: none;">
-                                        <label class="small font-weight-bold">Size</label>
+                                    <div class="col-md-2" id="singleSizeCol" style="display: none;">
+                                        <label class="erp-filter-label">Size</label>
                                         <select id="plannerSingleSize" class="form-control form-control-sm select2">
                                             <option value="">Select Size</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Color</label>
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Color</label>
                                         <select id="plannerColor" class="form-control form-control-sm select2">
                                             <option value="">Select Color</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Qty / Carton</label>
-                                        <input type="number" id="plannerQty" class="form-control form-control-sm" value="1">
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Qty / Carton</label>
+                                        <input type="number" id="plannerQty" class="form-control form-control-sm erp-input font-weight-bold" value="1">
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">MRP</label>
-                                        <input type="number" step="0.01" id="plannerMrp" class="form-control form-control-sm" placeholder="0.00" value="{{ $last_mrp }}">
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">MRP</label>
+                                        <input type="number" step="0.01" id="plannerMrp" class="form-control form-control-sm erp-input" placeholder="0.00" value="{{ $last_mrp }}">
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Price</label>
-                                        <input type="number" step="0.01" id="plannerPrice" class="form-control form-control-sm" placeholder="0.00" value="{{ $last_price }}">
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Price</label>
+                                        <input type="number" step="0.01" id="plannerPrice" class="form-control form-control-sm erp-input" placeholder="0.00" value="{{ $last_price }}">
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Warehouse</label>
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Warehouse</label>
                                         <select id="plannerWarehouse" class="form-control form-control-sm select2">
                                             @if($storerooms->count() > 1)
                                             <option value="">Select Store Room</option>
@@ -563,31 +714,27 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Rack (Optional)</label>
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Rack (Optional)</label>
                                         <select id="plannerRack" class="form-control form-control-sm select2">
                                             <option value="">Select Rack</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Barcode (Optional)</label>
-                                        <input type="text" id="plannerBarcode" class="form-control form-control-sm" placeholder="Optional" value="{{ $last_barcode }}">
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Barcode (Optional)</label>
+                                        <input type="text" id="plannerBarcode" class="form-control form-control-sm erp-input" placeholder="Optional" value="{{ $last_barcode }}">
                                     </div>
-                                    <div class="col-md-12 d-flex justify-content-end mt-2">
-                                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 mr-2" id="btnResetPlannerForm">
+                                    <div class="col-md-12 d-flex justify-content-end mt-2" style="gap: 8px;">
+                                        <button type="button" class="btn-erp btn-erp-outline" id="btnResetPlannerForm">
                                             <i class="fas fa-undo mr-1"></i> Reset Form
                                         </button>
-                                        <button class="btn btn-primary btn-sm px-4" id="btnSavePlanDirect">
+                                        <button class="btn-erp btn-erp-primary" id="btnSavePlanDirect">
                                             <i class="fas fa-save mr-1"></i> Save Plan
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-
-
-                        <hr class="my-4">
 
                         @php
                             $saved_grand_total_pieces = 0;
@@ -606,22 +753,31 @@
                                 $saved_grand_total_sets += $total_sets;
                             }
                         @endphp
-                        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap" style="gap: 10px;">
-                            <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
-                                <h6 class="font-weight-bold mb-0">Saved Cartons <span class="badge badge-secondary">{{ $saved_cartons->count() }}</span> — Total Sets: <span class="badge badge-info">{{ round($saved_grand_total_sets, 2) }}</span></h6>
-                                <button type="button" class="btn btn-xs btn-danger btn-bulk-delete-cartons" style="display:none;"><i class="fas fa-trash-alt mr-1"></i> Delete Selected (<span class="selected-count">0</span>)</button>
-                                <button type="button" class="btn btn-xs btn-success btn-save-all-pricing" style="display:none;"><i class="fas fa-check-double mr-1"></i> Save Modified MRP/Price (<span class="modified-count">0</span>)</button>
+
+                        <!-- Saved Cartons Card -->
+                        <div class="erp-card mb-3">
+                            <div class="erp-card-header d-flex align-items-center justify-content-between flex-wrap" style="gap: 10px;">
+                                <div class="d-flex align-items-center flex-wrap" style="gap: 10px;">
+                                    <span class="font-weight-bold" style="color: #05421c; font-size: 13px;">
+                                        <i class="fas fa-boxes mr-1 text-success"></i> Saved Cartons
+                                    </span>
+                                    <span class="badge badge-secondary" style="font-size: 11px;">{{ $saved_cartons->count() }} Cartons</span>
+                                    <span class="badge px-2 py-0.5 font-weight-bold" style="background:#edf7e4; color:#05421c; border:1px solid #c3e6cb; font-size: 11px;">
+                                        Total Sets: {{ round($saved_grand_total_sets, 2) }}
+                                    </span>
+                                    <button type="button" class="btn-erp btn-erp-danger btn-xs btn-bulk-delete-cartons" style="display:none;"><i class="fas fa-trash-alt mr-1"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+                                    <button type="button" class="btn-erp btn-erp-primary btn-xs btn-save-all-pricing" style="display:none;"><i class="fas fa-check-double mr-1"></i> Save Modified MRP/Price (<span class="modified-count">0</span>)</button>
+                                </div>
+                                <div class="d-flex align-items-center bulk-pricing-toolbar" style="display: none; gap: 6px;">
+                                    <span class="small font-weight-bold text-muted mr-1">Apply to Selected (<span class="selected-count">0</span>):</span>
+                                    <input type="number" step="0.01" min="0" id="bulkSetMRP" class="form-control form-control-sm text-right font-weight-bold" placeholder="MRP" style="width: 80px; height: 28px; font-size: 0.8rem;">
+                                    <input type="number" step="0.01" min="0" id="bulkSetPrice" class="form-control form-control-sm text-right font-weight-bold" placeholder="Price" style="width: 80px; height: 28px; font-size: 0.8rem;">
+                                    <button type="button" class="btn-erp btn-erp-primary btn-xs font-weight-bold" id="btnApplyBulkPricing"><i class="fas fa-bolt mr-1"></i> Apply & Save</button>
+                                </div>
                             </div>
-                            <div class="d-flex align-items-center bulk-pricing-toolbar" style="display: none; gap: 6px;">
-                                <span class="small font-weight-bold text-muted mr-1">Apply to Selected (<span class="selected-count">0</span>):</span>
-                                <input type="number" step="0.01" min="0" id="bulkSetMRP" class="form-control form-control-sm text-right" placeholder="MRP" style="width: 80px; height: 26px; font-size: 0.8rem;">
-                                <input type="number" step="0.01" min="0" id="bulkSetPrice" class="form-control form-control-sm text-right" placeholder="Price" style="width: 80px; height: 26px; font-size: 0.8rem;">
-                                <button type="button" class="btn btn-xs btn-primary font-weight-bold" id="btnApplyBulkPricing"><i class="fas fa-bolt mr-1"></i> Apply & Save</button>
-                            </div>
-                        </div>
-                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                            <table class="table erp-table table-sm table-bordered">
-                                <thead class="thead-light sticky-top">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table erp-table table-sm table-bordered mb-0">
+                                    <thead class="thead-light sticky-top">
                                     <tr>
                                         <th width="3%" class="text-center"><input type="checkbox" class="select-all-cartons"></th>
                                         <!-- <th>ID</th> -->
@@ -680,7 +836,7 @@
                                         <td class="text-center"><input type="checkbox" class="carton-chk" value="{{ $sc->id }}"></td>
                                         <!-- <td>{{ $sc->id }}</td> -->
                                         <td class="font-weight-bold">{{ $sc->carton_no }}</td>
-                                        <td class="font-weight-bold text-info">{{ round($total_sets, 2) }}</td>
+                                        <td class="font-weight-bold" style="color: #05421c;">{{ round($total_sets, 2) }}</td>
                                         <td>{{ $total_qty }}</td>
                                         <td>{{ $design }}</td>
                                         <td>{{ $size_set }}</td>
@@ -725,7 +881,7 @@
                                 <tfoot class="bg-light font-weight-bold">
                                     <tr>
                                         <td colspan="2" class="text-right">Grand Total:</td>
-                                        <td class="text-info">{{ round($saved_grand_total_sets, 2) }} Sets</td>
+                                        <td style="color: #05421c;">{{ round($saved_grand_total_sets, 2) }} Sets</td>
                                         <td>{{ $saved_cartons->count() }} Cartons</td>
                                         <td class="text-success">{{ $saved_grand_total_pieces }} Pcs</td>
                                         <td colspan="5"></td>
@@ -734,398 +890,460 @@
                                 @endif
                             </table>
                         </div>
-
                     </div>
+                    </div>
+                    @endif
                     <div class="tab-pane fade" id="tab-rework" role="tabpanel">
-                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
                             <div class="d-flex align-items-center">
-                                <h5 class="text-danger mb-0"><i class="fas fa-exclamation-triangle"></i> Defect / Rework</h5>
-                                <a href="{{ route('admin.packing.reworkList') }}" target="_blank" class="btn btn-xs btn-outline-danger font-weight-bold ml-3 shadow-sm">
+                                <h6 class="font-weight-bold mb-0 d-flex align-items-center" style="color: #05421c; font-size: 15px;">
+                                    <i class="fas fa-exclamation-triangle mr-2 text-danger"></i> Defect / Rework Management
+                                </h6>
+                                <a href="{{ route('admin.packing.reworkList') }}" target="_blank" class="btn-erp btn-erp-outline btn-xs font-weight-bold ml-3" style="color: #dc3545; border-color: #fca5a5;">
                                     <i class="fas fa-external-link-alt mr-1"></i> Rework Assignment List
                                 </a>
                             </div>
                             <div class="d-flex align-items-center" style="gap: 8px;">
-                                <span class="badge badge-light border text-danger px-2 py-1 font-weight-bold" style="{{ $saved_rework_total > 0 ? '' : 'display:none;' }} font-size: 0.85rem;">
+                                <span class="badge px-2.5 py-1 font-weight-bold" style="{{ $saved_rework_total > 0 ? '' : 'display:none;' }} background: #fef2f2; color: #dc3545; border: 1px solid #fecaca; font-size: 12px;">
                                     Saved: <strong id="reworkSavedDisplay">{{ $saved_rework_total }} Pcs</strong>
                                 </span>
-                                <span class="text-muted font-weight-bold" style="font-size: 0.88rem;">Total Defect Quantity:</span>
-                                <span id="reworkTopTotalBadge" class="badge badge-danger px-3 py-1 font-weight-bold" style="font-size: 0.95rem; border-radius: 6px;">{{ $saved_rework_total }} Pcs</span>
+                                <span class="text-muted font-weight-bold small text-uppercase">Total Defect Qty:</span>
+                                <span id="reworkTopTotalBadge" class="badge px-2.5 py-1 font-weight-bold" style="background: #dc3545; color: #fff; font-size: 12px; border-radius: 4px;">{{ $saved_rework_total }} Pcs</span>
                             </div>
                         </div>
                         
-                        <form id="reworkForm">
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label>Select Storeroom / Rack <span class="text-danger">*</span></label>
-                                    <select id="reworkRack" class="form-control form-control-sm select2" required>
-                                        <option value="">-- Select Rack --</option>
-                                        @foreach($storerooms as $store)
-                                            <optgroup label="{{ $store->name }}">
-                                                @foreach($store->racks as $rack)
-                                                    <option value="{{ $rack->id }}">{{ $rack->name }}</option>
-                                                @endforeach
-                                            </optgroup>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label>Target Stage <small class="text-muted">(Optional)</small></label>
-                                    <select id="reworkStage" class="form-control form-control-sm select2">
-                                        <option value="">-- Select Stage --</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label>Target Unit <small class="text-muted">(Optional)</small></label>
-                                    <select id="reworkUnit" class="form-control form-control-sm select2">
-                                        <option value="">-- Select Unit --</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label>Remarks</label>
-                                    <input type="text" id="reworkRemarks" class="form-control form-control-sm" placeholder="Optional notes...">
-                                </div>
-                                <div class="col-md-2 d-flex align-items-end">
-                                    <button type="button" id="btnSaveRework" class="btn btn-sm btn-danger w-100">
-                                        <i class="fas fa-warehouse mr-1"></i> Store in Rack
-                                    </button>
-                                </div>
+                        <!-- Rework Assignment Form Card -->
+                        <div class="erp-card mb-3">
+                            <div class="erp-card-header">
+                                <span class="font-weight-bold" style="color: #05421c; font-size: 12.5px;">
+                                    <i class="fas fa-warehouse mr-1 text-danger"></i> Assign & Store Defect Pieces
+                                </span>
                             </div>
-                            
+                            <div class="erp-card-body p-3">
+                                <form id="reworkForm">
+                                    <div class="row align-items-end mb-3" style="row-gap: 8px;">
+                                        <div class="col-md-3">
+                                            <label class="erp-filter-label">Storeroom / Rack <span class="text-danger">*</span></label>
+                                            <select id="reworkRack" class="form-control form-control-sm select2" required>
+                                                <option value="">-- Select Rack --</option>
+                                                @foreach($storerooms as $store)
+                                                    <optgroup label="{{ $store->name }}">
+                                                        @foreach($store->racks as $rack)
+                                                            <option value="{{ $rack->id }}">{{ $rack->name }}</option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="erp-filter-label">Target Stage <small class="text-muted font-weight-normal">(Optional)</small></label>
+                                            <select id="reworkStage" class="form-control form-control-sm select2">
+                                                <option value="">-- Select Stage --</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="erp-filter-label">Target Unit <small class="text-muted font-weight-normal">(Optional)</small></label>
+                                            <select id="reworkUnit" class="form-control form-control-sm select2">
+                                                <option value="">-- Select Unit --</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="erp-filter-label">Remarks</label>
+                                            <input type="text" id="reworkRemarks" class="form-control form-control-sm erp-input" placeholder="Notes..." style="height: 31px;">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="erp-filter-label d-none d-md-block" style="visibility: hidden;">&nbsp;</label>
+                                            <button type="button" id="btnSaveRework" class="btn-erp btn-erp-danger w-100 justify-content-center" style="height: 31px; background: #dc3545 !important; color: #fff !important; border-color: #dc3545 !important;">
+                                                <i class="fas fa-warehouse mr-1"></i> Store in Rack
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                        <table class="table erp-table table-sm table-bordered mb-0">
+                                            <thead class="thead-light sticky-top">
+                                                <tr>
+                                                    <th>LOT NO</th>
+                                                    <th>DESIGN / COLOR</th>
+                                                    <th>SIZE WISE DEFECT QTY</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($lots_data as $lot)
+                                                    <tr>
+                                                        <td class="font-weight-bold">{{ $lot->lot_no }}</td>
+                                                        <td>
+                                                            <div>{{ $lot->design_number }}</div>
+                                                            <small class="text-muted">{{ $lot->color_name }}</small>
+                                                        </td>
+                                                        <td>
+                                                            @if(isset($set_details[$lot->set_id]))
+                                                                @php
+                                                                    $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
+                                                                    $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
+                                                                    $rework_for_lot = isset($rework_by_lot_size[$lot->lot_no]) ? $rework_by_lot_size[$lot->lot_no]->sum('total') : 0;
+                                                                    $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
+                                                                    $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
+                                                                @endphp
+                                                                <div class="d-flex flex-column" style="gap: 5px; max-width: 280px;">
+                                                                    <div class="row no-gutters font-weight-bold text-muted border-bottom pb-1 mb-1" style="font-size: 0.75rem;">
+                                                                        <div class="col-7">Size</div>
+                                                                        <div class="col-5 text-center">Qty</div>
+                                                                    </div>
+                                                                    @foreach($set_details[$lot->set_id] as $detail)
+                                                                        @php
+                                                                            $sizeName = trim(strtoupper($detail->size));
+                                                                            $incoming_qty = !empty($lot->incoming_sizes) 
+                                                                                ? (int) ($lot->incoming_sizes[$sizeName] ?? 0) 
+                                                                                : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
+                                                                            if ($incoming_qty <= 0) continue;
+
+                                                                            $packed_qty = 0;
+                                                                            if (isset($packed_by_lot_size[$lot->lot_no])) {
+                                                                                $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                                                                                if ($item) $packed_qty = $item->total;
+                                                                            }
+                                                                            $rework_qty = 0;
+                                                                            if (isset($rework_by_lot_size[$lot->lot_no])) {
+                                                                                $item = $rework_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                                                                                if ($item) $rework_qty = $item->total;
+                                                                            }
+                                                                            $outflow_qty = 0;
+                                                                            if (isset($outflow_by_lot_size[$lot->lot_no])) {
+                                                                                $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                                                                                if ($item) $outflow_qty = $item->total;
+                                                                            }
+                                                                            $live_remaining_for_size = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
+
+                                                                            $cleanSize = preg_replace('/[\s\.]/', '-', $sizeName);
+                                                                            $inputId = "rework-input-{$lot->transaction_id}-{$cleanSize}";
+                                                                        @endphp
+                                                                        <div class="row no-gutters align-items-center mb-1" style="font-size: 0.8rem;">
+                                                                            <div class="col-7 text-dark font-weight-bold">{{ $sizeName }} <span class="badge badge-light text-muted border py-0 px-1 ml-1" style="font-size: 0.7rem;">Max: {{ $live_remaining_for_size }}</span></div>
+                                                                            <div class="col-5">
+                                                                                <input type="number" 
+                                                                                    id="{{ $inputId }}" 
+                                                                                    class="form-control form-control-sm text-center font-weight-bold rework-qty-input border py-0" 
+                                                                                    style="height: 26px;"
+                                                                                    data-transaction-id="{{ $lot->transaction_id }}"
+                                                                                    data-lot-no="{{ $lot->lot_no }}"
+                                                                                    data-detail-id="{{ $detail->id }}"
+                                                                                    data-size-name="{{ $sizeName }}"
+                                                                                    data-max="{{ $live_remaining_for_size }}"
+                                                                                    max="{{ $live_remaining_for_size }}"
+                                                                                    min="0" 
+                                                                                    placeholder="0">
+                                                                            </div>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Saved Rework Records Card -->
+                        <div class="erp-card mb-3">
+                            <div class="erp-card-header d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center" style="gap: 8px;">
+                                    <span class="font-weight-bold" style="color: #05421c; font-size: 12.5px;">
+                                        <i class="fas fa-list-alt mr-1 text-danger"></i> Saved Rework Records
+                                    </span>
+                                    <span class="badge px-2 py-0.5 font-weight-bold" style="background:#fef2f2; color:#dc3545; border:1px solid #fecaca; font-size: 11px;">
+                                        {{ count($saved_reworks ?? []) }} Records
+                                    </span>
+                                </div>
+                                <button type="button" class="btn-erp btn-erp-danger btn-xs btn-bulk-delete-rework" style="display:none;"><i class="fas fa-trash-alt mr-1"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+                            </div>
                             <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                                <table class="table erp-table table-sm table-bordered">
+                                <table class="table erp-table table-sm table-bordered mb-0">
                                     <thead class="thead-light sticky-top">
                                         <tr>
+                                            <th width="3%" class="text-center"><input type="checkbox" class="select-all-rework"></th>
                                             <th>LOT NO</th>
-                                            <th>DESIGN / COLOR</th>
-                                            <th>SIZE WISE DEFECT QTY</th>
+                                            <th>Storeroom / Rack</th>
+                                            <th>Target Stage</th>
+                                            <th>Target Unit</th>
+                                            <th>Size : Qty</th>
+                                            <th>Status</th>
+                                            <th>Remarks</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($lots_data as $lot)
+                                        @forelse($saved_reworks ?? [] as $rw)
                                             <tr>
-                                                <td class="font-weight-bold">{{ $lot->lot_no }}</td>
+                                                <td class="text-center"><input type="checkbox" class="rework-chk" value="{{ $rw->id }}"></td>
+                                                <td class="font-weight-bold">{{ $rw->lot_no }}</td>
                                                 <td>
-                                                    <div>{{ $lot->design_number }}</div>
-                                                    <small class="text-muted">{{ $lot->color_name }}</small>
+                                                    <i class="fas fa-warehouse text-muted mr-1"></i>
+                                                    {{ $rw->rack ? (($rw->rack->storeroom ? $rw->rack->storeroom->name . ' - ' : '') . $rw->rack->name) : 'N/A' }}
                                                 </td>
+                                                <td>{{ $rw->responsibleStage->name ?? ($rw->toStage->name ?? 'N/A') }}</td>
+                                                <td>{{ $rw->responsibleUnit->name ?? ($rw->toUnit->name ?? 'N/A') }}</td>
                                                 <td>
-                                                    @if(isset($set_details[$lot->set_id]))
-                                                        @php
-                                                            $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
-                                                            $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
-                                                            $rework_for_lot = isset($rework_by_lot_size[$lot->lot_no]) ? $rework_by_lot_size[$lot->lot_no]->sum('total') : 0;
-                                                            $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
-                                                            $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
-                                                        @endphp
-                                                        <div class="d-flex flex-column" style="gap: 5px; max-width: 280px;">
-                                                            <div class="row no-gutters font-weight-bold text-muted border-bottom pb-1 mb-1" style="font-size: 0.75rem;">
-                                                                <div class="col-7">Size</div>
-                                                                <div class="col-5 text-center">Qty</div>
-                                                            </div>
-                                                            @foreach($set_details[$lot->set_id] as $detail)
-                                                                @php
-                                                                    $sizeName = trim(strtoupper($detail->size));
-                                                                    $incoming_qty = !empty($lot->incoming_sizes) 
-                                                                        ? (int) ($lot->incoming_sizes[$sizeName] ?? 0) 
-                                                                        : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
-                                                                    if ($incoming_qty <= 0) continue;
-
-                                                                    $packed_qty = 0;
-                                                                    if (isset($packed_by_lot_size[$lot->lot_no])) {
-                                                                        $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                                                                        if ($item) $packed_qty = $item->total;
-                                                                    }
-                                                                    $rework_qty = 0;
-                                                                    if (isset($rework_by_lot_size[$lot->lot_no])) {
-                                                                        $item = $rework_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                                                                        if ($item) $rework_qty = $item->total;
-                                                                    }
-                                                                    $outflow_qty = 0;
-                                                                    if (isset($outflow_by_lot_size[$lot->lot_no])) {
-                                                                        $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                                                                        if ($item) $outflow_qty = $item->total;
-                                                                    }
-                                                                    $live_remaining_for_size = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
-
-                                                                    $cleanSize = preg_replace('/[\s\.]/', '-', $sizeName);
-                                                                    $inputId = "rework-input-{$lot->transaction_id}-{$cleanSize}";
-                                                                @endphp
-                                                                <div class="row no-gutters align-items-center mb-1" style="font-size: 0.8rem;">
-                                                                    <div class="col-7 text-dark font-weight-bold">{{ $sizeName }} <span class="badge badge-light text-muted border py-0 px-1 ml-1" style="font-size: 0.7rem;">Max: {{ $live_remaining_for_size }}</span></div>
-                                                                    <div class="col-5">
-                                                                        <input type="number" 
-                                                                            id="{{ $inputId }}" 
-                                                                            class="form-control form-control-sm text-center font-weight-bold rework-qty-input border py-0" 
-                                                                            style="height: 26px;"
-                                                                            data-transaction-id="{{ $lot->transaction_id }}"
-                                                                            data-lot-no="{{ $lot->lot_no }}"
-                                                                            data-detail-id="{{ $detail->id }}"
-                                                                            data-size-name="{{ $sizeName }}"
-                                                                            data-max="{{ $live_remaining_for_size }}"
-                                                                            max="{{ $live_remaining_for_size }}"
-                                                                            min="0" 
-                                                                            placeholder="0">
-                                                                    </div>
-                                                                </div>
-                                                            @endforeach
-                                                        </div>
+                                                    @if(isset($rw->size))
+                                                        <span class="badge badge-light border">{{ $rw->size->size ?? 'Unknown' }}: {{ $rw->quantity }} Pcs</span>
+                                                    @elseif(isset($rw->details))
+                                                        @foreach($rw->details as $d)
+                                                            <span class="badge badge-light border">{{ $d->size ?? 'Unknown' }}: {{ $d->quantity }} Pcs</span>
+                                                        @endforeach
+                                                    @else
+                                                        <span class="badge badge-light border">{{ $rw->quantity }} Pcs</span>
                                                     @endif
                                                 </td>
+                                                <td>
+                                                    @if($rw->status === 'assigned')
+                                                        <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i> Assigned</span>
+                                                    @else
+                                                        <span class="badge badge-warning text-dark"><i class="fas fa-warehouse mr-1"></i> Stored in Rack</span>
+                                                    @endif
+                                                </td>
+                                                <td>{{ $rw->remarks ?? '-' }}</td>
+                                                <td>
+                                                    <button class="erp-action-btn erp-btn-delete btn-delete-rework" data-id="{{ $rw->id }}" title="Delete">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </td>
                                             </tr>
-                                        @endforeach
+                                        @empty
+                                            <tr>
+                                                <td colspan="9" class="text-center text-muted py-4">
+                                                    <i class="fas fa-inbox fa-2x mb-2 d-block" style="color: #cbd5e1;"></i>
+                                                    No rework records found.
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>
-                        </form>
-
-                        <hr class="my-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <h6 class="font-weight-bold mb-0 text-danger">Saved Rework Records <span class="badge badge-secondary">{{ count($saved_reworks ?? []) }}</span></h6>
-                            <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-rework" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table erp-table table-sm table-bordered">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th width="3%" class="text-center"><input type="checkbox" class="select-all-rework"></th>
-                                        <th>LOT NO</th>
-                                        <th>Storeroom / Rack</th>
-                                        <th>Target Stage</th>
-                                        <th>Target Unit</th>
-                                        <th>Size : Qty</th>
-                                        <th>Status</th>
-                                        <th>Remarks</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($saved_reworks ?? [] as $rw)
-                                        <tr>
-                                            <td class="text-center"><input type="checkbox" class="rework-chk" value="{{ $rw->id }}"></td>
-                                            <td class="font-weight-bold">{{ $rw->lot_no }}</td>
-                                            <td>
-                                                <i class="fas fa-warehouse text-muted mr-1"></i>
-                                                {{ $rw->rack ? (($rw->rack->storeroom ? $rw->rack->storeroom->name . ' - ' : '') . $rw->rack->name) : 'N/A' }}
-                                            </td>
-                                            <td>{{ $rw->responsibleStage->name ?? ($rw->toStage->name ?? 'N/A') }}</td>
-                                            <td>{{ $rw->responsibleUnit->name ?? ($rw->toUnit->name ?? 'N/A') }}</td>
-                                            <td>
-                                                @if(isset($rw->size))
-                                                    <span class="badge badge-light border">{{ $rw->size->size ?? 'Unknown' }}: {{ $rw->quantity }} Pcs</span>
-                                                @elseif(isset($rw->details))
-                                                    @foreach($rw->details as $d)
-                                                        <span class="badge badge-light border">{{ $d->size ?? 'Unknown' }}: {{ $d->quantity }} Pcs</span>
-                                                    @endforeach
-                                                @else
-                                                    <span class="badge badge-light border">{{ $rw->quantity }} Pcs</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if($rw->status === 'assigned')
-                                                    <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i> Assigned</span>
-                                                @else
-                                                    <span class="badge badge-warning text-dark"><i class="fas fa-warehouse mr-1"></i> Stored in Rack</span>
-                                                @endif
-                                            </td>
-                                            <td>{{ $rw->remarks ?? '-' }}</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-delete-rework" data-id="{{ $rw->id }}">
-                                                    <i class="fas fa-trash"></i> Delete
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr><td colspan="9" class="text-center text-muted py-3">No rework records found.</td></tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                     <div class="tab-pane fade" id="tab-damage" role="tabpanel">
-                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                            <h5 class="text-dark mb-0"><i class="fas fa-skull-crossbones"></i> Dead / Damage</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="font-weight-bold mb-0 d-flex align-items-center" style="color: #05421c; font-size: 15px;">
+                                <i class="fas fa-skull-crossbones mr-2 text-dark"></i> Dead / Damage Management
+                            </h6>
                             <div class="d-flex align-items-center" style="gap: 8px;">
-                                <span class="badge badge-light border text-dark px-2 py-1 font-weight-bold" style="{{ $saved_dead_total > 0 ? '' : 'display:none;' }} font-size: 0.85rem;">
+                                <span class="badge px-2.5 py-1 font-weight-bold" style="{{ $saved_dead_total > 0 ? '' : 'display:none;' }} background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 12px;">
                                     Saved: <strong id="damageSavedDisplay">{{ $saved_dead_total }} Pcs</strong>
                                 </span>
-                                <span class="text-muted font-weight-bold" style="font-size: 0.88rem;">Total Dead Stock:</span>
-                                <span id="damageTopTotalBadge" class="badge badge-dark px-3 py-1 font-weight-bold" style="font-size: 0.95rem; border-radius: 6px;">{{ $saved_dead_total }} Pcs</span>
+                                <span class="text-muted font-weight-bold small text-uppercase">Total Dead Stock:</span>
+                                <span id="damageTopTotalBadge" class="badge px-2.5 py-1 font-weight-bold" style="background: #334155; color: #fff; font-size: 12px; border-radius: 4px;">{{ $saved_dead_total }} Pcs</span>
                             </div>
                         </div>
                         
-                        <form id="damageForm">
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label>Select Storeroom / Rack <span class="text-danger">*</span></label>
-                                    <select id="damageRack" class="form-control form-control-sm select2" required>
-                                        <option value="">-- Select Rack --</option>
-                                        @foreach($storerooms as $store)
-                                            <optgroup label="{{ $store->name }}">
-                                                @foreach($store->racks as $rack)
-                                                    <option value="{{ $rack->id }}">{{ $rack->name }}</option>
-                                                @endforeach
-                                            </optgroup>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Remarks</label>
-                                    <input type="text" id="damageRemarks" class="form-control form-control-sm" placeholder="Optional notes...">
-                                </div>
-                                <div class="col-md-3 d-flex align-items-end">
-                                    <button type="button" id="btnSaveDamage" class="btn btn-sm btn-dark w-100">
-                                        <i class="fas fa-save"></i> Save Dead Stock
-                                    </button>
-                                </div>
+                        <!-- Damage Form Card -->
+                        <div class="erp-card mb-3">
+                            <div class="erp-card-header">
+                                <span class="font-weight-bold" style="color: #05421c; font-size: 12.5px;">
+                                    <i class="fas fa-box mr-1 text-dark"></i> Record Dead / Damaged Pieces
+                                </span>
                             </div>
-                            
+                            <div class="erp-card-body p-3">
+                                <form id="damageForm">
+                                    <div class="row align-items-end mb-3" style="row-gap: 8px;">
+                                        <div class="col-md-3">
+                                            <label class="erp-filter-label">Storeroom / Rack <span class="text-danger">*</span></label>
+                                            <select id="damageRack" class="form-control form-control-sm select2" required>
+                                                <option value="">-- Select Rack --</option>
+                                                @foreach($storerooms as $store)
+                                                    <optgroup label="{{ $store->name }}">
+                                                        @foreach($store->racks as $rack)
+                                                            <option value="{{ $rack->id }}">{{ $rack->name }}</option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="erp-filter-label">Remarks</label>
+                                            <input type="text" id="damageRemarks" class="form-control form-control-sm erp-input" placeholder="Notes..." style="height: 31px;">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="erp-filter-label d-none d-md-block" style="visibility: hidden;">&nbsp;</label>
+                                            <button type="button" id="btnSaveDamage" class="btn-erp btn-erp-primary w-100 justify-content-center" style="height: 31px; background: #334155 !important; border-color: #334155 !important; color: #fff !important;">
+                                                <i class="fas fa-save mr-1"></i> Save Dead Stock
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                        <table class="table erp-table table-sm table-bordered mb-0">
+                                            <thead class="thead-light sticky-top">
+                                                <tr>
+                                                    <th>LOT NO</th>
+                                                    <th>DESIGN / COLOR</th>
+                                                    <th>SIZE WISE DAMAGE QTY</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($lots_data as $lot)
+                                                    <tr>
+                                                        <td class="font-weight-bold">{{ $lot->lot_no }}</td>
+                                                        <td>
+                                                            <div>{{ $lot->design_number }}</div>
+                                                            <small class="text-muted">{{ $lot->color_name }}</small>
+                                                        </td>
+                                                        <td>
+                                                            @if(isset($set_details[$lot->set_id]))
+                                                                @php
+                                                                    $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
+                                                                    $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
+                                                                    $rework_for_lot = isset($rework_by_lot_size[$lot->lot_no]) ? $rework_by_lot_size[$lot->lot_no]->sum('total') : 0;
+                                                                    $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
+                                                                    $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
+                                                                @endphp
+                                                                <div class="d-flex flex-column" style="gap: 5px; max-width: 280px;">
+                                                                    <div class="row no-gutters font-weight-bold text-muted border-bottom pb-1 mb-1" style="font-size: 0.75rem;">
+                                                                        <div class="col-7">Size</div>
+                                                                        <div class="col-5 text-center">Qty</div>
+                                                                    </div>
+                                                                    @foreach($set_details[$lot->set_id] as $detail)
+                                                                        @php
+                                                                            $sizeName = trim(strtoupper($detail->size));
+                                                                            $incoming_qty = !empty($lot->incoming_sizes) 
+                                                                                ? (int) ($lot->incoming_sizes[$sizeName] ?? 0) 
+                                                                                : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
+                                                                            if ($incoming_qty <= 0) continue;
+
+                                                                            $packed_qty = 0;
+                                                                            if (isset($packed_by_lot_size[$lot->lot_no])) {
+                                                                                $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                                                                                if ($item) $packed_qty = $item->total;
+                                                                            }
+                                                                            $rework_qty = 0;
+                                                                            if (isset($rework_by_lot_size[$lot->lot_no])) {
+                                                                                $item = $rework_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                                                                                if ($item) $rework_qty = $item->total;
+                                                                            }
+                                                                            $outflow_qty = 0;
+                                                                            if (isset($outflow_by_lot_size[$lot->lot_no])) {
+                                                                                $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                                                                                if ($item) $outflow_qty = $item->total;
+                                                                            }
+                                                                            $live_remaining_for_size = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
+
+                                                                            $cleanSize = preg_replace('/[\s\.]/', '-', $sizeName);
+                                                                            $inputId = "damage-input-{$lot->transaction_id}-{$cleanSize}";
+                                                                        @endphp
+                                                                        <div class="row no-gutters align-items-center mb-1" style="font-size: 0.8rem;">
+                                                                            <div class="col-7 text-dark font-weight-bold">{{ $sizeName }} <span class="badge badge-light text-muted border py-0 px-1 ml-1" style="font-size: 0.7rem;">Max: {{ $live_remaining_for_size }}</span></div>
+                                                                            <div class="col-5">
+                                                                                <input type="number" 
+                                                                                    id="{{ $inputId }}" 
+                                                                                    class="form-control form-control-sm text-center font-weight-bold damage-qty-input border py-0" 
+                                                                                    style="height: 26px;"
+                                                                                    data-transaction-id="{{ $lot->transaction_id }}"
+                                                                                    data-lot-no="{{ $lot->lot_no }}"
+                                                                                    data-detail-id="{{ $detail->id }}"
+                                                                                    data-size-name="{{ $sizeName }}"
+                                                                                    data-max="{{ $live_remaining_for_size }}"
+                                                                                    max="{{ $live_remaining_for_size }}"
+                                                                                    min="0" 
+                                                                                    placeholder="0">
+                                                                            </div>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Saved Dead Records Card -->
+                        <div class="erp-card mb-3">
+                            <div class="erp-card-header d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center" style="gap: 8px;">
+                                    <span class="font-weight-bold" style="color: #05421c; font-size: 12.5px;">
+                                        <i class="fas fa-list-alt mr-1 text-dark"></i> Saved Dead Records
+                                    </span>
+                                    <span class="badge px-2 py-0.5 font-weight-bold" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; font-size: 11px;">
+                                        {{ count($saved_dead ?? []) }} Records
+                                    </span>
+                                </div>
+                                <button type="button" class="btn-erp btn-erp-danger btn-xs btn-bulk-delete-dead" style="display:none;"><i class="fas fa-trash-alt mr-1"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+                            </div>
                             <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                                <table class="table erp-table table-sm table-bordered">
+                                <table class="table erp-table table-sm table-bordered mb-0">
                                     <thead class="thead-light sticky-top">
                                         <tr>
+                                            <th width="3%" class="text-center"><input type="checkbox" class="select-all-dead"></th>
                                             <th>LOT NO</th>
-                                            <th>DESIGN / COLOR</th>
-                                            <th>SIZE WISE DAMAGE QTY</th>
+                                            <th>Storeroom / Rack</th>
+                                            <th>Size</th>
+                                            <th>Qty</th>
+                                            <th>Remarks</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($lots_data as $lot)
+                                        @forelse($saved_dead ?? [] as $sd)
                                             <tr>
-                                                <td class="font-weight-bold">{{ $lot->lot_no }}</td>
+                                                <td class="text-center"><input type="checkbox" class="dead-chk" value="{{ $sd->id }}"></td>
+                                                <td class="font-weight-bold">{{ $sd->lot_no }}</td>
                                                 <td>
-                                                    <div>{{ $lot->design_number }}</div>
-                                                    <small class="text-muted">{{ $lot->color_name }}</small>
+                                                    {{ $sd->rack->storeroom->name ?? 'N/A' }} / {{ $sd->rack->name ?? 'N/A' }}
                                                 </td>
+                                                <td><span class="badge badge-light border">{{ $sd->size->size ?? 'Unknown' }}</span></td>
+                                                <td>{{ $sd->quantity }}</td>
+                                                <td>{{ $sd->remarks ?? '-' }}</td>
                                                 <td>
-                                                    @if(isset($set_details[$lot->set_id]))
-                                                        @php
-                                                            $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
-                                                            $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
-                                                            $rework_for_lot = isset($rework_by_lot_size[$lot->lot_no]) ? $rework_by_lot_size[$lot->lot_no]->sum('total') : 0;
-                                                            $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
-                                                            $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
-                                                        @endphp
-                                                        <div class="d-flex flex-column" style="gap: 5px; max-width: 280px;">
-                                                            <div class="row no-gutters font-weight-bold text-muted border-bottom pb-1 mb-1" style="font-size: 0.75rem;">
-                                                                <div class="col-7">Size</div>
-                                                                <div class="col-5 text-center">Qty</div>
-                                                            </div>
-                                                            @foreach($set_details[$lot->set_id] as $detail)
-                                                                @php
-                                                                    $sizeName = trim(strtoupper($detail->size));
-                                                                    $incoming_qty = !empty($lot->incoming_sizes) 
-                                                                        ? (int) ($lot->incoming_sizes[$sizeName] ?? 0) 
-                                                                        : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
-                                                                    if ($incoming_qty <= 0) continue;
-
-                                                                    $packed_qty = 0;
-                                                                    if (isset($packed_by_lot_size[$lot->lot_no])) {
-                                                                        $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                                                                        if ($item) $packed_qty = $item->total;
-                                                                    }
-                                                                    $rework_qty = 0;
-                                                                    if (isset($rework_by_lot_size[$lot->lot_no])) {
-                                                                        $item = $rework_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                                                                        if ($item) $rework_qty = $item->total;
-                                                                    }
-                                                                    $outflow_qty = 0;
-                                                                    if (isset($outflow_by_lot_size[$lot->lot_no])) {
-                                                                        $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                                                                        if ($item) $outflow_qty = $item->total;
-                                                                    }
-                                                                    $live_remaining_for_size = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
-
-                                                                    $cleanSize = preg_replace('/[\s\.]/', '-', $sizeName);
-                                                                    $inputId = "damage-input-{$lot->transaction_id}-{$cleanSize}";
-                                                                @endphp
-                                                                <div class="row no-gutters align-items-center mb-1" style="font-size: 0.8rem;">
-                                                                    <div class="col-7 text-dark font-weight-bold">{{ $sizeName }} <span class="badge badge-light text-muted border py-0 px-1 ml-1" style="font-size: 0.7rem;">Max: {{ $live_remaining_for_size }}</span></div>
-                                                                    <div class="col-5">
-                                                                        <input type="number" 
-                                                                            id="{{ $inputId }}" 
-                                                                            class="form-control form-control-sm text-center font-weight-bold damage-qty-input border py-0" 
-                                                                            style="height: 26px;"
-                                                                            data-transaction-id="{{ $lot->transaction_id }}"
-                                                                            data-lot-no="{{ $lot->lot_no }}"
-                                                                            data-detail-id="{{ $detail->id }}"
-                                                                            data-size-name="{{ $sizeName }}"
-                                                                            data-max="{{ $live_remaining_for_size }}"
-                                                                            max="{{ $live_remaining_for_size }}"
-                                                                            min="0" 
-                                                                            placeholder="0">
-                                                                    </div>
-                                                                </div>
-                                                            @endforeach
-                                                        </div>
-                                                    @endif
+                                                    <button class="erp-action-btn erp-btn-delete btn-delete-outflow" data-id="{{ $sd->id }}" title="Delete">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
                                                 </td>
                                             </tr>
-                                        @endforeach
+                                        @empty
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted py-4">
+                                                    <i class="fas fa-inbox fa-2x mb-2 d-block" style="color: #cbd5e1;"></i>
+                                                    No dead records found.
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>
-                        </form>
-
-                        <hr class="my-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <h6 class="font-weight-bold mb-0 text-dark">Saved Dead Records <span class="badge badge-secondary">{{ count($saved_dead ?? []) }}</span></h6>
-                            <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-dead" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table erp-table table-sm table-bordered">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th width="3%" class="text-center"><input type="checkbox" class="select-all-dead"></th>
-                                        <th>LOT NO</th>
-                                        <th>Storeroom / Rack</th>
-                                        <th>Size</th>
-                                        <th>Qty</th>
-                                        <th>Remarks</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($saved_dead ?? [] as $sd)
-                                        <tr>
-                                            <td class="text-center"><input type="checkbox" class="dead-chk" value="{{ $sd->id }}"></td>
-                                            <td class="font-weight-bold">{{ $sd->lot_no }}</td>
-                                            <td>
-                                                {{ $sd->rack->storeroom->name ?? 'N/A' }} / {{ $sd->rack->name ?? 'N/A' }}
-                                            </td>
-                                            <td><span class="badge badge-light border">{{ $sd->size->size ?? 'Unknown' }}</span></td>
-                                            <td>{{ $sd->quantity }}</td>
-                                            <td>{{ $sd->remarks ?? '-' }}</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-delete-outflow" data-id="{{ $sd->id }}">
-                                                    <i class="fas fa-trash"></i> Delete
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr><td colspan="7" class="text-center text-muted py-3">No dead records found.</td></tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                     <div class="tab-pane fade" id="tab-sampling" role="tabpanel">
-                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                            <h5 class="text-primary mb-0"><i class="fas fa-flask"></i> Sampling</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0 font-weight-bold" style="color: #05421c; font-size: 15px;">
+                                <i class="fas fa-flask mr-2 text-success"></i> Sampling Operations
+                            </h6>
                             <div class="d-flex align-items-center" style="gap: 8px;">
-                                <span class="badge badge-light border text-primary px-2 py-1 font-weight-bold" style="{{ $saved_sampling_total > 0 ? '' : 'display:none;' }} font-size: 0.85rem;">
+                                <span class="badge px-2.5 py-1 font-weight-bold" style="{{ $saved_sampling_total > 0 ? '' : 'display:none;' }} background: #edf7e4; color: #05421c; border: 1px solid #c3e6cb; font-size: 12px;">
                                     Saved: <strong id="samplingSavedDisplay">{{ $saved_sampling_total }} Pcs</strong>
                                 </span>
-                                <span class="text-muted font-weight-bold" style="font-size: 0.88rem;">Total Sampling:</span>
-                                <span id="samplingTopTotalBadge" class="badge badge-primary px-3 py-1 font-weight-bold" style="font-size: 0.95rem; border-radius: 6px;">{{ $saved_sampling_total }} Pcs</span>
+                                <span class="text-muted font-weight-bold small text-uppercase">Total Sampling:</span>
+                                <span id="samplingTopTotalBadge" class="badge px-2.5 py-1 font-weight-bold" style="background: #05421c; color: #fff; font-size: 12px; border-radius: 4px;">{{ $saved_sampling_total }} Pcs</span>
                             </div>
                         </div>
                         
-                        <div class="card bg-light border-0 shadow-sm mb-4">
-                            <div class="card-body p-3">
-                                <h6 class="font-weight-bold mb-3 small text-uppercase text-primary">Quick Add Sampling</h6>
-                                <div class="row align-items-end">
-                                     <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Design</label>
+                        <!-- Quick Add Sampling Card -->
+                        <div class="erp-card mb-3">
+                            <div class="erp-card-header d-flex justify-content-between align-items-center">
+                                <span class="font-weight-bold" style="color: #05421c; font-size: 12.5px;">
+                                    <i class="fas fa-plus-circle mr-1 text-success"></i> Quick Add Sampling
+                                </span>
+                            </div>
+                            <div class="erp-card-body p-3">
+                                <div class="row align-items-end" style="row-gap: 8px;">
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Design</label>
                                         <select id="samplingDesign" class="form-control form-control-sm select2">
                                             <option value="">Select Design</option>
                                             @foreach($unique_designs as $design)
@@ -1133,25 +1351,27 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Size Set</label>
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Size Set</label>
                                         <select id="samplingSizeSet" class="form-control form-control-sm select2" disabled>
                                             <option value="">Select Size Set</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Color</label>
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Color</label>
                                         <select id="samplingColor" class="form-control form-control-sm select2" disabled>
                                             <option value="">Select Color</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Quantity (Sets)</label>
-                                        <input type="number" id="samplingQty" class="form-control form-control-sm" min="1" placeholder="e.g. 5" disabled>
-                                        <small id="samplingQtyInfo" class="text-muted d-block mt-1" style="font-size: 0.72rem;">Select size set first</small>
+                                    <div class="col-md-2">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <label class="erp-filter-label mb-0">Quantity (Sets)</label>
+                                            <small id="samplingQtyInfo" class="text-muted" style="font-size: 10px;">Select size set</small>
+                                        </div>
+                                        <input type="number" id="samplingQty" class="form-control form-control-sm erp-input font-weight-bold" min="1" placeholder="e.g. 5" disabled style="height: 31px;">
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <label class="small font-weight-bold">Storage Rack</label>
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label">Storage Rack</label>
                                         <select id="samplingRack" class="form-control form-control-sm select2">
                                             <option value="">Select Storage</option>
                                             @foreach($storerooms as $store)
@@ -1163,282 +1383,319 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-2 mb-2">
-                                        <button type="button" id="btnSaveSamplingDirect" class="btn btn-sm btn-primary w-100 font-weight-bold text-uppercase">
-                                            <i class="fas fa-save"></i> Save
+                                    <div class="col-md-2">
+                                        <label class="erp-filter-label d-none d-md-block" style="visibility: hidden;">&nbsp;</label>
+                                        <button type="button" id="btnSaveSamplingDirect" class="btn-erp btn-erp-primary w-100 justify-content-center" style="height: 31px;">
+                                            <i class="fas fa-save mr-1"></i> Save
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <hr class="my-4">
-
-                        <div class="d-flex align-items-center mb-3">
-                            <h6 class="font-weight-bold mb-0 text-primary">Saved Sampling Records <span class="badge badge-secondary">{{ count($saved_sampling ?? []) }}</span></h6>
-                            <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-sampling" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
-                        </div>
-                        <div class="table-responsive bg-white rounded shadow-sm border mb-3" style="max-height: 400px; overflow-y: auto;">
-                            <table class="table erp-table table-sm table-bordered text-center align-middle mb-0">
-                                <thead class="bg-light">
-                                    <tr>
-                                        <th width="3%" class="text-center"><input type="checkbox" class="select-all-sampling-outflow"></th>
-                                        <th>LOT NO</th>
-                                        <th>Design</th>
-                                        <th>Color</th>
-                                        <th>Size</th>
-                                        <th>Storeroom / Rack</th>
-                                        <th>Qty</th>
-                                        <th>Remarks</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($saved_sampling ?? [] as $ss)
-                                    <tr>
-                                        <td class="text-center"><input type="checkbox" class="sampling-outflow-chk" value="{{ $ss->id }}"></td>
-                                        <td class="font-weight-bold">{{ $ss->lot_no }}</td>
-                                        <td>{{ $ss->product->design_number ?? 'N/A' }}</td>
-                                        <td><span class="badge badge-secondary">{{ $ss->color->name ?? 'N/A' }}</span></td>
-                                        <td><span class="badge badge-light border">{{ $ss->size->size ?? 'N/A' }}</span></td>
-                                        <td>
-                                            @if($ss->rack)
-                                                <span class="badge badge-info">{{ $ss->rack->storeroom->name ?? '' }} / {{ $ss->rack->name }}</span>
-                                            @else
-                                                <span class="text-muted">N/A</span>
-                                            @endif
-                                        </td>
-                                        <td><strong>{{ $ss->quantity }}</strong></td>
-                                        <td>{{ $ss->remarks ?? '-' }}</td>
-                                        <td>
-                                            <button class="btn btn-xs btn-outline-danger btn-delete-outflow" data-id="{{ $ss->id }}">
-                                                <i class="fas fa-trash-alt"></i> Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="9" class="text-muted py-4">No sampling records saved for this slip yet.</td>
-                                    </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="tab-debit" role="tabpanel">
-                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                            <h5 class="text-warning mb-0"><i class="fas fa-minus-circle"></i> Debit</h5>
-                            <div class="d-flex align-items-center" style="gap: 8px;">
-                                <span class="badge badge-light border text-warning px-2 py-1 font-weight-bold" style="{{ $saved_debit_total > 0 ? '' : 'display:none;' }} font-size: 0.85rem;">
-                                    Saved: <strong id="debitSavedDisplay">{{ $saved_debit_total }} Pcs</strong>
-                                </span>
-                                <span class="text-muted font-weight-bold" style="font-size: 0.88rem;">Total Debit Quantity:</span>
-                                <span id="debitTopTotalBadge" class="badge badge-warning text-dark px-3 py-1 font-weight-bold" style="font-size: 0.95rem; border-radius: 6px;">{{ $saved_debit_total }} Pcs</span>
+                        <!-- Saved Sampling Records Card -->
+                        <div class="erp-card mb-3">
+                            <div class="erp-card-header d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center" style="gap: 8px;">
+                                    <span class="font-weight-bold" style="color: #05421c; font-size: 12.5px;">
+                                        <i class="fas fa-list-alt mr-1 text-success"></i> Saved Sampling Records
+                                    </span>
+                                    <span class="badge px-2 py-0.5 font-weight-bold" style="background:#edf7e4; color:#05421c; border:1px solid #c3e6cb; font-size: 11px;">
+                                        {{ count($saved_sampling ?? []) }} Records
+                                    </span>
+                                </div>
+                                <button type="button" class="btn-erp btn-erp-danger btn-xs btn-bulk-delete-sampling" style="display:none;"><i class="fas fa-trash-alt mr-1"></i> Delete Selected (<span class="selected-count">0</span>)</button>
                             </div>
-                        </div>
-                        
-                        <form id="debitForm">
-                            <div class="row mb-3">
-                                <div class="col-md-2">
-                                    <label>Stage <span class="text-danger">*</span></label>
-                                    <select id="debitStage" class="form-control form-control-sm select2" required>
-                                        <option value="">-- Stage --</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label>Unit <span class="text-danger">*</span></label>
-                                    <select id="debitUnit" class="form-control form-control-sm select2" required disabled>
-                                        <option value="">-- Unit --</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label>Rack <span class="text-danger">*</span></label>
-                                    <select id="debitRack" class="form-control form-control-sm select2" required>
-                                        <option value="">-- Select Rack --</option>
-                                        @foreach($storerooms as $store)
-                                            <optgroup label="{{ $store->name }}">
-                                                @foreach($store->racks as $rack)
-                                                    <option value="{{ $rack->id }}">{{ $rack->name }}</option>
-                                                @endforeach
-                                            </optgroup>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label>Global Rate/Pc</label>
-                                    <input type="number" id="debitGlobalRate" class="form-control form-control-sm" placeholder="₹" min="0">
-                                </div>
-                                <div class="col-md-3 d-flex align-items-end">
-                                    <button type="button" id="btnSaveDebit" class="btn btn-sm btn-warning w-100">
-                                        <i class="fas fa-save"></i> Save Debit
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-2">
-                                    <label>Overall Discount</label>
-                                    <input type="number" id="debitDiscount" class="form-control form-control-sm" placeholder="₹" min="0" value="0">
-                                </div>
-                                <div class="col-md-10">
-                                    <label>Remarks</label>
-                                    <input type="text" id="debitRemarks" class="form-control form-control-sm" placeholder="Optional notes...">
-                                </div>
-                            </div>
-                            
                             <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                                <table class="table erp-table table-sm table-bordered">
+                                <table class="table erp-table table-sm table-bordered text-center align-middle mb-0">
                                     <thead class="thead-light sticky-top">
                                         <tr>
+                                            <th width="3%" class="text-center"><input type="checkbox" class="select-all-sampling-outflow"></th>
                                             <th>LOT NO</th>
-                                            <th>DESIGN / COLOR</th>
-                                            <th>SIZE WISE DEBIT (QTY & RATE)</th>
+                                            <th>Design</th>
+                                            <th>Color</th>
+                                            <th>Size</th>
+                                            <th>Storeroom / Rack</th>
+                                            <th>Qty</th>
+                                            <th>Remarks</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($lots_data as $lot)
-                                            <tr>
-                                                <td class="font-weight-bold">{{ $lot->lot_no }}</td>
-                                                <td>
-                                                    <div>{{ $lot->design_number }}</div>
-                                                    <small class="text-muted">{{ $lot->color_name }}</small>
-                                                </td>
-                                                <td>
-                                                    @if(isset($set_details[$lot->set_id]))
-                                                        @php
-                                                            $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
-                                                            $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
-                                                            $rework_for_lot = isset($rework_by_lot_size[$lot->lot_no]) ? $rework_by_lot_size[$lot->lot_no]->sum('total') : 0;
-                                                            $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
-                                                            $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
-                                                        @endphp
-                                                        <div class="d-flex flex-column" style="gap: 5px; max-width: 340px;">
-                                                            <div class="row no-gutters font-weight-bold text-muted border-bottom pb-1 mb-1" style="font-size: 0.75rem;">
-                                                                <div class="col-5">Size</div>
-                                                                <div class="col-3 text-center">Qty</div>
-                                                                <div class="col-4 text-center">Rate (₹)</div>
-                                                            </div>
-                                                            @foreach($set_details[$lot->set_id] as $detail)
-                                                                @php
-                                                                    $sizeName = trim(strtoupper($detail->size));
-                                                                    $incoming_qty = !empty($lot->incoming_sizes) 
-                                                                        ? (int) ($lot->incoming_sizes[$sizeName] ?? 0) 
-                                                                        : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
-                                                                    if ($incoming_qty <= 0) continue;
-
-                                                                    $packed_qty = 0;
-                                                                    if (isset($packed_by_lot_size[$lot->lot_no])) {
-                                                                        $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                                                                        if ($item) $packed_qty = $item->total;
-                                                                    }
-                                                                    $rework_qty = 0;
-                                                                    if (isset($rework_by_lot_size[$lot->lot_no])) {
-                                                                        $item = $rework_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                                                                        if ($item) $rework_qty = $item->total;
-                                                                    }
-                                                                    $outflow_qty = 0;
-                                                                    if (isset($outflow_by_lot_size[$lot->lot_no])) {
-                                                                        $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
-                                                                        if ($item) $outflow_qty = $item->total;
-                                                                    }
-                                                                    $live_remaining_for_size = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
-
-                                                                    $cleanSize = preg_replace('/[\s\.]/', '-', $sizeName);
-                                                                    $qtyId = "debit-qty-{$lot->transaction_id}-{$cleanSize}";
-                                                                    $rateId = "debit-rate-{$lot->transaction_id}-{$cleanSize}";
-                                                                @endphp
-                                                                <div class="row no-gutters align-items-center mb-1" style="font-size: 0.8rem;">
-                                                                    <div class="col-5 text-dark font-weight-bold">{{ $sizeName }} <span class="badge badge-light text-muted border py-0 px-1 ml-1" style="font-size: 0.7rem;">Max: {{ $live_remaining_for_size }}</span></div>
-                                                                    <div class="col-3 px-1">
-                                                                        <input type="number" id="{{ $qtyId }}" class="form-control form-control-sm text-center debit-qty-input border py-0" 
-                                                                            style="height: 26px;"
-                                                                            data-transaction-id="{{ $lot->transaction_id }}"
-                                                                            data-lot-no="{{ $lot->lot_no }}"
-                                                                            data-detail-id="{{ $detail->id }}"
-                                                                            data-size-name="{{ $sizeName }}"
-                                                                            data-max="{{ $live_remaining_for_size }}"
-                                                                            max="{{ $live_remaining_for_size }}"
-                                                                            min="0" placeholder="0">
-                                                                    </div>
-                                                                    <div class="col-4 px-1">
-                                                                        <div class="input-group input-group-sm">
-                                                                            <div class="input-group-prepend" style="height: 26px;"><span class="input-group-text px-1" style="font-size: 0.7rem; border-radius: 4px 0 0 4px; display: flex; align-items: center; justify-content: center;">₹</span></div>
-                                                                            <input type="number" id="{{ $rateId }}" class="form-control form-control-sm text-center debit-rate-input border py-0 px-1" 
-                                                                                style="height: 26px; border-radius: 0 4px 4px 0;"
-                                                                                min="0" placeholder="0">
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            @endforeach
-                                                        </div>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </form>
-
-                        <hr class="my-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <h6 class="font-weight-bold mb-0 text-warning">Saved Debit Records <span class="badge badge-secondary">{{ count($saved_debit ?? []) }}</span></h6>
-                            <button type="button" class="btn btn-xs btn-danger ml-3 btn-bulk-delete-debit" style="display:none;"><i class="fas fa-trash-alt"></i> Delete Selected (<span class="selected-count">0</span>)</button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table erp-table table-sm table-bordered">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th width="3%" class="text-center"><input type="checkbox" class="select-all-debit"></th>
-                                        <th>LOT NO</th>
-                                        <th>Responsible</th>
-                                        <th>Rack</th>
-                                        <th>Size</th>
-                                        <th>Qty</th>
-                                        <th>Rate/Pc</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($saved_debit ?? [] as $sd)
+                                        @forelse($saved_sampling ?? [] as $ss)
                                         <tr>
-                                            <td class="text-center"><input type="checkbox" class="debit-chk" value="{{ $sd->id }}"></td>
-                                            <td class="font-weight-bold">{{ $sd->lot_no }}</td>
+                                            <td class="text-center"><input type="checkbox" class="sampling-outflow-chk" value="{{ $ss->id }}"></td>
+                                            <td class="font-weight-bold">{{ $ss->lot_no }}</td>
+                                            <td>{{ $ss->product->design_number ?? 'N/A' }}</td>
+                                            <td><span class="badge badge-secondary">{{ $ss->color->name ?? 'N/A' }}</span></td>
+                                            <td><span class="badge badge-light border">{{ $ss->size->size ?? 'N/A' }}</span></td>
                                             <td>
-                                                <small>{{ $sd->responsibleStage->name ?? 'N/A' }} <br> <b>{{ $sd->responsibleUnit->name ?? 'N/A' }}</b></small>
+                                                @if($ss->rack)
+                                                    <span class="badge badge-info">{{ $ss->rack->storeroom->name ?? '' }} / {{ $ss->rack->name }}</span>
+                                                @else
+                                                    <span class="text-muted">N/A</span>
+                                                @endif
                                             </td>
-                                            <td><small>{{ $sd->rack->name ?? 'N/A' }}</small></td>
-                                            <td><span class="badge badge-light border">{{ $sd->size->size ?? 'Unknown' }}</span></td>
-                                            <td>{{ $sd->quantity }}</td>
-                                            <td>₹{{ number_format($sd->per_piece_amount, 2) }}</td>
+                                            <td><strong>{{ $ss->quantity }}</strong></td>
+                                            <td>{{ $ss->remarks ?? '-' }}</td>
                                             <td>
-                                                <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-delete-outflow" data-id="{{ $sd->id }}">
-                                                    <i class="fas fa-trash"></i> Delete
+                                                <button class="erp-action-btn erp-btn-delete btn-delete-outflow" data-id="{{ $ss->id }}" title="Delete">
+                                                    <i class="fas fa-trash-alt"></i>
                                                 </button>
                                             </td>
                                         </tr>
-                                    @empty
-                                        <tr><td colspan="8" class="text-center text-muted py-3">No debit records found.</td></tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                                        @empty
+                                        <tr>
+                                            <td colspan="9" class="text-center text-muted py-4">
+                                                <i class="fas fa-inbox fa-2x mb-2 d-block" style="color: #cbd5e1;"></i>
+                                                No sampling records saved for this slip yet.
+                                            </td>
+                                        </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="tab-debit" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0 font-weight-bold" style="color: #b45309; font-size: 15px;">
+                                <i class="fas fa-minus-circle mr-2 text-warning"></i> Debit Operations
+                            </h6>
+                            <div class="d-flex align-items-center" style="gap: 8px;">
+                                <span class="badge px-2.5 py-1 font-weight-bold" style="{{ $saved_debit_total > 0 ? '' : 'display:none;' }} background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-size: 12px;">
+                                    Saved: <strong id="debitSavedDisplay">{{ $saved_debit_total }} Pcs</strong>
+                                </span>
+                                <span class="text-muted font-weight-bold small text-uppercase">Total Debit Qty:</span>
+                                <span id="debitTopTotalBadge" class="badge px-2.5 py-1 font-weight-bold" style="background: #f59e0b; color: #fff; font-size: 12px; border-radius: 4px;">{{ $saved_debit_total }} Pcs</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Debit Form Card -->
+                        <div class="erp-card mb-3">
+                            <div class="erp-card-header">
+                                <span class="font-weight-bold" style="color: #05421c; font-size: 12.5px;">
+                                    <i class="fas fa-file-invoice-dollar mr-1 text-warning"></i> Record Debit Details
+                                </span>
+                            </div>
+                            <div class="erp-card-body p-3">
+                                <form id="debitForm">
+                                    <div class="row align-items-end mb-3" style="row-gap: 8px;">
+                                        <div class="col-md-2">
+                                            <label class="erp-filter-label">Stage <span class="text-danger">*</span></label>
+                                            <select id="debitStage" class="form-control form-control-sm select2" required>
+                                                <option value="">-- Stage --</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="erp-filter-label">Unit <span class="text-danger">*</span></label>
+                                            <select id="debitUnit" class="form-control form-control-sm select2" required disabled>
+                                                <option value="">-- Unit --</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="erp-filter-label">Rack <span class="text-danger">*</span></label>
+                                            <select id="debitRack" class="form-control form-control-sm select2" required>
+                                                <option value="">-- Select Rack --</option>
+                                                @foreach($storerooms as $store)
+                                                    <optgroup label="{{ $store->name }}">
+                                                        @foreach($store->racks as $rack)
+                                                            <option value="{{ $rack->id }}">{{ $rack->name }}</option>
+                                                        @endforeach
+                                                    </optgroup>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="erp-filter-label">Global Rate/Pc</label>
+                                            <input type="number" id="debitGlobalRate" class="form-control form-control-sm erp-input" placeholder="₹" min="0" style="height: 31px;">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="erp-filter-label d-none d-md-block" style="visibility: hidden;">&nbsp;</label>
+                                            <button type="button" id="btnSaveDebit" class="btn-erp btn-erp-primary w-100 justify-content-center" style="height: 31px; background: #d97706 !important; border-color: #d97706 !important; color: #fff !important;">
+                                                <i class="fas fa-save mr-1"></i> Save Debit
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="row align-items-end mb-3" style="row-gap: 8px;">
+                                        <div class="col-md-2">
+                                            <label class="erp-filter-label">Overall Discount</label>
+                                            <input type="number" id="debitDiscount" class="form-control form-control-sm erp-input" placeholder="₹" min="0" value="0" style="height: 31px;">
+                                        </div>
+                                        <div class="col-md-10">
+                                            <label class="erp-filter-label">Remarks</label>
+                                            <input type="text" id="debitRemarks" class="form-control form-control-sm erp-input" placeholder="Optional notes..." style="height: 31px;">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                        <table class="table erp-table table-sm table-bordered mb-0">
+                                            <thead class="thead-light sticky-top">
+                                                <tr>
+                                                    <th>LOT NO</th>
+                                                    <th>DESIGN / COLOR</th>
+                                                    <th>SIZE WISE DEBIT (QTY & RATE)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($lots_data as $lot)
+                                                    <tr>
+                                                        <td class="font-weight-bold">{{ $lot->lot_no }}</td>
+                                                        <td>
+                                                            <div>{{ $lot->design_number }}</div>
+                                                            <small class="text-muted">{{ $lot->color_name }}</small>
+                                                        </td>
+                                                        <td>
+                                                            @if(isset($set_details[$lot->set_id]))
+                                                                @php
+                                                                    $total_set_qty = $set_details[$lot->set_id]->sum('total_quantity');
+                                                                    $packed_for_lot = isset($packed_by_lot_size[$lot->lot_no]) ? $packed_by_lot_size[$lot->lot_no]->sum('total') : 0;
+                                                                    $rework_for_lot = isset($rework_by_lot_size[$lot->lot_no]) ? $rework_by_lot_size[$lot->lot_no]->sum('total') : 0;
+                                                                    $outflow_for_lot = isset($outflow_by_lot_size[$lot->lot_no]) ? $outflow_by_lot_size[$lot->lot_no]->sum('total') : 0;
+                                                                    $starting_lot_qty = $lot->remaining_quantity + $packed_for_lot + $rework_for_lot + $outflow_for_lot;
+                                                                @endphp
+                                                                <div class="d-flex flex-column" style="gap: 5px; max-width: 340px;">
+                                                                    <div class="row no-gutters font-weight-bold text-muted border-bottom pb-1 mb-1" style="font-size: 0.75rem;">
+                                                                        <div class="col-5">Size</div>
+                                                                        <div class="col-3 text-center">Qty</div>
+                                                                        <div class="col-4 text-center">Rate (₹)</div>
+                                                                    </div>
+                                                                    @foreach($set_details[$lot->set_id] as $detail)
+                                                                        @php
+                                                                            $sizeName = trim(strtoupper($detail->size));
+                                                                            $incoming_qty = !empty($lot->incoming_sizes) 
+                                                                                ? (int) ($lot->incoming_sizes[$sizeName] ?? 0) 
+                                                                                : ($total_set_qty > 0 ? floor($starting_lot_qty * ($detail->total_quantity / $total_set_qty)) : 0);
+                                                                            if ($incoming_qty <= 0) continue;
+
+                                                                            $packed_qty = 0;
+                                                                            if (isset($packed_by_lot_size[$lot->lot_no])) {
+                                                                                $item = $packed_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                                                                                if ($item) $packed_qty = $item->total;
+                                                                            }
+                                                                            $rework_qty = 0;
+                                                                            if (isset($rework_by_lot_size[$lot->lot_no])) {
+                                                                                $item = $rework_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                                                                                if ($item) $rework_qty = $item->total;
+                                                                            }
+                                                                            $outflow_qty = 0;
+                                                                            if (isset($outflow_by_lot_size[$lot->lot_no])) {
+                                                                                $item = $outflow_by_lot_size[$lot->lot_no]->where('size', $sizeName)->first();
+                                                                                if ($item) $outflow_qty = $item->total;
+                                                                            }
+                                                                            $live_remaining_for_size = max(0, $incoming_qty - $packed_qty - $rework_qty - $outflow_qty);
+
+                                                                            $cleanSize = preg_replace('/[\s\.]/', '-', $sizeName);
+                                                                            $qtyId = "debit-qty-{$lot->transaction_id}-{$cleanSize}";
+                                                                            $rateId = "debit-rate-{$lot->transaction_id}-{$cleanSize}";
+                                                                        @endphp
+                                                                        <div class="row no-gutters align-items-center mb-1" style="font-size: 0.8rem;">
+                                                                            <div class="col-5 text-dark font-weight-bold">{{ $sizeName }} <span class="badge badge-light text-muted border py-0 px-1 ml-1" style="font-size: 0.7rem;">Max: {{ $live_remaining_for_size }}</span></div>
+                                                                            <div class="col-3 px-1">
+                                                                                <input type="number" id="{{ $qtyId }}" class="form-control form-control-sm text-center debit-qty-input border py-0" 
+                                                                                    style="height: 26px;"
+                                                                                    data-transaction-id="{{ $lot->transaction_id }}"
+                                                                                    data-lot-no="{{ $lot->lot_no }}"
+                                                                                    data-detail-id="{{ $detail->id }}"
+                                                                                    data-size-name="{{ $sizeName }}"
+                                                                                    data-max="{{ $live_remaining_for_size }}"
+                                                                                    max="{{ $live_remaining_for_size }}"
+                                                                                    min="0" placeholder="0">
+                                                                            </div>
+                                                                            <div class="col-4 px-1">
+                                                                                <div class="input-group input-group-sm">
+                                                                                    <div class="input-group-prepend" style="height: 26px;"><span class="input-group-text px-1" style="font-size: 0.7rem; border-radius: 4px 0 0 4px; display: flex; align-items: center; justify-content: center;">₹</span></div>
+                                                                                    <input type="number" id="{{ $rateId }}" class="form-control form-control-sm text-center debit-rate-input border py-0 px-1" 
+                                                                                        style="height: 26px; border-radius: 0 4px 4px 0;"
+                                                                                        min="0" placeholder="0">
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Saved Debit Records Card -->
+                        <div class="erp-card mb-3">
+                            <div class="erp-card-header d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center" style="gap: 8px;">
+                                    <span class="font-weight-bold" style="color: #b45309; font-size: 12.5px;">
+                                        <i class="fas fa-list-alt mr-1 text-warning"></i> Saved Debit Records
+                                    </span>
+                                    <span class="badge px-2 py-0.5 font-weight-bold" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-size: 11px;">
+                                        {{ count($saved_debit ?? []) }} Records
+                                    </span>
+                                </div>
+                                <button type="button" class="btn-erp btn-erp-danger btn-xs btn-bulk-delete-debit" style="display:none;"><i class="fas fa-trash-alt mr-1"></i> Delete Selected (<span class="selected-count">0</span>)</button>
+                            </div>
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table erp-table table-sm table-bordered mb-0">
+                                    <thead class="thead-light sticky-top">
+                                        <tr>
+                                            <th width="3%" class="text-center"><input type="checkbox" class="select-all-debit"></th>
+                                            <th>LOT NO</th>
+                                            <th>Responsible</th>
+                                            <th>Rack</th>
+                                            <th>Size</th>
+                                            <th>Qty</th>
+                                            <th>Rate/Pc</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($saved_debit ?? [] as $sd)
+                                            <tr>
+                                                <td class="text-center"><input type="checkbox" class="debit-chk" value="{{ $sd->id }}"></td>
+                                                <td class="font-weight-bold">{{ $sd->lot_no }}</td>
+                                                <td>
+                                                    <small>{{ $sd->responsibleStage->name ?? 'N/A' }} <br> <b>{{ $sd->responsibleUnit->name ?? 'N/A' }}</b></small>
+                                                </td>
+                                                <td><small>{{ $sd->rack->name ?? 'N/A' }}</small></td>
+                                                <td><span class="badge badge-light border">{{ $sd->size->size ?? 'Unknown' }}</span></td>
+                                                <td>{{ $sd->quantity }}</td>
+                                                <td>₹{{ number_format($sd->per_piece_amount, 2) }}</td>
+                                                <td>
+                                                    <button class="erp-action-btn erp-btn-delete btn-delete-outflow" data-id="{{ $sd->id }}" title="Delete">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="8" class="text-center text-muted py-4">
+                                                    <i class="fas fa-inbox fa-2x mb-2 d-block" style="color: #cbd5e1;"></i>
+                                                    No debit records found.
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
     </div>
-</div>
 
 <!-- Production Slip Modal -->
 <div class="modal fade" id="slipModal" tabindex="-1" role="dialog" aria-labelledby="slipModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content text-dark">
-            <div class="modal-header">
-                <h5 class="modal-title font-weight-bold" id="slipModalLabel">
-                    <i class="fas fa-file-invoice mr-1 text-primary"></i> Production Slip Image
+        <div class="modal-content border-0 shadow-lg text-dark">
+            <div class="modal-header py-2 px-3 text-white" style="background: #05421c;">
+                <h5 class="modal-title font-weight-bold" id="slipModalLabel" style="font-size: 15px;">
+                    <i class="fas fa-file-invoice mr-1 text-warning"></i> Production Slip Image
                 </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -2929,7 +3186,7 @@
             let badgesHtml = '';
             let availLotSizes = Object.keys(availStockBySize);
             availLotSizes.forEach(sz => {
-                badgesHtml += `<span class="badge badge-info px-2 py-1 mr-1 mb-1 font-weight-normal">${sz}: <strong>${availStockBySize[sz]} pcs</strong></span>`;
+                badgesHtml += `<span class="badge px-2 py-1 mr-1 mb-1 font-weight-bold" style="background:#edf7e4; color:#05421c; border:1px solid #c3e6cb;">${sz}: <strong>${availStockBySize[sz]} pcs</strong></span>`;
             });
             if (!badgesHtml) {
                 badgesHtml = '<span class="text-danger small font-weight-bold">No live remaining stock in this slip!</span>';
@@ -2954,7 +3211,7 @@
             sizeOrder.forEach((domSize, idx) => {
                 let pcs = sizeCounts[domSize];
                 rowsHtml += `<tr>`;
-                rowsHtml += `<td class="font-weight-bold text-primary">${domSize}</td>`;
+                rowsHtml += `<td class="font-weight-bold" style="color: #05421c;">${domSize}</td>`;
                 rowsHtml += `<td><span class="badge badge-secondary">${pcs} pc${pcs > 1 ? 's' : ''}</span></td>`;
                 rowsHtml += `<td>`;
                 rowsHtml += `<select class="form-control form-control-sm dom-lot-select" data-dom-size="${domSize}" data-pcs="${pcs}">`;
@@ -3076,7 +3333,7 @@
                 } else if (boxQty > 0) {
                     $statusCell.html(`<span class="badge badge-success">OK (${totalNeededForLotSz} / ${avail} pcs)</span>`);
                 } else {
-                    $statusCell.html(`<span class="badge badge-info">${avail} pcs avail</span>`);
+                    $statusCell.html(`<span class="badge" style="background:#edf7e4; color:#05421c; border:1px solid #c3e6cb;">${avail} pcs avail</span>`);
                 }
             });
 

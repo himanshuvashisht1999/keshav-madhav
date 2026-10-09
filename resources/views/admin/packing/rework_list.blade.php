@@ -1,199 +1,417 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper" style="background-color: #f1f5f9;">
-    <!-- PAGE HEADER WITH EMBEDDED COMPACT STATS -->
-    <section class="content-header pb-2 pt-3">
-        <div class="container-fluid">
-            <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
-                <div>
-                    <h1 class="m-0 font-weight-bold text-dark d-flex align-items-center" style="font-size: 1.35rem; letter-spacing: -0.3px;">
-                        <span class="mr-2 text-danger"><i class="fas fa-tools"></i></span>
-                        Defect & Rework Management
-                    </h1>
-                    <small class="text-muted">Items stored in rack awaiting admin rework assignment</small>
+<style>
+    /* Snapkid Enterprise ERP Design System */
+    :root {
+        --erp-bg: #f8fafc;
+        --erp-card-bg: #ffffff;
+        --erp-border: #e2e8f0;
+        --erp-primary: #05421c;
+        --erp-primary-hover: #075e28;
+        --erp-text-main: #1e293b;
+        --erp-text-muted: #64748b;
+        --erp-radius: 6px;
+        --erp-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .content-wrapper {
+        background-color: var(--erp-bg);
+    }
+
+    /* 1. Header Bar */
+    .erp-header-bar {
+        background: linear-gradient(135deg, #05421c 0%, #0a5c28 100%) !important;
+        border-radius: 6px;
+        padding: 0.65rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: 0 2px 6px rgba(5,66,28,0.2) !important;
+        margin-bottom: 0.75rem;
+    }
+    .erp-header-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #ffffff !important;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+    .erp-header-subtitle {
+        color: rgba(255,255,255,0.85);
+        font-size: 0.8rem;
+        margin: 0;
+    }
+
+    /* 2. Filter Bar */
+    .erp-filter-bar {
+        background: #ffffff;
+        border: 1px solid var(--erp-border);
+        border-radius: var(--erp-radius);
+        padding: 0.75rem 1rem;
+        box-shadow: var(--erp-shadow);
+        margin-bottom: 0.75rem;
+    }
+    .erp-filter-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 4px;
+        display: block;
+        letter-spacing: 0.4px;
+    }
+    .erp-input, .form-control-sm {
+        height: 31px !important;
+        font-size: 12.5px !important;
+        border: 1px solid #ced4da;
+        border-radius: var(--erp-radius);
+    }
+    .erp-input:focus, .form-control-sm:focus {
+        border-color: #05421c;
+        box-shadow: 0 0 0 0.15rem rgba(5,66,28,0.15);
+    }
+
+    /* 3. Cards */
+    .erp-card {
+        background: var(--erp-card-bg);
+        border: 1px solid var(--erp-border);
+        border-radius: var(--erp-radius);
+        box-shadow: var(--erp-shadow);
+        margin-bottom: 0.75rem;
+    }
+
+    /* 4. Buttons */
+    .btn-erp {
+        font-size: 0.82rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: var(--erp-radius);
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease-in-out;
+        border: 1px solid transparent;
+        cursor: pointer;
+        height: 31px;
+    }
+    .btn-erp-primary {
+        background: #fcee21 !important;
+        color: #05421c !important;
+        border-color: #fcee21 !important;
+        font-weight: 700;
+    }
+    .btn-erp-primary:hover {
+        background: #f5e51b !important;
+        color: #032b12 !important;
+    }
+    .btn-erp-outline {
+        background: transparent;
+        border-color: rgba(255, 255, 255, 0.4);
+        color: #ffffff;
+    }
+    .btn-erp-outline:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+    }
+    .btn-erp-danger {
+        background: #ef4444;
+        color: #ffffff;
+        border-color: #ef4444;
+    }
+    .btn-erp-danger:hover {
+        background: #dc2626;
+        color: #ffffff;
+    }
+    .btn-erp-xs {
+        height: 24px !important;
+        padding: 0.15rem 0.5rem;
+        font-size: 0.74rem;
+        border-radius: 4px;
+    }
+
+    /* 5. Action Buttons */
+    .erp-action-btn {
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        font-size: 11.5px;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
+        background: transparent;
+        cursor: pointer;
+    }
+    .erp-btn-delete {
+        color: #ef4444;
+        border-color: #fee2e2;
+        background-color: #fef2f2;
+    }
+    .erp-btn-delete:hover {
+        background-color: #ef4444;
+        color: #ffffff;
+    }
+
+    /* 6. Tables */
+    .erp-table {
+        width: 100%;
+        margin-bottom: 0;
+        border-collapse: collapse;
+    }
+    .erp-table thead th {
+        background-color: #edf7e4 !important;
+        color: #05421c !important;
+        font-size: 0.74rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        padding: 0.65rem 0.75rem !important;
+        border-bottom: 2px solid #c3e6cb !important;
+        letter-spacing: 0.4px;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .erp-table tbody td {
+        vertical-align: middle;
+        padding: 0.55rem 0.75rem;
+        border-color: #f1f5f9;
+        font-size: 0.83rem;
+        color: #1e293b;
+    }
+
+    /* 7. Select2 Fixes */
+    .select2-container .select2-selection--single {
+        height: 31px !important;
+        border-radius: var(--erp-radius) !important;
+        border-color: #ced4da !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 29px !important;
+        font-size: 0.8rem;
+        padding-left: 8px !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 29px !important;
+    }
+
+    /* 8. Specific Badges */
+    .badge-in-rack {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+        font-weight: 600;
+        font-size: 0.73rem;
+        padding: 0.25em 0.55em;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+    .badge-assigned {
+        background-color: #edf7e4;
+        color: #05421c;
+        border: 1px solid #c3e6cb;
+        font-weight: 600;
+        font-size: 0.73rem;
+        padding: 0.25em 0.55em;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+    .badge-size-qty {
+        background-color: #fee2e2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+        font-weight: 700;
+        font-size: 0.76rem;
+        padding: 0.25em 0.55em;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+</style>
+
+<div class="content-wrapper erp-page p-2">
+    <!-- 1. PAGE HEADER WITH EMBEDDED INLINE STATS -->
+    <div class="erp-header-bar mb-3">
+        <div>
+            <h1 class="erp-header-title">
+                <i class="fas fa-tools mr-2 text-warning"></i> Defect & Rework Management
+            </h1>
+            <p class="erp-header-subtitle">Items stored in rack awaiting admin rework assignment</p>
+        </div>
+        
+        <!-- COMPACT INLINE STATS & ACTIONS -->
+        <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
+            <div class="px-3 py-1 rounded d-flex align-items-center" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);">
+                <i class="fas fa-warehouse mr-2 text-warning" style="font-size: 1.1rem;"></i>
+                <div style="line-height: 1.1;">
+                    <span class="text-uppercase d-block" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.75);">In Rack</span>
+                    <div class="font-weight-bold text-white" id="statStored" style="font-size: 0.95rem;">{{ $totalStoredPieces ?? 0 }} Pcs</div>
                 </div>
-                
-                <!-- COMPACT INLINE STATS -->
-                <div class="d-flex flex-wrap align-items-center mt-2 mt-md-0" style="gap: 10px;">
-                    <div class="stat-pill bg-white px-3 py-1 rounded border shadow-sm d-flex align-items-center">
-                        <span class="badge badge-warning p-2 mr-2 text-dark"><i class="fas fa-warehouse"></i></span>
-                        <div style="line-height: 1.1;">
-                            <span class="text-muted text-uppercase" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">Stored in Rack</span>
-                            <div class="font-weight-bold text-dark" id="statStored" style="font-size: 0.95rem;">{{ $totalStoredPieces ?? 0 }} Pcs</div>
-                        </div>
-                    </div>
+            </div>
 
-                    <div class="stat-pill bg-white px-3 py-1 rounded border shadow-sm d-flex align-items-center">
-                        <span class="badge badge-success p-2 mr-2"><i class="fas fa-check-circle"></i></span>
-                        <div style="line-height: 1.1;">
-                            <span class="text-muted text-uppercase" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">Assigned</span>
-                            <div class="font-weight-bold text-dark" id="statAssigned" style="font-size: 0.95rem;">{{ $totalAssignedPieces ?? 0 }} Pcs</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-pill bg-white px-3 py-1 rounded border shadow-sm d-flex align-items-center">
-                        <span class="badge badge-primary p-2 mr-2"><i class="fas fa-cubes"></i></span>
-                        <div style="line-height: 1.1;">
-                            <span class="text-muted text-uppercase" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">Active Lots</span>
-                            <div class="font-weight-bold text-dark" id="statLots" style="font-size: 0.95rem;">{{ $totalActiveLots ?? 0 }} Lots</div>
-                        </div>
-                    </div>
-
-                    <a href="{{ route('admin.packing.index') }}" class="btn btn-sm btn-outline-secondary px-3 shadow-sm ml-2" style="border-radius: 6px; height: 36px; display: inline-flex; align-items: center;">
-                        <i class="fas fa-box-open mr-1"></i> Packing Module
-                    </a>
-                    <button id="btnRefresh" class="btn btn-sm btn-light border px-3 shadow-sm" style="border-radius: 6px; height: 36px;" title="Refresh List">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
+            <div class="px-3 py-1 rounded d-flex align-items-center" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);">
+                <i class="fas fa-check-circle mr-2" style="font-size: 1.1rem; color: #4ade80 !important;"></i>
+                <div style="line-height: 1.1;">
+                    <span class="text-uppercase d-block" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.75);">Assigned</span>
+                    <div class="font-weight-bold text-white" id="statAssigned" style="font-size: 0.95rem;">{{ $totalAssignedPieces ?? 0 }} Pcs</div>
                 </div>
+            </div>
+
+            <div class="px-3 py-1 rounded d-flex align-items-center" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);">
+                <i class="fas fa-cubes mr-2 text-warning" style="font-size: 1.1rem;"></i>
+                <div style="line-height: 1.1;">
+                    <span class="text-uppercase d-block" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.75);">Active Lots</span>
+                    <div class="font-weight-bold text-white" id="statLots" style="font-size: 0.95rem;">{{ $totalActiveLots ?? 0 }} Lots</div>
+                </div>
+            </div>
+
+            <a href="{{ route('admin.packing.index') }}" class="btn-erp btn-erp-outline" style="color: #fff; border-color: rgba(255,255,255,0.4);">
+                <i class="fas fa-box-open mr-1"></i> Packing Module
+            </a>
+            <button id="btnRefresh" class="btn-erp btn-erp-outline" style="color: #fff; border-color: rgba(255,255,255,0.4);" title="Refresh List">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. STREAMLINED FILTER BAR -->
+    <div class="erp-filter-bar mb-3">
+        <div class="row align-items-end" style="row-gap: 8px;">
+            <div class="col-lg-3 col-md-6">
+                <label class="erp-filter-label">Search</label>
+                <div class="input-group input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted small"></i></span>
+                    </div>
+                    <input type="text" id="filterSearch" class="form-control form-control-sm border-left-0 erp-input" placeholder="Order, Lot, Design, Customer...">
+                </div>
+            </div>
+
+            <div class="col-lg-2 col-md-3">
+                <label class="erp-filter-label">Status</label>
+                <select id="filterStatus" class="form-control form-control-sm custom-select erp-input">
+                    <option value="">All Statuses</option>
+                    <option value="stored" selected>In Rack (Pending)</option>
+                    <option value="assigned">Assigned for Rework</option>
+                </select>
+            </div>
+
+            <div class="col-lg-3 col-md-3">
+                <label class="erp-filter-label">Storeroom / Rack</label>
+                <select id="filterRack" class="form-control form-control-sm select2">
+                    <option value="">All Storerooms / Racks</option>
+                    @foreach($storerooms as $store)
+                        <optgroup label="{{ $store->name }}">
+                            @foreach($store->racks as $rack)
+                                <option value="{{ $rack->id }}">{{ $rack->name }}</option>
+                            @endforeach
+                        </optgroup>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="col-lg-2 col-md-4">
+                <label class="erp-filter-label">Date From</label>
+                <input type="date" id="filterStartDate" class="form-control form-control-sm erp-input">
+            </div>
+
+            <div class="col-lg-2 col-md-4">
+                <label class="erp-filter-label">Date To</label>
+                <input type="date" id="filterEndDate" class="form-control form-control-sm erp-input">
+            </div>
+
+            <div class="col-12 col-md-auto d-flex ml-auto align-items-end mt-2 mt-md-0" style="gap: 6px;">
+                <button id="btnFilterApply" class="btn-erp btn-erp-primary font-weight-bold" title="Apply Filter">
+                    <i class="fas fa-filter mr-1"></i> Filter
+                </button>
+                <button id="btnResetFilters" class="btn-erp btn-erp-outline" style="border-color: #ced4da; color: #475569;" title="Reset Filters">
+                    <i class="fas fa-undo mr-1"></i> Reset
+                </button>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- CONTENT -->
-    <section class="content">
-        <div class="container-fluid">
-            
-            <!-- STREAMLINED FILTER BAR -->
-            <div class="card shadow-sm border-0 mb-3" style="border-radius: 8px;">
-                <div class="card-body bg-white p-2 px-3">
-                    <div class="row align-items-center no-gutters">
-                        <div class="col-lg-3 col-md-6 pr-2 mb-2 mb-lg-0">
-                            <label class="small font-weight-bold text-muted mb-0 d-block" style="font-size: 0.72rem;">SEARCH</label>
-                            <div class="input-group input-group-sm">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted small"></i></span>
-                                </div>
-                                <input type="text" id="filterSearch" class="form-control form-control-sm border-left-0" placeholder="Order, Lot, Design, Customer...">
-                            </div>
-                        </div>
-
-                        <div class="col-lg-2 col-md-3 pr-2 mb-2 mb-lg-0">
-                            <label class="small font-weight-bold text-muted mb-0 d-block" style="font-size: 0.72rem;">STATUS</label>
-                            <select id="filterStatus" class="form-control form-control-sm custom-select">
-                                <option value="">All Statuses</option>
-                                <option value="stored" selected>In Rack (Pending)</option>
-                                <option value="assigned">Assigned for Rework</option>
-                            </select>
-                        </div>
-
-                        <div class="col-lg-3 col-md-3 pr-2 mb-2 mb-lg-0">
-                            <label class="small font-weight-bold text-muted mb-0 d-block" style="font-size: 0.72rem;">STOREROOM / RACK</label>
-                            <select id="filterRack" class="form-control form-control-sm select2">
-                                <option value="">All Storerooms / Racks</option>
-                                @foreach($storerooms as $store)
-                                    <optgroup label="{{ $store->name }}">
-                                        @foreach($store->racks as $rack)
-                                            <option value="{{ $rack->id }}">{{ $rack->name }}</option>
-                                        @endforeach
-                                    </optgroup>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-lg-2 col-md-6 pr-2 mb-2 mb-lg-0">
-                            <label class="small font-weight-bold text-muted mb-0 d-block" style="font-size: 0.72rem;">DATE FROM</label>
-                            <input type="date" id="filterStartDate" class="form-control form-control-sm">
-                        </div>
-
-                        <div class="col-lg-2 col-md-6 mb-2 mb-lg-0 d-flex align-items-end">
-                            <div class="w-100 pr-2">
-                                <label class="small font-weight-bold text-muted mb-0 d-block" style="font-size: 0.72rem;">DATE TO</label>
-                                <input type="date" id="filterEndDate" class="form-control form-control-sm">
-                            </div>
-                            <div class="d-flex" style="gap: 4px;">
-                                <button id="btnFilterApply" class="btn btn-sm btn-primary shadow-sm" style="border-radius: 6px; padding: 4px 10px;" title="Apply Filter">
-                                    <i class="fas fa-filter"></i>
-                                </button>
-                                <button id="btnResetFilters" class="btn btn-sm btn-light border shadow-sm" style="border-radius: 6px; padding: 4px 10px;" title="Reset Filters">
-                                    <i class="fas fa-undo"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- 3. FLOATING / STICKY BULK ACTION BAR -->
+    <div id="bulkActionBar" class="erp-card mb-3 bg-white" style="border-left: 4px solid #05421c !important; display: none;">
+        <div class="p-2.5 px-3 d-flex justify-content-between align-items-center flex-wrap" style="gap: 10px;">
+            <div class="d-flex align-items-center" style="gap: 10px;">
+                <span class="badge px-2.5 py-1 font-weight-bold text-white" style="background: #05421c; border-radius: 4px; font-size: 12px;">
+                    <i class="fas fa-check-double mr-1 text-warning"></i><span id="selectedCountText">0</span> Selected
+                </span>
+                <span class="text-dark font-weight-bold small">Total Defect Qty: <strong id="selectedQtyText" style="color: #05421c; font-size: 13px;">0</strong> Pcs</span>
             </div>
-
-            <!-- FLOATING / STICKY BULK ACTION BAR -->
-            <div id="bulkActionBar" class="card shadow-sm border-0 mb-3 bg-white border-left border-danger" style="border-radius: 8px; border-left-width: 4px !important; display: none;">
-                <div class="card-body p-2 d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <span class="badge badge-danger mr-2 px-2 py-1"><i class="fas fa-check-double mr-1"></i><span id="selectedCountText">0</span> Selected</span>
-                        <span class="text-dark font-weight-bold small">Total: <span id="selectedQtyText" class="text-danger font-weight-bold">0</span> Pcs</span>
-                    </div>
-                    <div>
-                        <button type="button" class="btn btn-sm btn-outline-primary font-weight-bold px-3 mr-2 shadow-sm" id="btnBulkSlip" style="border-radius: 6px;" title="Print / Download Slips for selected items">
-                            <i class="fas fa-print mr-1"></i> Download Slips
-                        </button>
-                        <button type="button" class="btn btn-sm btn-danger font-weight-bold px-3 mr-2 shadow-sm" id="btnOpenBulkAssign" style="border-radius: 6px;">
-                            <i class="fas fa-paper-plane mr-1"></i> Assign Selected for Rework
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary px-2" id="btnBulkDelete" style="border-radius: 6px;" title="Delete Selected">
-                            <i class="fas fa-trash-alt mr-1"></i> Delete
-                        </button>
-                    </div>
-                </div>
+            <div class="d-flex align-items-center" style="gap: 8px;">
+                <button type="button" class="btn-erp btn-erp-outline btn-sm" id="btnBulkSlip" style="border-color: #cbd5e1; color: #05421c;" title="Print / Download Slips for selected items">
+                    <i class="fas fa-print mr-1 text-success"></i> Download Slips
+                </button>
+                <button type="button" class="btn-erp btn-erp-primary btn-sm font-weight-bold" id="btnOpenBulkAssign">
+                    <i class="fas fa-paper-plane mr-1"></i> Assign Selected for Rework
+                </button>
+                <button type="button" class="btn-erp btn-erp-danger btn-sm" id="btnBulkDelete" title="Delete Selected">
+                    <i class="fas fa-trash-alt mr-1"></i> Delete
+                </button>
             </div>
-
-            <!-- DATA TABLE CARD -->
-            <div class="card shadow-sm border-0" style="border-radius: 8px; overflow: hidden;">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table id="reworkTable" class="table table-hover table-striped align-middle mb-0 erp-rework-table">
-                            <thead>
-                                <tr>
-                                    <th width="35" class="text-center py-2">
-                                        <input type="checkbox" id="selectAllRework" style="cursor: pointer;">
-                                    </th>
-                                    <th width="105" class="py-2">Date / Slip</th>
-                                    <th width="125" class="py-2">Order / Customer</th>
-                                    <th width="85" class="text-center py-2">Lot No</th>
-                                    <th width="130" class="py-2">Design & Color</th>
-                                    <th width="105" class="text-center py-2">Size & Qty</th>
-                                    <th width="150" class="py-2">Storeroom & Rack</th>
-                                    <th width="145" class="py-2">Stage & Unit</th>
-                                    <th width="105" class="text-center py-2">Status</th>
-                                    <th width="100" class="py-2">Remarks</th>
-                                    <th width="130" class="text-center py-2 pr-3">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="reworkTableBody">
-                                <tr>
-                                    <td colspan="11" class="text-center py-5 text-muted">
-                                        <i class="fas fa-spinner fa-spin fa-2x mb-2 text-primary"></i>
-                                        <div class="small">Loading rework records...</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
         </div>
-    </section>
+    </div>
+
+    <!-- 4. DATA TABLE CARD -->
+    <div class="erp-card mb-3">
+        <div class="table-responsive">
+            <table id="reworkTable" class="table table-hover table-bordered erp-table mb-0 erp-rework-table">
+                <thead>
+                    <tr>
+                        <th width="35" class="text-center py-2">
+                            <input type="checkbox" id="selectAllRework" style="cursor: pointer;">
+                        </th>
+                        <th width="105" class="py-2">Date / Slip</th>
+                        <th width="130" class="py-2">Order / Customer</th>
+                        <th width="85" class="text-center py-2">Lot No</th>
+                        <th width="130" class="py-2">Design & Color</th>
+                        <th width="110" class="text-center py-2">Size & Qty</th>
+                        <th width="150" class="py-2">Storeroom & Rack</th>
+                        <th width="145" class="py-2">Stage & Unit</th>
+                        <th width="105" class="text-center py-2">Status</th>
+                        <th width="100" class="py-2">Remarks</th>
+                        <th width="115" class="text-center py-2 pr-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="reworkTableBody">
+                    <tr>
+                        <td colspan="11" class="text-center py-5 text-muted">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-2" style="color: #05421c;"></i>
+                            <div class="small">Loading rework records...</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
-<!-- ASSIGNMENT MODAL -->
+<!-- 5. ASSIGNMENT MODAL -->
 <div class="modal fade" id="assignModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
-            <div class="modal-header bg-danger text-white px-4 py-3">
-                <h6 class="modal-title font-weight-bold mb-0" id="assignModalTitle">
-                    <i class="fas fa-tools mr-2"></i> Assign Items for Rework
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 8px; overflow: hidden;">
+            <div class="modal-header text-white px-4 py-2.5" style="background: #05421c;">
+                <h6 class="modal-title font-weight-bold mb-0" id="assignModalTitle" style="font-size: 15px;">
+                    <i class="fas fa-tools mr-2 text-warning"></i> Assign Items for Rework
                 </h6>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body p-4">
-                <div class="alert alert-light border mb-3 p-3" style="border-radius: 8px;">
+            <div class="modal-body p-3">
+                <div class="alert mb-3 p-3" style="background: #edf7e4; border: 1px solid #c3e6cb; border-radius: 6px;">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="text-muted font-weight-bold small">Items to Assign:</span>
-                        <span class="badge badge-danger px-2 py-1" id="modalItemsCount">1 Record &bull; 0 Pcs</span>
+                        <span class="font-weight-bold small" style="color: #05421c;">Items to Assign:</span>
+                        <span class="badge px-2 py-1 font-weight-bold" id="modalItemsCount" style="background: #05421c; color: #fff;">1 Record &bull; 0 Pcs</span>
                     </div>
-                    <div class="small text-dark" id="modalItemsSummary" style="max-height: 110px; overflow-y: auto; line-height: 1.4;">
+                    <div class="small text-dark mt-2" id="modalItemsSummary" style="max-height: 110px; overflow-y: auto; line-height: 1.4;">
                         <!-- Item summaries populated dynamically -->
                     </div>
                 </div>
@@ -202,7 +420,7 @@
                     <input type="hidden" id="modalAssignIds">
                     
                     <div class="form-group mb-3">
-                        <label class="font-weight-bold text-dark small mb-1">
+                        <label class="erp-filter-label">
                             Target Production Stage <span class="text-danger">*</span>
                         </label>
                         <select id="modalStage" class="form-control form-control-sm select2" required style="width: 100%;">
@@ -211,27 +429,27 @@
                                 <option value="{{ $stage->id }}">{{ $stage->name }}</option>
                             @endforeach
                         </select>
-                        <small class="text-muted d-block mt-1">Select the production stage where defect work will be done</small>
+                        <small class="text-muted d-block mt-1">Select the production stage where defect rework will be processed</small>
                     </div>
 
                     <div class="form-group mb-3">
-                        <label class="font-weight-bold text-dark small mb-1">
+                        <label class="erp-filter-label">
                             Target Unit Person <span class="text-danger">*</span>
                         </label>
                         <select id="modalUnit" class="form-control form-control-sm select2" required style="width: 100%;">
                             <option value="">-- Select Unit --</option>
                         </select>
-                        <small class="text-muted d-block mt-1">Pre-filled with the unit from packing, or assign to any other unit person</small>
+                        <small class="text-muted d-block mt-1">Select the unit responsible for rework</small>
                     </div>
 
                     <div class="form-group mb-3">
-                        <label class="font-weight-bold text-dark small mb-1">Assignment Remarks</label>
+                        <label class="erp-filter-label">Assignment Remarks</label>
                         <textarea id="modalRemarks" class="form-control form-control-sm" rows="2" placeholder="Optional notes for unit person..."></textarea>
                     </div>
 
-                    <div class="d-flex justify-content-end align-items-center mt-4">
-                        <button type="button" class="btn btn-sm btn-light border px-3 mr-2" data-dismiss="modal" style="border-radius: 6px;">Cancel</button>
-                        <button type="submit" id="btnConfirmAssign" class="btn btn-sm btn-danger px-4 font-weight-bold shadow-sm" style="border-radius: 6px;">
+                    <div class="d-flex justify-content-end align-items-center mt-3" style="gap: 8px;">
+                        <button type="button" class="btn-erp btn-erp-outline" data-dismiss="modal" style="border-color: #ced4da; color: #475569;">Cancel</button>
+                        <button type="submit" id="btnConfirmAssign" class="btn-erp btn-erp-primary font-weight-bold px-3">
                             <i class="fas fa-check mr-1"></i> Confirm & Assign for Rework
                         </button>
                     </div>
@@ -241,24 +459,24 @@
     </div>
 </div>
 
-<!-- CHANGE ASSIGNED UNIT MODAL -->
+<!-- 6. CHANGE ASSIGNED UNIT MODAL -->
 <div class="modal fade" id="reassignModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
-            <div class="modal-header bg-primary text-white px-4 py-3">
-                <h6 class="modal-title font-weight-bold mb-0">
-                    <i class="fas fa-exchange-alt mr-2"></i> Change Assigned Unit
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 8px; overflow: hidden;">
+            <div class="modal-header text-white px-4 py-2.5" style="background: #05421c;">
+                <h6 class="modal-title font-weight-bold mb-0" style="font-size: 15px;">
+                    <i class="fas fa-exchange-alt mr-2 text-warning"></i> Change Assigned Unit
                 </h6>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body p-4">
+            <div class="modal-body p-3">
                 <form id="formReassignUnit">
                     <input type="hidden" id="modalReassignId">
                     
                     <div class="form-group mb-3">
-                        <label class="font-weight-bold text-dark small mb-1">Target Stage <span class="text-danger">*</span></label>
+                        <label class="erp-filter-label">Target Stage <span class="text-danger">*</span></label>
                         <select id="modalReassignStage" class="form-control form-control-sm select2" required style="width: 100%;">
                             <option value="">-- Select Stage --</option>
                             @foreach($stages as $stage)
@@ -268,20 +486,20 @@
                     </div>
 
                     <div class="form-group mb-3">
-                        <label class="font-weight-bold text-dark small mb-1">Target Unit <span class="text-danger">*</span></label>
+                        <label class="erp-filter-label">Target Unit <span class="text-danger">*</span></label>
                         <select id="modalReassignUnit" class="form-control form-control-sm select2" required style="width: 100%;">
                             <option value="">-- Select Unit --</option>
                         </select>
                     </div>
 
                     <div class="form-group mb-3">
-                        <label class="font-weight-bold text-dark small mb-1">Remarks</label>
+                        <label class="erp-filter-label">Remarks</label>
                         <textarea id="modalReassignRemarks" class="form-control form-control-sm" rows="2"></textarea>
                     </div>
 
-                    <div class="d-flex justify-content-end align-items-center mt-4">
-                        <button type="button" class="btn btn-sm btn-light border px-3 mr-2" data-dismiss="modal" style="border-radius: 6px;">Cancel</button>
-                        <button type="submit" id="btnConfirmReassign" class="btn btn-sm btn-primary px-4 font-weight-bold shadow-sm" style="border-radius: 6px;">
+                    <div class="d-flex justify-content-end align-items-center mt-3" style="gap: 8px;">
+                        <button type="button" class="btn-erp btn-erp-outline" data-dismiss="modal" style="border-color: #ced4da; color: #475569;">Cancel</button>
+                        <button type="submit" id="btnConfirmReassign" class="btn-erp btn-erp-primary font-weight-bold px-3">
                             <i class="fas fa-save mr-1"></i> Update Unit Assignment
                         </button>
                     </div>
@@ -290,72 +508,6 @@
         </div>
     </div>
 </div>
-
-<style>
-    .erp-rework-table {
-        font-size: 0.8125rem;
-    }
-    .erp-rework-table thead th {
-        background-color: #f8fafc;
-        color: #475569;
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 2px solid #cbd5e1;
-        border-top: none;
-        vertical-align: middle;
-        white-space: nowrap;
-    }
-    .erp-rework-table tbody td {
-        vertical-align: middle;
-        padding: 0.55rem 0.65rem;
-        border-color: #f1f5f9;
-        line-height: 1.25;
-    }
-    .select2-container .select2-selection--single {
-        height: 31px !important;
-        border-radius: 4px;
-        border-color: #ced4da;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 28px !important;
-        font-size: 0.8rem;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 28px !important;
-    }
-    .badge-in-rack {
-        background-color: #fef3c7;
-        color: #92400e;
-        border: 1px solid #fde68a;
-        font-weight: 600;
-        font-size: 0.73rem;
-        padding: 0.3em 0.6em;
-        border-radius: 4px;
-        white-space: nowrap;
-    }
-    .badge-assigned {
-        background-color: #dcfce7;
-        color: #166534;
-        border: 1px solid #bbf7d0;
-        font-weight: 600;
-        font-size: 0.73rem;
-        padding: 0.3em 0.6em;
-        border-radius: 4px;
-        white-space: nowrap;
-    }
-    .badge-size-qty {
-        background-color: #fee2e2;
-        color: #991b1b;
-        border: 1px solid #fecaca;
-        font-weight: 700;
-        font-size: 0.78rem;
-        padding: 0.35em 0.65em;
-        border-radius: 4px;
-        white-space: nowrap;
-    }
-</style>
 
 <script>
     let allReworkItems = [];
@@ -642,7 +794,7 @@
         $('#reworkTableBody').html(`
             <tr>
                 <td colspan="11" class="text-center py-5 text-muted">
-                    <i class="fas fa-spinner fa-spin fa-2x mb-2 text-primary"></i>
+                    <i class="fas fa-spinner fa-spin fa-2x mb-2" style="color: #05421c;"></i>
                     <div class="small">Loading rework records...</div>
                 </td>
             </tr>
@@ -672,7 +824,7 @@
     function renderTable(items) {
         let html = '';
         if (items.length === 0) {
-            html = `<tr><td colspan="11" class="text-center py-5 text-muted font-italic"><i class="fas fa-inbox fa-2x mb-2 d-block text-secondary"></i>No defect or rework records found for the selected filters.</td></tr>`;
+            html = `<tr><td colspan="11" class="text-center py-5 text-muted font-italic"><i class="fas fa-inbox fa-2x mb-2 d-block" style="color: #cbd5e1;"></i>No defect or rework records found for the selected filters.</td></tr>`;
             $('#reworkTableBody').html(html);
             $('#selectAllRework').prop('checked', false);
             updateBulkActionBar();
@@ -703,7 +855,7 @@
                 let aStage = item.assigned_stage ? item.assigned_stage.name : targetStageName;
                 let aUnit = item.assigned_unit ? item.assigned_unit.name : targetUnitName;
                 stageUnitDisplay = `
-                    <div class="font-weight-bold text-success text-truncate" style="max-width: 140px;" title="${aStage}">
+                    <div class="font-weight-bold text-truncate" style="max-width: 140px; color: #05421c;" title="${aStage}">
                         <i class="fas fa-check-circle mr-1 text-success"></i>${aStage}
                     </div>
                     <div class="text-muted small text-truncate" style="max-width: 140px;" title="${aUnit}">
@@ -725,25 +877,25 @@
             let actionButtons = '';
             if (!isAssigned) {
                 actionButtons = `
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" class="btn btn-primary px-2 py-1 font-weight-bold btn-assign-single" data-id="${item.id}" title="Assign for Rework">
+                    <div class="d-flex align-items-center justify-content-center" style="gap: 5px;">
+                        <button type="button" class="btn-erp btn-erp-primary btn-xs btn-assign-single font-weight-bold" data-id="${item.id}" title="Assign for Rework">
                             <i class="fas fa-paper-plane mr-1"></i>Assign
                         </button>
-                        <button type="button" class="btn btn-outline-danger px-2 py-1 btn-delete-rework" data-id="${item.id}" title="Delete & Revert Stock">
+                        <button type="button" class="erp-action-btn erp-btn-delete btn-delete-rework" data-id="${item.id}" title="Delete & Revert Stock">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
                 `;
             } else {
                 actionButtons = `
-                    <div class="btn-group btn-group-sm" role="group">
-                        <a href="${reworkSlipUrl}" class="btn btn-danger px-2 py-1 font-weight-bold" title="Direct Download Rework Slip">
+                    <div class="d-flex align-items-center justify-content-center" style="gap: 5px;">
+                        <a href="${reworkSlipUrl}" class="btn-erp btn-xs font-weight-bold" style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca;" title="Download Rework Slip">
                             <i class="fas fa-download mr-1"></i>Slip
                         </a>
-                        <button type="button" class="btn btn-outline-secondary px-2 py-1 btn-reassign-single" data-id="${item.id}" title="Change Assigned Unit">
+                        <button type="button" class="btn-erp btn-erp-outline btn-xs btn-reassign-single" style="border-color: #cbd5e1; color: #475569;" data-id="${item.id}" title="Change Assigned Unit">
                             <i class="fas fa-exchange-alt"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-danger px-2 py-1 btn-delete-rework" data-id="${item.id}" title="Delete & Revert Stock">
+                        <button type="button" class="erp-action-btn erp-btn-delete btn-delete-rework" data-id="${item.id}" title="Delete & Revert Stock">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
@@ -757,8 +909,8 @@
                     </td>
                     <td>
                         <div class="font-weight-bold text-dark">${createdDate}</div>
-                        <a href="${slipUrl}" class="text-primary font-weight-bold" style="font-size: 0.75rem;" target="_blank">
-                            <i class="fas fa-receipt mr-1"></i>#${item.slip_id || '-'}
+                        <a href="${slipUrl}" class="font-weight-bold" style="color: #05421c; font-size: 0.76rem;" target="_blank">
+                            <i class="fas fa-receipt mr-1 text-success"></i>#${item.slip_id || '-'}
                         </a>
                     </td>
                     <td>
@@ -768,7 +920,7 @@
                         </div>
                     </td>
                     <td class="text-center">
-                        <span class="badge badge-light border font-weight-bold text-dark px-2 py-1" style="font-family: monospace; font-size: 0.8rem;">
+                        <span class="badge px-2 py-1 font-weight-bold" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-family: monospace; font-size: 11.5px; border-radius: 4px;">
                             ${item.lot_no || '-'}
                         </span>
                     </td>

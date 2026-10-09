@@ -4,35 +4,32 @@
 <style>
     /* Enterprise ERP Design System */
     :root {
-        --erp-bg: #f4f6f9;
+        --erp-bg: #f8fafc;
         --erp-card-bg: #ffffff;
-        --erp-border: #e0e4e8;
-        --erp-primary: #0056b3;
-        --erp-text-main: #333333;
-        --erp-text-muted: #6c757d;
-        --erp-header-bg: #f8f9fa;
-        --erp-radius: 4px;
-        --erp-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .content-wrapper {
-        background-color: var(--erp-bg);
+        --erp-border: #e2e8f0;
+        --erp-primary: #05421c;
+        --erp-text-main: #1e293b;
+        --erp-text-muted: #64748b;
+        --erp-header-bg: #f8fafc;
+        --erp-radius: 6px;
+        --erp-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
 
     .erp-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 1.5rem;
-        background: var(--erp-card-bg);
-        border-bottom: 1px solid var(--erp-border);
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, #05421c 0%, #0a5c28 100%);
+        border-radius: 8px;
         margin-bottom: 1rem;
+        color: #fff;
     }
 
     .erp-header h1 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--erp-text-main);
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #fff;
         margin: 0;
     }
 
@@ -41,22 +38,22 @@
         border: 1px solid var(--erp-border);
         border-radius: var(--erp-radius);
         box-shadow: var(--erp-shadow);
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
     }
 
     .erp-card-header {
-        background-color: var(--erp-header-bg);
+        background-color: #ffffff;
         border-bottom: 1px solid var(--erp-border);
-        padding: 0.75rem 1.25rem;
+        padding: 0.75rem 1rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
 
     .erp-card-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--erp-text-main);
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #05421c;
         margin: 0;
         display: flex;
         align-items: center;
@@ -64,15 +61,15 @@
     }
 
     .erp-card-body {
-        padding: 1.25rem;
+        padding: 1rem;
     }
 
     /* Form Controls */
     .erp-label {
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         font-weight: 600;
         color: var(--erp-text-main);
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.35rem;
         display: block;
     }
 
@@ -85,7 +82,7 @@
     .select2-container--default .select2-selection--single .select2-selection__rendered {
         line-height: 34px;
         color: #495057;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
     }
 
     .select2-container--default .select2-selection--single .select2-selection__arrow {
@@ -93,35 +90,35 @@
     }
 
     .btn-erp {
-        font-size: 0.875rem;
-        padding: 0.375rem 0.75rem;
+        font-size: 0.85rem;
+        padding: 0.4rem 0.85rem;
         border-radius: var(--erp-radius);
-        font-weight: 500;
+        font-weight: 600;
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
-        transition: background-color 0.15s ease-in-out;
+        transition: all 0.15s ease-in-out;
     }
 
     .btn-erp-primary {
-        background-color: var(--erp-primary);
-        border: 1px solid var(--erp-primary);
+        background-color: #05421c;
+        border: 1px solid #05421c;
         color: white;
     }
 
     .btn-erp-primary:hover {
-        background-color: #004494;
-        color: white;
+        background-color: #043617;
+        color: #fcee21;
     }
 
     .btn-erp-default {
-        background-color: #f8f9fa;
-        border: 1px solid #ced4da;
-        color: #333;
+        background-color: #f8fafc;
+        border: 1px solid #cbd5e1;
+        color: #334155;
     }
 
     .btn-erp-default:hover {
-        background-color: #e2e6ea;
+        background-color: #e2e8f0;
     }
 
     /* Data Tables */
@@ -132,51 +129,51 @@
     }
 
     .erp-table th {
-        background-color: #f1f3f5;
-        color: #495057;
-        font-size: 0.8rem;
-        font-weight: 600;
+        background-color: #edf7e4;
+        color: #05421c;
+        font-size: 0.78rem;
+        font-weight: 700;
         text-transform: uppercase;
-        padding: 0.75rem;
-        border-bottom: 2px solid #dee2e6;
+        padding: 0.65rem 0.75rem;
+        border-bottom: 2px solid #c3e6cb;
         border-top: none;
     }
 
     .erp-table td {
-        padding: 0.75rem;
-        font-size: 0.9rem;
+        padding: 0.65rem 0.75rem;
+        font-size: 0.88rem;
         vertical-align: middle;
-        border-top: 1px solid #e9ecef;
-        color: #333;
+        border-top: 1px solid #e2e8f0;
+        color: #1e293b;
     }
 
     .erp-table tbody tr:hover {
-        background-color: #f8f9fa;
+        background-color: #f8fafc;
     }
 
     .erp-badge {
         padding: 0.25em 0.6em;
         font-size: 0.75rem;
         font-weight: 700;
-        border-radius: 0.25rem;
+        border-radius: 4px;
     }
 
     .erp-badge-light {
-        background-color: #e9ecef;
-        color: #495057;
-        border: 1px solid #ced4da;
+        background-color: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
     }
     
     .erp-badge-info {
-        background-color: #cff4fc;
-        color: #055160;
-        border: 1px solid #b6effb;
+        background-color: #edf7e4;
+        color: #05421c;
+        border: 1px solid #c3e6cb;
     }
 
     .erp-badge-success {
-        background-color: #d1e7dd;
-        color: #0f5132;
-        border: 1px solid #badbcc;
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
     }
 
     .empty-state {
@@ -187,22 +184,27 @@
 
     .empty-state i {
         font-size: 2.5rem;
-        color: #dee2e6;
+        color: #cbd5e1;
         margin-bottom: 1rem;
     }
 </style>
 
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
     <!-- Top Header Bar -->
     <div class="erp-header shadow-sm">
-        <h1>
-            <i class="fas fa-boxes mr-2 text-primary"></i> 
-            Packing Operations | <span class="text-muted" style="font-size: 1rem; font-weight: normal;">Slip #{{ $slip->id ?? '' }}</span>
-        </h1>
-        <div>
+        <div class="d-flex align-items-center">
+            <h1 class="mb-0">
+                <i class="fas fa-boxes mr-2 text-warning"></i> 
+                Packing Operations | <span class="text-white-50" style="font-size: 0.95rem; font-weight: normal;">Slip #{{ $slip->id ?? '' }}</span>
+            </h1>
+        </div>
+        <div class="d-flex align-items-center" style="gap: 8px;">
+            <a href="{{ route('admin.packing.index') }}" class="btn-erp btn-erp-outline" style="color: #fff; border-color: rgba(255,255,255,0.4); background: transparent;">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
             @if($slip && $slip->slip_file)
                 <button type="button" class="btn btn-erp btn-erp-default" onclick="window.open('{{ asset('assets/production_slips/' . $slip->slip_file) }}', '_blank')">
-                    <i class="fas fa-file-image text-info"></i> View Source Document
+                    <i class="fas fa-file-image text-warning"></i> View Source Document
                 </button>
             @endif
         </div>
@@ -275,7 +277,7 @@
                         <h3 class="erp-card-title"><i class="fas fa-list-ol"></i> Lot Distribution Data</h3>
                         <div class="card-tools m-0 d-flex align-items-center" style="gap: 12px;">
                             <div class="badge badge-light border py-2 px-3 text-dark d-flex align-items-center shadow-sm" style="font-size: 0.85rem; gap: 8px; border-radius: 6px;">
-                                <span>Selected: <strong id="selectedLotsCount" class="text-primary">0</strong> Lots</span>
+                                <span>Selected: <strong id="selectedLotsCount" style="color: #05421c;">0</strong> Lots</span>
                                 <span class="text-muted">|</span>
                                 <span>Gross Qty: <strong id="selectedGrossQty" class="text-dark">0</strong></span>
                                 <span class="text-muted">|</span>
