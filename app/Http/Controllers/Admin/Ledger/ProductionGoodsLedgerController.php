@@ -292,9 +292,22 @@ class ProductionGoodsLedgerController extends Controller
         $totalOutwardOverall = $totalOutwardHistoryOverall + $totalOutwardOrderOverall;
         $totalBalanceOverall = $totalInwardOverall - $totalOutwardOverall;
 
+        $pageTotalInward = 0;
+        $pageTotalOutward = 0;
+        $pageTotalBalance = 0;
+        foreach ($goods as $good) {
+            foreach ($good->variants as $variant) {
+                $pageTotalInward += (float)($variant->total_inward ?? 0);
+                $pageTotalOutward += (float)($variant->total_outward ?? 0);
+                $pageTotalBalance += (float)($variant->current_balance ?? 0);
+            }
+        }
+        $totalGoodsCount = $goods instanceof \Illuminate\Pagination\LengthAwarePaginator ? $goods->total() : $goods->count();
+
         return compact(
             'goods', 'search', 'warehouses', 'warehouseIds',
-            'totalInwardOverall', 'totalOutwardOverall', 'totalBalanceOverall'
+            'totalInwardOverall', 'totalOutwardOverall', 'totalBalanceOverall',
+            'pageTotalInward', 'pageTotalOutward', 'pageTotalBalance', 'totalGoodsCount'
         );
     }
 
@@ -650,6 +663,14 @@ class ProductionGoodsLedgerController extends Controller
             $warehouses->push((object)['id' => 'unassigned', 'name' => 'Unassigned (No Warehouse)']);
         }
 
-        return compact('good', 'sizeSet', 'transactions', 'startDate', 'endDate', 'openingBalanceAmount', 'warehouses', 'warehouseIds');
+        $periodTotalInward = (float)$transactions->sum('inward');
+        $periodTotalOutward = (float)$transactions->sum('outward');
+        $closingBalanceAmount = $transactions->isNotEmpty() ? (float)$transactions->last()->running_balance : (float)$openingBalanceAmount;
+
+        return compact(
+            'good', 'sizeSet', 'transactions', 'startDate', 'endDate',
+            'openingBalanceAmount', 'warehouses', 'warehouseIds',
+            'periodTotalInward', 'periodTotalOutward', 'closingBalanceAmount'
+        );
     }
 }

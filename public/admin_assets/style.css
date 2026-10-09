@@ -1225,18 +1225,24 @@ body.km-admin .report-meta {
     margin-top: 6px !important;
 }
 
-/* Bootstrap 4 pagination inside ERP card (Snapkid Dark Green) */
+/* Bootstrap 4 pagination inside ERP card & ERP page (Snapkid Dark Green) */
+.content-wrapper .pagination,
+.erp-card .pagination,
+.erp-page .pagination,
 .erp-card .dataTables_paginate .pagination {
     margin: 0 !important;
-    gap: 2px !important;
+    gap: 3px !important;
 }
 
+.content-wrapper .page-item .page-link,
+.erp-card .page-item .page-link,
+.erp-page .page-item .page-link,
 .erp-card .dataTables_paginate .page-item .page-link {
     font-size: var(--erp-font-sm) !important;
     color: var(--erp-text-heading) !important;
     border: 1px solid var(--erp-border) !important;
     background-color: #ffffff !important;
-    padding: 4px 9px !important;
+    padding: 4px 10px !important;
     border-radius: 4px !important;
     line-height: 1.4 !important;
     font-weight: 600 !important;
@@ -1244,12 +1250,18 @@ body.km-admin .report-meta {
     transition: all 0.15s ease-in-out;
 }
 
+.content-wrapper .page-item:not(.active):not(.disabled) .page-link:hover,
+.erp-card .page-item:not(.active):not(.disabled) .page-link:hover,
+.erp-page .page-item:not(.active):not(.disabled) .page-link:hover,
 .erp-card .dataTables_paginate .page-item:not(.active):not(.disabled) .page-link:hover {
     background-color: var(--erp-green-light) !important;
     border-color: var(--erp-green-primary) !important;
     color: var(--erp-green-primary) !important;
 }
 
+.content-wrapper .page-item.active .page-link,
+.erp-card .page-item.active .page-link,
+.erp-page .page-item.active .page-link,
 .erp-card .dataTables_paginate .page-item.active .page-link {
     background-color: var(--erp-green-primary) !important;
     border-color: var(--erp-green-primary) !important;
@@ -1257,6 +1269,25 @@ body.km-admin .report-meta {
     font-weight: 700 !important;
 }
 
+.content-wrapper .page-item .page-link:focus,
+.erp-card .page-item .page-link:focus,
+.erp-page .page-item .page-link:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(5, 66, 28, 0.2) !important;
+}
+
+.content-wrapper .page-item.active .page-link:focus,
+.erp-card .page-item.active .page-link:focus,
+.erp-page .page-item.active .page-link:focus {
+    background-color: var(--erp-green-primary) !important;
+    border-color: var(--erp-green-primary) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 2px rgba(5, 66, 28, 0.3) !important;
+}
+
+.content-wrapper .page-item.disabled .page-link,
+.erp-card .page-item.disabled .page-link,
+.erp-page .page-item.disabled .page-link,
 .erp-card .dataTables_paginate .page-item.disabled .page-link {
     color: #94a3b8 !important;
     background-color: #f8fafc !important;

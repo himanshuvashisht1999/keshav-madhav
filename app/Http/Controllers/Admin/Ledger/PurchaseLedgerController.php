@@ -17,14 +17,17 @@ class PurchaseLedgerController extends Controller
         $query = $this->getPurchasesQuery($request);
 
         $totalGrandTotal = clone $query;
-        $totalGrandTotal = $totalGrandTotal->sum('grand_total');
+        $totalGrandTotal = (float)$totalGrandTotal->sum('grand_total');
 
         $purchases = $query->orderBy('date', 'desc')->paginate(25)->appends($request->all());
+
+        $pageSubTotal = (float)$purchases->sum('grand_total');
+        $totalPurchasesCount = $purchases->total();
 
         $vendors = DB::table('vendors')->select('id', 'name')->orderBy('name')->get();
         $purchaseAgents = DB::table('purchase_agents')->select('id', 'name')->where('status', 1)->orderBy('name')->get();
 
-        return view('admin.ledger.purchase.index', compact('purchases', 'vendors', 'purchaseAgents', 'totalGrandTotal'));
+        return view('admin.ledger.purchase.index', compact('purchases', 'vendors', 'purchaseAgents', 'totalGrandTotal', 'pageSubTotal', 'totalPurchasesCount'));
     }
 
     public function exportPdf(Request $request)

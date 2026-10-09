@@ -17,14 +17,17 @@ class SalesLedgerController extends Controller
         $query = $this->getSalesQuery($request);
 
         $totalGrandTotal = clone $query;
-        $totalGrandTotal = $totalGrandTotal->sum('grand_total');
+        $totalGrandTotal = (float)$totalGrandTotal->sum('grand_total');
 
         $sales = $query->orderBy('dispatch_date', 'desc')->paginate(25)->appends($request->all());
+
+        $pageSubTotal = (float)$sales->sum('grand_total');
+        $totalSalesCount = $sales->total();
 
         $parties = DB::table('master_customers')->select('id', 'name')->orderBy('name')->get();
         $vendors = DB::table('vendors')->select('id', 'name')->orderBy('name')->get();
 
-        return view('admin.ledger.sales.index', compact('sales', 'parties', 'vendors', 'totalGrandTotal'));
+        return view('admin.ledger.sales.index', compact('sales', 'parties', 'vendors', 'totalGrandTotal', 'pageSubTotal', 'totalSalesCount'));
     }
 
     public function exportPdf(Request $request)

@@ -18,8 +18,7 @@ class FabricLedgerController extends Controller
     public function index(Request $request)
     {
         $data = $this->getFabricListData($request, true);
-        $fabrics = $data['fabrics'];
-        return view('admin.ledger.fabric.index', compact('fabrics'));
+        return view('admin.ledger.fabric.index', $data);
     }
 
     public function exportListPdf(Request $request)
@@ -135,7 +134,26 @@ class FabricLedgerController extends Controller
             $fabric->total_outward = $fabric->total_inward - $fabric->current_balance;
         }
 
-        return compact('fabrics', 'search');
+        $totalFabricsCount = Fabric::where('status', 1)->when($search, fn($q) => $q->where('name', 'LIKE', "%$search%"))->count();
+        $pageTotalInward = $fabrics->sum('total_inward');
+        $pageTotalOutward = $fabrics->sum('total_outward');
+        $pageTotalBalance = $fabrics->sum('current_balance');
+
+        $overallTotalInward = FabricReceiptDetail::whereHas('fabric', function($q) use ($search) {
+            $q->where('status', 1)->when($search, fn($sq) => $sq->where('name', 'LIKE', "%$search%"));
+        })->where('status', '>', 0)->sum('meter');
+
+        $overallTotalBalance = FabricReceiptDetail::whereHas('fabric', function($q) use ($search) {
+            $q->where('status', 1)->when($search, fn($sq) => $sq->where('name', 'LIKE', "%$search%"));
+        })->where('status', '>', 0)->sum('remaining_quantity');
+
+        $overallTotalOutward = $overallTotalInward - $overallTotalBalance;
+
+        return compact(
+            'fabrics', 'search', 'totalFabricsCount', 
+            'pageTotalInward', 'pageTotalOutward', 'pageTotalBalance', 
+            'overallTotalInward', 'overallTotalOutward', 'overallTotalBalance'
+        );
     }
 
     public function show(Request $request, $id)
@@ -456,6 +474,14 @@ class FabricLedgerController extends Controller
             $tx->running_balance = $balance;
         }
 
-        return compact('fabric', 'transactions', 'startDate', 'endDate', 'vendors', 'customers', 'vendorId', 'customerId', 'openingBalanceAmount');
+        $totalInwardSum = $transactions->sum('inward');
+        $totalOutwardSum = $transactions->sum('outward');
+        $closingBalanceAmount = $balance;
+
+        return compact(
+            'fabric', 'transactions', 'startDate', 'endDate', 
+            'vendors', 'customers', 'vendorId', 'customerId', 
+            'openingBalanceAmount', 'totalInwardSum', 'totalOutwardSum', 'closingBalanceAmount'
+        );
     }
 }

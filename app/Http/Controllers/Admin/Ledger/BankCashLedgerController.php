@@ -283,7 +283,12 @@ class BankCashLedgerController extends Controller
 
         $parties = $parties->sortBy('name');
 
-        return compact('parties', 'masters');
+        $totalAccountsCount = $parties->count();
+        $totalCreditBalance = (float)$parties->where('balance', '>', 0)->sum('balance');
+        $totalDebitBalance = (float)abs($parties->where('balance', '<', 0)->sum('balance'));
+        $totalNetBalance = (float)$parties->sum('balance');
+
+        return compact('parties', 'masters', 'totalAccountsCount', 'totalCreditBalance', 'totalDebitBalance', 'totalNetBalance');
     }
 
     private function getLedgerData(Request $request, $type, $id)
@@ -531,9 +536,15 @@ class BankCashLedgerController extends Controller
         }
         
         $party->balance = $balance;
+        $periodTotalDebit = (float)$transactions->sum('debit');
+        $periodTotalCredit = (float)$transactions->sum('credit');
+        $closingBalance = $balance;
 
         $viewMode = 'mix';
 
-        return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'viewMode');
+        return compact(
+            'party', 'transactions', 'type', 'startDate', 'endDate',
+            'openingBalAmount', 'viewMode', 'periodTotalDebit', 'periodTotalCredit', 'closingBalance'
+        );
     }
 }

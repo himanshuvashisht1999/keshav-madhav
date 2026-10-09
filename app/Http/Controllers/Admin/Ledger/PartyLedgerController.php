@@ -111,7 +111,12 @@ class PartyLedgerController extends Controller
         // Sort by name
         $parties = $parties->sortBy('name');
 
-        return view('admin.ledger.party.index', compact('parties', 'masters'));
+        $totalPartiesCount = $parties->count();
+        $totalCreditBalance = (float)$parties->where('balance', '>', 0)->sum('balance');
+        $totalDebitBalance = (float)abs($parties->where('balance', '<', 0)->sum('balance'));
+        $totalNetBalance = (float)$parties->sum('balance');
+
+        return view('admin.ledger.party.index', compact('parties', 'masters', 'totalPartiesCount', 'totalCreditBalance', 'totalDebitBalance', 'totalNetBalance'));
     }
 
     public function show(Request $request, $type, $id)
@@ -1112,8 +1117,15 @@ class PartyLedgerController extends Controller
         $availableTypes = $finalTransactions->pluck('type')->filter()->unique()->values()->all();
         $transactions = $this->applyLedgerFilters($finalTransactions, $request);
         $party->balance = $balance;
+        $periodTotalDebit = (float)$transactions->sum('debit');
+        $periodTotalCredit = (float)$transactions->sum('credit');
+        $closingBalance = $balance;
 
-        return compact('party', 'transactions', 'type', 'startDate', 'endDate', 'openingBalAmount', 'viewMode', 'groupedLedgers', 'availableTypes');
+        return compact(
+            'party', 'transactions', 'type', 'startDate', 'endDate',
+            'openingBalAmount', 'viewMode', 'groupedLedgers', 'availableTypes',
+            'periodTotalDebit', 'periodTotalCredit', 'closingBalance'
+        );
     }
 
     private function applyLedgerFilters($transactions, Request $request)

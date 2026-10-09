@@ -19,8 +19,7 @@ class LotLedgerController extends Controller
     public function index(Request $request)
     {
         $data = $this->getLotListData($request, true);
-        $lots = $data['lots'];
-        return view('admin.ledger.lot.index', compact('lots'));
+        return view('admin.ledger.lot.index', $data);
     }
 
     public function exportListPdf(Request $request)
@@ -132,7 +131,10 @@ class LotLedgerController extends Controller
             return $lot;
         });
 
-        return compact('lots', 'searchLot');
+        $pageTotalAssigned = $lots->sum('lot_quantity');
+        $totalLotsCount = $lots instanceof \Illuminate\Pagination\LengthAwarePaginator ? $lots->total() : $lots->count();
+
+        return compact('lots', 'searchLot', 'pageTotalAssigned', 'totalLotsCount');
     }
 
     public function show(Request $request, $lot_no)
@@ -327,6 +329,9 @@ class LotLedgerController extends Controller
             $tx->running_balance = $balance;
         }
 
-        return compact('lot', 'transactions', 'initialQty');
+        $packedQtySum = $transactions->where('type', 'Outward')->sum('outward');
+        $wipBalance = max(0, $initialQty - $packedQtySum);
+
+        return compact('lot', 'transactions', 'initialQty', 'packedQtySum', 'wipBalance');
     }
 }
