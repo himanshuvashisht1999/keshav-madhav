@@ -1,31 +1,13 @@
 @extends('admin.layouts.app')
 @section('content')
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-        /* layout: table on left, image preview on right */
-        .flex-row {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-        }
-
-        .left-col {
-            flex: 0 0 100%;
-            max-width: 100%;
-        }
-
-        .right-col {
-            flex: 0 0 40%;
-            max-width: 40%;
-        }
-
         .image-preview-box {
-            border: 1px dashed #dcdcdc;
-            border-radius: 6px;
-            padding: 10px;
+            border: 1px dashed var(--erp-border);
+            border-radius: 4px;
+            padding: 8px;
             background: #fff;
-            min-height: 300px;
+            min-height: 250px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -33,42 +15,16 @@
 
         .image-preview-box img {
             max-width: 100%;
-            max-height: 420px;
+            max-height: 400px;
             object-fit: contain;
             border-radius: 4px;
-        }
-
-        .ocr-progress {
-            margin-top: 8px;
-        }
-
-        .parse-note {
-            font-size: 13px;
-            color: #666;
-            margin-top: 6px;
-        }
-
-        .btn-parse {
-            margin-top: 8px;
-            width: 100%;
-        }
-
-        @media(max-width: 992px) {
-            .flex-row {
-                flex-direction: column;
-            }
-
-            .right-col {
-                max-width: 100%;
-                width: 100%;
-            }
         }
 
         .zoom-container {
             position: relative;
             overflow: hidden;
             width: 100%;
-            max-height: 420px;
+            max-height: 400px;
             border-radius: 4px;
             cursor: crosshair;
         }
@@ -81,288 +37,255 @@
         }
     </style>
 
-    <div class="content-wrapper">
-        <section class="content-header">
-            <div class="container-fluid">
-                <h1 class="text-center">Add Fabric Shipment Receipt</h1>
+    <div class="content-wrapper erp-page p-2">
+        <!-- Slim ERP Header Bar -->
+        <div class="erp-header-bar">
+            <div class="erp-header-title">
+                <i class="fas fa-truck-loading text-primary"></i> Add Fabric Shipment Receipt
             </div>
-        </section>
+            <div class="erp-header-actions">
+                <a href="{{ route('admin.fabric_receipt.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </div>
 
-        <section class="content">
-            <div class="container-fluid">
-                <div class="card card-default p-3">
-                    <form id="fabric-receipt-form" action="{{ route('admin.fabric_receipt.store') }}" method="post"
-                        enctype="multipart/form-data">
-                        @csrf
+        <form id="fabric-receipt-form" action="{{ route('admin.fabric_receipt.store') }}" method="post" enctype="multipart/form-data">
+            @csrf
 
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label class="d-flex justify-content-between align-items-center mb-1">
-                                    <span>Purchase Order (Optional)</span>
-                                    <span class="action-links">
-                                        <a href="{{ route('admin.purchase_order.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                        <a href="javascript:void(0)" class="text-info" id="refreshPoBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                    </span>
-                                </label>
-                                <select name="purchase_order_id" id="po-select" class="form-control select2"
-                                    style="width: 100%;">
-                                    <option value="">-- No PO (Create New) --</option>
-                                    @foreach($purchase_orders as $po)
-                                        <option value="{{$po->id}}" data-vendor="{{$po->vendor_id}}">{{$po->sku}}
-                                            {{$po->vendor ? '(' . $po->vendor->name . ')' : ''}}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="d-flex justify-content-between align-items-center mb-1">
-                                    <span>Warehouse</span>
-                                    <span class="action-links">
-                                        <a href="{{ route('admin.master.fabric_warehouse.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                        <a href="javascript:void(0)" class="text-info" id="refreshWarehouseBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                    </span>
-                                </label>
-                                <select name="master_fabric_warehouse_id" id="warehouse-select" class="form-control select2" style="width: 100%;"
-                                    required>
-                                    @foreach($cutting_units as $single_data)
-                                        <option value="{{$single_data->id}}"
-                                            {{old('master_fabric_warehouse_id') == $single_data->id ? 'selected' : ''}}>
-                                            {{$single_data->cutting_master_name}}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="col-md-4">
-                                <label class="d-flex justify-content-between align-items-center mb-1">
-                                    <span>Vendor</span>
-                                    <span class="action-links">
-                                        <a href="{{ route('admin.master.vendor.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                        <a href="javascript:void(0)" class="text-info" id="refreshVendorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                    </span>
-                                </label>
-                                <select name="vendor_id" id="vendor-select" class="form-control select2"
-                                    style="width: 100%;" required>
-                                    <option value="">-- Select vendor --</option>
-                                    @foreach($vendors as $single_data)
-                                        <option value="{{$single_data->id}}" {{old('vendor_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label for="datetime">Date</label>
-
-                                <input type="date" name="time" id="" class="form-control" placeholder="Select date"
-                                    value="{{ old('time') ?? date('Y-m-d') }}">
-
-                            </div>
-
-                            <div class="col-md-4">
-                                <label for="received_by">Received By</label>
-                                <input type="text" name="received_by" id="received_by" class="form-control"
-                                    placeholder="Enter received by">
-                            </div>
-
-                            <div class="col-md-4">
-                                <label for="bill_no">Bill No</label>
-                                <input type="text" name="bill_no" id="bill_no" class="form-control"
-                                    placeholder="Enter bill number">
-                                <span id="bill_no_error" class="text-danger" style="display: none;">Bill Number already
-                                    exists!</span>
-                            </div>
-                            <div class="col-md-6 mt-2">
-                                <label>Challan Slip</label>
-
-                                <div class="input-group">
-                                    <div class="custom-file">
-                                        <input type="file" id="challan-input" name="challan_photo" accept="image/*,.pdf"
-                                            class="custom-file-input">
-
-                                        <label class="custom-file-label" for="challan-input">
-                                            Choose file
-                                        </label>
-                                    </div>
-
-                                    <div class=" ml-3">
-                                        <button type="button" id="view-challan" class="btn btn-info btn-lm px-3" disabled>
-                                            View
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <small class="text-muted d-block mt-1">
-                                    Allowed: JPG, PNG, PDF
-                                </small>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
-                                <label>Other Images</label>
-                                <div class="input-group">
-                                    <div class="custom-file">
-                                        <input type="file" name="other_images[]" accept="image/*" class="custom-file-input" multiple>
-                                        <label class="custom-file-label">Choose files</label>
-                                    </div>
-                                </div>
-                                <small class="text-muted d-block mt-1">
-                                    You can select multiple images.
-                                </small>
-                            </div>
-
-                        </div>
-                        <div class="row mb-3">
-
-                            <div class="col-md-3 mt-2">
-                                <label>Amount</label>
-                                <input type="number" step="0.01" name="amount" id="amount" class="form-control"
-                                    placeholder="Enter amount" required>
-                            </div>
-
-                            <div class="col-md-3 mt-2">
-                                <label>GST %</label>
-                                <input type="number" step="0.01" name="gst_percentage" id="gst_percentage"
-                                    class="form-control" placeholder="GST %" required>
-                            </div>
-
-                            <div class="col-md-3 mt-2">
-                                <label>GST Amount</label>
-                                <input type="number" step="0.01" name="gst_amount" id="gst_amount" class="form-control">
-                            </div>
-
-                            <div class="col-md-3 mt-2">
-                                <label>Other Charges</label>
-                                <input type="number" step="0.01" name="other_charges" id="other_charges"
-                                    class="form-control" placeholder="Other Charges">
-                            </div>
-
-                            <div class="col-md-3 mt-2">
-                                <label>Total Amount</label>
-                                <div class="input-group">
-                                    <input type="number" step="0.01" name="total_amount" id="total_amount" class="form-control" readonly>
-                                    <div class="input-group-append">
-                                        <div class="input-group-text">
-                                            <input type="checkbox" id="round_off" checked> 
-                                            <small class="ml-1">Round</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3 mt-2">
-                                <label for="total_roll">Total Roll</label>
-                                <input type="number" name="total_roll" id="total_roll" class="form-control"
-                                    placeholder="Enter total roll" value="1" min="1" max="100">
-                            </div>
-                            <div class="col-md-3 mt-2">
-                                <label for="total_meter">Total Meter</label>
-                                <input type="number" name="total_meter" id="total_meter" class="form-control"
-                                    placeholder="Total Meter" min="0" step="0.01">
-                                <small class="text-danger d-none" id="total-meter-error">
-                                    Total Meter must be equal to sum of selected fabric meters
-                                </small>
-                            </div>
-
-                        </div>
-                        <div class="flex-row flex-column">
-
-                            <!-- Header -->
-                            <div class="mb-2 d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Select Fabrics</h5>
-                                <span class="action-links">
-                                    <a href="{{ route('admin.master.fabric.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                    <a href="javascript:void(0)" class="text-info refreshFabricBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+            <!-- Card 1: Shipment & Vendor Info -->
+            <div class="erp-card mb-2">
+                <div class="erp-card-header py-1">
+                    <span class="erp-card-title">
+                        <i class="fas fa-file-invoice"></i> Shipment & Vendor Details
+                    </span>
+                </div>
+                <div class="erp-card-body p-2">
+                    <div class="row">
+                        <div class="col-md-4 col-sm-6 mb-2">
+                            <label class="erp-label">
+                                <span>PO (Optional)</span>
+                                <span>
+                                    <a href="{{ route('admin.purchase_order.create') }}" target="_blank" class="erp-pill-btn erp-pill-new mr-1" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                    <a href="javascript:void(0)" class="erp-pill-btn erp-pill-refresh" id="refreshPoBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
                                 </span>
-                            </div>
-
-                            <!-- Table -->
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-striped text-center align-middle mb-0"
-                                    id="fabric-table">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th style="min-width:40%;">Fabric</th>
-                                            <th style="width:15%;">Rolls</th>
-                                            <th style="width:25%;">Price (per meter)</th>
-                                            <th style="width:10%;">Action</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody id="fabric-body">
-                                        <tr data-row="1" id="fabric-row">
-                                            <td>
-                                                <select name="rolls[1][fabric_id]"
-                                                    class="form-control select2 fabric-id-select" data-row="1">
-                                                    <option value="">Select Fabric</option>
-                                                    @foreach ($fabrics as $single_data)
-                                                        <option value="{{ $single_data->id }}">
-                                                            {{ $single_data->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-
-                                            <td>
-                                                <input type="number" class="form-control" name="rolls[1][roll]" min="1"
-                                                    placeholder="Rolls">
-                                            </td>
-
-                                            <td>
-                                                <input type="number" class="form-control meter" name="rolls[1][meter]"
-                                                    data-row="1" min="0" step="0.01" placeholder="Price per meter">
-                                            </td>
-
-                                            <td class="text-center">
-                                                <button type="button" class="btn btn-primary btn-sm px-3" id="add-row">
-                                                    + Add
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
+                            </label>
+                            <select name="purchase_order_id" id="po-select" class="form-control select2 erp-input" style="width: 100%;">
+                                <option value="">-- No PO (Direct Receipt) --</option>
+                                @foreach($purchase_orders as $po)
+                                    <option value="{{$po->id}}" data-vendor="{{$po->vendor_id}}">{{$po->sku}}
+                                        {{$po->vendor ? '(' . $po->vendor->name . ')' : ''}}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
 
+                        <div class="col-md-4 col-sm-6 mb-2">
+                            <label class="erp-label">
+                                <span>Warehouse <span class="required">*</span></span>
+                                <span>
+                                    <a href="{{ route('admin.master.fabric_warehouse.create') }}" target="_blank" class="erp-pill-btn erp-pill-new mr-1" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                    <a href="javascript:void(0)" class="erp-pill-btn erp-pill-refresh" id="refreshWarehouseBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                </span>
+                            </label>
+                            <select name="master_fabric_warehouse_id" id="warehouse-select" class="form-control select2 erp-input" style="width: 100%;" required>
+                                @foreach($cutting_units as $single_data)
+                                    <option value="{{$single_data->id}}" {{old('master_fabric_warehouse_id') == $single_data->id ? 'selected' : ''}}>
+                                        {{$single_data->cutting_master_name}}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                        <div class="flex-row mt-3">
-                            <div class="left-col">
-                                <div class="mb-2 d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">Roll Details</h5>
-                                    <!-- <small class="text-muted">Choose fabric, enter roll & meter. You can parse from challan image.</small> -->
-                                </div>
+                        <div class="col-md-4 col-sm-6 mb-2">
+                            <label class="erp-label">
+                                <span>Vendor <span class="required">*</span></span>
+                                <span>
+                                    <a href="{{ route('admin.master.vendor.create') }}" target="_blank" class="erp-pill-btn erp-pill-new mr-1" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                    <a href="javascript:void(0)" class="erp-pill-btn erp-pill-refresh" id="refreshVendorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                </span>
+                            </label>
+                            <select name="vendor_id" id="vendor-select" class="form-control select2 erp-input" style="width: 100%;" required>
+                                <option value="">-- Select Vendor --</option>
+                                @foreach($vendors as $single_data)
+                                    <option value="{{$single_data->id}}" {{old('vendor_id') == $single_data->id ? 'selected' : ''}}>{{$single_data->name}}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                                <div class="table-responsive" id="roll_details">
-                                    <table class="table table-bordered table-striped text-center align-middle mb-2"
-                                        id="fabric-table">
-                                        <thead class="thead-light">
-                                            <tr>
-                                                <th style="width: 5%;">#</th>
-                                                <th style="min-width: 45%;">Fabric</th>
-                                                <th style="width:20%;">Price (per meter)</th>
-                                                <th style="width:20%;">Roll No</th>
-                                                <th style="width:20%;">Meter</th>
-                                                <th style="width:20%;">Amount</th>
-                                                <th style="width: 5%;">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="roll-details-body">
+                        <div class="col-md-3 col-sm-6 mb-2">
+                            <label class="erp-label">Receipt Date <span class="required">*</span></label>
+                            <input type="date" name="time" class="form-control erp-input" value="{{ old('time') ?? date('Y-m-d') }}" required>
+                        </div>
 
-                                        </tbody>
-                                    </table>
-                                </div>
+                        <div class="col-md-3 col-sm-6 mb-2">
+                            <label class="erp-label">Received By</label>
+                            <input type="text" name="received_by" id="received_by" class="form-control erp-input" placeholder="Receiver Name">
+                        </div>
+
+                        <div class="col-md-3 col-sm-6 mb-2">
+                            <label class="erp-label">Bill No <span class="required">*</span></label>
+                            <input type="text" name="bill_no" id="bill_no" class="form-control erp-input" placeholder="Enter Bill No" required>
+                            <span id="bill_no_error" class="text-danger font-weight-bold" style="display: none; font-size: 10px;">Bill Number already exists!</span>
+                        </div>
+
+                        <div class="col-md-3 col-sm-6 mb-2">
+                            <label class="erp-label">Challan Slip</label>
+                            <div class="d-flex" style="gap: 4px;">
+                                <input type="file" id="challan-input" name="challan_photo" accept="image/*,.pdf" class="form-control erp-input p-1" style="font-size: 10px;">
+                                <button type="button" id="view-challan" class="btn-erp btn-erp-outline" style="white-space: nowrap;" disabled>
+                                    View
+                                </button>
                             </div>
                         </div>
 
-                        <div class="mt-3 text-right">
-                            <button type="submit" id="submit-btn" class="btn btn-success">Submit</button>
+                        <div class="col-md-12 mb-1">
+                            <label class="erp-label">Other Supporting Images (Optional)</label>
+                            <input type="file" name="other_images[]" accept="image/*" class="form-control erp-input p-1" multiple style="font-size: 10px;">
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
-        </section>
+
+            <!-- Card 2: Financial & Valuation Totals -->
+            <div class="erp-card mb-2">
+                <div class="erp-card-header py-1">
+                    <span class="erp-card-title">
+                        <i class="fas fa-calculator"></i> Valuation & Meter Totals
+                    </span>
+                </div>
+                <div class="erp-card-body p-2">
+                    <div class="row">
+                        <div class="col-md-2 col-sm-4 col-6 mb-2">
+                            <label class="erp-label">Amount (Rs.) <span class="required">*</span></label>
+                            <input type="number" step="0.01" name="amount" id="amount" class="form-control erp-input" placeholder="0.00" required>
+                        </div>
+
+                        <div class="col-md-1 col-sm-4 col-6 mb-2">
+                            <label class="erp-label">GST % <span class="required">*</span></label>
+                            <input type="number" step="0.01" name="gst_percentage" id="gst_percentage" class="form-control erp-input" placeholder="5" required>
+                        </div>
+
+                        <div class="col-md-2 col-sm-4 col-6 mb-2">
+                            <label class="erp-label">GST Amount (Rs.)</label>
+                            <input type="number" step="0.01" name="gst_amount" id="gst_amount" class="form-control erp-input" placeholder="0.00">
+                        </div>
+
+                        <div class="col-md-2 col-sm-4 col-6 mb-2">
+                            <label class="erp-label">Other Charges (Rs.)</label>
+                            <input type="number" step="0.01" name="other_charges" id="other_charges" class="form-control erp-input" placeholder="0.00">
+                        </div>
+
+                        <div class="col-md-2 col-sm-4 col-6 mb-2">
+                            <label class="erp-label">Total Amount (Rs.)</label>
+                            <div class="d-flex" style="gap: 4px;">
+                                <input type="number" step="0.01" name="total_amount" id="total_amount" class="form-control erp-input font-weight-bold" readonly>
+                                <label class="d-flex align-items-center mb-0 px-1 border rounded" style="font-size: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="round_off" checked>
+                                    <span class="ml-1">Rnd</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-1 col-sm-4 col-6 mb-2">
+                            <label class="erp-label">Total Rolls</label>
+                            <input type="number" name="total_roll" id="total_roll" class="form-control erp-input font-weight-bold" value="1" min="1" max="100">
+                        </div>
+
+                        <div class="col-md-2 col-sm-4 col-6 mb-2">
+                            <label class="erp-label">Total Meter</label>
+                            <input type="number" name="total_meter" id="total_meter" class="form-control erp-input font-weight-bold" placeholder="0.00" min="0" step="0.01">
+                            <small class="text-danger font-weight-bold d-none" id="total-meter-error" style="font-size: 9.5px;">
+                                Must equal sum of meters!
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Fabric Batches Input -->
+            <div class="erp-card mb-2">
+                <div class="erp-card-header py-1">
+                    <span class="erp-card-title">
+                        <i class="fas fa-boxes"></i> Select Fabric Batches
+                    </span>
+                    <span>
+                        <a href="{{ route('admin.master.fabric.create') }}" target="_blank" class="erp-pill-btn erp-pill-new mr-1" title="Create New"><i class="fas fa-plus"></i> New Fabric</a>
+                        <a href="javascript:void(0)" class="erp-pill-btn erp-pill-refresh refreshFabricBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                    </span>
+                </div>
+                <div class="table-responsive p-0">
+                    <table class="erp-table table table-bordered mb-0" id="fabric-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 40%;">Fabric Item</th>
+                                <th style="width: 15%;" class="text-center">Rolls Qty</th>
+                                <th style="width: 25%;" class="text-right">Price per Meter (Rs.)</th>
+                                <th style="width: 10%;" class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fabric-body">
+                            <tr data-row="1" id="fabric-row">
+                                <td>
+                                    <select name="rolls[1][fabric_id]" class="form-control select2 fabric-id-select erp-input" data-row="1" style="width: 100%;">
+                                        <option value="">-- Select Fabric --</option>
+                                        @foreach ($fabrics as $single_data)
+                                            <option value="{{ $single_data->id }}">{{ $single_data->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="text-center">
+                                    <input type="number" class="form-control erp-input text-center" name="rolls[1][roll]" min="1" placeholder="Rolls">
+                                </td>
+                                <td class="text-right">
+                                    <input type="number" class="form-control erp-input text-right meter" name="rolls[1][meter]" data-row="1" min="0" step="0.01" placeholder="0.00">
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn-erp btn-erp-primary" id="add-row">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Card 4: Generated Roll Details Breakdown -->
+            <div class="erp-card mb-2">
+                <div class="erp-card-header py-1">
+                    <span class="erp-card-title">
+                        <i class="fas fa-scroll"></i> Generated Roll List Breakdown
+                    </span>
+                </div>
+                <div class="table-responsive p-0" id="roll_details">
+                    <table class="erp-table table table-bordered mb-0" id="roll-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 45px;" class="text-center">#</th>
+                                <th>Fabric Item</th>
+                                <th style="width: 130px;" class="text-right">Price / Mtr (Rs.)</th>
+                                <th style="width: 140px;">Roll No</th>
+                                <th style="width: 120px;" class="text-right">Meters</th>
+                                <th style="width: 130px;" class="text-right">Amount (Rs.)</th>
+                                <th style="width: 50px;" class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roll-details-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Submit Action -->
+            <div class="d-flex justify-content-end align-items-center mt-2 mb-3">
+                <a href="{{ route('admin.fabric_receipt.index') }}" class="btn-erp btn-erp-outline mr-2">
+                    Cancel
+                </a>
+                <button type="submit" id="submit-btn" class="btn-erp btn-erp-primary px-4 py-2" style="font-size: 13px;">
+                    <i class="fas fa-save mr-1"></i> Save Fabric Shipment
+                </button>
+            </div>
+        </form>
     </div>
     <!-- Challan Image Preview Modal -->
     <!-- Challan Preview Modal -->
@@ -719,7 +642,7 @@
                                                 </td>
                                                 <td><input type="number" name="rolls[${rowCount}][roll]" class="form-control" value="${prefill.roll || ''}" required></td>
                                                 <td><input type="number" name="rolls[${rowCount}][meter]" class="form-control meter" data-row="${rowCount}" value="${prefill.meter || ''}" min="0" step="0.01" required></td>
-                                                <td><button type="button" class="btn btn-danger btn-sm remove-row">-</button></td>
+                                                <td class="text-center align-middle"><button type="button" class="erp-action-btn erp-btn-delete remove-row" title="Delete"><i class="fas fa-trash-alt"></i></button></td>
                                             </tr>
                                         `;
                 $('#fabric-body').append(newRow);
@@ -989,7 +912,7 @@
                                                     </td>
                                                     <td><input type="number" name="rolls[${rowCount}][roll]" class="form-control" value="${item.roll || ''}"></td>
                                                     <td><input type="number" name="rolls[${rowCount}][meter]" class="form-control meter" data-row="${rowCount}" value="${item.meter || ''}" min="0" step="0.01"></td>
-                                                    <td><button type="button" class="btn btn-danger btn-sm remove-row">-</button></td>
+                                                    <td class="text-center align-middle"><button type="button" class="erp-action-btn erp-btn-delete remove-row" title="Delete"><i class="fas fa-trash-alt"></i></button></td>
                                                 </tr>
                                             `;
                     $('#fabric-body').append(rowHtml);
@@ -1193,9 +1116,9 @@
                                                             class="form-control roll-amount"
                                                             readonly tabindex="-1">
                                                     </td>
-                                                    <td>
-                                                        <button type="button" class="btn btn-danger btn-sm remove-roll-detail">
-                                                            <i class="fas fa-times"></i>
+                                                    <td class="text-center align-middle">
+                                                        <button type="button" class="erp-action-btn erp-btn-delete remove-roll-detail" title="Delete">
+                                                            <i class="fas fa-trash-alt"></i>
                                                         </button>
                                                     </td>
                                                 </tr>

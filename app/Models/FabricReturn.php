@@ -10,6 +10,7 @@ class FabricReturn extends Model
     use HasFactory;
 
     protected $fillable = [
+        'vendor_id',
         'return_number',
         'fabric_receipt_id',
         'date',
@@ -21,6 +22,11 @@ class FabricReturn extends Model
         'discount',
         'other_charges'
     ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class, 'vendor_id');
+    }
 
     public function receipt()
     {

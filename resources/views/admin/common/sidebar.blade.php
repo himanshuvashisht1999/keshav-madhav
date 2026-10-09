@@ -7,9 +7,9 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
 <aside class="main-sidebar sidebar-dark-primary elevation-4 km-sidebar">
     <!-- Brand Logo -->
     <a href="{{ route('admin.user.profileEdit') }}" class="brand-link">
-        <img src="{{ $general_setting->logo }}" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
-            style="opacity: .8">
-        <span class="brand-text font-weight-light">SNAPKID</span>
+        <img src="{{ $general_setting->logo }}" alt="Snapkid" class="brand-image img-circle elevation-3"
+            style="opacity: 1;">
+        <span class="brand-text font-weight-bold ml-1">SNAPKID</span>
     </a>
 
     <!-- Sidebar -->
@@ -29,28 +29,50 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                             <p>DASHBOARD</p>
                         </a>
                     </li> -->
-                    @can('manage-purchase-order')
-                        <li class="nav-item">
-                            <a href="{{ route('admin.purchase_order.index') }}"
-                                class="{{ str_contains($page_url, 'admin/purchase-order') ? 'nav-link active' : 'nav-link' }} border_class">
-                                <i class="nav-icon fas fa-cube"></i>
+                    @if(auth()->user()->can('manage-purchase-order') || auth()->user()->can('manage-shipment'))
+                        @php
+                            $isFabricActive = (str_contains($page_url, 'admin/purchase-order') || str_contains($page_url, 'admin/fabric-receipt') || str_contains($page_url, 'admin/fabric-return'));
+                        @endphp
+                        <li class="{{ $isFabricActive ? 'nav-item menu-open' : 'nav-item' }}">
+                            <a href="#"
+                                class="{{ $isFabricActive ? 'nav-link active' : 'nav-link' }} border_class"
+                                style="position:static;">
+                                <i class="nav-icon fas fa-layer-group"></i>
                                 <p>
-                                    FABRIC POs
+                                    FABRIC
+                                    <i class="right fas fa-angle-left"></i>
                                 </p>
                             </a>
-                        </li>
-                    @endcan
+                            <ul class="nav nav-treeview">
+                                @can('manage-purchase-order')
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.purchase_order.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/purchase-order') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Fabric POs</p>
+                                        </a>
+                                    </li>
+                                @endcan
 
-                    @can('manage-shipment')
-                        <li class="nav-item">
-                            <a href="{{ route('admin.fabric_receipt.index') }}"
-                                class="{{ str_contains($page_url, 'admin/fabric-receipt') ? 'nav-link active' : 'nav-link' }} border_class"
-                                style="position:static;">
-                                <i class="nav-icon fas fa-receipt"></i>
-                                <p>FABRIC SHIPMENT</p>
-                            </a>
+                                @can('manage-shipment')
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.fabric_receipt.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/fabric-receipt') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Fabric Shipment</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('admin.fabric_return.index') }}"
+                                            class="{{ str_contains($page_url, 'admin/fabric-return') ? 'nav-link active' : 'nav-link' }}">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Fabric Return</p>
+                                        </a>
+                                    </li>
+                                @endcan
+                            </ul>
                         </li>
-                    @endcan
+                    @endif
 
                     <!-- <li class="nav-item">
                         <a href="{{ route('admin.stock.fabricIndex') }}"

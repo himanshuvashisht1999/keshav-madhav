@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\Master\FabricUnitController as AdminFabricUnitCon
 use App\Http\Controllers\Admin\Master\FabricController as AdminFabricController;
 use App\Http\Controllers\Admin\PurchaseOrderController as AdminPurchaseOrderController;
 use App\Http\Controllers\Admin\FabricReceiptController as AdminFabricReceiptController;
+use App\Http\Controllers\Admin\FabricReturnController as AdminFabricReturnController;
 use App\Http\Controllers\Admin\StockController as AdminStockController;
 use App\Http\Controllers\Admin\Master\ProductionGoodsController as AdminProductionGoodsController;
 use App\Http\Controllers\Admin\Master\ProductionGoodsItemController as AdminProductionGoodsItemController;
@@ -324,6 +325,17 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/return-delete/{id}', [AdminFabricReceiptController::class, 'deleteReturn'])->name('delete_return');
             Route::get('/return-edit/{id}', [AdminFabricReceiptController::class, 'editReturnPage'])->name('edit_return');
             Route::post('/return-update', [AdminFabricReceiptController::class, 'updateReturn'])->name('update_return');
+        });
+
+        Route::prefix('/fabric-return')->name('fabric_return.')->group(function () {
+            Route::get('/index', [AdminFabricReturnController::class, 'index'])->name('index');
+            Route::get('/indexList', [AdminFabricReturnController::class, 'indexList'])->name('indexList');
+            Route::get('/create', [AdminFabricReturnController::class, 'create'])->name('create');
+            Route::get('/vendor-available-rolls/{vendor_id}', [AdminFabricReturnController::class, 'getVendorAvailableRolls'])->name('vendor_available_rolls');
+            Route::post('/store', [AdminFabricReturnController::class, 'store'])->name('store');
+            Route::get('/view/{id}', [AdminFabricReturnController::class, 'view'])->name('view');
+            Route::get('/download-report/{id}', [AdminFabricReturnController::class, 'downloadReport'])->name('download_report');
+            Route::get('/delete/{id}', [AdminFabricReturnController::class, 'delete'])->name('delete');
         });
 
         Route::prefix('/item-receipt')->name('item_receipt.')->group(function () {
@@ -1464,6 +1476,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             // Deletion Logs Report
             Route::get('/deletion-logs', [\App\Http\Controllers\Admin\DeletionLogController::class, 'index'])->name('deletionLogs');
             Route::get('/deletion-logs/{id}', [\App\Http\Controllers\Admin\DeletionLogController::class, 'show'])->name('deletionLogs.show');
+            Route::post('/deletion-logs/{id}/undo', [\App\Http\Controllers\Admin\DeletionLogController::class, 'undo'])->name('deletionLogs.undo');
         });
     });
 

@@ -293,12 +293,12 @@ class FabricLedgerController extends Controller
             ->get();
 
         // B. Returns
-        $returnsOutwards = FabricReturnDetail::with(['fabric_return.receipt.vendor', 'receipt_detail'])
+        $returnsOutwards = FabricReturnDetail::with(['fabric_return.receipt.vendor', 'fabric_return.vendor', 'receipt_detail'])
             ->whereIn('fabric_receipt_detail_id', $receivedRollIds)
             ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
             ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
             ->when($vendorId, function ($q) use ($vendorId) {
-                $q->whereHas('return.receipt', fn($sq) => $sq->where('vendor_id', $vendorId));
+                $q->whereHas('fabric_return', fn($sq) => $sq->where('vendor_id', $vendorId)->orWhereHas('receipt', fn($rq) => $rq->where('vendor_id', $vendorId)));
             })
             ->get();
 

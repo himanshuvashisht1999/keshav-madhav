@@ -91,9 +91,10 @@
                                 <th style="width: 80px;">Log ID</th>
                                 <th>Module</th>
                                 <th>Original Record ID</th>
+                                <th>Party Name</th>
                                 <th>Deleted By</th>
                                 <th>Deleted At</th>
-                                <th style="width: 140px;" class="text-center">Action</th>
+                                <th style="width: 200px;" class="text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -105,6 +106,9 @@
                                     elseif(str_contains(strtolower($log->module), 'po')) $badgeClass = 'badge-info';
                                     elseif(str_contains(strtolower($log->module), 'pack')) $badgeClass = 'badge-success';
                                     elseif(str_contains(strtolower($log->module), 'payment')) $badgeClass = 'badge-danger';
+
+                                    $isAgentOrder = ($log->module === 'Agent Order');
+                                    $isRestored = ($log->restored_at !== null) || ($isAgentOrder && in_array($log->record_id, $existingOrderIds ?? []));
                                 @endphp
                                 <tr>
                                     <td class="font-weight-bold text-muted">#{{ $log->id }}</td>
@@ -117,6 +121,15 @@
                                         <span class="font-weight-bold">#{{ $log->record_id ?? 'N/A' }}</span>
                                     </td>
                                     <td>
+                                        @if(!empty($log->party_name))
+                                            <span class="font-weight-semibold text-dark">
+                                                <i class="fas fa-store text-muted mr-1"></i> {{ $log->party_name }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
                                         <i class="fas fa-user-circle text-muted mr-1"></i>
                                         {{ $log->user->name ?? 'System / Unknown' }}
                                     </td>
@@ -125,16 +138,37 @@
                                         {{ $log->created_at ? $log->created_at->format('d M Y, h:i A') : 'N/A' }}
                                     </td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-info view-payload-btn" 
-                                                data-id="{{ $log->id }}"
-                                                title="View Snapshot / Payload">
-                                            <i class="fas fa-eye mr-1"></i> View Data
-                                        </button>
+                                        <div class="d-inline-flex align-items-center" style="gap: 6px;">
+                                            <button type="button" class="btn btn-sm btn-info view-payload-btn" 
+                                                    data-id="{{ $log->id }}"
+                                                    title="View Snapshot / Payload">
+                                                <i class="fas fa-eye mr-1"></i> View Data
+                                            </button>
+
+                                            @if($isAgentOrder)
+                                                @if($isRestored)
+                                                    <a href="{{ route('admin.agent-orders.show', $log->record_id) }}" 
+                                                       class="btn btn-sm btn-outline-success font-weight-semibold" 
+                                                       target="_blank"
+                                                       title="Order restored and active in system">
+                                                        <i class="fas fa-check-circle mr-1"></i> Restored
+                                                    </a>
+                                                @else
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-success undo-order-btn font-weight-semibold" 
+                                                            data-id="{{ $log->id }}" 
+                                                            data-order-id="{{ $log->record_id }}"
+                                                            title="Undo Deletion & Restore Order #{{ $log->record_id }}">
+                                                        <i class="fas fa-undo mr-1"></i> Undo
+                                                    </button>
+                                                @endif
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">
+                                    <td colspan="7" class="text-center py-5 text-muted">
                                         <i class="fas fa-folder-open fa-3x mb-3 text-secondary d-block"></i>
                                         <p class="mb-0 font-weight-semibold">No deletion logs found.</p>
                                         <small>Deleted records across modules will automatically appear here.</small>
@@ -177,21 +211,36 @@
                 <div class="card shadow-sm mb-4">
                     <div class="card-body bg-white">
                         <div class="row">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="text-muted small text-uppercase font-weight-bold">Module</label>
                                 <h6 class="font-weight-bold text-primary" id="modalModule">-</h6>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="text-muted small text-uppercase font-weight-bold">Record ID</label>
                                 <h6 class="font-weight-bold" id="modalRecordId">-</h6>
                             </div>
                             <div class="col-md-3">
+                                <label class="text-muted small text-uppercase font-weight-bold">Party Name</label>
+                                <h6 class="font-weight-bold text-dark" id="modalPartyName">-</h6>
+                            </div>
+                            <div class="col-md-2">
                                 <label class="text-muted small text-uppercase font-weight-bold">Deleted By</label>
                                 <h6 class="font-weight-bold" id="modalDeletedBy">-</h6>
                             </div>
                             <div class="col-md-3">
                                 <label class="text-muted small text-uppercase font-weight-bold">Deleted At</label>
                                 <h6 class="font-weight-bold text-danger" id="modalDeletedAt">-</h6>
+                            </div>
+                            <div class="col-md-12 mt-2 pt-2 border-top" id="modalRestoredCol" style="display: none;">
+                                <div class="alert alert-success mb-0 py-2 d-flex align-items-center justify-content-between">
+                                    <span>
+                                        <i class="fas fa-check-circle mr-1"></i>
+                                        <strong>Status:</strong> <span id="modalRestoredStatus">Restored</span>
+                                    </span>
+                                    <a href="#" id="modalHeaderViewOrderLink" target="_blank" class="btn btn-xs btn-success font-weight-bold">
+                                        <i class="fas fa-external-link-alt mr-1"></i> Open Order
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -233,7 +282,15 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer bg-white">
+            <div class="modal-footer bg-white d-flex justify-content-between align-items-center">
+                <div>
+                    <button type="button" class="btn btn-success undo-order-btn" id="modalUndoBtn" style="display: none;">
+                        <i class="fas fa-undo mr-1"></i> Undo Deletion & Restore Order
+                    </button>
+                    <a href="#" id="modalViewOrderBtn" class="btn btn-outline-success font-weight-bold" target="_blank" style="display: none;">
+                        <i class="fas fa-external-link-alt mr-1"></i> View Restored Order
+                    </a>
+                </div>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             </div>
         </div>
@@ -252,8 +309,12 @@ $(document).ready(function() {
         // Reset modal content
         $('#modalModule').text('Loading...');
         $('#modalRecordId').text('...');
+        $('#modalPartyName').text('...');
         $('#modalDeletedBy').text('...');
         $('#modalDeletedAt').text('...');
+        $('#modalRestoredCol').hide();
+        $('#modalUndoBtn').hide();
+        $('#modalViewOrderBtn').hide();
         $('#structuredContent').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i></div>');
         $('#rawJsonCode').text('Loading payload...');
 
@@ -268,8 +329,30 @@ $(document).ready(function() {
                     var data = res.data;
                     $('#modalModule').text(data.module);
                     $('#modalRecordId').text('#' + (data.record_id || 'N/A'));
+                    $('#modalPartyName').text(data.party_name || '-');
                     $('#modalDeletedBy').text(data.deleted_by);
                     $('#modalDeletedAt').text(data.created_at);
+
+                    // Handle restoration status in modal
+                    if (data.module === 'Agent Order') {
+                        var orderViewUrl = "{{ url('admin/agent-orders') }}/" + data.record_id + "/show";
+                        if (data.is_restored) {
+                            var restoredMsg = 'This order has been restored' + (data.restored_at ? ' on ' + data.restored_at : '') + (data.restored_by ? ' by ' + data.restored_by : '') + '.';
+                            $('#modalRestoredStatus').text(restoredMsg);
+                            $('#modalHeaderViewOrderLink').attr('href', orderViewUrl).show();
+                            $('#modalRestoredCol').show();
+                            $('#modalUndoBtn').hide();
+                            $('#modalViewOrderBtn').attr('href', orderViewUrl).show();
+                        } else {
+                            $('#modalRestoredCol').hide();
+                            $('#modalUndoBtn').data('id', data.id).data('order-id', data.record_id).show();
+                            $('#modalViewOrderBtn').hide();
+                        }
+                    } else {
+                        $('#modalRestoredCol').hide();
+                        $('#modalUndoBtn').hide();
+                        $('#modalViewOrderBtn').hide();
+                    }
 
                     var payload = data.payload;
                     var jsonString = JSON.stringify(payload, null, 4);
@@ -307,6 +390,82 @@ $(document).ready(function() {
                 $('#structuredContent').html('<div class="alert alert-danger">Error retrieving data from server.</div>');
             }
         });
+    });
+
+    // Undo / Restore Order Handler
+    $(document).on('click', '.undo-order-btn', function() {
+        var logId = $(this).data('id');
+        var orderId = $(this).data('order-id');
+        var btn = $(this);
+
+        var confirmText = 'Are you sure you want to undo this deletion and restore Agent Order #' + (orderId || '') + '? All order items and quantities will be restored back into the CRM.';
+
+        var executeUndo = function() {
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Restoring...');
+
+            $.ajax({
+                url: "{{ url('admin/reports/deletion-logs') }}/" + logId + "/undo",
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                dataType: 'json',
+                success: function(res) {
+                    if (res.status) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Order Restored!',
+                                text: res.message || 'Agent order has been successfully restored.',
+                                confirmButtonText: 'OK'
+                            }).then(function() {
+                                location.reload();
+                            });
+                        } else {
+                            alert(res.message || 'Order restored successfully.');
+                            location.reload();
+                        }
+                    } else {
+                        btn.prop('disabled', false).html('<i class="fas fa-undo mr-1"></i> Undo');
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Error', res.message || 'Failed to restore order.', 'error');
+                        } else {
+                            alert(res.message || 'Failed to restore order.');
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    btn.prop('disabled', false).html('<i class="fas fa-undo mr-1"></i> Undo');
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Server error while restoring order.';
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('Error', msg, 'error');
+                    } else {
+                        alert(msg);
+                    }
+                }
+            });
+        };
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Undo Deletion?',
+                text: confirmText,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-undo mr-1"></i> Yes, Restore Order!',
+                cancelButtonText: 'Cancel'
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    executeUndo();
+                }
+            });
+        } else {
+            if (confirm(confirmText)) {
+                executeUndo();
+            }
+        }
     });
 
     $('#copyJsonBtn').on('click', function() {

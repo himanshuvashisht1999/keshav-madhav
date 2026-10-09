@@ -1,242 +1,235 @@
 @extends('admin.layouts.app')
 @section('content')
     <style>
-        .invoice-box {
-            background: #fff;
-            padding: 30px;
-            border: 1px solid #e0e0e0;
-            box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.05);
-            font-size: 14px;
-            line-height: 20px;
-            color: #333;
-        }
-
-        .invoice-header {
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-
-        .company-details h2 {
-            margin: 0;
-            font-weight: bold;
-            color: #007bff;
-        }
-
-        .vendor-box,
-        .po-box {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 15px;
-        }
-
-        table.invoice-table th {
-            background: #007bff;
-            color: #fff;
-            text-align: center;
-        }
-
-        table.invoice-table td {
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .grand-total {
-            font-size: 18px;
-            font-weight: bold;
-            background: #f1f1f1;
-        }
 
         @media print {
-            .action-buttons {
+            .erp-header-bar,
+            .action-buttons,
+            .main-sidebar,
+            .main-header {
                 display: none !important;
+            }
+            .content-wrapper {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+            }
+            .erp-voucher-sheet {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
             }
         }
     </style>
 
-    <div class="content-wrapper">
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-sm-6">
-                        <h1>Fabric Purchase Order ({{ $data->sku }})</h1>
+    <div class="content-wrapper erp-page p-2">
+        <!-- Slim ERP Header Bar -->
+        <div class="erp-header-bar">
+            <div class="erp-header-title">
+                <i class="fas fa-file-invoice text-primary"></i> Fabric Purchase Order:
+                <span class="erp-badge-yellow px-2 py-1 ml-1 rounded font-weight-bold">{{ $data->sku }}</span>
+            </div>
+            <div class="erp-header-actions action-buttons">
+                <a href="{{ route('admin.purchase_order.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <a href="{{ route('admin.purchase_order.edit', ['id' => $data->id]) }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-edit text-primary"></i> Edit
+                </a>
+                <a href="{{ route('admin.purchase_order.send_whatsapp_report', ['id' => $data->id]) }}"
+                    class="btn-erp btn-erp-success"
+                    onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $data->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </a>
+                <a href="{{ route('admin.purchase_order.download_report', ['id' => $data->id]) }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-file-pdf text-danger"></i> PDF
+                </a>
+                <button onclick="window.print()" class="btn-erp btn-erp-primary">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+
+        <div class="erp-voucher-sheet">
+            <!-- Header Row: Company & Logo -->
+            <div class="row erp-voucher-header align-items-center">
+                <div class="col-8">
+                    @if($data->company)
+                        <h4 class="erp-voucher-title">{{ $data->company->name }}</h4>
+                        <div class="erp-company-meta">
+                            <div>{{ $data->company->address }}</div>
+                            <div>
+                                @if($data->company->phone)<span><b>Phone:</b> {{ $data->company->phone }}</span>@endif
+                                @if($data->company->email)<span class="ml-2"><b>Email:</b> {{ $data->company->email }}</span>@endif
+                                @if($data->company->gst_number)<span class="ml-2"><b>GST:</b> {{ $data->company->gst_number }}</span>@endif
+                            </div>
+                        </div>
+                    @else
+                        <h4 class="erp-voucher-title">{{ $general_setting->website_name }}</h4>
+                        <div class="erp-company-meta">
+                            <div>{{ $general_setting->address }}</div>
+                            <div>
+                                @if($general_setting->phone)<span><b>Phone:</b> {{ $general_setting->phone }}</span>@endif
+                                @if($general_setting->email)<span class="ml-2"><b>Email:</b> {{ $general_setting->email }}</span>@endif
+                            </div>
+                        </div>
+                    @endif
+                </div>
+                <div class="col-4 text-right">
+                    @if($general_setting->logo)
+                        <img src="{{ $general_setting->logo }}" height="55" alt="Logo" style="object-fit: contain;">
+                    @endif
+                </div>
+            </div>
+
+            <!-- Two-Column Voucher Details -->
+            <div class="row mb-3">
+                <div class="col-md-6 mb-2">
+                    <div class="erp-card h-100 mb-0">
+                        <div class="erp-card-header py-1">
+                            <span class="erp-card-title"><i class="fas fa-user-tie text-primary mr-1"></i> Vendor Details</span>
+                        </div>
+                        <div class="erp-card-body p-2">
+                            <table class="erp-info-table">
+                                <tr>
+                                    <td class="label-col">Name</td>
+                                    <td class="val-col">: {{ $data->vendor->name ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label-col">Phone</td>
+                                    <td class="val-col">: {{ $data->vendor->phone ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label-col">Email</td>
+                                    <td class="val-col">: {{ $data->vendor->email ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label-col">Address</td>
+                                    <td class="val-col">: {{ $data->vendor->address ?? 'N/A' }}</td>
+                                </tr>
+                            </table>
+                        </div>
                     </div>
-                    <div class="col-sm-6 text-right">
-                        <a href="{{ route('admin.purchase_order.send_whatsapp_report', ['id' => $data->id]) }}"
-                            class="btn text-white mr-2" style="background-color: #25D366; border-color: #25D366;"
-                            onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $data->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + '&phone=' + encodeURIComponent(phone); }">
-                            <i class="fab fa-whatsapp"></i> Send WhatsApp
-                        </a>
-                        <a href="{{ route('admin.purchase_order.download_report', ['id' => $data->id]) }}"
-                            class="btn btn-success">
-                            <i class="fas fa-file-pdf"></i> Download PDF
-                        </a>
+                </div>
+
+                <div class="col-md-6 mb-2">
+                    <div class="erp-card h-100 mb-0">
+                        <div class="erp-card-header py-1">
+                            <span class="erp-card-title"><i class="fas fa-file-invoice text-primary mr-1"></i> Purchase Order Info</span>
+                        </div>
+                        <div class="erp-card-body p-2">
+                            <table class="erp-info-table">
+                                <tr>
+                                    <td class="label-col">PO Number</td>
+                                    <td class="val-col text-primary font-weight-bold">: {{ $data->sku }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label-col">PO Date</td>
+                                    <td class="val-col">: {{ getformatDate($data->date) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label-col">Delivery Date</td>
+                                    <td class="val-col">: {{ getformatDate($data->delivery_date) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="label-col">Transport</td>
+                                    <td class="val-col">: {{ $data->transport ?? 'N/A' }}</td>
+                                </tr>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <section class="content">
-            <div class="container-fluid">
-
-                <div class="invoice-box">
-                    {{-- Header --}}
-                    <div class="row invoice-header">
-                        <div class="col-md-6 company-details">
-                            @if($data->company)
-                                <h2>{{ $data->company->name }}</h2>
-                                <p class="mb-0">{{ $data->company->address }}</p>
-                                <p class="mb-0">{{ $data->company->email }}</p>
-                                <p class="mb-0"><b>Phone:</b> {{ $data->company->phone }}</p>
-                                <p class="mb-0"><b>GST:</b> {{ $data->company->gst_number }}</p>
-                            @else
-                                <h2>{{ $general_setting->website_name }}</h2>
-                                <p class="mb-0">{{ $general_setting->address }}</p>
-                                <p class="mb-0">{{ $general_setting->email }}</p>
-                                <p class="mb-0">Phone: {{ $general_setting->phone }}</p>
-                            @endif
-                            <p class="mt-2"><b>Delivery Warehouse Address:</b> {{ $data->fabric_warehouse->address ?? 'N/A' }}</p>
-                        </div>
-                        <div class="col-md-6 text-right">
-                            <img src="{{ $general_setting->logo }}" height="80" alt="Logo">
-                        </div>
-                    </div>
-
-                    {{-- Vendor & PO Info --}}
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="vendor-box h-100" style="border: 1px solid #dee2e6;">
-                                <h5 class="text-primary border-bottom pb-2 mb-3"><b><i class="fas fa-user-tie"></i> VENDOR DETAILS</b></h5>
-                                <div class="row mb-2">
-                                    <div class="col-4"><b>Name</b></div>
-                                    <div class="col-8"><b>: {{ $data->vendor->name ?? 'N/A' }}</b></div>
-                                </div>
-                                <div class="row mb-2">
-                                    <div class="col-4"><b>Email</b></div>
-                                    <div class="col-8"><b>: {{ $data->vendor->email ?? 'N/A' }}</b></div>
-                                </div>
-                                <div class="row mb-2">
-                                    <div class="col-4"><b>Phone</b></div>
-                                    <div class="col-8"><b>: {{ $data->vendor->phone ?? 'N/A' }}</b></div>
-                                </div>
-                                <div class="row mb-2">
-                                    <div class="col-4"><b>Address</b></div>
-                                    <div class="col-8"><b>: {{ $data->vendor->address ?? 'N/A' }}</b></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="po-box h-100" style="border: 1px solid #dee2e6;">
-                                <h5 class="text-primary border-bottom pb-2 mb-3 text-right"><b>PURCHASE ORDER INFO <i class="fas fa-info-circle"></i></b></h5>
-                                <div class="row mb-2">
-                                    <div class="col-5 text-right"><b>PO Number</b></div>
-                                    <div class="col-7"><b>: {{ $data->sku }}</b></div>
-                                </div>
-                                <div class="row mb-2">
-                                    <div class="col-5 text-right"><b>PO Date</b></div>
-                                    <div class="col-7"><b>: {{ getformatDate($data->date) }}</b></div>
-                                </div>
-                                <div class="row mb-2">
-                                    <div class="col-5 text-right"><b>Delivery Date</b></div>
-                                    <div class="col-7"><b>: {{ getformatDate($data->delivery_date) }}</b></div>
-                                </div>
-                                <div class="row mb-2">
-                                    <div class="col-5 text-right"><b>Transport</b></div>
-                                    <div class="col-7"><b>: {{ $data->transport ?? 'N/A' }}</b></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Items --}}
-                    <h5 class="mt-4 mb-3 text-primary">Order Items</h5>
-                    <table class="table table-bordered invoice-table">
+            <!-- Items Table -->
+            <div class="erp-card mb-3">
+                <div class="erp-card-header py-1">
+                    <span class="erp-card-title"><i class="fas fa-layer-group text-primary mr-1"></i> Fabric Order Items</span>
+                </div>
+                <div class="table-responsive p-0">
+                    <table class="erp-table table table-bordered mb-0">
                         <thead>
                             <tr>
-                                <th>#</th>
-                                <!-- <th>Item SKU</th> -->
+                                <th style="width: 40px;" class="text-center">#</th>
                                 <th>Fabric</th>
-                                <th>Meters</th>
-                                <th>Price</th>
-                                <th>Total</th>
+                                <th>Composition</th>
+                                <th style="width: 140px;" class="text-right">Meters / Qty</th>
+                                <th style="width: 140px;" class="text-right">Rate / Price (₹)</th>
+                                <th style="width: 160px;" class="text-right">Total Amount (₹)</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @php $grandTotal = 0; @endphp
+                            @php
+                                $totalMeters = 0;
+                                $grandTotal = 0;
+                            @endphp
 
                             @foreach($data->items as $index => $item)
-
                                 @php
                                     $total = null;
-
                                     if ($item->price > 0) {
                                         $total = $item->meter * $item->price;
                                         $grandTotal += $total;
                                     }
+                                    $totalMeters += $item->meter;
                                 @endphp
-
                                 <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>
-                                        {{ $item->fabric->name }}
-                                        <br>
-                                        <small class="text-muted"><b>Composition: </b>{{ $item->fabric->fabric_composition->name ?? 'N/A' }}</small>
-                                    </td>
-                                    <td>{{ $item->meter }}</td>
-
-                                    <td>
-                                        {{ $item->price > 0 ? getIndianCurrency($item->price) : 'N/A' }}
-                                    </td>
-
-                                    <td>
-                                        {{ $total !== null ? getIndianCurrency($total) : 'N/A' }}
-                                    </td>
+                                    <td class="text-center">{{ $index + 1 }}</td>
+                                    <td class="font-weight-bold">{{ $item->fabric->name }}</td>
+                                    <td>{{ $item->fabric->fabric_composition->name ?? 'N/A' }}</td>
+                                    <td class="text-right font-weight-bold text-primary">{{ number_format($item->meter, 2) }}</td>
+                                    <td class="text-right">{{ $item->price > 0 ? getIndianCurrency($item->price) : 'N/A' }}</td>
+                                    <td class="text-right font-weight-bold text-success">{{ $total !== null ? getIndianCurrency($total) : 'N/A' }}</td>
                                 </tr>
-
                             @endforeach
                         </tbody>
                         <tfoot>
-                            <tr class="grand-total">
-                                <td colspan="4" class="text-right">Grand Total</td>
-                                <td>{{ $grandTotal > 0 ? getIndianCurrency($grandTotal) : 'N/A' }}</td>
+                            <tr class="erp-table-grand-total">
+                                <td colspan="3" class="text-right text-uppercase" style="letter-spacing: 0.5px;">Grand Total:</td>
+                                <td class="text-right font-weight-bold grand-total-val">{{ number_format($totalMeters, 2) }}</td>
+                                <td></td>
+                                <td class="text-right font-weight-bold grand-total-val">{{ $grandTotal > 0 ? getIndianCurrency($grandTotal) : 'N/A' }}</td>
                             </tr>
                         </tfoot>
                     </table>
+                </div>
+            </div>
 
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <h5 class="text-primary"><b>Delivery Warehouse Address</b></h5>
-                            <div style="background:#f1f1f1; padding:12px; border-radius:6px;">
-                                {{ $data->fabric_warehouse->address ?? 'N/A' }}
-                            </div>
+            <!-- Warehouse & Remarks Row -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-2">
+                    <div class="erp-card h-100 mb-0">
+                        <div class="erp-card-header py-1">
+                            <span class="erp-card-title"><i class="fas fa-warehouse text-primary mr-1"></i> Delivery Warehouse Address</span>
                         </div>
-                        <div class="col-md-6">
-                            <h5 class="text-primary"><b>Remark</b></h5>
-                            <div style="background:#f1f1f1; padding:12px; border-radius:6px;">
-                                {{ $data->remark ?? 'N/A' }}
-                            </div>
+                        <div class="erp-card-body p-2" style="background: var(--erp-bg-card);">
+                            {{ $data->fabric_warehouse->address ?? 'N/A' }}
                         </div>
-                    </div>
-
-                    {{-- Footer --}}
-                    <div class="row mt-5">
-                        <div class="col-md-6">
-                            <p><b>Authorized Signature</b></p>
-                            <p>____________________</p>
-                        </div>
-                        <div class="col-md-6 text-right">
-                            <p class="text-primary"><b>Thank you for your business!</b></p>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 text-right action-buttons">
-                        <a href="{{ route('admin.purchase_order.index') }}" class="btn btn-secondary">Back</a>
-                        <button onclick="window.print()" class="btn btn-primary">Print</button>
                     </div>
                 </div>
 
+                <div class="col-md-6 mb-2">
+                    <div class="erp-card h-100 mb-0">
+                        <div class="erp-card-header py-1">
+                            <span class="erp-card-title"><i class="fas fa-comment-dots text-primary mr-1"></i> Remarks / Notes</span>
+                        </div>
+                        <div class="erp-card-body p-2" style="background: var(--erp-bg-card);">
+                            {{ $data->remark ?? 'None' }}
+                        </div>
+                    </div>
+                </div>
             </div>
-        </section>
+
+            <!-- Signature & Sign-off -->
+            <div class="row pt-3 align-items-end" style="border-top: 1px dashed var(--erp-border);">
+                <div class="col-6">
+                    <div style="width: 180px; border-bottom: 1px solid var(--erp-border); height: 35px;"></div>
+                    <div class="mt-1 font-weight-bold text-muted text-uppercase" style="font-size: var(--erp-font-xs);">Authorized Signature</div>
+                </div>
+                <div class="col-6 text-right">
+                    <span class="text-muted font-italic" style="font-size: var(--erp-font-xs);">Thank you for your business!</span>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection

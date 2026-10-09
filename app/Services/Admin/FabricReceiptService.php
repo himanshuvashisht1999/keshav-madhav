@@ -1002,8 +1002,9 @@ class FabricReceiptService
             }
 
             // Revert Vendor Balance
-            if ($receipt && $receipt->vendor_id) {
-                $vendor = Vendor::find($receipt->vendor_id);
+            $vendor_id = $return->vendor_id ?? ($receipt ? $receipt->vendor_id : null);
+            if ($vendor_id) {
+                $vendor = Vendor::find($vendor_id);
                 if ($vendor) {
                     $vendor->balance += $return->total_amount;
                     $vendor->save();

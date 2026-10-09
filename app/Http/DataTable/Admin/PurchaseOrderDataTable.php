@@ -54,14 +54,13 @@ class PurchaseOrderDataTable  {
             })
             
             ->addColumn('action', function ($queue) {
-				$parameter= $queue->id;
+				$parameter = $queue->id;
                 return '
-                <a href="' . route('admin.purchase_order.view',['id' => $parameter]) . '" class="text-info mx-1" data-toggle="tooltip" title="View"><i class="fas fa-eye"></i></a>
-                <a href="' . route('admin.purchase_order.edit',['id' => $parameter]) . '" class="text-primary mx-1" data-toggle="tooltip" title="Edit"><i class="fas fa-edit"></i></a>
-                <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="text-danger mx-1" data-toggle="tooltip" title="Delete"><i class="fas fa-trash"></i></a>
-                <button type="button" class="btn-send-email btn btn-sm btn-outline-primary ml-1" data-id="' . $parameter . '" title="Resend PO">
-                    <i class="fas fa-envelope"></i>
-                </button>
+                <div class="d-inline-flex align-items-center">
+                    <a href="' . route('admin.purchase_order.view',['id' => $parameter]) . '" class="erp-action-btn erp-btn-view" data-toggle="tooltip" title="View"><i class="fas fa-eye"></i></a>
+                    <a href="' . route('admin.purchase_order.edit',['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" data-toggle="tooltip" title="Edit"><i class="fas fa-edit"></i></a>
+                    <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="erp-action-btn erp-btn-delete" data-toggle="tooltip" title="Delete"><i class="fas fa-trash"></i></a>
+                </div>
                 ';
             })
             

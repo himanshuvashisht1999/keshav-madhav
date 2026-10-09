@@ -587,11 +587,10 @@ class PartyLedgerController extends Controller
                 }
 
                 // 7. Vendor Specific: Returns to Vendor (Purchase Returns) - DEBIT
-                $pReturns = FabricReturn::whereHas('receipt', function ($q) use ($id) {
-                    $q->where('vendor_id', $id);
-                })
-                    
-                    
+                $pReturns = FabricReturn::where('vendor_id', $id)
+                    ->orWhereHas('receipt', function ($q) use ($id) {
+                        $q->where('vendor_id', $id);
+                    })
                     ->get();
 
                 foreach ($pReturns as $pr) {

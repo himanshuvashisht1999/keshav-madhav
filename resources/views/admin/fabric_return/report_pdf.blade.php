@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Fabric Shipment - {{ $data->shipment_id }}</title>
+    <title>Fabric Return - {{ $return->return_number }}</title>
     <style>
         @page {
             margin: 10mm 10mm 10mm 10mm;
@@ -191,18 +191,6 @@
             background: #fbfdfc;
         }
 
-        .barcode-img {
-            width: 100px;
-            height: 32px;
-        }
-
-        .barcode-number {
-            font-size: 8px;
-            font-weight: bold;
-            margin-top: 1px;
-            color: #245834;
-        }
-
         /* Sign-off & Footer */
         .signoff-table {
             width: 100%;
@@ -251,7 +239,7 @@
             <tr>
                 <td width="70%" valign="top">
                     @php
-                        $general_setting = \App\Models\GeneralSetting::first();
+                        $general_setting = \App\Models\GeneralSettings::where('status', 1)->first() ?? \App\Models\GeneralSettings::first();
                     @endphp
                     <div class="company-name">{{ $general_setting->website_name ?? 'SNAPKID' }}</div>
                     <div class="company-meta">
@@ -264,10 +252,14 @@
                 </td>
                 <td width="30%" align="right" valign="top">
                     @php
-                        $logoPath = public_path('admin_assets/img/logo.png');
+                        $logoFilename = $general_setting ? ($general_setting->getRawOriginal('logo') ?? $general_setting->logo) : null;
+                        $logoPath = $logoFilename ? public_path('assets/general-settings-image/' . $logoFilename) : null;
+                        if (!$logoPath || !file_exists($logoPath)) {
+                            $logoPath = public_path('images/snapkid_logo.png');
+                        }
                     @endphp
                     @if(file_exists($logoPath))
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" height="48" alt="Logo">
+                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" height="48" style="object-fit: contain;" alt="Logo">
                     @endif
                 </td>
             </tr>
@@ -278,46 +270,53 @@
             <tr>
                 <td class="summary-cell" width="20%">
                     <div class="summary-label">Base Amount</div>
-                    <div class="summary-val">Rs. {{ number_format($data->amount ?? 0, 2) }}</div>
+                    <div class="summary-val">Rs. {{ number_format($return->sub_total ?? 0, 2) }}</div>
                 </td>
                 <td class="summary-cell" width="20%">
-                    <div class="summary-label">GST ({{ $data->gst_percentage ?? 0 }}%)</div>
-                    <div class="summary-val">Rs. {{ number_format($data->gst_amount ?? 0, 2) }}</div>
+                    <div class="summary-label">GST ({{ (float)($return->gst_percentage ?? 0) }}%)</div>
+                    <div class="summary-val">Rs. {{ number_format($return->gst_amount ?? 0, 2) }}</div>
                 </td>
                 <td class="summary-cell" width="20%">
-                    <div class="summary-label">Other Charges</div>
-                    <div class="summary-val">Rs. {{ number_format($data->other_charges ?? 0, 2) }}</div>
+                    <div class="summary-label">Charges / Disc.</div>
+                    <div class="summary-val">Rs. {{ number_format(($return->other_charges ?? 0) - ($return->discount ?? 0), 2) }}</div>
                 </td>
                 <td class="summary-cell summary-total" width="20%">
-                    <div class="summary-label" style="color: #15803d;">Total Amount</div>
-                    <div class="summary-val" style="color: #052a12;">Rs. {{ number_format($data->total_amount ?? 0, 2) }}</div>
+                    <div class="summary-label" style="color: #15803d;">Total Return Value</div>
+                    <div class="summary-val" style="color: #052a12;">Rs. {{ number_format($return->total_amount ?? 0, 2) }}</div>
                 </td>
                 <td class="summary-cell" width="20%">
-                    <div class="summary-label">Total Rolls</div>
-                    <div class="summary-val">{{ $data->details->count() }}</div>
+                    <div class="summary-label">Total Rolls Returned</div>
+                    <div class="summary-val">{{ $return->details->count() }}</div>
                 </td>
             </tr>
         </table>
 
         <!-- Two Column Voucher Info -->
+        @php
+            $vendor = $return->vendor ?? ($return->receipt->vendor ?? null);
+        @endphp
         <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
             <tr>
                 <td width="48.5%" valign="top">
                     <div class="info-card">
-                        <div class="info-card-header">Vendor Details</div>
+                        <div class="info-card-header">Vendor / Supplier Details</div>
                         <div class="info-card-body">
                             <table class="info-table" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td class="info-label">Vendor Name</td>
-                                    <td class="info-val">: {{ $data->vendor->name ?? 'N/A' }}</td>
+                                    <td class="info-val">: {{ $vendor->name ?? 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <td class="info-label">Phone</td>
-                                    <td class="info-val">: {{ $data->vendor->phone ?? 'N/A' }}</td>
+                                    <td class="info-val">: {{ $vendor->phone ?? 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <td class="info-label">Address</td>
-                                    <td class="info-val">: {{ $data->vendor->address ?? 'N/A' }}</td>
+                                    <td class="info-val">: {{ $vendor->address ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="info-label">Email</td>
+                                    <td class="info-val">: {{ $vendor->email ?? 'N/A' }}</td>
                                 </tr>
                             </table>
                         </div>
@@ -326,29 +325,31 @@
                 <td width="3%"></td>
                 <td width="48.5%" valign="top">
                     <div class="info-card">
-                        <div class="info-card-header">Shipment Information</div>
+                        <div class="info-card-header">Return Voucher Information</div>
                         <div class="info-card-body">
                             <table class="info-table" cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td class="info-label">Shipment No</td>
-                                    <td class="info-val">: <span class="sku-badge">{{ $data->shipment_id }}</span></td>
+                                    <td class="info-label">Voucher No</td>
+                                    <td class="info-val">: <span class="sku-badge">{{ $return->return_number }}</span></td>
                                 </tr>
                                 <tr>
-                                    <td class="info-label">Bill No</td>
-                                    <td class="info-val">: {{ $data->bill_no ?? 'N/A' }}</td>
+                                    <td class="info-label">Return Date</td>
+                                    <td class="info-val">: {{ \Carbon\Carbon::parse($return->date)->format('d M Y') }}</td>
                                 </tr>
                                 <tr>
-                                    <td class="info-label">Warehouse</td>
-                                    <td class="info-val">: {{ $data->cutting_master->cutting_master_name ?? 'N/A' }}</td>
+                                    <td class="info-label">Total Meters</td>
+                                    <td class="info-val">: {{ number_format($return->details->sum('return_meter'), 2) }} M</td>
                                 </tr>
                                 <tr>
-                                    <td class="info-label">Date</td>
-                                    <td class="info-val">: {{ \Carbon\Carbon::parse($data->time)->format('d M Y') }}</td>
+                                    <td class="info-label">Total Rolls</td>
+                                    <td class="info-val">: {{ $return->details->count() }} Rolls</td>
                                 </tr>
+                                @if($return->remarks)
                                 <tr>
-                                    <td class="info-label">Received By</td>
-                                    <td class="info-val">: {{ $data->received_by ?? 'N/A' }}</td>
+                                    <td class="info-label">Remarks</td>
+                                    <td class="info-val">: {{ $return->remarks }}</td>
                                 </tr>
+                                @endif
                             </table>
                         </div>
                     </div>
@@ -356,55 +357,64 @@
             </tr>
         </table>
 
-        <!-- Fabric Rolls Section -->
-        <div class="section-title">Received Fabric Rolls Breakdown</div>
+        <!-- Returned Fabric Rolls Section -->
+        <div class="section-title">Returned Fabric Rolls (Multi-Shipment Breakdown)</div>
         <table class="items-table" cellpadding="0" cellspacing="0">
             <thead>
                 <tr>
-                    <th width="5%">#</th>
-                    <th class="text-left">Fabric Item</th>
-                    <th width="15%" class="text-right">Price/Mtr (Rs.)</th>
-                    <th width="18%">Roll No</th>
-                    <th width="15%" class="text-right">Meters</th>
-                    <th width="22%">Barcode</th>
+                    <th width="4%">#</th>
+                    <th width="14%">Roll No</th>
+                    <th width="15%">Shipment No</th>
+                    <th width="11%">Bill No</th>
+                    <th class="text-left">Fabric Item & SKU</th>
+                    <th width="14%">Warehouse</th>
+                    <th width="12%" class="text-right">Return (M)</th>
+                    <th width="12%" class="text-right">Rate/Mtr (Rs.)</th>
+                    <th width="14%" class="text-right">Amount (Rs.)</th>
                 </tr>
             </thead>
             <tbody>
                 @php
                     $totalMetersSum = 0;
+                    $totalAmountSum = 0;
                 @endphp
-                @forelse($data->details as $key => $detail)
+                @forelse($return->details as $key => $detail)
                     @php
-                        $totalMetersSum += $detail->meter;
+                        $rd = $detail->receipt_detail;
+                        $rc = $rd->fabric_receipt ?? null;
+                        $wh = $rd->master_fabric_warehouse->cutting_master_name ?? ($rc->master_fabric_warehouse->cutting_master_name ?? 'N/A');
+                        $lineTotal = $detail->return_meter * $detail->price_per_meter;
+                        $totalMetersSum += $detail->return_meter;
+                        $totalAmountSum += $lineTotal;
                     @endphp
                     <tr class="{{ $key % 2 == 1 ? 'even' : '' }}">
                         <td class="text-center">{{ $key + 1 }}</td>
-                        <td class="text-left"><b>{{ $detail->fabric->name ?? '-' }}</b></td>
-                        <td class="text-right">{{ number_format($detail->price_per_meter ?? 0, 2) }}</td>
-                        <td class="text-center"><b>{{ $detail->roll_number }}</b></td>
-                        <td class="text-right"><b>{{ number_format($detail->meter, 2) }}</b></td>
-                        <td class="text-center">
-                            @php
-                                $barcodeFilename = $detail->getRawOriginal('barcode');
-                                $barcodePath = public_path('assets/barcodes/' . $barcodeFilename);
-                            @endphp
-                            @if($barcodeFilename && file_exists($barcodePath))
-                                <img src="data:image/png;base64,{{ base64_encode(file_get_contents($barcodePath)) }}" class="barcode-img">
+                        <td class="text-center"><b>{{ $rd->roll_number ?? ('#' . $rd->id) }}</b></td>
+                        <td class="text-center"><b>{{ $rc ? ($rc->shipment_id ?: $rc->sku) : '-' }}</b></td>
+                        <td class="text-center">{{ $rc->bill_no ?? '-' }}</td>
+                        <td class="text-left">
+                            <b>{{ $detail->fabric->name ?? 'N/A' }}</b>
+                            @if(!empty($detail->fabric->sku))
+                                <span style="font-size: 8.5px; color: #457855;">({{ $detail->fabric->sku }})</span>
                             @endif
-                            <div class="barcode-number">{{ $detail->qrcode_number }}</div>
                         </td>
+                        <td class="text-center">{{ $wh }}</td>
+                        <td class="text-right"><b>{{ number_format($detail->return_meter, 2) }}</b></td>
+                        <td class="text-right">{{ number_format($detail->price_per_meter, 2) }}</td>
+                        <td class="text-right"><b>{{ number_format($lineTotal, 2) }}</b></td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center">No fabric roll details found</td>
+                        <td colspan="9" class="text-center">No returned fabric roll details found</td>
                     </tr>
                 @endforelse
             </tbody>
             <tfoot>
-                <tr>
-                    <td colspan="4" class="text-right" style="font-size: 9.5px; text-transform: uppercase;"><b>Total Received Meters:</b></td>
-                    <td class="text-right"><b>{{ number_format($totalMetersSum, 2) }}</b></td>
+                <tr class="summary-total" style="font-weight: 800;">
+                    <td colspan="6" class="text-right" style="font-size: 9.5px; text-transform: uppercase;"><b>TOTAL:</b></td>
+                    <td class="text-right"><b>{{ number_format($totalMetersSum, 2) }} M</b></td>
                     <td></td>
+                    <td class="text-right"><b>Rs. {{ number_format($totalAmountSum, 2) }}</b></td>
                 </tr>
             </tfoot>
         </table>
@@ -412,18 +422,22 @@
         <!-- Sign-off & Footer -->
         <table class="signoff-table" cellpadding="0" cellspacing="0">
             <tr>
-                <td width="50%" valign="bottom">
+                <td width="35%" valign="bottom">
                     <div class="signature-line"></div>
-                    <div class="signoff-caption">Authorized Receiver Signature</div>
+                    <div class="signoff-caption">Prepared By / Store Incharge</div>
                 </td>
-                <td width="50%" align="right" valign="bottom">
+                <td width="35%" valign="bottom">
+                    <div class="signature-line"></div>
+                    <div class="signoff-caption">Authorized Signatory / Vendor Ack</div>
+                </td>
+                <td width="30%" align="right" valign="bottom">
                     <div class="thank-you">Thank you for your business!</div>
                 </td>
             </tr>
         </table>
 
         <div class="print-date">
-            Generated on {{ date('j M Y, h:i A') }} | Fabric Shipment {{ $data->shipment_id }}
+            Generated on {{ date('j M Y, h:i A') }} | Fabric Return {{ $return->return_number }}
         </div>
     </div>
 </body>
