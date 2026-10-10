@@ -1,89 +1,92 @@
 @extends('admin.layouts.app')
 @section('content')
-    <div class="content-wrapper">
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1>Purchase Agents</h1>
-                    </div>
-                    <div class="col-sm-6">
-                        <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                            <li class="breadcrumb-item"><a href="{{route('admin.master.purchase-agent.index')}}">Purchase Agents</a></li>
-                            <li class="breadcrumb-item active">Create</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="content">
-            <div class="container-fluid">
-                <div class="card card-default">
-                    <div class="card-header">
-                        <h3 class="card-title">Create Purchase Agent</h3>
-                    </div>
-                    <form action="{{route('admin.master.purchase-agent.store')}}" method="post">
-                        @csrf
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Name <span class="text-danger">*</span></label>
-                                        <input type="text" name="name" class="form-control" placeholder="Enter name"
-                                            value="{{old('name')}}" required>
-                                        @error('name')<span class="text-danger small">{{ $message }}</span>@enderror
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Email</label>
-                                        <input type="email" name="email" class="form-control" placeholder="Enter email"
-                                            value="{{old('email')}}">
-                                        @error('email')<span class="text-danger small">{{ $message }}</span>@enderror
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Phone</label>
-                                        <input type="text" name="phone" class="form-control" placeholder="Enter phone"
-                                            value="{{old('phone')}}">
-                                        @error('phone')<span class="text-danger small">{{ $message }}</span>@enderror
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <label>Address</label>
-                                        <textarea name="address" class="form-control"
-                                            placeholder="Enter address" rows="3">{{old('address')}}</textarea>
-                                        @error('address')<span class="text-danger small">{{ $message }}</span>@enderror
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Opening Balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
-                                        <input type="number" step="0.01" name="balance" class="form-control" placeholder="Enter opening balance" value="{{ old('balance', 0) }}">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                         <label>Opening Balance Type</label>
-                                         <select name="balance_type" class="form-control select2" style="width: 100%;">
-                                             <option value="Credit" {{ old('balance_type') == 'Credit' ? 'selected' : 'selected' }}>Credit</option>
-                                             <option value="Debit" {{ old('balance_type') == 'Debit' ? 'selected' : '' }}>Debit</option>
-                                         </select>
-                                     </div>
-                                 </div>
-                            </div>
-                            <div class="mt-2 text-right">
-                                <button type="submit" class="btn btn-primary">Submit</button>
-                                <a href="{{route('admin.master.purchase-agent.index')}}" class="btn btn-secondary">Cancel</a>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </section>
+<div class="content-wrapper erp-page p-2">
+    <!-- ERP Header Bar -->
+    <div class="erp-header-bar mb-2 d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="erp-header-title">Create purchase agent</h1>
+        </div>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.master.purchase-agent.index') }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left mr-1"></i> Back to list
+            </a>
+        </div>
     </div>
+
+    <!-- Main Content -->
+    <div class="erp-card p-3">
+        @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show mb-3" style="border-radius: 6px;">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <strong><i class="fas fa-exclamation-triangle mr-1"></i> Please correct the following errors:</strong>
+                <ul class="mb-0 mt-2 pl-3">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form action="{{ route('admin.master.purchase-agent.store') }}" method="post">
+            @csrf
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control erp-filter-input" placeholder="Enter name" value="{{ old('name') }}" required>
+                        @error('name')<span class="text-danger small">{{ $message }}</span>@enderror
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control erp-filter-input" placeholder="Enter email" value="{{ old('email') }}">
+                        @error('email')<span class="text-danger small">{{ $message }}</span>@enderror
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" name="phone" class="form-control erp-filter-input" placeholder="Enter phone" value="{{ old('phone') }}">
+                        @error('phone')<span class="text-danger small">{{ $message }}</span>@enderror
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea name="address" class="form-control erp-filter-input" placeholder="Enter address" rows="2">{{ old('address') }}</textarea>
+                        @error('address')<span class="text-danger small">{{ $message }}</span>@enderror
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Opening balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
+                        <input type="number" step="0.01" name="balance" class="form-control erp-filter-input" placeholder="Enter opening balance" value="{{ old('balance', 0) }}">
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Opening balance type</label>
+                        <select name="balance_type" class="form-control select2 erp-filter-select" style="width: 100%;">
+                            <option value="Credit" {{ old('balance_type') == 'Credit' ? 'selected' : 'selected' }}>Credit</option>
+                            <option value="Debit" {{ old('balance_type') == 'Debit' ? 'selected' : '' }}>Debit</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-12 d-flex justify-content-end align-items-center mt-3 pt-2 border-top">
+                    <a href="{{ route('admin.master.purchase-agent.index') }}" class="btn-erp btn-erp-outline mr-2">Cancel</a>
+                    <button type="submit" class="btn-erp btn-erp-primary">
+                        <i class="fas fa-check mr-1"></i> Save purchase agent
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection

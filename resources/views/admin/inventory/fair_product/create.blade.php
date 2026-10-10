@@ -1,310 +1,145 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --success: #10b981;
-            --bg-main: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-        }
-
-        .content-wrapper {
-            background-color: var(--bg-main);
-            padding-bottom: 100px;
-        }
-
-        .premium-header {
-            padding: 2rem 0;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 2rem;
-            background: #fff;
-        }
-
-        .premium-sidebar {
-            background: #fff;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            position: sticky;
-            top: 20px;
-            max-height: calc(100vh - 40px);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .filter-card {
-            background: #fff;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            margin-bottom: 2rem;
-        }
-
-        .product-card {
-            background: #fff;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            transition: all 0.3s;
-        }
-
-        .product-card:hover {
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-            transform: translateY(-2px);
-        }
-
-        .size-set-chip {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            border: 1px solid var(--border);
-            margin: 0.25rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 500;
-            background: #fff;
-        }
-
-        .size-set-chip.selected {
-            background: var(--primary);
-            color: #fff;
-            border-color: var(--primary);
-        }
-
-        .size-set-chip input {
-            display: none;
-        }
-
-        .btn-generate {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: #fff;
-            border: none;
-            padding: 1rem 2.5rem;
-            border-radius: 12px;
-            font-weight: 700;
-            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 100;
-        }
-
-        .btn-generate:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 25px -5px rgba(99, 102, 241, 0.4);
-            color: #fff;
-        }
-
-        /* Premium Product Card Styles */
-        .product-card-premium {
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            background: #fff;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        .product-card-premium:hover {
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            transform: translateY(-3px);
-            border-color: #cbd5e1;
-        }
-        .badge-primary-light {
-            background: #eef2ff;
-            color: #4f46e5;
-            border: 1px solid #e0e7ff;
-            font-size: 12px;
-        }
-        .size-item-premium {
-            transition: all 0.2s ease;
-            border: 1px solid #e2e8f0;
-        }
-        .size-item-premium:hover {
-            border-color: #cbd5e1;
-        }
-        .size-item-premium.selected {
-            border-color: #6366f1;
-            background-color: #fff !important;
-            box-shadow: 0 0 0 1px #6366f1;
-        }
-        .color-pill-premium {
-            font-size: 11px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            border: 1px solid #e2e8f0;
-            background: #fff;
-            color: #475569;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            user-select: none;
-            font-weight: 600;
-        }
-        .color-pill-premium:hover {
-            background: #f1f5f9;
-            border-color: #cbd5e1;
-        }
-        .color-pill-premium.active {
-            background: #4f46e5;
-            color: #fff;
-            border-color: #4f46e5;
-        }
-        .color-pill-premium.active .badge {
-            background: #fff !important;
-            color: #4f46e5 !important;
-        }
-    </style>
-
-    <div class="content-wrapper">
-        <div class="container-fluid">
-            <div class="premium-header py-3 mb-4 d-flex justify-content-between align-items-center">
+    <div class="content-wrapper erp-page p-2">
+        <div class="container-fluid p-0">
+            <div class="erp-header-bar mb-2">
                 <div>
-                    <h1 class="h5 font-weight-bold text-dark mb-0">{{ isset($batch) ? 'Edit Sample Set' : 'Create Sample Set' }}</h1>
-                    <p class="text-muted small mb-0">Filter and select size sets to generate barcodes.</p>
+                    <h1 class="erp-page-title">{{ isset($batch) ? 'Edit Sample Set' : 'Create Sample Set' }}</h1>
+                    <p class="erp-page-subtitle">Filter and select size sets to generate barcodes</p>
                 </div>
-                <button type="button" class="btn btn-primary shadow-sm" data-toggle="modal" data-target="#selectedItemsModal">
-                    <i class="fas fa-shopping-cart mr-2"></i> Selected Items <span class="badge badge-light text-primary ml-1" id="selected-count" style="font-size: 14px;">0</span>
-                </button>
+                <div class="erp-header-actions">
+                    <button type="button" class="btn-erp btn-erp-primary" data-toggle="modal" data-target="#selectedItemsModal">
+                        <i class="fas fa-shopping-cart mr-1"></i> Selected Items <span class="badge badge-light text-dark ml-1 font-weight-bold" id="selected-count">0</span>
+                    </button>
+                </div>
             </div>
 
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="filter-card py-3 mb-3">
-                        <div class="row">
-                            <div class="col-md-2 mb-2">
-                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Brand</label>
-                                <select id="brand_id" class="form-control select2">
-                                    <option value="">Brand</option>
-                                    @foreach($brands as $brand)
-                                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Fitting</label>
-                                <select id="fitting_id" class="form-control select2">
-                                    <option value="">Fitting</option>
-                                    @foreach($fittings as $fitting)
-                                        <option value="{{ $fitting->id }}">{{ $fitting->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Pattern</label>
-                                <select id="pattern_id" class="form-control select2">
-                                    <option value="">Pattern</option>
-                                    @foreach($patterns as $pattern)
-                                        <option value="{{ $pattern->id }}">{{ $pattern->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Series</label>
-                                <select id="series_id" class="form-control select2">
-                                    <option value="">Series</option>
-                                    @foreach($series as $s)
-                                        <option value="{{ $s->id }}">{{ $s->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Design No</label>
-                                <select id="design_number" class="form-control select2">
-                                    <option value="">Design No</option>
-                                    @foreach($designNumbers as $dn)
-                                        <option value="{{ $dn }}">{{ $dn }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Size Set</label>
-                                <select id="size_set_id" class="form-control select2">
-                                    <option value="">Size Set</option>
-                                    @foreach($sizeSets as $ss)
-                                        <option value="{{ $ss->id }}">{{ $ss->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+            <div class="erp-card mb-2">
+                <div class="erp-card-body p-2">
+                    <div class="row">
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Brand</label>
+                            <select id="brand_id" class="form-control select2">
+                                <option value="">Brand</option>
+                                @foreach($brands as $brand)
+                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                        <div class="row">
-                            <div class="col-md-2 mb-2">
-                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Storeroom</label>
-                                <select id="storeroom_id" class="form-control select2">
-                                    <option value="">Storeroom</option>
-                                    @foreach($storerooms as $storeroom)
-                                        <option value="{{ $storeroom->id }}">{{ $storeroom->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Product Nature</label>
-                                <select id="product_nature_id" class="form-control select2">
-                                    <option value="">Nature</option>
-                                    @foreach($productNatures as $nature)
-                                        <option value="{{ $nature->id }}">{{ $nature->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-2">
-                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">Fabric Type</label>
-                                <select id="fabric_type_id" class="form-control select2">
-                                    <option value="">Fabric</option>
-                                    @foreach($fabricTypes as $type)
-                                        <option value="{{ $type->id }}">{{ $type->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">MRP From</label>
-                                <input type="number" id="mrp_from" class="form-control" placeholder="Min MRP">
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <label class="font-weight-bold x-small text-uppercase text-muted mb-1">MRP To</label>
-                                <input type="number" id="mrp_to" class="form-control" placeholder="Max MRP">
-                            </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Fitting</label>
+                            <select id="fitting_id" class="form-control select2">
+                                <option value="">Fitting</option>
+                                @foreach($fittings as $fitting)
+                                    <option value="{{ $fitting->id }}">{{ $fitting->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                        <div class="text-right mt-2">
-                            <button type="button" id="btn-reset-filters" class="btn btn-secondary px-4 btn-sm mr-2">
-                                <i class="fas fa-undo mr-2"></i> Reset Filters
-                            </button>
-                            <button type="button" id="btn-filter" class="btn btn-primary px-4 btn-sm">
-                                <i class="fas fa-search mr-2"></i> Find Products
-                            </button>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Pattern</label>
+                            <select id="pattern_id" class="form-control select2">
+                                <option value="">Pattern</option>
+                                @foreach($patterns as $pattern)
+                                    <option value="{{ $pattern->id }}">{{ $pattern->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Series</label>
+                            <select id="series_id" class="form-control select2">
+                                <option value="">Series</option>
+                                @foreach($series as $s)
+                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Design No</label>
+                            <select id="design_number" class="form-control select2">
+                                <option value="">Design No</option>
+                                @foreach($designNumbers as $dn)
+                                    <option value="{{ $dn }}">{{ $dn }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Size Set</label>
+                            <select id="size_set_id" class="form-control select2">
+                                <option value="">Size Set</option>
+                                @foreach($sizeSets as $ss)
+                                    <option value="{{ $ss->id }}">{{ $ss->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Storeroom</label>
+                            <select id="storeroom_id" class="form-control select2">
+                                <option value="">Storeroom</option>
+                                @foreach($storerooms as $storeroom)
+                                    <option value="{{ $storeroom->id }}">{{ $storeroom->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Product Nature</label>
+                            <select id="product_nature_id" class="form-control select2">
+                                <option value="">Nature</option>
+                                @foreach($productNatures as $nature)
+                                    <option value="{{ $nature->id }}">{{ $nature->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Fabric Type</label>
+                            <select id="fabric_type_id" class="form-control select2">
+                                <option value="">Fabric</option>
+                                @foreach($fabricTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="erp-label">MRP From</label>
+                            <input type="number" id="mrp_from" class="form-control" placeholder="Min MRP">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="erp-label">MRP To</label>
+                            <input type="number" id="mrp_to" class="form-control" placeholder="Max MRP">
                         </div>
                     </div>
+                    <div class="d-flex justify-content-end align-items-center mt-2" style="gap: 6px;">
+                        <button type="button" id="btn-reset-filters" class="btn-erp btn-erp-secondary">
+                            <i class="fas fa-undo mr-1"></i> Reset Filters
+                        </button>
+                        <button type="button" id="btn-filter" class="btn-erp btn-erp-primary">
+                            <i class="fas fa-search mr-1"></i> Find Products
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-                    <div id="product-container" class="row">
-                        <!-- Products will be loaded here as col-md-6 -->
-                        <div class="col-12 text-center py-5 text-muted bg-white rounded border">
-                            <i class="fas fa-box-open fa-3x mb-3"></i>
-                            <p>Use filters to find products</p>
-                        </div>
-                    </div>
+            <div id="product-container" class="row">
+                <!-- Products will be loaded here as col-md-6 -->
+                <div class="col-12 text-center py-5 text-muted bg-white rounded border">
+                    <i class="fas fa-box-open fa-3x mb-3 text-muted"></i>
+                    <p class="mb-0">Use filters to find products</p>
                 </div>
             </div>
 
             <div class="modal fade" id="selectedItemsModal" tabindex="-1" role="dialog" aria-labelledby="selectedItemsModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-xl" role="document">
-                    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
-                        <div class="modal-header border-0 bg-light px-4 py-3">
-                            <h5 class="modal-title font-weight-bold text-dark d-flex align-items-center" id="selectedItemsModalLabel">
-                                <i class="fas fa-shopping-cart mr-2 text-primary"></i>
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header py-2 px-3" style="background: var(--brand-dark-green, #05421c); color: #fff;">
+                            <h5 class="modal-title font-weight-bold d-flex align-items-center" id="selectedItemsModalLabel" style="font-size: 14px;">
+                                <i class="fas fa-shopping-cart mr-2"></i>
                                 {{ isset($batch) ? 'Edit Sample Set' : 'Selected Sample Items' }}
                             </h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
-                        <div class="modal-body p-4 bg-white">
+                        <div class="modal-body p-3 bg-white">
                             <form
                                 action="{{ isset($batch) ? route('admin.inventory.fair-product.update', $batch->id) : route('admin.inventory.fair-product.store') }}"
                                 method="POST" id="fairForm" class="mb-3">
@@ -314,7 +149,7 @@
                                 <div class="row align-items-end">
                                     <div class="col-md-4">
                                         <div class="form-group mb-0">
-                                            <label class="x-small font-weight-bold text-uppercase text-muted mb-1">Sales Agents</label>
+                                            <label class="erp-label">Sales Agents</label>
                                             <select name="sales_agent_ids[]" class="form-control select2-modal" multiple>
                                                 @foreach($salesAgents as $agent)
                                                     <option value="{{ $agent->id }}" {{ isset($batch) && is_array($batch->sales_agent_ids) && in_array($agent->id, $batch->sales_agent_ids) ? 'selected' : '' }}>{{ $agent->name }}</option>
@@ -322,22 +157,22 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div id="global-discount-container" style="display: none;">
-                                            <label class="x-small font-weight-bold text-uppercase text-muted mb-1">Global Discount %</label>
+                                            <label class="erp-label">Global Discount %</label>
                                             <div class="input-group input-group-sm">
                                                 <input type="number" id="global-discount" class="form-control"
                                                     placeholder="Type to apply to all..." min="0" max="100" step="0.01">
                                                 <div class="input-group-append">
-                                                    <span class="input-group-text x-small">%</span>
+                                                    <span class="input-group-text small">%</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-5 text-right">
-                                        <button type="submit" class="btn btn-generate position-static py-2 px-4 w-100" id="btn-submit"
-                                            style="display: none;">
-                                            <i class="fas fa-save mr-2"></i> {{ isset($batch) ? 'Update Sample Set' : 'Generate Sample Set' }}
+                                    <div class="col-md-4 text-right">
+                                        <button type="submit" class="btn-erp btn-erp-primary w-100" id="btn-submit"
+                                            style="display: none; height: 33px;">
+                                            <i class="fas fa-save mr-1"></i> {{ isset($batch) ? 'Update Sample Set' : 'Generate Sample Set' }}
                                         </button>
                                     </div>
                                 </div>
@@ -345,9 +180,9 @@
                                 <div id="hidden-inputs"></div>
                             </form>
 
-                            <div class="row mb-3 align-items-center">
+                            <div class="row mb-2 align-items-center">
                                 <div class="col-md-4">
-                                    <label class="x-small font-weight-bold text-uppercase text-muted mb-1">Filter by Brand</label>
+                                    <label class="erp-label">Filter by Brand</label>
                                     <select id="modal_brand_filter" class="form-control select2-modal">
                                         <option value="">All Brands</option>
                                         @foreach($brands as $brand)
@@ -357,23 +192,23 @@
                                 </div>
                             </div>
                             
-                            <div class="table-responsive mt-4 border rounded">
-                                <table class="table table-bordered table-hover bg-white mb-0" id="selected-table">
-                                    <thead class="thead-light">
+                            <div class="table-responsive">
+                                <table class="erp-table table-bordered table-hover mb-0" id="selected-table">
+                                    <thead>
                                         <tr>
-                                            <th class="x-small text-uppercase font-weight-bold">Product</th>
-                                            <th class="x-small text-uppercase font-weight-bold">Design & Size</th>
-                                            <th class="x-small text-uppercase font-weight-bold">MRP</th>
-                                            <th class="x-small text-uppercase font-weight-bold">Discount %</th>
-                                            <th class="x-small text-uppercase font-weight-bold">Barcode Count</th>
-                                            <th class="x-small text-uppercase font-weight-bold text-center">Action</th>
+                                            <th>Product</th>
+                                            <th>Design & Size</th>
+                                            <th class="text-right">MRP</th>
+                                            <th style="width: 120px;">Discount %</th>
+                                            <th style="width: 120px;">Barcode Count</th>
+                                            <th class="text-center" style="width: 80px;">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody id="selected-list">
                                         <tr>
-                                            <td colspan="6" class="text-center py-5 text-muted border-dashed">
+                                            <td colspan="6" class="text-center py-4 text-muted">
                                                 <div class="d-flex flex-column align-items-center justify-content-center">
-                                                    <i class="fas fa-box-open fa-2x mb-2 opacity-50"></i>
+                                                    <i class="fas fa-box-open fa-2x mb-2 text-muted"></i>
                                                     <p class="mb-0 small">No items selected yet.</p>
                                                 </div>
                                             </td>
@@ -384,7 +219,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
     </div>
 

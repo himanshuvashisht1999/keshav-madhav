@@ -1,253 +1,48 @@
 @php use Carbon\Carbon; @endphp
-    <style>
-        /* ================= PAGE ================= */
-        .report-page {
-            background: #f4f6f9;
-        }
+<div class="content-wrapper erp-page p-2 lot-details-container">
+    <section class="content">
+        <div class="container-fluid">
 
-        /* ================= SECTION ================= */
-        .section {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
-            margin-bottom: 14px;
-        }
+            @php $lot = $data['lots_data'][0] ?? null; @endphp
 
-        .section-title {
-            padding: 12px 16px;
-            font-weight: 700;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        /* ================= INFO HEADER ================= */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 14px;
-            margin-bottom: 14px;
-        }
-
-        .info-card {
-            background: #ffffff;
-            border-radius: 8px;
-            padding: 14px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
-            border-left: 5px solid #2563eb;
-        }
-
-        .info-card label {
-            font-size: 11px;
-            color: #6b7280;
-            font-weight: 600;
-        }
-
-        .info-card div {
-            font-size: 15px;
-            font-weight: 700;
-            color: #111827;
-        }
-
-        /* ================= SUMMARY ================= */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 14px;
-            padding: 16px;
-        }
-
-        .summary-card {
-            background: #f9fafb;
-            border-radius: 8px;
-            padding: 12px;
-            border: 1px solid #e5e7eb;
-        }
-
-        .summary-card label {
-            font-size: 11px;
-            color: #6b7280;
-            font-weight: 600;
-        }
-
-        .summary-card div {
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        /* ================= TABLE ================= */
-        .compact-table {
-            width: 100%;
-            font-size: 13px;
-        }
-
-        .compact-table th {
-            background: #111827;
-            color: #fff;
-            padding: 6px;
-        }
-
-        .compact-table td {
-            padding: 6px;
-        }
-
-        .compact-table tr:last-child td {
-            background: #f1f5f9;
-            font-weight: 700;
-        }
-
-        /* ================= CUTTING ================= */
-        .cutting-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            padding: 16px;
-        }
-
-        .cut-card {
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
-            padding: 12px;
-        }
-
-        .cut-card h6 {
-            font-size: 14px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        /* ================= PROGRESS CARDS ================= */
-        .progress-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 14px;
-            padding: 16px;
-        }
-
-        .stage-card {
-            border-radius: 10px;
-            padding: 14px;
-            position: relative;
-            box-shadow: 0 6px 14px rgba(0, 0, 0, .08);
-            border-left: 6px solid;
-        }
-
-        .stage-card h5 {
-            font-size: 15px;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
-
-        .stage-card .unit {
-            font-size: 12px;
-            color: #374151;
-            margin-bottom: 10px;
-        }
-
-        .stage-metrics {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .metric {
-            background: rgba(255, 255, 255, .7);
-            border-radius: 6px;
-            padding: 6px;
-            text-align: center;
-            font-size: 13px;
-        }
-
-        .metric strong {
-            display: block;
-            font-size: 15px;
-        }
-
-        /* STATUS */
-        .card-progress {
-            background: #fef3c7;
-            border-color: #f59e0b;
-        }
-
-        .card-completed {
-            background: #dcfce7;
-            border-color: #16a34a;
-        }
-
-        .card-delayed {
-            background: #fee2e2;
-            border-color: #dc2626;
-        }
-
-        .card-not_started {
-            background: #e5e7eb;
-            border-color: #6b7280;
-        }
-
-        .status-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 14px;
-            color: #fff;
-        }
-
-        .badge-progress {
-            background: #f59e0b;
-        }
-
-        .badge-completed {
-            background: #16a34a;
-        }
-
-        .badge-delayed {
-            background: #dc2626;
-        }
-
-        .badge-not_started {
-            background: #6b7280;
-        }
-    </style>
-
-    <div class="content-wrapper report-page">
-        <section class="content">
-            <div class="container-fluid">
-
-                @php $lot = $data['lots_data'][0] ?? null; @endphp
-
-                {{-- ================= INFO HEADER ================= --}}
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="mb-0 font-weight-bold" style="color: #1e293b;">Lot Details</h4>
+            {{-- ================= INFO HEADER ================= --}}
+            <div class="erp-header-bar mb-3">
+                <div class="d-flex align-items-center">
+                    <h1 class="erp-page-title mb-0">Lot details</h1>
+                    <div class="erp-report-meta ml-3">
+                        <span class="meta-item"><i class="fas fa-tag mr-1 text-muted"></i> Lot #{{ $data['lot_no'] }}</span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center">
                     <a href="{{ route('admin.report.lots.lot-details.pdf', ['lot_no' => $data['lot_no']]) }}"
-                        class="btn btn-primary px-4 shadow-sm" style="border-radius: 8px;">
-                        <i class="fas fa-file-pdf mr-2"></i> Download PDF
+                        class="btn-erp btn-erp-primary">
+                        <i class="fas fa-file-pdf mr-1"></i> Download PDF
                     </a>
                 </div>
+            </div>
 
-                <div class="info-grid">
-                    <div class="info-card">
-                        <label>Lot Number</label>
-                        <div>{{ $lot->lot_no ?? '-' }}</div>
-                    </div>
-                    <div class="info-card">
-                        <label>Order SKU</label>
-                        <div>{{ $lot->orderProductSet->orderMain->sku ?? '-' }}</div>
-                    </div>
-                    <div class="info-card">
-                        <label>Customer</label>
-                        <div>{{ $lot->orderProductSet->orderMain->customer->name ?? '-' }}</div>
-                    </div>
-                    <div class="info-card">
-                        <label>Report Date</label>
-                        <div>{{ now()->format('d M Y') }}</div>
-                    </div>
+            <div class="info-grid">
+                <div class="info-card">
+                    <label>Lot number</label>
+                    <div>{{ $lot->lot_no ?? '-' }}</div>
                 </div>
+                <div class="info-card">
+                    <label>Order SKU</label>
+                    <div>{{ $lot->orderProductSet->orderMain->sku ?? '-' }}</div>
+                </div>
+                <div class="info-card">
+                    <label>Customer</label>
+                    <div>{{ $lot->orderProductSet->orderMain->customer->name ?? '-' }}</div>
+                </div>
+                <div class="info-card">
+                    <label>Report date</label>
+                    <div>{{ now()->format('d M Y') }}</div>
+                </div>
+            </div>
 
                 {{-- ================= ORDER SUMMARY ================= --}}
                 <div class="section">
-                    <div class="section-title">Order Summary</div>
+                    <div class="section-title">Order summary</div>
                     <div class="summary-grid">
                         <div class="summary-card">
                             <label>Fabric</label>
@@ -262,7 +57,7 @@
                             <div>{{ $lot->orderProductSet->master_design_pattern->name ?? '-' }}</div>
                         </div>
                         <div class="summary-card">
-                            <label>Design Number</label>
+                            <label>Design number</label>
                             <div>{{ $lot->orderProductSet->design_number ?? '-' }}</div>
                         </div>
                         <div class="summary-card">
@@ -270,7 +65,7 @@
                             <div>{{ $lot->orderProductSet->master_product_fitting->name ?? '-' }}</div>
                         </div>
                         <div class="summary-card">
-                            <label>Production Unit</label>
+                            <label>Production unit</label>
                             <div>{{ $lot->productionSlipDigitization?->getUnitMaster?->name ?? ($lot->cutting_master?->name ?? ($lot->orderProductSet?->stage_master_unit?->name ?? '-')) }}</div>
                         </div>
                     </div>
@@ -278,11 +73,11 @@
 
                 {{-- ================= CUTTING & ROLLS ================= --}}
                 <div class="section">
-                    <div class="section-title">Cutting & Rolls</div>
+                    <div class="section-title">Cutting & rolls</div>
                     <div class="cutting-grid">
 
                         <div class="cut-card">
-                            <h6>Size Wise Quantity</h6>
+                            <h6>Size wise quantity</h6>
                             <table class="compact-table">
                                 <thead>
                                     <tr>
@@ -310,7 +105,7 @@
                         </div>
 
                         <div class="cut-card">
-                            <h6>Roll Consumption</h6>
+                            <h6>Roll consumption</h6>
                             <table class="compact-table">
                                 <thead>
                                     <tr>
@@ -338,7 +133,7 @@
 
                 {{-- ================= PRODUCTION PROGRESS (UNCHANGED LOGIC) ================= --}}
                 <div class="section">
-                    <div class="section-title">Production Progress</div>
+                    <div class="section-title">Production progress</div>
 
                     <div class="progress-grid">
                         @foreach($master_stages as $stage)
@@ -387,7 +182,7 @@
 
                 {{-- ================= ALL SESSIONS AS CARDS ================= --}}
                 <div class="section mt-4">
-                    <div class="section-title">Production Sessions</div>
+                    <div class="section-title">Production sessions</div>
                     <div class="progress-grid">
 
                         @php

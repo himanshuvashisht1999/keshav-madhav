@@ -234,7 +234,7 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                 @else
-                                    <a href="{{ route('admin.domestic_order_dispatch.view', ['id' => $dispatch->id]) }}"
+                                    <a href="{{ route('admin.agent-orders.dispatches.show', $dispatch->id) }}"
                                        class="erp-action-btn erp-btn-view" title="View Dispatch Details">
                                         <i class="fas fa-eye"></i>
                                     </a>

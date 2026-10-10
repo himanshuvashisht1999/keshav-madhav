@@ -1,270 +1,7 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        .content-wrapper {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #f1f5f9;
-            font-size: 12px;
-            padding: 6px 10px 30px 10px;
-        }
-
-        /* COMPACT ERP TOP BAR */
-        .erp-topbar {
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            padding: 6px 12px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-        }
-
-        /* HIGH-DENSITY CARD */
-        .hd-card {
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-        }
-
-        .hd-card-header {
-            padding: 5px 10px;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .hd-card-title {
-            font-size: 11.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            color: #1e293b;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .hd-card-body {
-            padding: 8px 10px;
-        }
-
-        /* FORM ELEMENTS (ULTRA COMPACT) */
-        .hd-form-group {
-            margin-bottom: 4px;
-        }
-
-        .hd-label {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-            color: #475569;
-            margin-bottom: 1px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .hd-label .action-links a {
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: none;
-            color: #4f46e5;
-            margin-left: 4px;
-        }
-
-        .hd-input {
-            height: 29px !important;
-            border-radius: 4px !important;
-            border: 1px solid #cbd5e1 !important;
-            font-size: 12px !important;
-            font-weight: 500 !important;
-            padding: 2px 8px !important;
-            line-height: 1.3 !important;
-        }
-
-        .hd-input:focus {
-            border-color: #4f46e5 !important;
-            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15) !important;
-            outline: none;
-        }
-
-        .select2-container--bootstrap4 .select2-selection--single {
-            height: 29px !important;
-            border-radius: 4px !important;
-            border: 1px solid #cbd5e1 !important;
-            padding: 2px 6px !important;
-            font-size: 12px !important;
-            line-height: 23px !important;
-        }
-
-        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
-            line-height: 23px !important;
-            padding-left: 2px !important;
-            font-size: 12px !important;
-        }
-
-        .select2-container--bootstrap4 .select2-selection--single .select2-selection__arrow {
-            height: 27px !important;
-            right: 4px !important;
-        }
-
-        /* COMPACT SIZE SET BLOCK */
-        .size-set-block {
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            margin-bottom: 8px;
-            overflow: visible;
-        }
-
-        .size-set-header {
-            padding: 4px 8px;
-            background: #f1f5f9;
-            border-bottom: 1px solid #e2e8f0;
-            border-top-left-radius: 4px;
-            border-top-right-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        /* Ensure Select2 Dropdowns float comfortably and show 8-10 options */
-        .select2-container--bootstrap4 .select2-dropdown {
-            z-index: 9999 !important;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
-            border-radius: 4px !important;
-        }
-
-        .select2-container--bootstrap4 .select2-results > .select2-results__options {
-            max-height: 280px !important;
-            overflow-y: auto !important;
-        }
-
-        .select2-container--bootstrap4 .select2-results__option {
-            padding: 5px 10px !important;
-            font-size: 12px !important;
-        }
-
-        .size-set-body {
-            padding: 6px 8px;
-        }
-
-        /* COMPACT COLOR TABLE */
-        .hd-color-table {
-            width: 100%;
-            margin-bottom: 4px;
-            border-collapse: collapse;
-        }
-
-        .hd-color-table th {
-            background: #f8fafc;
-            color: #475569;
-            font-size: 9.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            padding: 3px 6px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .hd-color-table td {
-            padding: 3px 6px;
-            vertical-align: middle;
-            border: 1px solid #e2e8f0;
-            background: #ffffff;
-        }
-
-        .barcode-badge {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            background: #eef2ff;
-            color: #4f46e5;
-            border: 1px solid #c7d2fe;
-            padding: 1px 4px;
-            border-radius: 3px;
-            font-size: 10.5px;
-            font-weight: 600;
-        }
-
-        .thumb-preview-mini {
-            width: 26px;
-            height: 26px;
-            object-fit: cover;
-            border-radius: 3px;
-            border: 1px solid #cbd5e1;
-            display: inline-block;
-            vertical-align: middle;
-        }
-
-        .thumb-preview-card {
-            width: 38px;
-            height: 38px;
-            object-fit: cover;
-            border-radius: 4px;
-            border: 1px solid #cbd5e1;
-        }
-
-        /* CUSTOM RATIO MODAL */
-        .modal-ratio {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(2px);
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .modal-ratio-content {
-            background: #fff;
-            width: 380px;
-            padding: 16px;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-            border: 1px solid #cbd5e1;
-        }
-
-        .size-row-ratio {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 4px 8px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            margin-top: 4px;
-        }
-
-        .counter-ratio button {
-            width: 24px;
-            height: 24px;
-            border: 1px solid #cbd5e1;
-            background: #ffffff;
-            color: #0f172a;
-            border-radius: 3px;
-            font-weight: 700;
-            font-size: 12px;
-            line-height: 1;
-            cursor: pointer;
-        }
-
-        .counter-ratio button:hover {
-            background: #4f46e5;
-            color: #fff;
-        }
-    </style>
-
-    <div class="content-wrapper">
+    <div class="content-wrapper erp-page p-2">
         <form action="{{ route('admin.master.production-goods.update') }}" method="post" enctype="multipart/form-data" id="editProductForm">
             @csrf
             <input type="hidden" name="id" value="{{ $data->id }}">
@@ -288,8 +25,8 @@
                 </div>
 
                 <div class="d-flex align-items-center">
-                    <button type="submit" class="btn btn-primary btn-sm px-4 font-weight-bold shadow-sm" style="height: 28px; line-height: 14px;">
-                        <i class="fas fa-save mr-1"></i> Save Changes
+                    <button type="submit" class="btn-erp btn-erp-primary">
+                        <i class="fas fa-save mr-1"></i> Save changes
                     </button>
                 </div>
             </div>
@@ -460,8 +197,8 @@
                     <h3 class="hd-card-title text-primary">
                         <i class="fas fa-layer-group"></i> 2. Size Sets & Pricing Matrix
                     </h3>
-                    <button type="button" class="btn btn-primary btn-xs font-weight-bold add-size-set">
-                        <i class="fas fa-plus mr-1"></i> Add Size Set
+                    <button type="button" class="btn-erp btn-erp-primary btn-sm add-size-set">
+                        <i class="fas fa-plus mr-1"></i> Add size set
                     </button>
                 </div>
                 <div class="hd-card-body p-2" id="size-set-container">
@@ -663,8 +400,8 @@
                     @empty
                         <div id="no-variants-message" class="p-3 border rounded text-center bg-light text-muted">
                             <span class="mr-2">No size sets defined.</span>
-                            <button type="button" class="btn btn-primary btn-xs add-size-set">
-                                <i class="fas fa-plus mr-1"></i> Add Size Set
+                            <button type="button" class="btn-erp btn-erp-primary btn-sm add-size-set">
+                                <i class="fas fa-plus mr-1"></i> Add size set
                             </button>
                         </div>
                     @endforelse
@@ -677,8 +414,8 @@
                     <h3 class="hd-card-title text-primary">
                         <i class="fas fa-images"></i> 3. Product Gallery & Photos
                     </h3>
-                    <button type="button" class="btn btn-primary btn-xs font-weight-bold add-new-product-image-btn">
-                        <i class="fas fa-plus mr-1"></i> Add Photo
+                    <button type="button" class="btn-erp btn-erp-primary btn-sm add-new-product-image-btn">
+                        <i class="fas fa-plus mr-1"></i> Add photo
                     </button>
                 </div>
                 <div class="hd-card-body p-2">
@@ -747,10 +484,10 @@
 
             <!-- BOTTOM SAVE ACTION -->
             <div class="text-center py-2">
-                <button type="submit" class="btn btn-primary px-5 py-2 font-weight-bold shadow-sm" style="font-size: 13px;">
-                    <i class="fas fa-save mr-1"></i> Update Product Specification
+                <button type="submit" class="btn-erp btn-erp-primary px-4 py-2" style="font-size: 13px;">
+                    <i class="fas fa-save mr-1"></i> Update product specification
                 </button>
-                <a href="{{ route('admin.master.production-goods.index') }}" class="btn btn-outline-secondary px-4 py-2 ml-2" style="font-size: 13px;">
+                <a href="{{ route('admin.master.production-goods.index') }}" class="btn-erp btn-erp-outline px-4 py-2 ml-2" style="font-size: 13px;">
                     Cancel
                 </a>
             </div>
@@ -763,7 +500,7 @@
     <div class="modal-ratio" id="sizeRatioModal">
         <div class="modal-ratio-content">
             <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
-                <strong class="text-dark" style="font-size: 13px;"><i class="fas fa-sliders-h text-primary mr-1"></i> Update Size Ratio</strong>
+                <strong class="text-dark" style="font-size: 13px;"><i class="fas fa-sliders-h text-primary mr-1"></i> Update size ratio</strong>
                 <button type="button" class="close text-muted" onclick="closeRatioModal()" style="font-size: 1.2rem; line-height: 1;">&times;</button>
             </div>
             <div class="modal-body p-0">
@@ -779,8 +516,8 @@
                 <input type="hidden" id="ratio_val_hidden">
             </div>
             <div class="d-flex justify-content-end gap-2 mt-3 pt-2 border-top">
-                <button type="button" class="btn btn-outline-secondary btn-xs px-3 mr-2" onclick="closeRatioModal()">Close</button>
-                <button type="button" class="btn btn-primary btn-xs px-3 font-weight-bold" onclick="saveRatioGroup()">Save Ratio</button>
+                <button type="button" class="btn-erp btn-erp-outline btn-sm px-3 mr-2" onclick="closeRatioModal()">Close</button>
+                <button type="button" class="btn-erp btn-erp-primary btn-sm px-3" onclick="saveRatioGroup()">Save ratio</button>
             </div>
         </div>
     </div>

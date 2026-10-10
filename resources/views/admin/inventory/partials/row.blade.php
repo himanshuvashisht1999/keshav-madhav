@@ -35,7 +35,7 @@
                 'pattern_id' => $row->pattern_id,
             ];
         @endphp
-        <a href="{{ route('admin.inventory.show', $params) }}" class="btn btn-primary btn-sm btn-icon" title="View Details">
+        <a href="{{ route('admin.inventory.show', $params) }}" class="erp-action-btn erp-btn-view" title="View Details">
             <i class="fas fa-eye"></i>
         </a>
     </td>

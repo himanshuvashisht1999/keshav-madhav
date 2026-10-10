@@ -1,334 +1,24 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        :root {
-            --erp-primary: #4f46e5;
-            --erp-primary-hover: #4338ca;
-            --erp-primary-light: #eef2ff;
-            --erp-success: #059669;
-            --erp-success-light: #ecfdf5;
-            --erp-danger: #dc2626;
-            --erp-danger-light: #fef2f2;
-            --erp-warning: #d97706;
-            --erp-border: #cbd5e1;
-            --erp-bg-header: #f1f5f9;
-            --erp-text: #0f172a;
-            --erp-muted: #64748b;
-        }
-
-        .content-wrapper {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #f8fafc;
-            padding-bottom: 75px;
-        }
-
-        /* STICKY ERP TOP HUD BAR */
-        .sticky-erp-hud {
-            position: sticky;
-            top: 0;
-            z-index: 1020;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(12px);
-            border-bottom: 2px solid #e2e8f0;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
-            padding: 8px 16px;
-            margin: -0.5rem -0.5rem 10px -0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: nowrap;
-        }
-
-        .hud-stat-box {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 5px 14px;
-            border-radius: 8px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            min-width: 200px;
-        }
-
-        .hud-source-box {
-            border-left: 4px solid var(--erp-primary);
-            background: #fafbff;
-        }
-
-        .hud-target-box {
-            border-left: 4px solid var(--erp-success);
-            background: #fbfdfb;
-        }
-
-        .hud-subtotal-box {
-            border-left: 4px solid #f59e0b;
-            background: #fffdf7;
-        }
-
-        .hud-label {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        .hud-numbers {
-            font-size: 1.15rem;
-            font-weight: 800;
-            line-height: 1.2;
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-        }
-
-        /* ERP CARDS & TABLES */
-        .erp-card {
-            background: #ffffff;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-            margin-bottom: 10px;
-            overflow: hidden;
-        }
-
-        .erp-card-header {
-            padding: 7px 12px;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .erp-card-title {
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .erp-table {
-            width: 100%;
-            margin-bottom: 0;
-            font-size: 11.5px;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-
-        .erp-table thead th {
-            background: #f1f5f9;
-            color: #334155;
-            font-size: 10.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 6px 8px;
-            border-bottom: 2px solid #cbd5e1;
-            border-top: none;
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        .erp-table tbody td {
-            padding: 5px 8px;
-            vertical-align: middle;
-            border-top: 1px solid #edf2f7;
-            border-bottom: none;
-        }
-
-        .erp-table tbody tr:hover {
-            background-color: #f8fafc;
-        }
-
-        /* COMPACT CONTROLS IN ERP */
-        .erp-input {
-            height: 31px !important;
-            padding: 2px 8px !important;
-            font-size: 12px !important;
-            font-weight: 600;
-            border-radius: 5px !important;
-            border: 1px solid #cbd5e1 !important;
-            background-color: #ffffff;
-            line-height: 1.2;
-            width: 100%;
-        }
-
-        .erp-input:focus {
-            border-color: var(--erp-primary) !important;
-            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15) !important;
-            outline: none;
-        }
-
-        .erp-input[readonly] {
-            background-color: #f1f5f9 !important;
-            color: #475569;
-        }
-
-        .erp-label {
-            font-size: 10.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            color: #475569;
-            margin-bottom: 3px;
-            display: block;
-        }
-
-        /* SELECT2 IN ERP */
-        .select2-container--bootstrap4 .select2-selection {
-            height: 31px !important;
-            min-height: 31px !important;
-            border-radius: 5px !important;
-            border: 1px solid #cbd5e1 !important;
-            padding: 0 !important;
-            display: flex;
-            align-items: center;
-        }
-
-        .select2-container--bootstrap4 .select2-selection__rendered {
-            line-height: 29px !important;
-            font-size: 12px !important;
-            padding-left: 8px !important;
-            padding-right: 18px !important;
-            color: var(--erp-text);
-        }
-
-        .select2-container--bootstrap4 .select2-selection__arrow {
-            height: 29px !important;
-            right: 4px !important;
-            width: 14px !important;
-        }
-
-        .select2-dropdown {
-            border-radius: 8px !important;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12) !important;
-            border: 1px solid #cbd5e1 !important;
-            font-size: 12px !important;
-            z-index: 10050 !important;
-        }
-
-        /* PILLS & BADGES */
-        .erp-pill {
-            display: inline-block;
-            padding: 1px 6px;
-            border-radius: 4px;
-            font-size: 10.5px;
-            font-weight: 700;
-            line-height: 1.3;
-            white-space: nowrap;
-        }
-
-        .erp-pill-source {
-            background: #e0e7ff;
-            color: #3730a3;
-            border: 1px solid #c7d2fe;
-        }
-
-        .erp-pill-gen {
-            background: #d1fae5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
-        }
-
-        /* BUTTONS */
-        .btn-erp-add {
-            font-size: 11px;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 5px;
-            line-height: 1.4;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-        }
-
-        .btn-erp-icon {
-            width: 26px;
-            height: 26px;
-            padding: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 5px;
-            font-size: 11px;
-            border: none;
-            transition: all 0.15s ease;
-            cursor: pointer;
-        }
-
-        .btn-erp-del {
-            background: #fee2e2;
-            color: #ef4444;
-        }
-
-        .btn-erp-del:hover {
-            background: #ef4444;
-            color: #fff;
-        }
-
-        .btn-hud-confirm {
-            background: linear-gradient(135deg, var(--erp-primary) 0%, var(--erp-primary-hover) 100%);
-            color: #ffffff !important;
-            font-weight: 700;
-            font-size: 12.5px;
-            border-radius: 6px;
-            padding: 6px 16px;
-            border: none;
-            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
-            white-space: nowrap;
-            transition: all 0.2s;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-hud-confirm:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
-        }
-
-        /* STICKY BOTTOM ACTIONS BAR */
-        .sticky-bottom-bar {
-            position: fixed;
-            bottom: 0;
-            left: 250px;
-            right: 0;
-            background: rgba(255, 255, 255, 0.96);
-            backdrop-filter: blur(10px);
-            padding: 8px 24px;
-            border-top: 1px solid #cbd5e1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 1000;
-            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
-        }
-
-        @media (max-width: 991.98px) {
-            .sticky-bottom-bar {
-                left: 0;
-            }
-            .sticky-erp-hud {
-                flex-wrap: wrap;
-            }
-        }
-    </style>
-
-    <div class="content-wrapper">
-        <section class="content pt-1">
-            <div class="container-fluid px-2">
+    <div class="content-wrapper erp-page p-2">
+        <div class="container-fluid p-0">
+            <!-- ERP HEADER BAR -->
+            <div class="erp-header-bar mb-2">
+                <div>
+                    <h1 class="erp-page-title m-0">Purchase & Inward Entry</h1>
+                    <p class="erp-page-subtitle m-0">Add vendor purchases, inward physical boxes and update stock inventory</p>
+                </div>
+                <div class="d-flex align-items-center" style="gap: 8px;">
+                    <a href="{{ route('admin.inventory.purchase_history.index') }}" class="btn-erp btn-erp-outline">
+                        <i class="fas fa-history mr-1"></i> Purchase history
+                    </a>
+                    <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
+                        <i class="fas fa-arrow-left mr-1"></i> Back to inventory
+                    </a>
+                </div>
+            </div>
                 <form action="{{ route('admin.inventory.store') }}" method="POST" id="addStockForm">
                     @csrf
 
@@ -339,7 +29,7 @@
                         <!-- Total Boxes Stat Box -->
                         <div class="hud-stat-box hud-source-box">
                             <div>
-                                <span class="hud-label text-primary"><i class="fas fa-boxes mr-1"></i> TOTAL BOXES</span>
+                                <span class="hud-label text-primary"><i class="fas fa-boxes mr-1"></i> Total boxes</span>
                                 <div class="hud-numbers">
                                     <span id="hudTotalBoxes" class="text-primary">0</span> <small class="text-muted" style="font-size:10px;">Boxes</small>
                                 </div>
@@ -349,7 +39,7 @@
                         <!-- Total Pieces Stat Box -->
                         <div class="hud-stat-box hud-target-box">
                             <div>
-                                <span class="hud-label text-success"><i class="fas fa-tshirt mr-1"></i> TOTAL PIECES</span>
+                                <span class="hud-label text-success"><i class="fas fa-tshirt mr-1"></i> Total pieces</span>
                                 <div class="hud-numbers">
                                     <span id="hudTotalPieces" class="text-success">0</span> <small class="text-muted" style="font-size:10px;">Pieces</small>
                                 </div>
@@ -359,7 +49,7 @@
                         <!-- Sub Total Stat Box -->
                         <div class="hud-stat-box hud-subtotal-box">
                             <div>
-                                <span class="hud-label text-warning"><i class="fas fa-receipt mr-1"></i> SUB TOTAL</span>
+                                <span class="hud-label text-warning"><i class="fas fa-receipt mr-1"></i> Sub total</span>
                                 <div class="hud-numbers">
                                     <span id="hudSubTotal" class="text-dark">₹0.00</span>
                                 </div>
@@ -367,12 +57,12 @@
                         </div>
 
                         <!-- Actions in HUD -->
-                        <div class="d-flex align-items-center">
-                            <a href="{{ route('admin.inventory.purchase_history.index') }}" class="btn btn-outline-secondary btn-erp-add mr-2" style="height: 31px;">
-                                <i class="fas fa-history mr-1"></i> Purchase History
+                        <div class="d-flex align-items-center" style="gap: 8px;">
+                            <a href="{{ route('admin.inventory.purchase_history.index') }}" class="btn-erp btn-erp-outline" style="height: 31px;">
+                                <i class="fas fa-history mr-1"></i> Purchase history
                             </a>
                             <button type="button" class="btn-hud-confirm btn-open-summary" id="btnHudOpenSummary">
-                                <i class="fas fa-file-invoice-dollar mr-1"></i> Review & Upload
+                                <i class="fas fa-file-invoice-dollar mr-1"></i> Review & upload
                             </button>
                         </div>
                     </div>
@@ -383,7 +73,7 @@
                     <div class="erp-card">
                         <div class="erp-card-header">
                             <div class="erp-card-title text-primary">
-                                <i class="fas fa-file-invoice"></i> 1. Source & Invoice Details
+                                <i class="fas fa-file-invoice"></i> 1. Source & invoice details
                             </div>
                         </div>
                         <div class="p-2">
@@ -465,7 +155,7 @@
                     <div class="erp-card">
                         <div class="erp-card-header">
                             <div class="erp-card-title text-success">
-                                <i class="fas fa-cart-plus"></i> 2. Add Product Item
+                                <i class="fas fa-cart-plus"></i> 2. Add product item
                             </div>
                         </div>
                         <div class="p-2">
@@ -488,7 +178,7 @@
                                 <div class="col-lg-3 col-md-3 col-12 mb-1">
                                     <label class="erp-label">Design *</label>
                                     <select id="headerDesign" class="erp-input select2">
-                                        <option value="">Select Design</option>
+                                        <option value="">Select design</option>
                                         @foreach($products as $product)
                                             <option value="{{ $product->id }}" data-name="{{ $product->name_of_garment }}">
                                                 {{ $product->design_number }} ({{ $product->series->name ?? '' }})
@@ -497,7 +187,7 @@
                                     </select>
                                 </div>
                                 <div class="col-lg-1 col-md-2 col-6 mb-1">
-                                    <label class="erp-label">Size Set *</label>
+                                    <label class="erp-label">Size set *</label>
                                     <select id="headerSizeSet" class="erp-input select2">
                                         <option value="">Size</option>
                                     </select>
@@ -539,7 +229,7 @@
                     <div class="erp-card">
                         <div class="erp-card-header">
                             <div class="erp-card-title text-dark">
-                                <i class="fas fa-boxes"></i> 3. Added Products List
+                                <i class="fas fa-boxes"></i> 3. Added products list
                                 <span class="badge badge-light border text-muted ml-2 font-weight-normal" style="font-size:11px;">
                                     <strong id="tableItemCount">0</strong> items added
                                 </span>
@@ -558,12 +248,12 @@
                                 <thead>
                                     <tr>
                                         <th style="width: 3%; text-align: center;">#</th>
-                                        <th style="width: 22%;">Design No</th>
-                                        <th style="width: 14%;">Pattern / Fit</th>
-                                        <th style="width: 15%;">Warehouse / Rack</th>
-                                        <th style="width: 13%;">Size / Color</th>
+                                        <th style="width: 22%;">Design no</th>
+                                        <th style="width: 14%;">Pattern / fit</th>
+                                        <th style="width: 15%;">Warehouse / rack</th>
+                                        <th style="width: 13%;">Size / color</th>
                                         <th style="width: 7%; text-align: center;">Boxes</th>
-                                        <th style="width: 6%; text-align: center;">Pcs/Bx</th>
+                                        <th style="width: 6%; text-align: center;">Pcs/bx</th>
                                         <th style="width: 7%; text-align: right;">MRP</th>
                                         <th style="width: 7%; text-align: right;">Rate (₹)</th>
                                         <th style="width: 8%; text-align: right;">Total (₹)</th>
@@ -731,8 +421,7 @@
                         </div>
                     </div>
                 </form>
-            </div>
-        </section>
+        </div>
     </div>
 
     @section('scripts')

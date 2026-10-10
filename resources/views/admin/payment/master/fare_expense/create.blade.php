@@ -1,50 +1,42 @@
-@extends('admin.layouts.app')
+﻿@extends('admin.layouts.app')
+@section('title', 'Create Fare Expense Master')
 
 @section('content')
-    <div class="content-wrapper">
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1>Create Fare Expense</h1>
-                    </div>
-                    <div class="col-sm-6">
-                        <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                            <li class="breadcrumb-item"><a href="{{route('admin.payment.master.fare_expense.index')}}">Manage
-                                    Fare Expense</a></li>
-                            <li class="breadcrumb-item active">Create</li>
-                        </ol>
-                    </div>
-                </div>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- Header Bar -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title">Create Fare Expense Master</h1>
+                <p class="erp-page-subtitle">Add a new record to Fare Expense Master</p>
             </div>
-        </section>
+            <div class="d-flex align-items-center">
+                <a href="{{ route('admin.payment.master.fare_expense.index') }}" class="btn-erp btn-erp-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to List
+                </a>
+            </div>
+        </div>
 
-        <section class="content">
-            <div class="container-fluid">
-                <div class="card card-default">
-                    <form action="{{route('admin.payment.master.fare_expense.store')}}" method="post">
-                        @csrf
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="name">Name <span class="text-danger">*</span></label>
-                                        <input type="text" name="name" class="form-control" id="name"
-                                            placeholder="Enter Fare Expense Name" required>
-                                        @error('name')
-                                            <span class="text-danger">{{ $message }}</span>
-                                        @enderror
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                        </div>
-                    </form>
+        <!-- Form Card -->
+        <div class="erp-card p-3">
+            <form action="{{ route('admin.payment.master.fare_expense.store') }}" method="post">
+                @csrf
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="erp-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control form-control-sm erp-input @error('name') is-invalid @enderror" id="name" placeholder="Enter name" required value="{{ old('name') }}">
+                        @error('name')
+                            <span class="text-danger small font-weight-bold mt-1 d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
                 </div>
-            </div>
-        </section>
+                <div class="d-flex justify-content-end pt-2 border-top">
+                    <button type="submit" class="btn-erp btn-erp-primary">
+                        <i class="fas fa-save mr-1"></i> Save
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
+</div>
 @endsection

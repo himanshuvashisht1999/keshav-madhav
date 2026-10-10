@@ -3,245 +3,222 @@
 @section('title', 'Edit Stock Disposal')
 
 @section('content')
-<div class="content-wrapper">
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Edit Stock Disposal</h1>
-                </div>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- Header Bar -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title">Update Disposal: {{ $main->disposal_no }}</h1>
+                <p class="erp-page-subtitle">Re-balance and correct stock disposal quantities</p>
+            </div>
+            <div>
+                <a href="{{ route('admin.inventory.stock_disposal.index') }}" class="btn-erp btn-erp-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to History
+                </a>
             </div>
         </div>
-    </section>
 
-    <section class="content">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card card-warning card-outline shadow-sm border-0">
-                        <div class="card-header bg-white">
-                            <h3 class="card-title font-weight-bold">Update Disposal: {{ $main->disposal_no }}</h3>
+        <form id="disposalForm">
+            @csrf
+            
+            <!-- Stock Type Indicator Card -->
+            <div class="erp-card mb-2 p-3 text-center">
+                <label class="erp-label mb-2 font-weight-bold" style="font-size: 0.9rem;">Stock Type (Locked for existing record)</label>
+                <div class="d-flex justify-content-center">
+                    <div style="max-width: 350px; width: 100%;">
+                        <span class="badge-erp-status {{ $main->item_type === 'fabric' ? 'badge-erp-info' : 'badge-erp-primary' }} p-2 w-100 font-weight-bold" style="font-size: 0.95rem;">
+                            <i class="fas {{ $main->item_type === 'fabric' ? 'fa-scroll' : 'fa-boxes' }} mr-2"></i>
+                            {{ $main->item_type === 'fabric' ? 'Fabric Roll' : 'Domestic Stock' }}
+                        </span>
+                    </div>
+                </div>
+                <input type="hidden" name="item_type" value="{{ $main->item_type }}">
+            </div>
+
+            <!-- Fabric Section -->
+            @if($main->item_type === 'fabric')
+            <div id="fabric_section">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <div class="erp-card p-3 h-100">
+                            <h6 class="font-weight-bold mb-3 pb-2 border-bottom" style="color: #05421c;">
+                                <i class="fas fa-filter mr-1"></i> Warehouse & Fabric Filter
+                            </h6>
+                            <div class="form-group mb-3">
+                                <label class="erp-label">Warehouse <span class="text-danger">*</span></label>
+                                <select id="fabric_warehouse" name="warehouse_id" class="form-control form-control-sm erp-input select2">
+                                    <option value="">Select warehouse</option>
+                                    @foreach($fabricWarehouses as $wh)
+                                        <option value="{{ $wh->id }}" {{ optional($main->items->first())->fabricReceiptDetail->master_fabric_warehouse_id == $wh->id ? 'selected' : '' }}>
+                                            {{ $wh->cutting_master_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group mb-0">
+                                <label class="erp-label">Fabric <span class="text-danger">*</span></label>
+                                <select id="fabric_id" class="form-control form-control-sm erp-input select2" multiple disabled>
+                                    <option value="">Select fabric</option>
+                                </select>
+                            </div>
                         </div>
-                        <form id="disposalForm">
-                            @csrf
-                            <div class="card-body">
-                                <!-- Stock Type Selection (Disabled in Edit) -->
-                                <div class="row justify-content-center mb-4">
-                                    <div class="col-md-6">
-                                        <div class="form-group text-center">
-                                            <label class="d-block mb-3 text-muted text-uppercase small font-weight-bold">Stock Type (Cannot be changed)</label>
-                                            <div class="btn-group d-flex">
-                                                <button type="button" class="btn btn-{{ $main->item_type === 'fabric' ? 'primary' : 'outline-secondary' }} flex-fill py-3 font-weight-bold disabled">
-                                                    <i class="fas fa-scroll mr-2"></i> Fabric Roll
-                                                </button>
-                                                <button type="button" class="btn btn-{{ $main->item_type === 'domestic' ? 'primary' : 'outline-secondary' }} flex-fill py-3 font-weight-bold disabled">
-                                                    <i class="fas fa-boxes mr-2"></i> Domestic Stock
-                                                </button>
-                                            </div>
-                                            <input type="hidden" name="item_type" value="{{ $main->item_type }}">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <hr class="mb-4">
-
-                                <!-- Fabric Section -->
-                                @if($main->item_type === 'fabric')
-                                <div id="fabric_section" class="animate-in">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <div class="card bg-light border-0 shadow-sm mb-3">
-                                                <div class="card-body">
-                                                    <div class="form-group">
-                                                        <label class="small font-weight-bold">Warehouse <span class="text-danger">*</span></label>
-                                                        <select id="fabric_warehouse" name="warehouse_id" class="form-control select2">
-                                                            <option value="">Select Warehouse</option>
-                                                            @foreach($fabricWarehouses as $wh)
-                                                                <option value="{{ $wh->id }}" {{ optional($main->items->first())->fabricReceiptDetail->master_fabric_warehouse_id == $wh->id ? 'selected' : '' }}>{{ $wh->cutting_master_name }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                    <div class="form-group mt-3">
-                                                        <label class="small font-weight-bold">Fabric <span class="text-danger">*</span></label>
-                                                        <select id="fabric_id" class="form-control select2" multiple disabled>
-                                                            <option value="">Select Fabric</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-8">
-                                            <div class="card border-0 shadow-sm">
-                                                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                                                    <h6 class="mb-0 font-weight-bold">Select Rolls to Dispose</h6>
-                                                    <div class="custom-control custom-checkbox">
-                                                        <input class="custom-control-input" type="checkbox" id="selectAllRolls">
-                                                        <label for="selectAllRolls" class="custom-control-label small">Select All</label>
-                                                    </div>
-                                                </div>
-                                                <div class="card-body p-0">
-                                                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                                                        <table class="table table-hover table-striped mb-0">
-                                                            <thead class="bg-light sticky-top">
-                                                                <tr>
-                                                                    <th width="40">#</th>
-                                                                    <th>Roll No</th>
-                                                                    <th>Remaining (Mtr)</th>
-                                                                    <th width="120">Dispose (Mtr)</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody id="rollsBody">
-                                                                @foreach($main->items as $item)
-                                                                    @php $r = $item->fabricReceiptDetail; @endphp
-                                                                    <tr>
-                                                                        <td><div class="custom-control custom-checkbox"><input class="custom-control-input roll-check" type="checkbox" name="roll_ids[]" id="roll_{{ $r->id }}" value="{{ $r->id }}" checked><label for="roll_{{ $r->id }}" class="custom-control-label"></label></div></td>
-                                                                        <td><span class="badge badge-info">{{ $r->roll_number }}</span><div class="small text-muted">{{ $r->fabric->name }}</div></td>
-                                                                        <td><strong>{{ $r->remaining_quantity + $item->quantity }}</strong> mtr <small class="text-success">(Incl. current disposal)</small></td>
-                                                                        <td><input type="number" name="roll_qty[{{ $r->id }}]" class="form-control form-control-sm" max="{{ $r->remaining_quantity + $item->quantity }}" min="0.01" step="0.01" value="{{ $item->quantity }}"></td>
-                                                                    </tr>
-                                                                @endforeach
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endif
-
-                                <!-- Domestic Section -->
-                                @if($main->item_type === 'domestic')
-                                <div id="domestic_section" class="animate-in">
-                                    <div class="row">
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label class="small font-weight-bold">Warehouse <span class="text-danger">*</span></label>
-                                                <select id="domestic_warehouse" name="warehouse_id" class="form-control select2">
-                                                    <option value="">Select Warehouse</option>
-                                                    @foreach($storerooms as $wh)
-                                                        <option value="{{ $wh->id }}">{{ $wh->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label class="small font-weight-bold">Design No <span class="text-danger">*</span></label>
-                                                <select id="product_id" name="product_id" class="form-control select2">
-                                                    <option value="">Select Design</option>
-                                                    @foreach($products as $p)
-                                                        <option value="{{ $p->id }}">{{ $p->design_number }} ({{ $p->series->name ?? '' }})</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label class="small font-weight-bold">Size Set <span class="text-danger">*</span></label>
-                                                <select id="size_set_id" name="size_set_id" class="form-control select2" disabled>
-                                                    <option value="">Select Size</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <label class="small font-weight-bold">Color <span class="text-danger">*</span></label>
-                                                <select id="color_id" name="color_id" class="form-control select2" disabled>
-                                                    <option value="">Select Color</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row mt-3">
-                                        <div class="col-md-4">
-                                            <div class="callout callout-info py-2">
-                                                <span class="text-muted small">Available Stock:</span>
-                                                <h4 class="mb-0 font-weight-bold" id="available_qty_display">0 <span class="small text-muted">Boxes</span></h4>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group">
-                                                <label class="small font-weight-bold">Quantity to Dispose <span class="text-danger">*</span></label>
-                                                <input type="number" id="dispose_qty" class="form-control" placeholder="Enter boxes..." min="1" step="1">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-group pt-4">
-                                                <button type="button" class="btn btn-outline-primary btn-block font-weight-bold" id="add_domestic_item">
-                                                    <i class="fas fa-plus mr-1"></i> Add to List
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row mt-4">
-                                        <div class="col-12">
-                                            <div class="card border-0 shadow-sm">
-                                                <div class="card-header bg-white">
-                                                    <h6 class="mb-0 font-weight-bold">Items Added for Disposal</h6>
-                                                </div>
-                                                <div class="card-body p-0">
-                                                    <div class="table-responsive">
-                                                        <table class="table table-hover mb-0">
-                                                            <thead class="bg-light">
-                                                                <tr>
-                                                                    <th>Product/Design</th>
-                                                                    <th>Warehouse</th>
-                                                                    <th>Size/Color</th>
-                                                                    <th>Quantity</th>
-                                                                    <th width="50">Action</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody id="domesticItemsBody">
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endif
-
-                                <hr class="my-4">
-
-                                <!-- Reason & Remarks -->
-                                <div class="row justify-content-center">
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label class="small font-weight-bold text-danger text-uppercase">Reason for Disposal <span class="text-danger">*</span></label>
-                                            <select name="reason" class="form-control select2" required>
-                                                <option value="">Select Reason</option>
-                                                <option value="Damage" {{ $main->reason == 'Damage' ? 'selected' : '' }}>Damage</option>
-                                                <option value="Lost" {{ $main->reason == 'Lost' ? 'selected' : '' }}>Lost</option>
-                                                <option value="Sample" {{ $main->reason == 'Sample' ? 'selected' : '' }}>Sample</option>
-                                                <option value="Wrong Entry" {{ $main->reason == 'Wrong Entry' ? 'selected' : '' }}>Wrong Entry</option>
-                                                <option value="Other" {{ $main->reason == 'Other' ? 'selected' : '' }}>Other</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-8">
-                                        <div class="form-group">
-                                            <label class="small font-weight-bold text-uppercase">Remarks / Notes</label>
-                                            <textarea name="remarks" class="form-control" rows="1" placeholder="Optional details...">{{ $main->remarks }}</textarea>
-                                        </div>
-                                    </div>
+                    </div>
+                    <div class="col-md-8 mb-2">
+                        <div class="erp-card p-0 h-100">
+                            <div class="p-2 border-bottom bg-light d-flex justify-content-between align-items-center">
+                                <h6 class="font-weight-bold mb-0" style="color: #05421c;">
+                                    <i class="fas fa-scroll mr-1"></i> Select Rolls to Dispose
+                                </h6>
+                                <div class="custom-control custom-checkbox">
+                                    <input class="custom-control-input" type="checkbox" id="selectAllRolls">
+                                    <label for="selectAllRolls" class="custom-control-label erp-label mb-0 cursor-pointer">Select all</label>
                                 </div>
                             </div>
-                            <div class="card-footer bg-white py-3">
-                                <button type="submit" class="btn btn-warning float-right px-5 py-2 font-weight-bold shadow" id="submit_btn">
-                                    <i class="fas fa-save mr-2"></i> Update Stock Disposal
-                                </button>
-                                <a href="{{ route('admin.inventory.stock_disposal.index') }}" class="btn btn-default py-2">Cancel</a>
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table erp-table table-bordered table-hover mb-0">
+                                    <thead class="sticky-top bg-light">
+                                        <tr>
+                                            <th class="text-center" style="width: 45px;">#</th>
+                                            <th>Roll no</th>
+                                            <th>Remaining (Mtr)</th>
+                                            <th style="width: 140px;">Dispose (Mtr)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rollsBody">
+                                        @foreach($main->items as $item)
+                                            @php $r = $item->fabricReceiptDetail; @endphp
+                                            <tr>
+                                                <td class="text-center"><div class="custom-control custom-checkbox"><input class="custom-control-input roll-check" type="checkbox" name="roll_ids[]" id="roll_{{ $r->id }}" value="{{ $r->id }}" checked><label for="roll_{{ $r->id }}" class="custom-control-label"></label></div></td>
+                                                <td><span class="badge-erp-status badge-erp-info font-weight-bold">{{ $r->roll_number }}</span><div class="small text-muted">{{ $r->fabric->name }}</div></td>
+                                                <td><strong>{{ $r->remaining_quantity + $item->quantity }}</strong> mtr <small class="text-success font-weight-bold">(Incl. current)</small></td>
+                                                <td><input type="number" name="roll_qty[{{ $r->id }}]" class="form-control form-control-sm erp-input" max="{{ $r->remaining_quantity + $item->quantity }}" min="0.01" step="0.01" value="{{ $item->quantity }}"></td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+            @endif
+
+            <!-- Domestic Section -->
+            @if($main->item_type === 'domestic')
+            <div id="domestic_section">
+                <div class="erp-card mb-2 p-3">
+                    <h6 class="font-weight-bold mb-3 pb-2 border-bottom" style="color: #05421c;">
+                        <i class="fas fa-box-open mr-1"></i> Select Domestic Stock
+                    </h6>
+                    <div class="form-row">
+                        <div class="col-md-3 mb-2">
+                            <label class="erp-label">Warehouse <span class="text-danger">*</span></label>
+                            <select id="domestic_warehouse" name="warehouse_id" class="form-control form-control-sm erp-input select2">
+                                <option value="">Select warehouse</option>
+                                @foreach($storerooms as $wh)
+                                    <option value="{{ $wh->id }}">{{ $wh->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="erp-label">Design no <span class="text-danger">*</span></label>
+                            <select id="product_id" name="product_id" class="form-control form-control-sm erp-input select2">
+                                <option value="">Select design</option>
+                                @foreach($products as $p)
+                                    <option value="{{ $p->id }}">{{ $p->design_number }} ({{ $p->series->name ?? '' }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="erp-label">Size set <span class="text-danger">*</span></label>
+                            <select id="size_set_id" name="size_set_id" class="form-control form-control-sm erp-input select2" disabled>
+                                <option value="">Select size</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="erp-label">Color <span class="text-danger">*</span></label>
+                            <select id="color_id" name="color_id" class="form-control form-control-sm erp-input select2" disabled>
+                                <option value="">Select color</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row align-items-end mt-2 pt-2 border-top">
+                        <div class="col-md-3 mb-2">
+                            <div class="p-2 rounded bg-light border">
+                                <span class="erp-label d-block text-muted mb-0">Available stock</span>
+                                <h5 class="mb-0 font-weight-bold text-success" id="available_qty_display">0 <small class="text-muted">Boxes</small></h5>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="erp-label">Quantity to dispose <span class="text-danger">*</span></label>
+                            <input type="number" id="dispose_qty" class="form-control form-control-sm erp-input" placeholder="Enter boxes..." min="1" step="1">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button type="button" class="btn-erp btn-erp-primary w-100" id="add_domestic_item">
+                                <i class="fas fa-plus mr-1"></i> Add to List
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="erp-card mb-2 p-0">
+                    <div class="p-2 border-bottom bg-light">
+                        <h6 class="font-weight-bold mb-0" style="color: #05421c;">
+                            <i class="fas fa-list mr-1"></i> Items Added for Disposal
+                        </h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table erp-table table-bordered table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Product/Design</th>
+                                    <th>Warehouse</th>
+                                    <th>Size/Color</th>
+                                    <th class="text-center" style="width: 140px;">Quantity</th>
+                                    <th class="text-center" style="width: 60px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="domesticItemsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Reason & Remarks Card -->
+            <div class="erp-card mb-2 p-3">
+                <h6 class="font-weight-bold mb-3 pb-2 border-bottom" style="color: #05421c;">
+                    <i class="fas fa-clipboard-check mr-1"></i> Disposal Reason & Remarks
+                </h6>
+                <div class="form-row">
+                    <div class="col-md-4 mb-2">
+                        <label class="erp-label">Reason for disposal <span class="text-danger">*</span></label>
+                        <select name="reason" class="form-control form-control-sm erp-input select2" required>
+                            <option value="">Select reason</option>
+                            <option value="Damage" {{ $main->reason == 'Damage' ? 'selected' : '' }}>Damage</option>
+                            <option value="Lost" {{ $main->reason == 'Lost' ? 'selected' : '' }}>Lost</option>
+                            <option value="Sample" {{ $main->reason == 'Sample' ? 'selected' : '' }}>Sample</option>
+                            <option value="Wrong Entry" {{ $main->reason == 'Wrong Entry' ? 'selected' : '' }}>Wrong Entry</option>
+                            <option value="Other" {{ $main->reason == 'Other' ? 'selected' : '' }}>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8 mb-2">
+                        <label class="erp-label">Remarks / notes</label>
+                        <textarea name="remarks" class="form-control form-control-sm erp-input" rows="2" placeholder="Optional audit details...">{{ $main->remarks }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="erp-card p-2 text-right">
+                <a href="{{ route('admin.inventory.stock_disposal.index') }}" class="btn-erp btn-erp-secondary mr-2">Cancel</a>
+                <button type="submit" class="btn-erp btn-erp-primary" id="submit_btn">
+                    <i class="fas fa-save mr-1"></i> Update Stock Disposal
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 @endsection
 
@@ -289,7 +266,7 @@
                     warehouse_id: whId, 
                     disposal_id: "{{ $main->id }}"
                 }, function(data) {
-                    let options = '<option value="">Select Fabric</option>';
+                    let options = '<option value="">Select fabric</option>';
                     data.forEach(f => {
                         let selected = currentFabricIds.includes(f.id.toString()) || currentFabricIds.includes(f.id) ? 'selected' : '';
                         options += `<option value="${f.id}" ${selected}>${f.name}</option>`;
@@ -308,7 +285,7 @@
             let fabricIds = $(this).val();
             let whId = $('#fabric_warehouse').val();
             if (fabricIds && fabricIds.length > 0 && whId) {
-                $('#rollsBody').html('<tr><td colspan="4" class="text-center py-4">Loading rolls...</td></tr>');
+                $('#rollsBody').html('<tr><td colspan="4" class="text-center py-4 text-muted">Loading rolls...</td></tr>');
                 $.get("{{ route('admin.inventory.stock_disposal.get-rolls') }}", {
                     warehouse_id: whId, 
                     fabric_ids: fabricIds,
@@ -323,10 +300,10 @@
                             let inputVal = checked ? originalQty : totalAvailable;
 
                             rows += `<tr>
-                                <td><div class="custom-control custom-checkbox"><input class="custom-control-input roll-check" type="checkbox" name="roll_ids[]" id="roll_${r.id}" value="${r.id}" ${checked}><label for="roll_${r.id}" class="custom-control-label"></label></div></td>
-                                <td><span class="badge badge-info">${r.roll_number}</span><div class="small text-muted">${r.fabric.name}</div></td>
+                                <td class="text-center"><div class="custom-control custom-checkbox"><input class="custom-control-input roll-check" type="checkbox" name="roll_ids[]" id="roll_${r.id}" value="${r.id}" ${checked}><label for="roll_${r.id}" class="custom-control-label"></label></div></td>
+                                <td><span class="badge-erp-status badge-erp-info font-weight-bold">${r.roll_number}</span><div class="small text-muted">${r.fabric.name}</div></td>
                                 <td><strong>${totalAvailable}</strong> mtr</td>
-                                <td><input type="number" name="roll_qty[${r.id}]" class="form-control form-control-sm" max="${totalAvailable}" min="0.01" step="0.01" value="${inputVal}"></td>
+                                <td><input type="number" name="roll_qty[${r.id}]" class="form-control form-control-sm erp-input" max="${totalAvailable}" min="0.01" step="0.01" value="${inputVal}"></td>
                             </tr>`;
                         });
                     } else {
@@ -344,7 +321,7 @@
         // --- Domestic Logic ---
         $('#product_id').on('change', function() {
             let pId = $(this).val();
-            $('#size_set_id').empty().append('<option value="">Select Size</option>').prop('disabled', true).trigger('change');
+            $('#size_set_id').empty().append('<option value="">Select size</option>').prop('disabled', true).trigger('change');
             if (pId) {
                 $.get("{{ route('admin.inventory.stock_disposal.get-product-details') }}", { product_id: pId }, function(res) {
                     if (res.success) {
@@ -358,7 +335,7 @@
         $('#size_set_id').on('change', function() {
             let sId = $(this).val();
             let pId = $('#product_id').val();
-            $('#color_id').empty().append('<option value="">Select Color</option>').prop('disabled', true).trigger('change');
+            $('#color_id').empty().append('<option value="">Select color</option>').prop('disabled', true).trigger('change');
             if (sId && pId) {
                 $.get("{{ route('admin.inventory.stock_disposal.get-size-colors') }}", { product_id: pId, size_set_id: sId }, function(res) {
                     if (res.success) {
@@ -378,7 +355,7 @@
                 $.get("{{ route('admin.inventory.stock_disposal.get-domestic-stock') }}", {
                     warehouse_id: whId, product_id: pId, size_set_id: sId, color_id: cId
                 }, function(response) {
-                    $('#available_qty_display').html(response.available + ' <span class="small text-muted">Boxes</span>');
+                    $('#available_qty_display').html(response.available + ' <small class="text-muted">Boxes</small>');
                     $('#dispose_qty').attr('max', response.available);
                 });
             }
@@ -418,8 +395,8 @@
                     <td>${item.product_name}</td>
                     <td>${item.warehouse_name}</td>
                     <td>${item.size_name} / ${item.color_name}</td>
-                    <td><strong>${item.quantity}</strong> Boxes</td>
-                    <td><button type="button" class="btn btn-xs btn-danger" onclick="removeDomesticItem(${index})"><i class="fas fa-times"></i></button></td>
+                    <td class="text-center font-weight-bold">${item.quantity} Boxes</td>
+                    <td class="text-center"><button type="button" class="erp-action-btn erp-btn-delete" onclick="removeDomesticItem(${index})"><i class="fas fa-trash"></i></button></td>
                 </tr>`;
             });
             $('#domesticItemsBody').html(rows || '<tr><td colspan="5" class="text-center py-4 text-muted">No items</td></tr>');
@@ -440,6 +417,7 @@
                 text: "This will restore old stock and apply new deductions.",
                 icon: 'warning',
                 showCancelButton: true,
+                confirmButtonColor: '#05421c',
                 confirmButtonText: 'Yes, Update'
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -464,12 +442,4 @@
         });
     });
 </script>
-<style>
-    .animate-in { animation: fadeIn 0.4s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .btn-group-toggle .btn { border-radius: 10px !important; margin: 0 5px; border: 2px solid transparent; transition: all 0.2s; }
-    .btn-group-toggle .btn.active { background-color: #6366f1 !important; color: #fff !important; }
-    .callout { border-left-width: 5px; border-radius: 8px; background: #f8fafc; }
-    .sticky-top { z-index: 10; background: white; }
-</style>
 @endsection

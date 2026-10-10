@@ -2,122 +2,117 @@
 @section('title', 'Fabric Transfer')
 
 @section('content')
-<div class="content-wrapper">
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Fabric Transfer</h1>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- PAGE HEADER -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title m-0">Fabric Transfer</h1>
+                <p class="erp-page-subtitle m-0">Transfer fabric rolls between cutting masters and warehouses</p>
+            </div>
+            <div class="d-flex align-items-center" style="gap: 8px;">
+                <a href="{{ route('admin.inventory.fabric_transfer.history') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-history mr-1"></i> Transfer history
+                </a>
+                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to inventory
+                </a>
+            </div>
+        </div>
+
+        <form id="transferForm">
+            @csrf
+            <div class="row">
+                {{-- Selection Sidebar --}}
+                <div class="col-md-4 mb-2">
+                    <div class="erp-card p-3">
+                        <div class="border-bottom pb-2 mb-3">
+                            <h6 class="m-0 font-weight-bold text-dark" style="font-size: 0.9rem;">
+                                <i class="fas fa-sliders-h mr-1 text-primary"></i> Transfer parameters
+                            </h6>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label class="erp-label mb-1">From warehouse *</label>
+                            <select name="from_warehouse_id" id="from_warehouse" class="form-control form-control-sm select2" required>
+                                <option value="">Select warehouse</option>
+                                @foreach($warehouses as $wh)
+                                    <option value="{{ $wh->id }}">{{ $wh->cutting_master_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label class="erp-label mb-1">Select fabric(s) *</label>
+                            <select name="fabric_ids[]" id="fabric_id" class="form-control form-control-sm select2" multiple disabled required>
+                                <option value="">Select fabric</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label class="erp-label mb-1">To warehouse *</label>
+                            <select name="to_warehouse_id" id="to_warehouse" class="form-control form-control-sm select2" required>
+                                <option value="">Select destination</option>
+                                @foreach($warehouses as $wh)
+                                    <option value="{{ $wh->id }}">{{ $wh->cutting_master_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label class="erp-label mb-1">Transfer date *</label>
+                            <input type="date" name="transfer_date" class="form-control form-control-sm erp-input" value="{{ date('Y-m-d') }}" required>
+                        </div>
+
+                        <div class="form-group mb-0">
+                            <label class="erp-label mb-1">Remarks</label>
+                            <textarea name="remarks" class="form-control form-control-sm" rows="2" placeholder="Optional notes..."></textarea>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-sm-6">
-                    <div class="float-sm-right">
-                        <a href="{{ route('admin.inventory.fabric_transfer.history') }}" class="btn btn-dark">
-                            <i class="fas fa-history"></i> Transfer History
-                        </a>
+
+                {{-- Rolls List --}}
+                <div class="col-md-8 mb-2">
+                    <div class="erp-card p-0">
+                        <div class="p-2 border-bottom d-flex justify-content-between align-items-center" style="background-color: #f8fafc;">
+                            <h6 class="m-0 font-weight-bold text-dark" style="font-size: 0.9rem;">
+                                <i class="fas fa-boxes mr-1 text-primary"></i> Select fabric rolls
+                            </h6>
+                            <div class="custom-control custom-checkbox">
+                                <input class="custom-control-input" type="checkbox" id="selectAll">
+                                <label for="selectAll" class="custom-control-label erp-label" style="cursor: pointer;">Select all</label>
+                            </div>
+                        </div>
+                        <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                            <table class="erp-table table-bordered table-hover mb-0" id="rollsTable">
+                                <thead style="position: sticky; top: 0; z-index: 5;">
+                                    <tr>
+                                        <th style="width: 40px; text-align: center;">#</th>
+                                        <th>Roll no</th>
+                                        <th>Remaining qty (Mtr)</th>
+                                        <th>Current location</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rollsBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center py-5 text-muted">
+                                            <i class="fas fa-arrow-left fa-2x mb-2 d-block opacity-50"></i>
+                                            Please select Warehouse and Fabric to load rolls
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-2 border-top bg-white text-right">
+                            <button type="submit" class="btn-erp btn-erp-primary py-2 px-4 font-weight-bold" id="submitBtn" disabled>
+                                <i class="fas fa-exchange-alt mr-1"></i> Transfer selected rolls
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <section class="content">
-        <div class="container-fluid">
-            <form id="transferForm">
-                @csrf
-                <div class="row">
-                    {{-- Selection Sidebar --}}
-                    <div class="col-md-4">
-                        <div class="card shadow-sm border-0">
-                            <div class="card-header bg-primary text-white">
-                                <h3 class="card-title">Transfer Details</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-group">
-                                    <label>From Warehouse <span class="text-danger">*</span></label>
-                                    <select name="from_warehouse_id" id="from_warehouse" class="form-control select2" required>
-                                        <option value="">Select Warehouse</option>
-                                        @foreach($warehouses as $wh)
-                                            <option value="{{ $wh->id }}">{{ $wh->cutting_master_name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="form-group mt-3">
-                                    <label>Select Fabric(s) <span class="text-danger">*</span></label>
-                                    <select name="fabric_ids[]" id="fabric_id" class="form-control select2" multiple disabled required>
-                                        <option value="">Select Fabric</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group mt-3">
-                                    <label>To Warehouse <span class="text-danger">*</span></label>
-                                    <select name="to_warehouse_id" id="to_warehouse" class="form-control select2" required>
-                                        <option value="">Select Destination</option>
-                                        @foreach($warehouses as $wh)
-                                            <option value="{{ $wh->id }}">{{ $wh->cutting_master_name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="form-group mt-3">
-                                    <label>Transfer Date <span class="text-danger">*</span></label>
-                                    <input type="date" name="transfer_date" class="form-control" value="{{ date('Y-m-d') }}" required>
-                                </div>
-
-                                <div class="form-group mt-3">
-                                    <label>Remarks</label>
-                                    <textarea name="remarks" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Rolls List --}}
-                    <div class="col-md-8">
-                        <div class="card shadow-sm border-0">
-                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                                <h3 class="card-title mb-0">Select Rolls</h3>
-                                <div class="card-tools">
-                                    <div class="custom-control custom-checkbox">
-                                        <input class="custom-control-input" type="checkbox" id="selectAll">
-                                        <label for="selectAll" class="custom-control-label">Select All</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                                    <table class="table table-hover table-striped mb-0" id="rollsTable">
-                                        <thead class="sticky-top bg-light">
-                                            <tr>
-                                                <th width="50">#</th>
-                                                <th>Roll No</th>
-                                                <!-- <th>Batch</th> -->
-                                                <th>Remaining Qty (Mtr)</th>
-                                                <th>Current Location</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="rollsBody">
-                                            <tr>
-                                                <td colspan="4" class="text-center py-5 text-muted">
-                                                    <i class="fas fa-arrow-left fa-2x mb-2 d-block"></i>
-                                                    Please select Warehouse and Fabric to load rolls
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div class="card-footer bg-white text-right">
-                                <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm" id="submitBtn" disabled>
-                                    <i class="fas fa-exchange-alt"></i> Transfer Selected Rolls
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </section>
+        </form>
+    </div>
 </div>
 @endsection
 
@@ -125,7 +120,8 @@
 <script>
 $(document).ready(function() {
     $('.select2').select2({
-        theme: 'bootstrap4'
+        theme: 'bootstrap4',
+        width: '100%'
     });
 
     $('#from_warehouse').change(function() {
@@ -159,25 +155,24 @@ $(document).ready(function() {
                     data.forEach(function(roll) {
                         rows += `
                             <tr>
-                                <td>
+                                <td class="text-center">
                                     <div class="custom-control custom-checkbox">
                                         <input class="custom-control-input roll-check" type="checkbox" name="roll_ids[]" id="roll_${roll.id}" value="${roll.id}">
                                         <label for="roll_${roll.id}" class="custom-control-label"></label>
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge badge-info">${roll.roll_number}</span>
-                                    <div class="small text-muted">${roll.fabric ? roll.fabric.name : 'Unknown Fabric'}</div>
+                                    <span class="badge badge-light border font-weight-bold text-dark px-2 py-1">${roll.roll_number}</span>
+                                    <div class="small text-muted font-weight-bold mt-1">${roll.fabric ? roll.fabric.name : 'Unknown Fabric'}</div>
                                 </td>
-                                <!-- <td>${roll.batch_no || 'N/A'}</td> -->
-                                <td><strong>${roll.remaining_quantity}</strong> mtr</td>
-                                <td><small class="text-muted"><i class="fas fa-map-marker-alt"></i> ${$('#from_warehouse option:selected').text()}</small></td>
+                                <td><strong style="color: #05421c;">${roll.remaining_quantity}</strong> mtr</td>
+                                <td><small class="text-muted"><i class="fas fa-map-marker-alt mr-1"></i> ${$('#from_warehouse option:selected').text()}</small></td>
                             </tr>
                         `;
                     });
                     $('#submitBtn').prop('disabled', false);
                 } else {
-                    rows = '<tr><td colspan="4" class="text-center py-5 text-warning">No rolls available for selected fabrics</td></tr>';
+                    rows = '<tr><td colspan="4" class="text-center py-5 text-warning font-weight-bold">No rolls available for selected fabrics</td></tr>';
                     $('#submitBtn').prop('disabled', true);
                 }
                 $('#rollsBody').html(rows);
@@ -210,8 +205,8 @@ $(document).ready(function() {
             text: "Are you sure you want to transfer the selected rolls?",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
+            confirmButtonColor: '#05421c',
+            cancelButtonColor: '#64748b',
             confirmButtonText: 'Yes, transfer them!'
         }).then((result) => {
             if (result.isConfirmed) {
@@ -236,15 +231,4 @@ $(document).ready(function() {
     });
 });
 </script>
-<style>
-    .sticky-top {
-        z-index: 10;
-    }
-    .table thead th {
-        border-top: 0;
-    }
-    .card-title {
-        font-weight: 600;
-    }
-</style>
 @endsection

@@ -1,61 +1,43 @@
 @extends('admin.layouts.app')
 @section('content')
-    <div class="content-wrapper">
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-3 align-items-center">
-                    <div class="col-sm-6">
-                        <h1 class="m-0 font-weight-bold text-dark">Stock Transfer History</h1>
-                        <small class="text-muted">Recorded history of all warehouse inventory movements</small>
-                    </div>
-                    <div class="col-sm-6 text-right">
-                        <a href="{{ route('admin.inventory.warehouse_stock') }}" class="btn btn-secondary shadow-sm">
-                            <i class="fas fa-arrow-left mr-1"></i> Back to Warehouse Stock
-                        </a>
-                    </div>
+    <div class="content-wrapper erp-page p-2">
+        <div class="container-fluid p-0">
+            <!-- PAGE HEADER -->
+            <div class="erp-header-bar mb-2">
+                <div>
+                    <h1 class="erp-page-title">Stock Transfer History</h1>
+                    <p class="erp-page-subtitle">Recorded history of all warehouse inventory movements</p>
+                </div>
+                <div class="erp-header-actions">
+                    <a href="{{ route('admin.inventory.warehouse_stock') }}" class="btn-erp btn-erp-secondary">
+                        <i class="fas fa-arrow-left mr-1"></i> Back to Warehouse Stock
+                    </a>
                 </div>
             </div>
-        </section>
 
-        <section class="content">
-            <div class="container-fluid">
-                <div class="card shadow border-0" style="border-radius: 12px; overflow: hidden;">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table id="historyTable" class="table table-hover mb-0">
-                                <thead class="bg-light contrast-text">
-                                    <tr>
-                                         <th width="5%" class="py-3">#</th>
-                                         <th class="py-3">Date & Time</th>
-                                         <th class="py-3">Product Details</th>
-                                         <th class="py-3">From Location</th>
-                                         <th class="py-3">Destination</th>
-                                         <th class="py-3 text-center">Boxes</th>
-                                         <th class="py-3 text-center">Action</th>
-                                     </tr>
-                                 </thead>
-                                 <tbody></tbody>
-                            </table>
-                        </div>
+            <!-- TABLE CARD -->
+            <div class="erp-card">
+                <div class="erp-card-body p-0">
+                    <div class="table-responsive">
+                        <table id="historyTable" class="erp-table table-bordered table-hover mb-0">
+                            <thead>
+                                <tr>
+                                     <th style="width: 45px;" class="text-center">#</th>
+                                     <th>Date & time</th>
+                                     <th>Product details</th>
+                                     <th>From location</th>
+                                     <th>Destination</th>
+                                     <th class="text-center">Boxes</th>
+                                     <th class="text-center" style="width: 70px;">Action</th>
+                                 </tr>
+                             </thead>
+                             <tbody></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
     </div>
-
-    <style>
-        .contrast-text th {
-            color: #444;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 0.5px;
-        }
-        .table tbody td {
-            vertical-align: middle;
-            padding: 1rem 0.75rem;
-        }
-    </style>
 
     <script>
         $(function () {

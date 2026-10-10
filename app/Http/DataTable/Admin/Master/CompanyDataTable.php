@@ -26,13 +26,17 @@ class CompanyDataTable {
          
             ->editColumn('status', function ($queue) {
                 $status = $queue->status;
-                return ($status == 1) ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>';
+                return ($status == 1) 
+                    ? '<span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 8px;">Active</span>' 
+                    : '<span class="badge badge-secondary" style="font-size: 11px; padding: 3px 8px;">Inactive</span>';
             })
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
                 return '
-                <a href="' . route('admin.master.company.edit',['id' => $parameter]) . '" class="mx-2" data-toggle="tooltip" title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                <a href="javascript:void(0)" onclick="deleteItem(' . $parameter . ')" class="mx-2" data-toggle="tooltip" title="Delete"><i class="fas fa-trash text-danger"></i></a>
+                <div class="d-inline-flex" style="gap: 4px;">
+                    <a href="' . route('admin.master.company.edit',['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
+                    <a href="javascript:void(0)" onclick="deleteItem(' . $parameter . ')" class="erp-action-btn erp-btn-delete" title="Delete"><i class="fas fa-trash"></i></a>
+                </div>
                 ';
             })
             

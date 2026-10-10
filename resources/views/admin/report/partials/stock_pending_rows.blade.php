@@ -18,6 +18,6 @@
         </td>
         <td>{{ $item->design_number ?? '-' }}</td>
         <td>{{ $item->size_set_name ?? '-' }}</td>
-        <td>{{ number_format($qty) }} Pcs</td>
+        <td class="text-right font-weight-bold">{{ number_format($qty) }} Pcs</td>
     </tr>
 @endforeach

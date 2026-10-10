@@ -56,14 +56,18 @@ class UserDataTable
 
             ->editColumn('status', function ($queue) {
                 $status = $queue->status;
-                return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
+                return ($status == 1) 
+                    ? '<span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 8px;">Active</span>' 
+                    : '<span class="badge badge-secondary" style="font-size: 11px; padding: 3px 8px;">Inactive</span>';
             })
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
                 return '
-                    <a href="' . route('admin.users.edit', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                    <a href="javascript:void(0)" class="ml-1" onClick="deleteUser(' . $parameter . ')" data-id="' . $parameter . '" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete"><i class="fas fa-trash text-danger"></i></a>
-                    ';
+                <div class="d-inline-flex" style="gap: 4px;">
+                    <a href="' . route('admin.users.edit', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
+                    <a href="javascript:void(0)" class="erp-action-btn erp-btn-delete" onClick="deleteUser(' . $parameter . ')" title="Delete"><i class="fas fa-trash"></i></a>
+                </div>
+                ';
             })
             ->rawColumns(['action', 'status', 'role_id'])
             ->make(true);

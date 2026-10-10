@@ -65,7 +65,7 @@
         <div class="text-muted small">{{ $row->created_at->format('H:i') }}</div>
     </td>
     <td class="text-center">
-        <a href="{{ route('admin.inventory.attribute-history.show', $row->id) }}" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i></a>
+        <a href="{{ route('admin.inventory.attribute-history.show', $row->id) }}" class="erp-action-btn erp-btn-view" title="View details"><i class="fas fa-eye"></i></a>
         @if (in_array($row->type, ['attribute_change', 'stock_consume', 'creation']) && $row->new_product_id)
             @php
                 $current_inventory = \App\Models\DomesticInventory::where('product_id', $row->new_product_id)
@@ -76,7 +76,7 @@
                 $isEditable = $current_inventory && $current_inventory->total_boxes >= $row->box_quantity;
             @endphp
             @if($isEditable)
-                <a href="{{ route('admin.inventory.attribute-history.edit', $row->id) }}" class="btn btn-sm btn-warning ml-1"><i class="fas fa-edit"></i></a>
+                <a href="{{ route('admin.inventory.attribute-history.edit', $row->id) }}" class="erp-action-btn erp-btn-edit ml-1" title="Edit attributes"><i class="fas fa-edit"></i></a>
             @endif
         @endif
     </td>

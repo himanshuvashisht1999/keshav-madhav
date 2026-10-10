@@ -1118,10 +1118,16 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                     </li>
 
                     @can('manage-masters')
+                        @php
+                            $isMastersActive = str_contains($page_url, 'admin/master')
+                                || str_contains($page_url, 'admin/users')
+                                || str_contains($page_url, 'admin/roles')
+                                || str_contains($page_url, 'admin/settings');
+                        @endphp
                                         <!-- Master Settings (Dropdown) -->
-                                        <li class="{{ str_contains($page_url, 'admin/master') ? 'nav-item menu-open' : 'nav-item' }}">
+                                        <li class="{{ $isMastersActive ? 'nav-item menu-open' : 'nav-item' }}">
                                             <a href="#"
-                                                class="{{ str_contains($page_url, 'admin/master') ? 'nav-link active' : 'nav-link' }} border_class">
+                                                class="{{ $isMastersActive ? 'nav-link active' : 'nav-link' }} border_class">
                                                 <i class="nav-icon fas fa-cogs"></i>
                                                 <p>
                                                     MASTERS
@@ -1405,32 +1411,19 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                                 </li>
 
                                                 @can('manage-users')
-                                                    <li
-                                                        class="{{ (str_contains($page_url, 'admin/roles') || str_contains($page_url, 'admin/users')) ? 'nav-item menu-open' : 'nav-item' }}">
-                                                        <a href="#"
-                                                            class="{{ (str_contains($page_url, 'admin/roles') || str_contains($page_url, 'admin/users')) ? 'nav-link active' : 'nav-link' }}">
+                                                    <li class="nav-item">
+                                                        <a href="{{ route('admin.users.index') }}"
+                                                            class="{{ str_contains($page_url, 'admin/users') ? 'nav-link active' : 'nav-link' }}">
                                                             <i class="far fa-circle nav-icon"></i>
-                                                            <p>
-                                                                User Management
-                                                                <i class="right fas fa-angle-left"></i>
-                                                            </p>
+                                                            <p>Users</p>
                                                         </a>
-                                                        <ul class="nav nav-treeview">
-                                                            <li class="nav-item">
-                                                                <a href="{{ route('admin.users.index') }}"
-                                                                    class="{{ str_contains($page_url, 'admin/users') ? 'nav-link active' : 'nav-link' }}">
-                                                                    <i class="fas fa-circle-notch nav-icon"></i>
-                                                                    <p>Users</p>
-                                                                </a>
-                                                            </li>
-                                                            <li class="nav-item">
-                                                                <a href="{{ route('admin.roles.index') }}"
-                                                                    class="{{ str_contains($page_url, 'admin/roles') ? 'nav-link active' : 'nav-link' }}">
-                                                                    <i class="fas fa-circle-notch nav-icon"></i>
-                                                                    <p>Roles & Permissions</p>
-                                                                </a>
-                                                            </li>
-                                                        </ul>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a href="{{ route('admin.roles.index') }}"
+                                                            class="{{ str_contains($page_url, 'admin/roles') ? 'nav-link active' : 'nav-link' }}">
+                                                            <i class="far fa-circle nav-icon"></i>
+                                                            <p>Role & Permission</p>
+                                                        </a>
                                                     </li>
                                                 @endcan
                                             </ul>

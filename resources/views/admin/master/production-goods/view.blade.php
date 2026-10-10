@@ -1,42 +1,27 @@
 @extends('admin.layouts.app')
 @section('content')
 
-<div class="content-wrapper">
-
-    <!-- Header -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Product Details</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item"><a href="{{route('admin.master.production-goods.index')}}">Available Products</a></li>
-                        <li class="breadcrumb-item active">View Product</li>
-                    </ol>
-                </div>
-            </div>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar">
+        <div class="erp-header-title">
+            <i class="fas fa-tshirt text-primary"></i> Product Details: {{ $data->design_number ?? '-' }}
         </div>
-    </section>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.master.production-goods.index') }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left"></i> Back to Products
+            </a>
+            <a href="{{ route('admin.master.production-goods.edit', ['id' => $data->id]) }}" class="btn-erp btn-erp-primary">
+                <i class="fas fa-edit"></i> Edit Product
+            </a>
+        </div>
+    </div>
 
-    <!-- Content -->
-    <section class="content">
-        <div class="container-fluid">
-            <div class="card card-default">
-
-                <div class="card-header">
-                    <h3 class="card-title">Product Specification</h3>
-
-                    <div class="card-tools">
-                        <a href="{{ route('admin.master.production-goods.edit', ['id' => $data->id]) }}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
-                    </div>
-                </div>
-
-                <div class="card-body">
+    <div class="erp-card">
+        <div class="px-3 py-2 border-bottom bg-light font-weight-bold" style="font-size: 13px; color: var(--erp-text-main);">
+            <i class="fas fa-info-circle mr-1 text-primary"></i> Product Specification
+        </div>
+        <div class="erp-card-body p-3">
 
                     <div class="row">
                         {{-- Company --}}
@@ -380,22 +365,8 @@
                     </div>
 
                 </div> <!-- card-body -->
-
             </div>
-        </div>
-    </section>
-
+    </div>
 </div>
 
 @endsection
-
-@push('scripts')
-<style>
-    .shadow-xs {
-        box-shadow: 0 0 0.2rem rgba(0,0,0,.05);
-    }
-    .uppercase {
-        text-transform: uppercase;
-    }
-</style>
-@endpush

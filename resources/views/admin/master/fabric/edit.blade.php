@@ -1,220 +1,166 @@
 @extends('admin.layouts.app')
 @section('content')
-    <div class="content-wrapper">
-        <!-- Content Header (Page header) -->
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1>Fabric</h1>
-                    </div>
-                    <div class="col-sm-6">
-                        <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                            <li class="breadcrumb-item active">Edit Fabric</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Main content -->
-        <section class="content">
-            <div class="container-fluid">
-                <!-- SELECT2 EXAMPLE -->
-                <div class="card card-default">
-                    <div class="card-header">
-                        <h3 class="card-title">Edit Fabric</h3>
-                    </div>
-                    <form action="{{ route('admin.master.fabric.update') }}" method="post" enctype="multipart/form-data">
-                        @csrf
-                        <input type="hidden" name="id" value="{{ $data->id }}">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1">Supplier Name</label>
-                                        <a href="{{route('admin.master.vendor.create')}}" target="_blank" style="float:right;">Create New +</a>
-                                        <select name="vendor_id" class="form-control select2" style="width: 100%;">
-                                            <option value="">Select Supplier</option>
-                                            @foreach ($vender_data as $single_data)
-                                                <option value="{{ $single_data->id }}"
-                                                    {{ $data->vendor_id == $single_data->id ? 'selected' : '' }}>
-                                                    {{ $single_data->name }}</option>
-                                            @endforeach
-
-                                        </select>
-                                        @if ($errors->has('vendor_id'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('vendor_id') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="exampleInputEmail1">Fabric Name</label>
-                                        <input type="text" name="name" class="form-control"
-                                            placeholder="Enter fabric name" value="{{ $data->name }}">
-                                        @if ($errors->has('name'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('name') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                {{-- <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Fabric Dye</label>
-                                        <select name="dye_id" class="form-control select2" style="width: 100%;">
-                                            @foreach ($fab_dye_data as $single_data)
-                                                <option value="{{ $single_data->id }}"
-                                                    {{ $data->dye_id == $single_data->id ? 'selected' : '' }}>
-                                                    {{ $single_data->sku }}</option>
-                                            @endforeach
-
-                                        </select>
-                                        @if ($errors->has('dye_id'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('dye_id') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div> --}}
-
-                                
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                            <span>Fabric Composition</span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.fabric_composition.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                <a href="javascript:void(0)" class="text-info" id="refreshCompositionBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                            </span>
-                                        </label>
-                                        <select name="composition_id" id="compositionSelect" class="form-control select2" style="width: 100%;">
-                                            <option value="0" {{ $data->composition_id == '' ? 'selected' : '' }}>N/A</option>
-                                            @foreach ($fab_composition_data as $single_data)
-                                                <option value="{{ $single_data->id }}"
-                                                    {{ $data->composition_id == $single_data->id ? 'selected' : '' }}>
-                                                    {{ $single_data->name }}</option>
-                                            @endforeach
-
-                                        </select>
-                                        @if ($errors->has('composition_id'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('composition_id') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                            <span>Unit</span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.fabric_unit.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                <a href="javascript:void(0)" class="text-info" id="refreshUnitBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                            </span>
-                                        </label>
-                                        <select name="fabric_unit_id" id="unitSelect" class="form-control select2" style="width: 100%;">
-                                            <option value="">Select Unit</option>
-                                            @foreach ($fab_unit_data as $single_data)
-                                                <option value="{{ $single_data->id }}"
-                                                    {{ $data->fabric_unit_id == $single_data->id ? 'selected' : '' }}>
-                                                    {{ $single_data->name }} ({{ $single_data->symbol }})</option>
-                                            @endforeach
-                                        </select>
-                                        @if ($errors->has('fabric_unit_id'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('fabric_unit_id') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="status">Status</label>
-                                        <select name="status" id="status" class="form-control">
-                                            <option value="1" {{ $data->status == '1' ? 'selected' : '' }}>Active</option>
-                                            <option value="0" {{ $data->status == '0' ? 'selected' : '' }}>Inactive</option>
-                                        </select>
-                                        @if ($errors->has('status'))
-                                            <span class="invalid-feedback d-block">
-                                                {{ $errors->first('status') }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="exampleInputFile">Main Image</label>
-                                        <div class="input-group">
-                                            <div class="custom-file">
-                                                <input type="file" name="image" class="custom-file-input" id="image-input" onchange="previewImage()"  accept=".jpg,.jpeg,.png">
-                                                <label class="custom-file-label" for="exampleInputFile">Choose file</label>
-                                            </div>
-                                            
-                                            @if ($errors->has('image'))
-                                                <span class="invalid-feedback d-block">
-                                                {{ $errors->first('image') }}
-                                                </span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <img class="" src="{{$data->image}}" alt="Preview" id="image-preview" height="80px" width="80px">
-                                </div>
-
-                                <div class="col-md-12 mt-2">
-                                    <div class="form-group">
-                                        <label for="exampleInputFile">Other Images</label>
-                                        <div class="input-group">
-                                            <div class="custom-file">
-                                                
-                                                <input type="file" name="other_images[]" id="other-images" class="custom-file-input" multiple accept=".jpg,.jpeg,.png">
-                                                <label class="custom-file-label" for="exampleInputFile">Choose file</label>
-                                            </div>
-                                            
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-12 mt-2 d-flex flex-wrap" id="preview-multiple-images">
-                                    @foreach($data->other_images as $single_image)
-                                        <div class="position-relative d-inline-block m-1">
-                                            <img src="{{$single_image->image}}" 
-                                                alt="Preview" 
-                                                class="border rounded" 
-                                                height="80px" 
-                                                width="80px">
-
-                                            <!-- Delete Icon as <a> -->
-                                            <a href="{{ route('admin.master.fabric.deleteImage', ['id' => $single_image->id, 'fabric_id' => $single_image->fabric_id]) }}" 
-                                            class="btn btn-sm btn-danger rounded-circle p-0" 
-                                            style="position:absolute; top:2px; right:2px; width:22px; height:22px; line-height:18px; text-align:center;"
-                                            onclick="return confirm('Are you sure you want to delete this image?')">
-                                                ×
-                                            </a>
-                                        </div>
-                                    @endforeach
-                                </div>
-
-                                <div class="col-md-12">
-                                    <div class="mt-2" style="float:right">
-                                        <button type="submit" class="btn btn-primary">Submit</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </form>
-                </div>
-            </div>
-        </section>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar">
+        <div class="erp-header-title">
+            <i class="fas fa-scroll text-primary"></i> Edit Fabric
+        </div>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.master.fabric.index') }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left"></i> Back to Fabrics
+            </a>
+        </div>
     </div>
+
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show mb-2" role="alert">
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
+    <div class="erp-card">
+        <div class="px-3 py-2 border-bottom bg-light font-weight-bold" style="font-size: 13px; color: var(--erp-text-main);">
+            <i class="fas fa-edit mr-1 text-primary"></i> Fabric Information
+        </div>
+        <form action="{{ route('admin.master.fabric.update') }}" method="post" enctype="multipart/form-data">
+            @csrf
+            <input type="hidden" name="id" value="{{ $data->id }}">
+            <div class="erp-card-body p-3">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label font-weight-bold mb-0" style="font-size: 13px;">Supplier Name <span class="text-danger">*</span></label>
+                            <a href="{{ route('admin.master.vendor.create') }}" target="_blank" style="font-size: 12px; color: var(--brand-dark-green); font-weight: 600;">Create New +</a>
+                        </div>
+                        <select name="vendor_id" class="form-control select2 erp-filter-select" required>
+                            <option value="">Select Supplier</option>
+                            @foreach ($vender_data as $single_data)
+                                <option value="{{ $single_data->id }}" {{ $data->vendor_id == $single_data->id ? 'selected' : '' }}>
+                                    {{ $single_data->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @if ($errors->has('vendor_id'))
+                            <span class="invalid-feedback d-block">{{ $errors->first('vendor_id') }}</span>
+                        @endif
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label font-weight-bold" style="font-size: 13px;">Fabric Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control erp-filter-input" placeholder="Enter fabric name" value="{{ old('name', $data->name) }}" required>
+                        @if ($errors->has('name'))
+                            <span class="invalid-feedback d-block">{{ $errors->first('name') }}</span>
+                        @endif
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label font-weight-bold mb-0" style="font-size: 13px;">Fabric Composition</label>
+                            <span style="font-size: 12px;">
+                                <a href="{{ route('admin.master.fabric_composition.create') }}" target="_blank" class="mr-2" style="color: var(--brand-dark-green); font-weight: 600;"><i class="fas fa-plus"></i> New</a>
+                                <a href="javascript:void(0)" class="text-secondary" id="refreshCompositionBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                            </span>
+                        </div>
+                        <select name="composition_id" id="compositionSelect" class="form-control select2 erp-filter-select">
+                            <option value="0" {{ ($data->composition_id == '' || $data->composition_id == 0) ? 'selected' : '' }}>N/A</option>
+                            @foreach ($fab_composition_data as $single_data)
+                                <option value="{{ $single_data->id }}" {{ $data->composition_id == $single_data->id ? 'selected' : '' }}>
+                                    {{ $single_data->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @if ($errors->has('composition_id'))
+                            <span class="invalid-feedback d-block">{{ $errors->first('composition_id') }}</span>
+                        @endif
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label font-weight-bold mb-0" style="font-size: 13px;">Unit <span class="text-danger">*</span></label>
+                            <span style="font-size: 12px;">
+                                <a href="{{ route('admin.master.fabric_unit.create') }}" target="_blank" class="mr-2" style="color: var(--brand-dark-green); font-weight: 600;"><i class="fas fa-plus"></i> New</a>
+                                <a href="javascript:void(0)" class="text-secondary" id="refreshUnitBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                            </span>
+                        </div>
+                        <select name="fabric_unit_id" id="unitSelect" class="form-control select2 erp-filter-select" required>
+                            <option value="">Select Unit</option>
+                            @foreach ($fab_unit_data as $single_data)
+                                <option value="{{ $single_data->id }}" {{ $data->fabric_unit_id == $single_data->id ? 'selected' : '' }}>
+                                    {{ $single_data->name }} ({{ $single_data->symbol }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @if ($errors->has('fabric_unit_id'))
+                            <span class="invalid-feedback d-block">{{ $errors->first('fabric_unit_id') }}</span>
+                        @endif
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label font-weight-bold" style="font-size: 13px;">Status</label>
+                        <select name="status" id="status" class="form-control select2 erp-filter-select">
+                            <option value="1" {{ old('status', $data->status) == '1' ? 'selected' : '' }}>Active</option>
+                            <option value="0" {{ old('status', $data->status) == '0' ? 'selected' : '' }}>Inactive</option>
+                        </select>
+                        @if ($errors->has('status'))
+                            <span class="invalid-feedback d-block">{{ $errors->first('status') }}</span>
+                        @endif
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label font-weight-bold" style="font-size: 13px;">Main Image</label>
+                        <div class="custom-file">
+                            <input type="file" name="image" class="custom-file-input" id="image-input" onchange="previewImage()" accept=".jpg,.jpeg,.png">
+                            <label class="custom-file-label" for="image-input">Choose file</label>
+                        </div>
+                        @if ($errors->has('image'))
+                            <span class="invalid-feedback d-block">{{ $errors->first('image') }}</span>
+                        @endif
+                    </div>
+
+                    <div class="col-md-2 mb-3 d-flex align-items-center">
+                        <img src="{{ $data->image ?: asset('images/image-placeholder.png') }}" alt="Preview" id="image-preview" class="border rounded" style="width: 70px; height: 70px; object-fit: cover;">
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label font-weight-bold" style="font-size: 13px;">Other Images</label>
+                        <div class="custom-file">
+                            <input type="file" name="other_images[]" id="other-images" class="custom-file-input" multiple accept=".jpg,.jpeg,.png">
+                            <label class="custom-file-label" for="other-images">Choose multiple files</label>
+                        </div>
+                        <div class="mt-2 d-flex flex-wrap" id="preview-multiple-images" style="gap: 8px;">
+                            @foreach($data->other_images as $single_image)
+                                <div class="position-relative d-inline-block border rounded overflow-hidden" style="width: 70px; height: 70px;">
+                                    <img src="{{ $single_image->image }}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <a href="{{ route('admin.master.fabric.deleteImage', ['id' => $single_image->id, 'fabric_id' => $single_image->fabric_id]) }}" 
+                                       class="btn btn-sm btn-danger rounded-circle p-0 position-absolute" 
+                                       style="top: 2px; right: 2px; width: 18px; height: 18px; line-height: 16px; text-align: center; font-size: 12px;"
+                                       onclick="return confirm('Are you sure you want to delete this image?')"
+                                       title="Delete image">
+                                        &times;
+                                    </a>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-3 py-2 border-top bg-white d-flex justify-content-end" style="gap: 8px;">
+                <a href="{{ route('admin.master.fabric.index') }}" class="btn-erp btn-erp-outline">Cancel</a>
+                <button type="submit" class="btn-erp btn-erp-primary">
+                    <i class="fas fa-save"></i> Update
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script>
     $(document).ready(function() {
@@ -272,27 +218,27 @@
             reader.onload = function(e) {
                 imagePreview.src = e.target.result;
             };
-            
             reader.readAsDataURL(imageInput.files[0]);
-        } else {
-            // If no file is selected or supported, clear the preview
-            imagePreview.src = "";
         }
     }
+
     document.getElementById('other-images').addEventListener('change', function() {
         let previewContainer = document.getElementById('preview-multiple-images');
-        // previewContainer.innerHTML = ""; // clear old previews
-
         if (this.files) {
             [...this.files].forEach(file => {
                 let reader = new FileReader();
                 reader.onload = function(e) {
+                    let imgWrapper = document.createElement("div");
+                    imgWrapper.classList.add("border", "rounded", "overflow-hidden");
+                    imgWrapper.style.width = "70px";
+                    imgWrapper.style.height = "70px";
                     let img = document.createElement("img");
                     img.src = e.target.result;
-                    img.classList.add("m-1", "border", "rounded");
-                    img.style.width = "80px";
-                    img.style.height = "80px";
-                    previewContainer.appendChild(img);
+                    img.style.width = "100%";
+                    img.style.height = "100%";
+                    img.style.objectFit = "cover";
+                    imgWrapper.appendChild(img);
+                    previewContainer.appendChild(imgWrapper);
                 };
                 reader.readAsDataURL(file);
             });

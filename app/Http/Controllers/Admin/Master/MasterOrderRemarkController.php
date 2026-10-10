@@ -31,10 +31,14 @@ class MasterOrderRemarkController extends Controller
         
         $data = [];
         foreach($remarks as $key => $remark) {
-            $status = $remark->status == 1 ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Inactive</span>';
+            $status = $remark->status == 1 
+                ? '<span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 8px;">Active</span>' 
+                : '<span class="badge badge-secondary" style="font-size: 11px; padding: 3px 8px;">Inactive</span>';
             $action = '
-                <a href="' . route('admin.master.order-remarks.edit', ['id' => $remark->id]) . '" class="btn btn-sm btn-primary" title="Edit"><i class="fas fa-edit"></i></a>
-                <a href="' . route('admin.master.order-remarks.delete', ['id' => $remark->id]) . '" class="btn btn-sm btn-danger" onclick="return confirm(\'Are you sure?\')" title="Delete"><i class="fas fa-trash"></i></a>
+                <div class="d-inline-flex" style="gap: 4px;">
+                    <a href="' . route('admin.master.order-remarks.edit', ['id' => $remark->id]) . '" class="erp-action-btn erp-btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
+                    <a href="javascript:void(0)" onclick="deleteData(' . $remark->id . ')" class="erp-action-btn erp-btn-delete" title="Delete"><i class="fas fa-trash"></i></a>
+                </div>
             ';
             $data[] = [
                 'DT_RowIndex' => $key + 1,

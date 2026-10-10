@@ -52,21 +52,23 @@ class SalesAgentDataTable
 
             ->editColumn('status', function ($queue) {
                 $status = $queue->status;
-                return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
+                return ($status == 1) 
+                    ? '<span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 8px;">Active</span>' 
+                    : '<span class="badge badge-secondary" style="font-size: 11px; padding: 3px 8px;">Inactive</span>';
             })
             ->editColumn('total_balance', function ($queue) {
                 $balance = $queue->total_balance ?? 0;
-                $color = ($balance >= 0) ? 'green' : 'red';
+                $color = ($balance >= 0) ? 'var(--erp-green-primary)' : '#dc2626';
                 $type = ($balance >= 0) ? 'Credit' : 'Debit';
                 return '<span style="color:' . $color . '; font-weight:bold;">' . number_format(abs($balance), 2) . ' (' . $type . ')</span>';
             })
             ->addColumn('opening_balance', function ($queue) {
                 if ($queue->currentOpeningBalance) {
-                    $type = $queue->currentOpeningBalance->balance_type == 'Credit' ? 'green' : 'red';
+                    $type = $queue->currentOpeningBalance->balance_type == 'Credit' ? 'var(--erp-green-primary)' : '#dc2626';
                     $label = $queue->currentOpeningBalance->balance_type;
                     return '<span style="color:' . $type . '; font-weight:bold;">' . number_format($queue->currentOpeningBalance->amount, 2) . ' (' . $label . ')</span>';
                 }
-                return '0.00';
+                return '<span class="text-muted">0.00</span>';
             })
             ->addColumn('shops_count', function ($queue) {
                 return $queue->shops_count ?? 0;
@@ -74,9 +76,11 @@ class SalesAgentDataTable
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
                 return '
-                <a href="' . route('admin.master.sales-agent.view', ['id' => $parameter]) . '" class="mr-2" data-toggle="tooltip" data-placement="top" title="View"><i class="fas fa-eye text-primary"></i></a>
-                <a href="' . route('admin.master.sales-agent.edit', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                <a href="' . route('admin.master.sales-agent.delete', ['id' => $parameter]) . '" class="ml-2" onclick="return confirm(\'Are you sure?\')" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger"></i></a>
+                <div class="d-inline-flex" style="gap: 4px;">
+                    <a href="' . route('admin.master.sales-agent.view', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-view" title="View"><i class="fas fa-eye"></i></a>
+                    <a href="' . route('admin.master.sales-agent.edit', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
+                    <a href="' . route('admin.master.sales-agent.delete', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-delete" onclick="return confirm(\'Are you sure?\')" title="Delete"><i class="fas fa-trash"></i></a>
+                </div>
                 ';
             })
 

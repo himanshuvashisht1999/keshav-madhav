@@ -28,13 +28,17 @@ class FabricUnitDataTable  {
             }) 
          
             ->editColumn('status', function ($queue) {
-				$status= $queue->status;
-                return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
+				$status = $queue->status;
+                return ($status == 1) 
+                    ? '<span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 8px;">Active</span>' 
+                    : '<span class="badge badge-secondary" style="font-size: 11px; padding: 3px 8px;">Inactive</span>';
             })
             ->addColumn('action', function ($queue) {
-				$parameter= $queue->id;
+				$parameter = $queue->id;
                 return '
-                <a href="' . route('admin.master.fabric_unit.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                <div class="d-inline-flex" style="gap: 4px;">
+                    <a href="' . route('admin.master.fabric_unit.edit',['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
+                </div>
                 ';
             })
             

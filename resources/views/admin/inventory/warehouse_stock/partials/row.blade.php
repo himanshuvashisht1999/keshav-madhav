@@ -26,7 +26,7 @@
         {{ isset($row->mrp) && $row->mrp !== null ? '₹' . number_format($row->mrp, 2) : '-' }}
     </td>
     <td class="text-center">
-        <a href="{{ route('admin.inventory.warehouse_stock.show', [$row->product_id ?? 0, $row->size_set_id ?? 0, $row->rack_id ?? 0]) }}" class="btn btn-xs btn-primary shadow-xs mr-1" title="View">
+        <a href="{{ route('admin.inventory.warehouse_stock.show', [$row->product_id ?? 0, $row->size_set_id ?? 0, $row->rack_id ?? 0]) }}" class="erp-action-btn erp-btn-view" title="View">
             <i class="fas fa-eye"></i>
         </a>
     </td>

@@ -59,27 +59,31 @@ class VendorDataTable  {
             })
             ->editColumn('balance', function ($queue) {
                 $balance = $queue->balance;
-                $color = ($balance >= 0) ? 'green' : 'red';
+                $color = ($balance >= 0) ? 'var(--erp-green-primary)' : 'var(--erp-red-primary, #dc2626)';
                 $type = ($balance >= 0) ? 'Credit' : 'Debit';
-                return '<span style="color:' . $color . '; font-weight:bold;">' . number_format(abs($balance), 2) . ' (' . $type . ')</span>';
+                return '<span style="color:' . $color . '; font-weight:700;">' . number_format(abs($balance), 2) . ' (' . $type . ')</span>';
             })
             ->addColumn('opening_balance', function ($queue) {
                 if ($queue->currentOpeningBalance) {
-                    $type = $queue->currentOpeningBalance->balance_type == 'Credit' ? 'green' : 'red';
+                    $color = $queue->currentOpeningBalance->balance_type == 'Credit' ? 'var(--erp-green-primary)' : 'var(--erp-red-primary, #dc2626)';
                     $label = $queue->currentOpeningBalance->balance_type;
-                    return '<span style="color:' . $type . '; font-weight:bold;">' . number_format($queue->currentOpeningBalance->amount, 2) . ' (' . $label . ')</span>';
+                    return '<span style="color:' . $color . '; font-weight:700;">' . number_format($queue->currentOpeningBalance->amount, 2) . ' (' . $label . ')</span>';
                 }
-                return '0.00';
+                return '<span style="color:var(--erp-green-primary); font-weight:700;">0.00 (Credit)</span>';
             })
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
-                return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
+                return ($status == 1) 
+                    ? '<span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 8px;">Active</span>' 
+                    : '<span class="badge badge-secondary" style="font-size: 11px; padding: 3px 8px;">Inactive</span>';
             })
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
                 return '
-                <a href="' . route('admin.master.vendor.edit',['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger"></i></a>
+                <div class="d-inline-flex" style="gap: 4px;">
+                    <a href="' . route('admin.master.vendor.edit',['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
+                    <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="erp-action-btn erp-btn-delete" title="Delete"><i class="fas fa-trash"></i></a>
+                </div>
                 ';
             })
             

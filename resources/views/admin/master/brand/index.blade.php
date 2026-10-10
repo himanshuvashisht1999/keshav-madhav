@@ -1,51 +1,46 @@
 @extends('admin.layouts.app')
-@section('content')
-<div class="content-wrapper">
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Manage Brands</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Brands</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <section class="content">
-        <div class="container-fluid">
-            <div class="card card-default">
-                <div class="card-body table-responsive">
-                    <table id="brands-table" class="table table-bordered table-hover">
-                        <thead>
-                            <tr role="row" class="filter">
-                                <td></td>
-                                <td></td>
-                                <td>
-                                    <input type="text" class="form-control" name="name" id="search_name" placeholder="Search Name" autocomplete="off">
-                                </td>
-                                <td></td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <th>ID</th>
-                                <th>Logo</th>
-                                <th>Name</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
+@section('content')
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar">
+        <div class="erp-header-title">
+            <i class="fas fa-tag text-primary"></i> Manage Brands
         </div>
-    </section>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.master.brand.create') }}" class="btn-erp btn-erp-primary">
+                <i class="fas fa-plus"></i> Add Brand
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Data Table Card -->
+    <div class="erp-card">
+        <div class="erp-card-body p-2 table-responsive">
+            <table id="brands-table" class="erp-table table table-bordered table-hover">
+                <thead>
+                    <tr role="row" class="filter">
+                        <td></td>
+                        <td></td>
+                        <td>
+                            <input type="text" class="form-control erp-filter-input" name="name" id="search_name" placeholder="Search name..." autocomplete="off">
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th style="width: 70px;" class="text-center">Logo</th>
+                        <th>Name</th>
+                        <th style="width: 100px;" class="text-center">Status</th>
+                        <th style="width: 100px;" class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -62,24 +57,15 @@
                 url: '{!! route('admin.master.brand.indexList') !!}',
                 data: function (d) {
                     d.name = $('#search_name').val();
-                }
+                },
+                orderable: false
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
-                {data: 'logo', name: 'logo'},
+                {data: 'logo', name: 'logo', orderable: false, searchable: false, className: 'text-center'},
                 {data: 'name', name: 'name'},
-                {data: 'status', name: 'status'},
-                {data: 'action', name: 'action', searchable: false}
-            ],
-            dom: 'lBfrtip',
-            buttons: [
-                {
-                    text: 'Add Brand',
-                    className: 'btn btn-primary',
-                    action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.brand.create') }}";
-                    }
-                }
+                {data: 'status', name: 'status', className: 'text-center'},
+                {data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center'}
             ]
         });
 
@@ -89,10 +75,10 @@
         });
     });
 
-    function deleteItem(id) {
+    function deleteItem(id){
         Swal.fire({
             title: "Are you sure?",
-            text: "This brand will be marked as inactive!",
+            text: "You won't be able to revert this!",
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
@@ -100,20 +86,7 @@
             confirmButtonText: "Yes, delete it!"
         }).then((result) => {
             if (result.isConfirmed) {
-                $.ajax({
-                    url: "{{ route('admin.master.brand.delete') }}",
-                    type: "POST",
-                    data: {
-                        id: id,
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            Swal.fire("Deleted!", response.message, "success");
-                            $('#brands-table').DataTable().draw();
-                        }
-                    }
-                });
+                window.location.href = "{{ route('admin.master.brand.delete') }}?id=" + id;
             }
         });
     }

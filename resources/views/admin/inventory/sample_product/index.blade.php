@@ -1,113 +1,94 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<style>
-    :root {
-        --primary: #6366f1;
-        --bg-main: #f8fafc;
-        --border: #e2e8f0;
-    }
-    .content-wrapper {
-        background-color: var(--bg-main);
-    }
-    .premium-card {
-        background: #fff;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    }
-    .table thead th {
-        background: #fcfdfe;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.05em;
-        color: #64748b;
-        border-bottom: 1px solid var(--border);
-    }
-    .barcode-display {
-        font-family: monospace;
-        background: #f1f5f9;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.875rem;
-    }
-</style>
 
-<div class="content-wrapper">
-    <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="h3 font-weight-bold text-dark mb-0">Sample Catalogs</h1>
-                <p class="text-muted">Manage your grouped sample catalogs for customers.</p>
+<div class="content-wrapper erp-page p-2">
+
+    {{-- ================= HEADER ================= --}}
+    <div class="erp-header-bar mb-3">
+        <div class="d-flex align-items-center">
+            <h1 class="erp-page-title mb-0">Sample catalogs</h1>
+            <div class="erp-report-meta ml-3">
+                <span class="meta-item"><i class="fas fa-layer-group mr-1 text-muted"></i> Grouped sample catalogs for customers</span>
             </div>
-            <a href="{{ route('admin.inventory.sample-product.create') }}" class="btn btn-primary px-4">
-                <i class="fas fa-plus mr-2"></i> Create New Catalog
+        </div>
+        <div class="d-flex align-items-center">
+            <a href="{{ route('admin.inventory.sample-product.create') }}" class="btn-erp btn-erp-primary">
+                <i class="fas fa-plus mr-1"></i> Create new catalog
             </a>
         </div>
+    </div>
 
-        <div class="premium-card mb-4">
-            <div class="card-body">
-                <form action="{{ route('admin.inventory.sample-product.index') }}" method="GET" class="row align-items-end">
+    {{-- ================= FILTERS ================= --}}
+    <div class="card erp-card mb-3">
+        <div class="card-body p-2">
+            <form action="{{ route('admin.inventory.sample-product.index') }}" method="GET">
+                <div class="row g-2 align-items-end">
                     <div class="col-md-3">
-                        <label class="form-label text-muted small text-uppercase font-weight-bold">Batch No</label>
-                        <input type="text" name="batch_no" class="form-control" placeholder="Search batch no..." value="{{ request('batch_no') }}">
+                        <label class="erp-label mb-1">Batch no</label>
+                        <input type="text" name="batch_no" class="form-control form-control-sm" placeholder="Search batch no..." value="{{ request('batch_no') }}">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label text-muted small text-uppercase font-weight-bold">Date From</label>
-                        <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
+                        <label class="erp-label mb-1">Date from</label>
+                        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ request('date_from') }}">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label text-muted small text-uppercase font-weight-bold">Date To</label>
-                        <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
+                        <label class="erp-label mb-1">Date to</label>
+                        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request('date_to') }}">
                     </div>
-                    <div class="col-md-3">
-                        <button type="submit" class="btn btn-primary px-4"><i class="fas fa-search mr-2"></i> Filter</button>
-                        <a href="{{ route('admin.inventory.sample-product.index') }}" class="btn btn-outline-secondary ml-2">Clear</a>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn-erp btn-erp-primary mr-2"><i class="fas fa-search mr-1"></i> Filter</button>
+                        <a href="{{ route('admin.inventory.sample-product.index') }}" class="btn-erp btn-erp-outline">Reset</a>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
+    </div>
 
-        <div class="premium-card">
+    {{-- ================= TABLE ================= --}}
+    <div class="card erp-card">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table erp-table mb-0">
                     <thead>
                         <tr>
-                            <th class="px-4 py-3">Date</th>
-                            <th class="py-3">Batch No</th>
-                            <th class="py-3 text-center">Total Items</th>
-                            <th class="py-3 text-right px-4">Actions</th>
+                            <th style="width: 130px;">Date</th>
+                            <th>Batch no</th>
+                            <th class="text-center" style="width: 140px;">Total items</th>
+                            <th class="text-right" style="width: 220px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($batches as $batch)
                         <tr>
-                            <td class="px-4 align-middle text-muted small">
+                            <td class="text-muted small align-middle">
                                 {{ $batch->created_at->format('d M Y') }}
                             </td>
                             <td class="align-middle">
                                 <span class="barcode-display">{{ $batch->batch_no }}</span>
                             </td>
                             <td class="align-middle text-center">
-                                <span class="badge badge-info px-3 py-2">{{ $batch->products_count }} Products</span>
+                                <span class="erp-stat-pill font-weight-bold" style="padding: 2px 8px; font-size: 11px;">
+                                    <strong>{{ $batch->products_count }}</strong> products
+                                </span>
                             </td>
-                            <td class="align-middle text-right px-4">
-                                <a href="{{ route('admin.inventory.sample-product.show', $batch->id) }}" class="btn btn-sm btn-outline-info mr-1" title="View Catalog">
+                            <td class="align-middle text-right">
+                                <a href="{{ route('admin.inventory.sample-product.show', $batch->id) }}" class="erp-action-btn erp-btn-view" title="View catalog">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ route('admin.inventory.sample-product.edit', $batch->id) }}" class="btn btn-sm btn-outline-warning mr-1" title="Edit Catalog">
+                                <a href="{{ route('admin.inventory.sample-product.edit', $batch->id) }}" class="erp-action-btn erp-btn-edit" title="Edit catalog">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="{{ route('admin.inventory.sample-product.generate-pdf-batch', $batch->id) }}?show_wsp=yes" class="btn btn-sm btn-outline-success mr-1" title="PDF with WSP">
-                                    <i class="fas fa-file-invoice-dollar"></i> WSP
+                                <a href="{{ route('admin.inventory.sample-product.generate-pdf-batch', $batch->id) }}?show_wsp=yes" class="btn-erp btn-erp-outline btn-erp-xs mr-1" title="PDF with WSP" target="_blank">
+                                    <i class="fas fa-file-invoice-dollar text-success mr-1"></i> WSP
                                 </a>
-                                <a href="{{ route('admin.inventory.sample-product.generate-pdf-batch', $batch->id) }}?show_wsp=no" class="btn btn-sm btn-outline-primary mr-1" title="PDF No Price">
-                                    <i class="fas fa-file-pdf"></i> NO WSP
+                                <a href="{{ route('admin.inventory.sample-product.generate-pdf-batch', $batch->id) }}?show_wsp=no" class="btn-erp btn-erp-outline btn-erp-xs mr-1" title="PDF without price" target="_blank">
+                                    <i class="fas fa-file-pdf text-danger mr-1"></i> No WSP
                                 </a>
                                 <form action="{{ route('admin.inventory.sample-product.destroy', $batch->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this entire catalog batch?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Batch">
+                                    <button type="submit" class="erp-action-btn erp-btn-delete border-0" title="Delete batch">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </form>
@@ -116,8 +97,8 @@
                         @empty
                         <tr>
                             <td colspan="4" class="text-center py-5 text-muted">
-                                <i class="fas fa-history fa-3x mb-3"></i>
-                                <p>No sample catalogs found.</p>
+                                <i class="fas fa-boxes fa-3x mb-3 text-secondary d-block"></i>
+                                <p class="mb-0">No sample catalogs found.</p>
                             </td>
                         </tr>
                         @endforelse
@@ -125,11 +106,13 @@
                 </table>
             </div>
             @if($batches->hasPages())
-            <div class="card-footer bg-white border-0">
+            <div class="card-footer bg-white border-top py-2 px-3">
                 {{ $batches->links() }}
             </div>
             @endif
         </div>
     </div>
+
 </div>
+
 @endsection

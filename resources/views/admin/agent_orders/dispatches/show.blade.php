@@ -1,365 +1,401 @@
 @extends('admin.layouts.app')
 
+@section('title', 'Dispatch #' . str_pad($dispatch->id, 5, '0', STR_PAD_LEFT))
+
 @section('content')
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-        :root {
-            --bg-main: #f8fafc;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
-
-        .content-wrapper {
-            background-color: var(--bg-main);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            padding-bottom: 2rem;
-        }
-
-        .premium-page-header {
-            padding: 1.5rem 0;
-            background: #fff;
-            border-bottom: 1px solid #e2e8f0;
-            margin-bottom: 1.5rem;
-        }
-
-        .page-title {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--text-main);
-            letter-spacing: -0.025em;
-            margin: 0 0 0.25rem 0;
-            display: flex;
-            align-items: center;
-        }
-
-        .page-title i {
-            color: #6366f1;
-            background: #eef2ff;
-            padding: 0.5rem;
-            border-radius: 10px;
-            margin-right: 0.75rem;
-            font-size: 1.25rem;
-        }
-
-        .stat-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            transition: all 0.2s;
-            box-shadow: var(--shadow-sm);
-            height: 100%;
-        }
-
-        .stat-card:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
-            border-color: #cbd5e1;
-        }
-
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            flex-shrink: 0;
-        }
-
-        .stat-info {
-            flex-grow: 1;
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-value {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: var(--text-main);
-            margin: 0;
-        }
-
-        .btn-action {
-            border-radius: 8px;
-            padding: 0.5rem 1rem;
-            font-weight: 600;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.2s;
-            border: none;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn-action:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .bg-soft-primary { background: #eef2ff; color: #4f46e5; }
-        .bg-soft-success { background: #ecfdf5; color: #059669; }
-        .bg-soft-warning { background: #fffbeb; color: #d97706; }
-        .bg-soft-info { background: #f0fdfa; color: #0d9488; }
-        .bg-soft-danger { background: #fef2f2; color: #dc2626; }
-        .bg-soft-secondary { background: #f8fafc; color: #475569; }
-        .bg-primary-gradient { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #fff; }
-
-        .order-card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: var(--shadow-md);
-            background: #fff;
-            overflow: hidden;
-            margin-bottom: 1.5rem;
-        }
-
-        .order-card-header {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            background: #fcfdfe;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .table thead th {
-            background: #f8fafc;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            font-weight: 700;
-            color: var(--text-muted);
-            border-top: none;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 1rem 1.5rem;
-        }
-
-        .table td {
-            padding: 1rem 1.5rem;
-            vertical-align: middle;
-            color: var(--text-main);
-            font-size: 0.875rem;
-            border-top: 1px solid #f1f5f9;
-        }
-    </style>
-
-    <div class="content-wrapper">
-        <div class="content-header" style="background: #fff; border-bottom: 1px solid #e2e8f0; padding: 1.25rem 0; margin-bottom: 1.5rem;">
-            <div class="container-fluid">
-                <div class="row align-items-center">
-                    <div class="col-md-5">
-                        <h1 class="m-0 font-weight-bold text-dark" style="font-size: 1.5rem; letter-spacing: -0.025em;">
-                            <i class="fas fa-truck-loading text-primary mr-2"></i> Dispatch #DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}
-                        </h1>
-                        <p class="text-muted mb-0 mt-1" style="font-size: 0.875rem;">
-                            Party: <strong class="text-dark">
-                                @if ($dispatch->party_type === 'vendor')
-                                    {{ $dispatch->vendor->name ?? 'N/A' }} <span class="badge badge-warning shadow-sm ml-1" style="font-size: 10px;">VENDOR</span>
-                                @else
-                                    {{ $dispatch->shop->name ?? 'N/A' }}
-                                @endif
-                            </strong> 
-                            <span class="mx-2 text-light-gray">|</span>
-                            Agent: <strong class="text-dark">{{ $dispatch->agent->name ?? 'Direct' }}</strong>
-                            
-                            @if($dispatch->company_id)
-                                <span class="mx-2 text-light-gray">|</span>
-                                Company: <strong class="text-dark">{{ $dispatch->company->name ?? 'N/A' }}</strong>
-                            @endif
-
-                            @if($dispatch->bill_no)
-                                <span class="mx-2 text-light-gray">|</span>
-                                Bill No: <strong class="text-dark">{{ $dispatch->bill_no }}</strong>
-                            @endif
-                        </p>
-                    </div>
-                    <div class="col-md-7 text-md-right mt-3 mt-md-0 d-flex flex-wrap align-items-center justify-content-md-end" style="gap: 0.5rem;">
-                        @if(!$isFabric)
-                        <div>
-                            <select id="brandSelect" class="form-control form-control-sm shadow-sm"
-                                style="border-radius: 8px; min-width: 120px; height: 36px; border: 1px solid #e2e8f0;">
-                                <option value="actual">Actual Brand</option>
-                                <option value="2">Surgical</option>
-                                <option value="1">Snapkid</option>
-                            </select>
-                        </div>
-                        @endif
-                        
-                        <button type="button" class="btn btn-action bg-white border text-warning" data-toggle="modal" data-target="#editInvoiceModal" title="Edit Invoice">
-                            <i class="fas fa-edit"></i> <span class="d-none d-xl-inline">Edit Invoice</span>
-                        </button>
-
-                        <button type="button" class="btn btn-action bg-white border text-primary" data-toggle="modal" data-target="#editItemsModal" title="Edit Items Prices">
-                            <i class="fas fa-tags"></i> <span class="d-none d-xl-inline">Edit Items</span>
-                        </button>
-                        
-                        <a href="{{ route('admin.agent-orders.dispatches.return.create', $dispatch->id) }}" class="btn btn-action bg-white border text-danger" title="Sales Return">
-                            <i class="fas fa-undo"></i> <span class="d-none d-xl-inline">Sales Return</span>
-                        </a>
-                        
-                        @php
-                            $hasReturns = $dispatch->returns()->exists();
-                        @endphp
-                        @if($hasReturns)
-                        <button type="button" class="btn btn-action bg-soft-danger text-muted border-0" onclick="alert('Cannot delete this dispatch because one or more sales returns are created against it. Please delete the sales return(s) first.')" title="Cannot delete: Sales Return exists" style="cursor: not-allowed; opacity: 0.6;">
-                            <i class="fas fa-trash-alt"></i> <span class="d-none d-xl-inline">Delete</span>
-                        </button>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- Header Bar -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title">
+                    Dispatch #DSP-{{ str_pad($dispatch->id, 5, '0', STR_PAD_LEFT) }}
+                </h1>
+                <p class="erp-page-subtitle">
+                    Party: <strong class="text-dark">
+                        @if ($dispatch->party_type === 'vendor')
+                            {{ $dispatch->vendor->name ?? 'N/A' }} <span class="badge-erp-status badge-erp-warning ml-1">Vendor</span>
                         @else
-                        <a href="{{ route('admin.agent-orders.dispatches.destroy', $dispatch->id) }}" class="btn btn-action bg-soft-danger text-danger border-0" onclick="return confirm('Are you sure you want to PERMANENTLY delete this dispatch? This will reverse stock and customer balance.')" title="Delete Dispatch">
-                            <i class="fas fa-trash-alt"></i> <span class="d-none d-xl-inline">Delete</span>
-                        </a>
+                            {{ $dispatch->shop->name ?? 'N/A' }}
                         @endif
+                    </strong> 
+                    <span class="mx-2 text-muted">|</span>
+                    Agent: <strong class="text-dark">{{ $dispatch->agent->name ?? 'Direct' }}</strong>
+                    
+                    @if($dispatch->company_id)
+                        <span class="mx-2 text-muted">|</span>
+                        Company: <strong class="text-dark">{{ $dispatch->company->name ?? 'N/A' }}</strong>
+                    @endif
 
-                        @if(!$isFabric)
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-action bg-soft-primary text-primary" data-toggle="modal" data-target="#customPrnModal" style="border-top-right-radius: 0; border-bottom-right-radius: 0;" title="Download Barcode (PRN)">
-                                <i class="fas fa-barcode"></i> PRN
-                            </button>
-                            <button type="button" class="btn btn-action bg-soft-primary text-primary dropdown-toggle dropdown-toggle-split px-2" style="border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: 1px solid rgba(99, 102, 241, 0.2);" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Barcode Options">
-                                <span class="sr-only">Toggle Dropdown</span>
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-right shadow-sm" style="border-radius: 8px;">
-                                <a class="dropdown-item py-2 font-weight-bold text-primary" href="#" data-toggle="modal" data-target="#customPrnModal">
-                                    <i class="fas fa-sliders-h text-primary mr-2"></i> Custom PRN (Boxes / Pieces / MRP)
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.dispatches.generate-prn', $dispatch->id) }}">
-                                    <i class="fas fa-barcode text-muted mr-2"></i> Default PRN (Boxes, Standard)
-                                </a>
-                                <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.dispatches.download-barcode-pdf', $dispatch->id) }}" target="_blank">
-                                    <i class="fas fa-file-pdf text-danger mr-2"></i> Download Barcodes (PDF)
-                                </a>
-                            </div>
+                    @if($dispatch->bill_no)
+                        <span class="mx-2 text-muted">|</span>
+                        Bill no: <strong class="text-dark">{{ $dispatch->bill_no }}</strong>
+                    @endif
+                </p>
+            </div>
+            <div class="d-flex flex-wrap align-items-center justify-content-end" style="gap: 5px;">
+                @if(!$isFabric)
+                <div>
+                    <select id="brandSelect" class="form-control form-control-sm erp-input" style="min-width: 120px; height: 31px;">
+                        <option value="actual">Actual Brand</option>
+                        <option value="2">Surgical</option>
+                        <option value="1">Snapkid</option>
+                    </select>
+                </div>
+                @endif
+                
+                <button type="button" class="btn-erp btn-erp-outline" data-toggle="modal" data-target="#editInvoiceModal" title="Edit Invoice">
+                    <i class="fas fa-edit mr-1"></i> Edit Invoice
+                </button>
+
+                <button type="button" class="btn-erp btn-erp-outline" data-toggle="modal" data-target="#editItemsModal" title="Edit Items Prices">
+                    <i class="fas fa-tags mr-1"></i> Edit Items
+                </button>
+                
+                <a href="{{ route('admin.agent-orders.dispatches.return.create', $dispatch->id) }}" class="btn-erp btn-erp-outline text-danger border-danger" title="Sales Return">
+                    <i class="fas fa-undo mr-1"></i> Sales Return
+                </a>
+                
+                @php
+                    $hasReturns = $dispatch->returns()->exists();
+                @endphp
+                @if($hasReturns)
+                <button type="button" class="btn-erp btn-erp-secondary" onclick="alert('Cannot delete this dispatch because one or more sales returns are created against it. Please delete the sales return(s) first.')" title="Cannot delete: Sales Return exists" style="cursor: not-allowed; opacity: 0.6;">
+                    <i class="fas fa-trash-alt mr-1"></i> Delete
+                </button>
+                @else
+                <a href="{{ route('admin.agent-orders.dispatches.destroy', $dispatch->id) }}" class="btn-erp btn-erp-danger" onclick="return confirm('Are you sure you want to PERMANENTLY delete this dispatch? This will reverse stock and customer balance.')" title="Delete Dispatch">
+                    <i class="fas fa-trash-alt mr-1"></i> Delete
+                </a>
+                @endif
+
+                @if(!$isFabric)
+                <div class="btn-group">
+                    <button type="button" class="btn-erp btn-erp-primary" data-toggle="modal" data-target="#customPrnModal" title="Download Barcode (PRN)">
+                        <i class="fas fa-barcode mr-1"></i> PRN
+                    </button>
+                    <button type="button" class="btn-erp btn-erp-primary dropdown-toggle dropdown-toggle-split px-2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Barcode Options">
+                        <span class="sr-only">Toggle Dropdown</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right shadow border-0">
+                        <a class="dropdown-item py-2 font-weight-bold" href="#" data-toggle="modal" data-target="#customPrnModal" style="color: #05421c;">
+                            <i class="fas fa-sliders-h mr-2"></i> Custom PRN (Boxes / Pieces / MRP)
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.dispatches.generate-prn', $dispatch->id) }}">
+                            <i class="fas fa-barcode text-muted mr-2"></i> Default PRN (Boxes, Standard)
+                        </a>
+                        <a class="dropdown-item py-2" href="{{ route('admin.agent-orders.dispatches.download-barcode-pdf', $dispatch->id) }}" target="_blank">
+                            <i class="fas fa-file-pdf text-danger mr-2"></i> Download Barcodes (PDF)
+                        </a>
+                    </div>
+                </div>
+                @endif
+
+                <a href="{{ route('admin.agent-orders.dispatches.download-packing-slip', $dispatch->id) }}" id="packingSlipBtn" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-box-open mr-1"></i> Packing Slip
+                </a>
+                
+                <a href="{{ route('admin.agent-orders.dispatches.send-whatsapp-packing-slip', $dispatch->id) }}" id="waPackingSlipBtn" class="btn-erp text-white" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $dispatch->shop->phone ?? $dispatch->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + (this.href.includes('?') ? '&' : '?') + 'phone=' + encodeURIComponent(phone); }">
+                    <i class="fab fa-whatsapp mr-1"></i> WA Packing Slip
+                </a>
+                
+                <a href="{{ route('admin.agent-orders.dispatches.download-invoice', $dispatch->id) }}" id="invoiceBtn" class="btn-erp btn-erp-primary">
+                    <i class="fas fa-file-invoice mr-1"></i> Invoice
+                </a>
+
+                <a href="{{ route('admin.agent-orders.dispatches.download-retail-invoice', $dispatch->id) }}" id="retailInvoiceBtn" class="btn-erp btn-erp-secondary">
+                    <i class="fas fa-file-invoice-dollar mr-1"></i> Busy Invoice
+                </a>
+
+                <a href="{{ route('admin.agent-orders.dispatches.download-retail-invoice-excel', $dispatch->id) }}" id="retailInvoiceExcelBtn" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-file-excel text-success mr-1"></i> Busy Excel
+                </a>
+
+                <a href="{{ route('admin.agent-orders.dispatches.send-whatsapp-invoice', $dispatch->id) }}" id="waInvoiceBtn" class="btn-erp text-white" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $dispatch->shop->phone ?? $dispatch->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + (this.href.includes('?') ? '&' : '?') + 'phone=' + encodeURIComponent(phone); }">
+                    <i class="fab fa-whatsapp mr-1"></i> WA Invoice
+                </a>
+            </div>
+        </div>
+
+        <!-- KPI Summary Row 1 -->
+        @php
+            $overallQty = $groupedItems->sum('total_qty');
+            $overallFabricMeters = $fabricItems->sum('meter');
+        @endphp
+        <div class="row mb-2">
+            <div class="col-md-3 mb-1">
+                <div class="erp-card p-2 d-flex align-items-center">
+                    <div class="mr-3 text-center" style="width: 40px; height: 40px; line-height: 40px; border-radius: 6px; background: #edf5ee; color: #05421c;">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div>
+                        <div class="erp-label mb-0 text-muted">Dispatch date</div>
+                        <div class="font-weight-bold text-dark">{{ $dispatch->dispatch_date ? date('d M Y, h:i A', strtotime($dispatch->dispatch_date)) : 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-1">
+                <div class="erp-card p-2 d-flex align-items-center">
+                    <div class="mr-3 text-center" style="width: 40px; height: 40px; line-height: 40px; border-radius: 6px; background: #e0f2fe; color: #0284c7;">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <div class="erp-label mb-0 text-muted">Total units</div>
+                        <div class="font-weight-bold text-dark">
+                            @if($overallQty > 0) {{ number_format($overallQty) }} PCs @endif
+                            @if($overallQty > 0 && $overallFabricMeters > 0) + @endif
+                            @if($overallFabricMeters > 0) {{ number_format($overallFabricMeters, 2) }} m @endif
                         </div>
-                        @endif
-
-                        <a href="{{ route('admin.agent-orders.dispatches.download-packing-slip', $dispatch->id) }}" id="packingSlipBtn" class="btn btn-action bg-soft-info text-info border-0">
-                            <i class="fas fa-box-open"></i> Packing Slip
-                        </a>
-                        
-                        <a href="{{ route('admin.agent-orders.dispatches.send-whatsapp-packing-slip', $dispatch->id) }}" id="waPackingSlipBtn" class="btn btn-action text-white" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $dispatch->shop->phone ?? $dispatch->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + (this.href.includes('?') ? '&' : '?') + 'phone=' + encodeURIComponent(phone); }">
-                            <i class="fab fa-whatsapp"></i> WA Packing Slip
-                        </a>
-                        
-                        <a href="{{ route('admin.agent-orders.dispatches.download-invoice', $dispatch->id) }}" id="invoiceBtn" class="btn btn-action bg-primary-gradient">
-                            <i class="fas fa-file-invoice"></i> Download Invoice
-                        </a>
-
-                        <a href="{{ route('admin.agent-orders.dispatches.download-retail-invoice', $dispatch->id) }}" id="retailInvoiceBtn" class="btn btn-action bg-secondary text-white">
-                            <i class="fas fa-file-invoice-dollar"></i> Busy Invoice
-                        </a>
-
-                        <a href="{{ route('admin.agent-orders.dispatches.download-retail-invoice-excel', $dispatch->id) }}" id="retailInvoiceExcelBtn" class="btn btn-action bg-success text-white">
-                            <i class="fas fa-file-excel"></i> Busy Excel
-                        </a>
-
-                        <a href="{{ route('admin.agent-orders.dispatches.send-whatsapp-invoice', $dispatch->id) }}" id="waInvoiceBtn" class="btn btn-action text-white" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $dispatch->shop->phone ?? $dispatch->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + (this.href.includes('?') ? '&' : '?') + 'phone=' + encodeURIComponent(phone); }">
-                            <i class="fab fa-whatsapp"></i> WA Invoice
-                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-1">
+                <div class="erp-card p-2 d-flex align-items-center">
+                    <div class="mr-3 text-center" style="width: 40px; height: 40px; line-height: 40px; border-radius: 6px; background: #dcfce7; color: #16a34a;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <div class="erp-label mb-0 text-muted">Status</div>
+                        <div class="font-weight-bold text-success">{{ strtoupper($dispatch->status) }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-1">
+                <div class="erp-card p-2 d-flex align-items-center">
+                    <div class="mr-3 text-center" style="width: 40px; height: 40px; line-height: 40px; border-radius: 6px; background: #f1f5f9; color: #475569;">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <div>
+                        <div class="erp-label mb-0 text-muted">Subtotal</div>
+                        <div class="font-weight-bold text-dark">₹{{ number_format($dispatch->total_amount, 2) }}</div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- KPI Summary Row 2 -->
+        <div class="row mb-2">
+            <div class="col-md-3 mb-1">
+                <div class="erp-card p-2 d-flex align-items-center">
+                    <div class="mr-3 text-center" style="width: 40px; height: 40px; line-height: 40px; border-radius: 6px; background: #fee2e2; color: #dc2626;">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <div>
+                        <div class="erp-label mb-0 text-muted">Extra discount</div>
+                        <div class="font-weight-bold text-danger">₹{{ number_format($dispatch->discount_amount ?? 0, 2) }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-1">
+                <div class="erp-card p-2 d-flex align-items-center">
+                    <div class="mr-3 text-center" style="width: 40px; height: 40px; line-height: 40px; border-radius: 6px; background: #fef3c7; color: #d97706;">
+                        <i class="fas fa-percent"></i>
+                    </div>
+                    <div>
+                        <div class="erp-label mb-0 text-muted">GST ({{ number_format($dispatch->gst_percentage ?? 5, 1) }}%)</div>
+                        <div class="font-weight-bold text-warning">₹{{ number_format($dispatch->gst_amount, 2) }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-1">
+                <div class="erp-card p-2 d-flex align-items-center">
+                    <div class="mr-3 text-center" style="width: 40px; height: 40px; line-height: 40px; border-radius: 6px; background: #f1f5f9; color: #475569;">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <div>
+                        <div class="erp-label mb-0 text-muted">Other charges</div>
+                        <div class="font-weight-bold text-dark">₹{{ number_format($dispatch->other_charges ?? 0, 2) }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-1">
+                <div class="erp-card p-2 d-flex align-items-center" style="background: #edf5ee; border-color: #cce3d0;">
+                    <div class="mr-3 text-center" style="width: 40px; height: 40px; line-height: 40px; border-radius: 6px; background: #05421c; color: #fff;">
+                        <i class="fas fa-rupee-sign"></i>
+                    </div>
+                    <div>
+                        <div class="erp-label mb-0" style="color: #05421c;">Final amount</div>
+                        <div class="font-weight-bold" style="color: #05421c; font-size: 1.15rem;">₹{{ number_format($dispatch->grand_total, 2) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if($dispatch->remark)
+        <div class="erp-card mb-2 p-2 bg-light">
+            <span class="erp-label text-muted d-block mb-1"><i class="fas fa-comment-dots mr-1"></i> Dispatch Remark:</span>
+            <div class="font-weight-bold text-dark">{{ $dispatch->remark }}</div>
+        </div>
+        @endif
+
+        <!-- Items Grouped By Order -->
+        @foreach($dispatch->orders as $order)
+            @php
+                $sessionItems = $order->items->where('agent_order_dispatch_id', $dispatch->id);
+                $sessionFabricItems = $fabricItems->where('agent_order_id', $order->id);
+                
+                if ($sessionItems->isEmpty() && $sessionFabricItems->isEmpty())
+                    continue;
+
+                $orderDispatchedQty = $sessionItems->sum('quantity');
+                $orderDispatchedMeters = $sessionFabricItems->sum('meter');
+                $orderSubtotal = $sessionItems->sum(function ($i) {
+                    return $i->quantity * $i->selling_price;
+                }) + $sessionFabricItems->sum(function ($i) {
+                    return $i->meter * $i->selling_price;
+                });
+            @endphp
+
+            <div class="erp-card p-0 mb-2">
+                <div class="p-2 border-bottom bg-light d-flex justify-content-between align-items-center">
+                    <h6 class="font-weight-bold mb-0" style="color: #05421c;">
+                        <i class="fas fa-shopping-cart mr-1"></i>
+                        Order <a href="{{ route('admin.agent-orders.show', $order->id) }}" class="text-dark font-weight-bold" target="_blank">
+                            #ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}
+                        </a>
+                    </h6>
+                    <div class="d-flex align-items-center" style="gap: 6px;">
+                        <span class="badge-erp-status badge-erp-info font-weight-bold">
+                            @if($orderDispatchedQty > 0) {{ number_format($orderDispatchedQty) }} PCs @endif
+                            @if($orderDispatchedQty > 0 && $orderDispatchedMeters > 0) + @endif
+                            @if($orderDispatchedMeters > 0) {{ number_format($orderDispatchedMeters, 2) }} m @endif
+                        </span>
+                        <span class="badge-erp-status badge-erp-primary font-weight-bold">
+                            ₹{{ number_format($orderSubtotal, 2) }}
+                        </span>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table erp-table table-bordered table-hover mb-0">
+                        <thead>
+                            @if($sessionItems->isNotEmpty())
+                                <tr>
+                                    <th>Design #</th>
+                                    <th>Product name</th>
+                                    <th>Color</th>
+                                    <th>Size set</th>
+                                    <th class="text-center" style="width: 80px;">Boxes</th>
+                                    <th class="text-center" style="width: 100px;">Total pcs</th>
+                                    <th class="text-right" style="width: 110px;">Price/pc</th>
+                                    <th class="text-right" style="width: 130px;">Total amount</th>
+                                </tr>
+                            @else
+                                <tr>
+                                    <th>Roll #</th>
+                                    <th>Fabric name</th>
+                                    <th class="text-center" style="width: 120px;">Batch no</th>
+                                    <th class="text-center" style="width: 100px;">Meters</th>
+                                    <th class="text-right" style="width: 110px;">Price/m</th>
+                                    <th class="text-right" style="width: 130px;">Total amount</th>
+                                </tr>
+                            @endif
+                        </thead>
+                        <tbody>
+                            @foreach($sessionItems as $item)
+                                <tr>
+                                    <td class="font-weight-bold text-dark">{{ $item->design_number }}</td>
+                                    <td>{{ $item->product_name }}</td>
+                                    <td>{{ $item->color_name }} ({{ $item->color_id }})</td>
+                                    <td>{{ $item->size_set_name ?? 'N/A' }}</td>
+                                    <td class="text-center font-weight-bold">{{ number_format($item->box_qty, 0) }}</td>
+                                    <td class="text-center font-weight-bold text-dark">{{ number_format($item->quantity, 0) }}</td>
+                                    <td class="text-right text-muted">₹{{ number_format($item->selling_price, 2) }}</td>
+                                    <td class="text-right font-weight-bold text-dark">₹{{ number_format($item->quantity * $item->selling_price, 2) }}</td>
+                                </tr>
+                            @endforeach
+
+                            @foreach($sessionFabricItems as $fItem)
+                                <tr>
+                                    <td><span class="badge-erp-status badge-erp-info font-weight-bold">{{ $fItem->roll_number }}</span></td>
+                                    <td><div class="font-weight-bold text-dark">{{ $fItem->fabric_name }}</div></td>
+                                    <td class="text-center">{{ $fItem->batch_no }}</td>
+                                    <td class="text-center font-weight-bold text-dark">{{ number_format($fItem->meter, 2) }} m</td>
+                                    <td class="text-right text-muted">₹{{ number_format($fItem->selling_price, 2) }}</td>
+                                    <td class="text-right font-weight-bold text-dark">₹{{ number_format($fItem->meter * $fItem->selling_price, 2) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endforeach
+
         <!-- Edit Invoice Modal -->
         <div class="modal fade" id="editInvoiceModal" tabindex="-1" role="dialog" aria-labelledby="editInvoiceModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content shadow-lg border-0" style="border-radius: 16px;">
-                    <div class="modal-header bg-white border-bottom-0" style="padding: 1.5rem 1.5rem 0.5rem;">
-                        <h5 class="modal-title font-weight-bold text-dark" id="editInvoiceModalLabel">
-                            <i class="fas fa-edit text-warning mr-2"></i> Update Dispatch Invoice
-                        </h5>
-                        <button type="button" class="close text-muted" data-dismiss="modal" aria-label="Close">
+                <div class="modal-content shadow border-0" style="border-radius: 8px;">
+                    <div class="modal-header py-2" style="background: #05421c; color: #fff; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+                        <h6 class="modal-title font-weight-bold" id="editInvoiceModalLabel">
+                            <i class="fas fa-edit mr-1"></i> Update Dispatch Invoice
+                        </h6>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <form id="editInvoiceForm">
                         @csrf
-                        <div class="modal-body px-4 pb-4">
-                            <div class="form-group mb-3">
-                                <label class="stat-label">Dispatch Date</label>
-                                <input type="datetime-local" class="form-control" style="border-radius: 10px; height: 44px;" id="dispatch_date" name="dispatch_date" value="{{ date('Y-m-d\TH:i', strtotime($dispatch->dispatch_date)) }}" required>
+                        <div class="modal-body p-3">
+                            <div class="form-group mb-2">
+                                <label class="erp-label">Dispatch date</label>
+                                <input type="datetime-local" class="form-control form-control-sm erp-input" id="dispatch_date" name="dispatch_date" value="{{ date('Y-m-d\TH:i', strtotime($dispatch->dispatch_date)) }}" required>
                             </div>
-                            <div class="form-group mb-3">
-                                <label class="stat-label">Company</label>
-                                <select class="form-control" style="border-radius: 10px; height: 44px;" id="company_id" name="company_id">
+                            <div class="form-group mb-2">
+                                <label class="erp-label">Company</label>
+                                <select class="form-control form-control-sm erp-input select2" id="company_id" name="company_id">
                                     <option value="">Select Company</option>
                                     @foreach($companies as $company)
                                         <option value="{{ $company->id }}" {{ $dispatch->company_id == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="form-group mb-3">
-                                <label class="stat-label">Bill Number</label>
-                                <input type="text" class="form-control" style="border-radius: 10px; height: 44px;" id="bill_no" name="bill_no" value="{{ $dispatch->bill_no }}" placeholder="Enter Bill Number">
+                            <div class="form-group mb-2">
+                                <label class="erp-label">Bill number</label>
+                                <input type="text" class="form-control form-control-sm erp-input" id="bill_no" name="bill_no" value="{{ $dispatch->bill_no }}" placeholder="Enter Bill Number">
                             </div>
-                            <div class="form-group mb-3">
-                                <label class="stat-label">Subtotal Amount (Pcs * Price)</label>
-                                <input type="number" step="0.01" class="form-control" style="border-radius: 10px; height: 44px;" id="total_amount" name="total_amount" value="{{ $dispatch->total_amount }}" required>
+                            <div class="form-group mb-2">
+                                <label class="erp-label">Subtotal amount (Pcs * Price)</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm erp-input" id="total_amount" name="total_amount" value="{{ $dispatch->total_amount }}" required>
                             </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label class="stat-label">Extra Discount %</label>
-                                        @php
-                                            $discPct = ($dispatch->total_amount > 0 && $dispatch->discount_amount > 0) ? ($dispatch->discount_amount / $dispatch->total_amount * 100) : 0;
-                                        @endphp
-                                        <input type="number" step="any" class="form-control" style="border-radius: 10px; height: 44px;" id="discount_percentage" name="discount_percentage" value="{{ round($discPct, 6) }}">
-                                    </div>
+                            <div class="form-row">
+                                <div class="col-md-6 mb-2">
+                                    <label class="erp-label">Extra discount %</label>
+                                    @php
+                                        $discPct = ($dispatch->total_amount > 0 && $dispatch->discount_amount > 0) ? ($dispatch->discount_amount / $dispatch->total_amount * 100) : 0;
+                                    @endphp
+                                    <input type="number" step="any" class="form-control form-control-sm erp-input" id="discount_percentage" name="discount_percentage" value="{{ round($discPct, 6) }}">
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label class="stat-label">Extra Discount Amount</label>
-                                        <input type="number" step="0.01" class="form-control" style="border-radius: 10px; height: 44px;" id="discount_amount" name="discount_amount" value="{{ $dispatch->discount_amount ?? 0 }}">
-                                    </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="erp-label">Extra discount amount</label>
+                                    <input type="number" step="0.01" class="form-control form-control-sm erp-input" id="discount_amount" name="discount_amount" value="{{ $dispatch->discount_amount ?? 0 }}">
                                 </div>
                             </div>
-                            <div class="form-group mb-3">
-                                <label class="stat-label">Other Charges</label>
-                                <input type="number" step="0.01" class="form-control" style="border-radius: 10px; height: 44px;" id="other_charges" name="other_charges" value="{{ $dispatch->other_charges ?? 0 }}">
+                            <div class="form-group mb-2">
+                                <label class="erp-label">Other charges</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm erp-input" id="other_charges" name="other_charges" value="{{ $dispatch->other_charges ?? 0 }}">
                             </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label class="stat-label">GST %</label>
-                                        <input type="number" step="any" class="form-control" style="border-radius: 10px; height: 44px;" id="gst_percentage" name="gst_percentage" value="{{ $dispatch->gst_percentage ?? 5 }}">
-                                    </div>
+                            <div class="form-row">
+                                <div class="col-md-6 mb-2">
+                                    <label class="erp-label">GST %</label>
+                                    <input type="number" step="any" class="form-control form-control-sm erp-input" id="gst_percentage" name="gst_percentage" value="{{ $dispatch->gst_percentage ?? 5 }}">
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label class="stat-label">GST Amount</label>
-                                        <input type="number" step="any" class="form-control" style="border-radius: 10px; height: 44px;" id="gst_amount_input" value="{{ round($dispatch->gst_amount, 2) }}">
-                                    </div>
+                                <div class="col-md-6 mb-2">
+                                    <label class="erp-label">GST amount</label>
+                                    <input type="number" step="any" class="form-control form-control-sm erp-input" id="gst_amount_input" value="{{ round($dispatch->gst_amount, 2) }}">
                                 </div>
                             </div>
-                            <div class="form-group mb-3">
-                                <label class="stat-label">Remark</label>
-                                <textarea name="remark" class="form-control" style="border-radius: 10px;" rows="2">{{ $dispatch->remark }}</textarea>
+                            <div class="form-group mb-2">
+                                <label class="erp-label">Remark</label>
+                                <textarea name="remark" class="form-control form-control-sm erp-input" rows="2">{{ $dispatch->remark }}</textarea>
                             </div>
-                            <div class="bg-light p-3 rounded text-center mt-4">
-                                <h6 class="stat-label mb-1">Final Grand Total</h6>
-                                <h3 class="mb-0 text-primary font-weight-bold" id="grand_total_display">₹{{ number_format($dispatch->grand_total, 2) }}</h3>
+                            <div class="p-2 rounded text-center border mt-3" style="background: #edf5ee; border-color: #cce3d0 !important;">
+                                <span class="erp-label d-block text-muted mb-0">Final Grand Total</span>
+                                <h4 class="mb-0 font-weight-bold" style="color: #05421c;" id="grand_total_display">₹{{ number_format($dispatch->grand_total, 2) }}</h4>
                             </div>
                         </div>
-                        <div class="modal-footer bg-white border-top-0 px-4 pb-4">
-                            <button type="button" class="btn btn-action bg-white border text-muted" data-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-action bg-warning text-dark font-weight-bold">Save Changes</button>
+                        <div class="modal-footer p-2 bg-light">
+                            <button type="button" class="btn-erp btn-erp-secondary mr-2" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn-erp btn-erp-primary font-weight-bold">Save Changes</button>
                         </div>
                     </form>
                 </div>
@@ -369,19 +405,19 @@
         <!-- Edit Items Modal -->
         <div class="modal fade" id="editItemsModal" tabindex="-1" role="dialog" aria-labelledby="editItemsModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
-                <div class="modal-content shadow-lg border-0" style="border-radius: 16px;">
-                    <div class="modal-header bg-white border-bottom-0" style="padding: 1.5rem 1.5rem 0.5rem;">
-                        <h5 class="modal-title font-weight-bold text-dark" id="editItemsModalLabel">
-                            <i class="fas fa-tags text-primary mr-2"></i> Update Items Price / Discount
-                        </h5>
-                        <button type="button" class="close text-muted" data-dismiss="modal" aria-label="Close">
+                <div class="modal-content shadow border-0" style="border-radius: 8px;">
+                    <div class="modal-header py-2" style="background: #05421c; color: #fff; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+                        <h6 class="modal-title font-weight-bold" id="editItemsModalLabel">
+                            <i class="fas fa-tags mr-1"></i> Update Items Price / Discount
+                        </h6>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <form id="editItemsForm">
                         @csrf
-                        <div class="modal-body px-4 pb-4" style="max-height: 60vh; overflow-y: auto;">
-                            <div class="row mb-3">
+                        <div class="modal-body p-3" style="max-height: 65vh; overflow-y: auto;">
+                            <div class="form-row mb-2">
                                 @php
                                     $uniqueBrands = $groupedItems->unique('brand_id');
                                 @endphp
@@ -393,61 +429,63 @@
                                             $brandDiscount = (($firstItemOfBrand->mrp - $firstItemOfBrand->selling_price) / $firstItemOfBrand->mrp) * 100;
                                         }
                                     @endphp
-                                    <div class="col-md-3">
-                                        <label class="stat-label">{{ $brand->brand->name ?? 'Brand' }} Discount %</label>
-                                        <div class="input-group">
-                                            <input type="number" step="any" class="form-control brand-discount-input" style="border-radius: 10px 0 0 10px; height: 40px;" data-brand="{{ $brand->brand_id }}" value="{{ round($brandDiscount, 2) }}">
+                                    <div class="col-md-3 mb-2">
+                                        <label class="erp-label">{{ $brand->brand->name ?? 'Brand' }} Discount %</label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" step="any" class="form-control form-control-sm erp-input brand-discount-input" data-brand="{{ $brand->brand_id }}" value="{{ round($brandDiscount, 2) }}">
                                             <div class="input-group-append">
-                                                <button type="button" class="btn btn-primary apply-brand-discount" style="border-radius: 0 10px 10px 0; height: 40px;" data-brand="{{ $brand->brand_id }}">Apply</button>
+                                                <button type="button" class="btn-erp btn-erp-primary apply-brand-discount" data-brand="{{ $brand->brand_id }}">Apply</button>
                                             </div>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
-                            <small class="text-muted d-block mb-3 border-bottom pb-2">Apply a discount to instantly update all items belonging to that brand.</small>
-                            <table class="table table-bordered text-center align-middle" id="editItemsTable">
-                                <thead class="bg-light">
-                                    <tr>
-                                        <th>Design #</th>
-                                        <th>Color</th>
-                                        <th>Size Set</th>
-                                        <th>Qty</th>
-                                        <th>MRP</th>
-                                        <th style="width: 150px;">Discount (%)</th>
-                                        <th style="width: 150px;">Sale Price (₹)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($groupedItems as $index => $item)
-                                        <tr class="item-edit-row" data-brand="{{ $item->brand_id }}">
-                                            <td class="align-middle font-weight-bold">{{ $item->design_number }}</td>
-                                            <td class="align-middle">{{ $item->color_name }} ({{ $item->color_id }})</td>
-                                            <td class="align-middle">{{ $item->size_set_name ?? 'N/A' }}</td>
-                                            <td class="align-middle font-weight-bold">{{ $item->total_qty }}</td>
-                                            <td class="align-middle text-muted item-mrp" data-mrp="{{ $item->mrp }}">₹{{ number_format($item->mrp, 2) }}</td>
-                                            <td class="align-middle">
-                                                @php
-                                                    $calculatedDiscount = $item->mrp > 0 ? (($item->mrp - $item->selling_price) / $item->mrp) * 100 : 0;
-                                                @endphp
-                                                <input type="number" step="any" class="form-control text-center item-discount" value="{{ round($calculatedDiscount, 2) }}">
-                                            </td>
-                                            <td class="align-middle">
-                                                <input type="hidden" name="items[{{ $index }}][product_id]" value="{{ $item->product_id }}">
-                                                <input type="hidden" name="items[{{ $index }}][color_id]" value="{{ $item->color_id }}">
-                                                <input type="hidden" name="items[{{ $index }}][size_set_id]" value="{{ $item->size_set_id }}">
-                                                <input type="number" step="0.01" class="form-control text-center item-sale-price" name="items[{{ $index }}][selling_price]" value="{{ $item->selling_price }}" required>
-                                            </td>
+                            <small class="text-muted d-block mb-2 border-bottom pb-2">Apply a discount to instantly update all items belonging to that brand.</small>
+                            <div class="table-responsive">
+                                <table class="table erp-table table-bordered table-hover mb-0" id="editItemsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Design #</th>
+                                            <th>Color</th>
+                                            <th>Size set</th>
+                                            <th class="text-center">Qty</th>
+                                            <th class="text-right">MRP</th>
+                                            <th class="text-center" style="width: 140px;">Discount (%)</th>
+                                            <th class="text-center" style="width: 140px;">Sale price (₹)</th>
                                         </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                            <div class="alert alert-info border-0 mt-3 mb-0">
-                                <i class="fas fa-info-circle"></i> Updating the prices here will automatically recalculate the dispatch total, GST, and the party balance.
+                                    </thead>
+                                    <tbody>
+                                        @foreach($groupedItems as $index => $item)
+                                            <tr class="item-edit-row" data-brand="{{ $item->brand_id }}">
+                                                <td class="font-weight-bold text-dark">{{ $item->design_number }}</td>
+                                                <td>{{ $item->color_name }} ({{ $item->color_id }})</td>
+                                                <td>{{ $item->size_set_name ?? 'N/A' }}</td>
+                                                <td class="text-center font-weight-bold">{{ $item->total_qty }}</td>
+                                                <td class="text-right text-muted item-mrp" data-mrp="{{ $item->mrp }}">₹{{ number_format($item->mrp, 2) }}</td>
+                                                <td class="text-center">
+                                                    @php
+                                                        $calculatedDiscount = $item->mrp > 0 ? (($item->mrp - $item->selling_price) / $item->mrp) * 100 : 0;
+                                                    @endphp
+                                                    <input type="number" step="any" class="form-control form-control-sm erp-input text-center item-discount mx-auto" value="{{ round($calculatedDiscount, 2) }}">
+                                                </td>
+                                                <td class="text-center">
+                                                    <input type="hidden" name="items[{{ $index }}][product_id]" value="{{ $item->product_id }}">
+                                                    <input type="hidden" name="items[{{ $index }}][color_id]" value="{{ $item->color_id }}">
+                                                    <input type="hidden" name="items[{{ $index }}][size_set_id]" value="{{ $item->size_set_id }}">
+                                                    <input type="number" step="0.01" class="form-control form-control-sm erp-input text-center item-sale-price mx-auto" name="items[{{ $index }}][selling_price]" value="{{ $item->selling_price }}" required>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-info border-0 mt-2 mb-0 small">
+                                <i class="fas fa-info-circle mr-1"></i> Updating the prices here will automatically recalculate the dispatch total, GST, and the party balance.
                             </div>
                         </div>
-                        <div class="modal-footer bg-white border-top-0 px-4 pb-4">
-                            <button type="button" class="btn btn-action bg-white border text-muted" data-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-action bg-primary text-white font-weight-bold">Update Prices</button>
+                        <div class="modal-footer p-2 bg-light">
+                            <button type="button" class="btn-erp btn-erp-secondary mr-2" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn-erp btn-erp-primary font-weight-bold">Update Prices</button>
                         </div>
                     </form>
                 </div>
@@ -457,49 +495,49 @@
         <!-- Custom PRN Modal -->
         <div class="modal fade" id="customPrnModal" tabindex="-1" role="dialog" aria-labelledby="customPrnModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content shadow-lg border-0" style="border-radius: 16px; overflow: hidden;">
-                    <div class="modal-header bg-white border-bottom-0" style="padding: 1.5rem 1.5rem 0.5rem;">
-                        <h5 class="modal-title font-weight-bold text-dark" id="customPrnModalLabel">
-                            <i class="fas fa-barcode text-primary mr-2"></i> Download Barcodes (PRN)
-                        </h5>
-                        <button type="button" class="close text-muted" data-dismiss="modal" aria-label="Close">
+                <div class="modal-content shadow border-0" style="border-radius: 8px;">
+                    <div class="modal-header py-2" style="background: #05421c; color: #fff; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+                        <h6 class="modal-title font-weight-bold" id="customPrnModalLabel">
+                            <i class="fas fa-barcode mr-1"></i> Download Barcodes (PRN)
+                        </h6>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <form action="{{ route('admin.agent-orders.dispatches.generate-prn', $dispatch->id) }}" method="GET" target="_blank">
-                        <div class="modal-body px-4 pb-4">
+                        <div class="modal-body p-3">
                             @php
                                 $dItems = DB::table('agent_order_items')->where('agent_order_dispatch_id', $dispatch->id)->get();
                                 $dTotalBoxes = $dItems->sum('box_qty') ?: $dItems->sum('scanned_box_qty');
                                 $dTotalPieces = $dItems->sum('quantity');
                             @endphp
                             
-                            <div class="row mb-3">
+                            <div class="form-row mb-3">
                                 <div class="col-6">
-                                    <div class="p-3 border rounded text-center" style="background: #f8fafc; border-color: #e2e8f0 !important;">
-                                        <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 0.75rem; letter-spacing: 0.05em;">Total Boxes</small>
-                                        <strong class="text-primary font-weight-bold" style="font-size: 1.25rem;">{{ number_format($dTotalBoxes) }}</strong>
+                                    <div class="p-2 border rounded text-center bg-light">
+                                        <small class="text-muted d-block text-uppercase font-weight-bold erp-label">Total boxes</small>
+                                        <strong class="font-weight-bold text-dark" style="font-size: 1.15rem;">{{ number_format($dTotalBoxes) }}</strong>
                                     </div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="p-3 border rounded text-center" style="background: #f8fafc; border-color: #e2e8f0 !important;">
-                                        <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 0.75rem; letter-spacing: 0.05em;">Total Pieces</small>
-                                        <strong class="text-info font-weight-bold" style="font-size: 1.25rem;">{{ number_format($dTotalPieces) }}</strong>
+                                    <div class="p-2 border rounded text-center bg-light">
+                                        <small class="text-muted d-block text-uppercase font-weight-bold erp-label">Total pieces</small>
+                                        <strong class="font-weight-bold text-dark" style="font-size: 1.15rem;">{{ number_format($dTotalPieces) }}</strong>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="form-group mb-3">
-                                <label class="stat-label mb-2">1. Select Barcode Quantity Mode</label>
-                                <div class="d-flex" style="gap: 12px;">
-                                    <label class="border rounded p-3 flex-fill d-flex align-items-center mb-0 prn-mode-card active-mode-card" style="cursor: pointer; border-color: #4f46e5 !important; background: #eef2ff;">
+                                <label class="erp-label mb-2">1. Select Barcode Quantity Mode</label>
+                                <div class="d-flex" style="gap: 8px;">
+                                    <label class="border rounded p-2 flex-fill d-flex align-items-center mb-0 prn-mode-card" style="cursor: pointer; background: #edf5ee; border-color: #05421c !important;">
                                         <input type="radio" name="mode" value="boxes" checked class="mr-2 prn-mode-radio">
                                         <div>
-                                            <div class="font-weight-bold text-dark"><i class="fas fa-boxes text-primary mr-1"></i> Box Wise</div>
+                                            <div class="font-weight-bold text-dark"><i class="fas fa-boxes mr-1" style="color: #05421c;"></i> Box Wise</div>
                                             <small class="text-muted">1 label per box (Total: {{ $dTotalBoxes }} barcodes)</small>
                                         </div>
                                     </label>
-                                    <label class="border rounded p-3 flex-fill d-flex align-items-center mb-0 prn-mode-card" style="cursor: pointer; border-color: #e2e8f0; background: #fff;">
+                                    <label class="border rounded p-2 flex-fill d-flex align-items-center mb-0 prn-mode-card" style="cursor: pointer; background: #fff;">
                                         <input type="radio" name="mode" value="pieces" class="mr-2 prn-mode-radio">
                                         <div>
                                             <div class="font-weight-bold text-dark"><i class="fas fa-tshirt text-info mr-1"></i> Piece Wise</div>
@@ -510,27 +548,25 @@
                             </div>
 
                             <div class="form-group mb-3">
-                                <label class="stat-label mb-1" for="prnMultiplierInput">2. MRP Multiplier (Sales Price &times; Multiplier)</label>
-                                <div class="input-group">
+                                <label class="erp-label mb-1" for="prnMultiplierInput">2. MRP Multiplier (Sales Price &times; Multiplier)</label>
+                                <div class="input-group input-group-sm">
                                     <div class="input-group-prepend">
-                                        <span class="input-group-text bg-white" style="border-radius: 10px 0 0 10px; border-right: 0;"><i class="fas fa-times text-muted"></i></span>
+                                        <span class="input-group-text bg-white"><i class="fas fa-times text-muted"></i></span>
                                     </div>
-                                    <input type="number" step="any" min="0.1" name="multiplier" id="prnMultiplierInput" value="2" class="form-control font-weight-bold text-dark" style="border-radius: 0 10px 10px 0; height: 44px; font-size: 1.1rem;" required>
+                                    <input type="number" step="any" min="0.1" name="multiplier" id="prnMultiplierInput" value="2" class="form-control form-control-sm erp-input font-weight-bold text-dark" required>
                                 </div>
-                                <small class="text-muted mt-2 d-block">
-                                    <i class="fas fa-info-circle text-primary mr-1"></i>
-                                    Printed MRP will be calculated as: <code>Sales Price &times; Multiplier</code>.<br>
-                                    <em>E.g., if Sales Price is ₹426.00 and Multiplier is 2 &rarr; <strong>Printed MRP will show ₹852.00</strong></em>.
+                                <small class="text-muted mt-1 d-block">
+                                    Printed MRP will be calculated as: <code>Sales Price &times; Multiplier</code>.
                                 </small>
                             </div>
 
-                            <div class="alert alert-light border mb-0 text-muted small" style="border-radius: 8px;">
+                            <div class="alert alert-light border mb-0 text-muted small">
                                 <i class="fas fa-shield-alt text-success mr-1"></i> <strong>Barcode Structure:</strong> Code-128 format and encoding remain identical and completely unchanged.
                             </div>
                         </div>
-                        <div class="modal-footer bg-white border-top-0 px-4 pb-4">
-                            <button type="button" class="btn btn-action bg-white border text-muted" data-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-action bg-primary text-white font-weight-bold px-4">
+                        <div class="modal-footer p-2 bg-light">
+                            <button type="button" class="btn-erp btn-erp-secondary mr-2" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn-erp btn-erp-primary font-weight-bold">
                                 <i class="fas fa-download mr-1"></i> Download PRN
                             </button>
                         </div>
@@ -538,220 +574,8 @@
                 </div>
             </div>
         </div>
-
-
-        <section class="content">
-            <div class="container-fluid">
-                <!-- KPI Summary Cards -->
-                <div class="row mb-4">
-                    <div class="col-md-3 mb-3 mb-md-0">
-                        <div class="stat-card">
-                            <div class="stat-icon bg-soft-primary">
-                                <i class="fas fa-calendar-alt"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-label">Dispatch Date</div>
-                                <div class="stat-value" style="font-size: 1rem;">{{ $dispatch->dispatch_date ? date('d M Y, h:i A', strtotime($dispatch->dispatch_date)) : 'N/A' }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    @php
-                        $overallQty = $groupedItems->sum('total_qty');
-                        $overallFabricMeters = $fabricItems->sum('meter');
-                    @endphp
-                    <div class="col-md-3 mb-3 mb-md-0">
-                        <div class="stat-card">
-                            <div class="stat-icon bg-soft-info">
-                                <i class="fas fa-layer-group"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-label">Total Units</div>
-                                <div class="stat-value text-info">
-                                    @if($overallQty > 0) {{ number_format($overallQty) }} PCs @endif
-                                    @if($overallQty > 0 && $overallFabricMeters > 0) + @endif
-                                    @if($overallFabricMeters > 0) {{ number_format($overallFabricMeters, 2) }} m @endif
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3 mb-md-0">
-                        <div class="stat-card">
-                            <div class="stat-icon bg-soft-success">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-label">Status</div>
-                                <div class="stat-value text-success" style="font-size: 1.1rem;">{{ strtoupper($dispatch->status) }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="stat-icon bg-soft-secondary">
-                                <i class="fas fa-calculator"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-label">Subtotal</div>
-                                <div class="stat-value">₹{{ number_format($dispatch->total_amount, 2) }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row mb-4">
-                    <div class="col-md-3 mb-3 mb-md-0">
-                        <div class="stat-card">
-                            <div class="stat-icon bg-soft-danger">
-                                <i class="fas fa-tags"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-label">Extra Discount</div>
-                                <div class="stat-value text-danger">₹{{ number_format($dispatch->discount_amount ?? 0, 2) }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3 mb-md-0">
-                        <div class="stat-card">
-                            <div class="stat-icon bg-soft-warning">
-                                <i class="fas fa-percent"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-label">GST ({{ number_format($dispatch->gst_percentage ?? 5, 1) }}%)</div>
-                                <div class="stat-value text-warning">₹{{ number_format($dispatch->gst_amount, 2) }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3 mb-md-0">
-                        <div class="stat-card">
-                            <div class="stat-icon bg-soft-secondary">
-                                <i class="fas fa-plus"></i>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-label">Other Charges</div>
-                                <div class="stat-value">₹{{ number_format($dispatch->other_charges ?? 0, 2) }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
-                            <div class="stat-icon" style="background: rgba(255,255,255,0.2); color: #fff;">
-                                <i class="fas fa-rupee-sign"></i>
-                            </div>
-                            <div class="stat-info text-white">
-                                <div class="stat-label text-white-50">Final Amount</div>
-                                <div class="stat-value text-white">₹{{ number_format($dispatch->grand_total, 2) }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                @if($dispatch->remark)
-                <div class="card order-card mb-4">
-                    <div class="card-body p-4 bg-soft-info">
-                        <h6 class="stat-label text-info"><i class="fas fa-comment-dots mr-2"></i>Dispatch Remark</h6>
-                        <p class="mb-0 text-dark font-weight-500">{{ $dispatch->remark }}</p>
-                    </div>
-                </div>
-                @endif
-
-                <!-- Items Grouped By Order -->
-                @foreach($dispatch->orders as $order)
-                    @php
-                        $sessionItems = $order->items->where('agent_order_dispatch_id', $dispatch->id);
-                        $sessionFabricItems = $fabricItems->where('agent_order_id', $order->id);
-                        
-                        if ($sessionItems->isEmpty() && $sessionFabricItems->isEmpty())
-                            continue;
-
-                        $orderDispatchedQty = $sessionItems->sum('quantity');
-                        $orderDispatchedMeters = $sessionFabricItems->sum('meter');
-                        $orderSubtotal = $sessionItems->sum(function ($i) {
-                            return $i->quantity * $i->selling_price;
-                        }) + $sessionFabricItems->sum(function ($i) {
-                            return $i->meter * $i->selling_price;
-                        });
-                    @endphp
-
-                    <div class="card shadow-sm border-0 mb-4">
-                        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0 font-weight-bold">
-                                <i class="fas fa-shopping-cart text-primary mr-2"></i>
-                                Order <a href="{{ route('admin.agent-orders.show', $order->id) }}" class="text-dark"
-                                    target="_blank">#ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}</a>
-                            </h5>
-                            <div class="text-right">
-                                <span class="badge badge-light border px-3 py-2 mr-2" style="font-size: 14px;">
-                                    @if($orderDispatchedQty > 0) {{ number_format($orderDispatchedQty) }} PCs @endif
-                                    @if($orderDispatchedQty > 0 && $orderDispatchedMeters > 0) + @endif
-                                    @if($orderDispatchedMeters > 0) {{ number_format($orderDispatchedMeters, 2) }} m @endif
-                                </span>
-                                <span class="badge badge-success px-3 py-2" style="font-size: 14px;">₹{{ number_format($orderSubtotal, 2) }}</span>
-                            </div>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover mb-0 text-nowrap">
-                                    <thead class="bg-light">
-                                        @if($sessionItems->isNotEmpty())
-                                            <tr>
-                                                <th>Design #</th>
-                                                <th>Product Name</th>
-                                                <th>Color</th>
-                                                <th>Size Set</th>
-                                                <th class="text-center">Boxes</th>
-                                                <th class="text-center">Total Pcs</th>
-                                                <th class="text-right">Price/Pc</th>
-                                                <th class="text-right">Total Amount</th>
-                                            </tr>
-                                        @else
-                                            <tr>
-                                                <th>Roll #</th>
-                                                <th>Fabric Name</th>
-                                                <th class="text-center">Batch No</th>
-                                                <th class="text-center">Meters</th>
-                                                <th class="text-right">Price/m</th>
-                                                <th class="text-right">Total Amount</th>
-                                            </tr>
-                                        @endif
-                                    </thead>
-                                    <tbody>
-                                        @foreach($sessionItems as $item)
-                                            <tr>
-                                                <td class="font-weight-bold text-dark">{{ $item->design_number }}</td>
-                                                <td>{{ $item->product_name }}</td>
-                                                <td>{{ $item->color_name }} ({{ $item->color_id }})</td>
-                                                <td>{{ $item->size_set_name ?? 'N/A' }}</td>
-                                                <td class="text-center"><span class="badge badge-light border px-3 py-1"
-                                                        style="font-size: 13px;">{{ number_format($item->box_qty, 0) }}</span></td>
-                                                <td class="text-center font-weight-bold" style="font-size: 15px;">
-                                                    {{ number_format($item->quantity, 0) }}
-                                                </td>
-                                                <td class="text-right text-muted">₹{{ number_format($item->selling_price, 2) }}</td>
-                                                <td class="text-right font-weight-bold text-success" style="font-size: 15px;">
-                                                    ₹{{ number_format($item->quantity * $item->selling_price, 2) }}</td>
-                                            </tr>
-                                        @endforeach
-
-                                        @foreach($sessionFabricItems as $fItem)
-                                            <tr>
-                                                <td><span class="badge badge-primary">{{ $fItem->roll_number }}</span></td>
-                                                <td><div class="font-weight-bold text-dark">{{ $fItem->fabric_name }}</div></td>
-                                                <td class="text-center">{{ $fItem->batch_no }}</td>
-                                                <td class="text-center font-weight-bold" style="font-size: 15px;">{{ number_format($fItem->meter, 2) }} m</td>
-                                                <td class="text-right text-muted">₹{{ number_format($fItem->selling_price, 2) }}</td>
-                                                <td class="text-right font-weight-bold text-success" style="font-size: 15px;">₹{{ number_format($fItem->meter * $fItem->selling_price, 2) }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-
-            </div>
-        </section>
     </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -790,7 +614,7 @@
             // On change
             $('#brandSelect').on('change', updateUrls);
 
-            // 🔥 IMPORTANT: Run once on page load
+            // 🔥 Run once on page load
             updateUrls();
 
             // Invoice Modal Calculations
@@ -811,7 +635,6 @@
                     }
                 }
                 
-                // Refresh discountAmount in case it was modified
                 discountAmount = Math.ceil(parseFloat($('#discount_amount').val()) || 0);
 
                 const otherCharges = Math.ceil(parseFloat($('#other_charges').val()) || 0);
@@ -831,7 +654,6 @@
                         $('#gst_percentage').val(0);
                     }
                 } else {
-                    // Default/Other fields changed - update amount from percentage
                     gstAmount = Math.ceil(taxableAmount * (gstPercentage / 100));
                     $('#gst_amount_input').val(gstAmount.toFixed(2));
                 }
@@ -871,7 +693,7 @@
             $('#editInvoiceForm').on('submit', function(e) {
                 e.preventDefault();
                 const btn = $(this).find('button[type="submit"]');
-                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> UPDATING...');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Updating...');
 
                 $.ajax({
                     url: "{{ route('admin.agent-orders.dispatches.update-invoice', $dispatch->id) }}",
@@ -885,12 +707,12 @@
                             }, 1000);
                         } else {
                             toastr.error(response.message);
-                            btn.prop('disabled', false).text('UPDATE INVOICE');
+                            btn.prop('disabled', false).text('Save Changes');
                         }
                     },
                     error: function(xhr) {
                         toastr.error('Something went wrong. Please try again.');
-                        btn.prop('disabled', false).text('UPDATE INVOICE');
+                        btn.prop('disabled', false).text('Save Changes');
                     }
                 });
             });
@@ -900,7 +722,7 @@
                 e.preventDefault();
                 const btn = $(this).find('button[type="submit"]');
                 const originalHtml = btn.html();
-                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> UPDATING PRICES...');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Updating...');
 
                 $.ajax({
                     url: "{{ route('admin.agent-orders.dispatches.update-items', $dispatch->id) }}",
@@ -989,7 +811,7 @@
             // Toggle active styling on PRN mode radio selection
             $(document).on('change', '.prn-mode-radio', function() {
                 $('.prn-mode-card').css({'border-color': '#e2e8f0', 'background': '#fff'});
-                $(this).closest('.prn-mode-card').css({'border-color': '#4f46e5', 'background': '#eef2ff'});
+                $(this).closest('.prn-mode-card').css({'border-color': '#05421c', 'background': '#edf5ee'});
             });
         });
     </script>

@@ -1,177 +1,90 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <style>
-        :root {
-            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            --bg-main: #f8fafc;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- PAGE HEADER -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title m-0">Purchase History</h1>
+                <p class="erp-page-subtitle m-0">Manage and track all inventory stock inward entries</p>
+            </div>
+            <div class="d-flex align-items-center" style="gap: 8px;">
+                <a href="{{ route('admin.inventory.purchase') }}" class="btn-erp btn-erp-primary">
+                    <i class="fas fa-plus mr-1"></i> New purchase
+                </a>
+                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to inventory
+                </a>
+            </div>
+        </div>
 
-        .content-wrapper {
-            background-color: var(--bg-main);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        }
-
-        .premium-page-header {
-            padding: 1rem 0;
-            background: #fff;
-            border-bottom: 1px solid #e2e8f0;
-            margin-bottom: 1rem;
-        }
-
-        .page-title {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: var(--text-main);
-            letter-spacing: -0.025em;
-            margin: 0;
-        }
-
-        .card-premium {
-            border: none;
-            border-radius: 1rem;
-            box-shadow: var(--shadow-md);
-            overflow: hidden;
-            background: #fff;
-        }
-
-        .table thead th {
-            background: #f8fafc;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            font-weight: 700;
-            color: var(--text-muted);
-            border-top: none;
-            padding: 1rem;
-        }
-
-        .table td {
-            padding: 1rem;
-            vertical-align: middle;
-            color: var(--text-main);
-            font-size: 0.875rem;
-            border-color: #f1f5f9;
-        }
-
-        .btn-soft-primary {
-            background: #eef2ff;
-            color: #4f46e5;
-            border: none;
-        }
-
-        .btn-soft-danger {
-            background: #fef2f2;
-            color: #ef4444;
-            border: none;
-        }
-
-        .btn-soft-primary:hover { background: #e0e7ff; color: #4338ca; }
-        .btn-soft-danger:hover { background: #fee2e2; color: #dc2626; }
-
-        .badge-soft-success { background: #ecfdf5; color: #059669; }
-        .badge-soft-info { background: #eff6ff; color: #2563eb; }
-
-        .animate-in {
-            animation: slideUp 0.4s ease-out forwards;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
-
-    <div class="content-wrapper">
-        <div class="premium-page-header">
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="page-title">Purchase History</h1>
-                        <p class="text-muted mb-0 small">Manage and track all inventory stock entries</p>
-                    </div>
-                    <a href="{{ route('admin.inventory.purchase') }}" class="btn btn-primary shadow-sm" style="border-radius: 0.75rem; padding: 0.6rem 1.5rem; font-weight: 600;">
-                        <i class="fas fa-plus mr-2"></i>New Purchase
-                    </a>
+        <!-- FILTER CARD -->
+        <div class="erp-card mb-2 p-2">
+            <div class="row align-items-end">
+                <div class="col-md-2 mb-1">
+                    <label class="erp-label mb-1">Start date</label>
+                    <input type="date" id="start_date" class="form-control form-control-sm erp-input">
+                </div>
+                <div class="col-md-2 mb-1">
+                    <label class="erp-label mb-1">End date</label>
+                    <input type="date" id="end_date" class="form-control form-control-sm erp-input">
+                </div>
+                <div class="col-md-2 mb-1">
+                    <label class="erp-label mb-1">Vendor</label>
+                    <select id="vendor_filter" class="form-control form-control-sm select2">
+                        <option value="">All vendors</option>
+                        @foreach($vendors as $vendor)
+                            <option value="{{ $vendor->id }}">{{ $vendor->company_name ?? $vendor->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2 mb-1">
+                    <label class="erp-label mb-1">Customer</label>
+                    <select id="customer_filter" class="form-control form-control-sm select2">
+                        <option value="">All customers</option>
+                        @foreach($customers as $customer)
+                            <option value="{{ $customer->id }}">{{ $customer->company_name ?? $customer->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2 mb-1">
+                    <label class="erp-label mb-1">Bill no.</label>
+                    <input type="text" id="bill_no_filter" class="form-control form-control-sm erp-input" placeholder="Search bill...">
+                </div>
+                <div class="col-md-1 mb-1">
+                    <label class="erp-label mb-1">PO no.</label>
+                    <input type="text" id="po_number_filter" class="form-control form-control-sm erp-input" placeholder="Search PO...">
+                </div>
+                <div class="col-md-1 mb-1">
+                    <button id="reset_filters" class="btn-erp btn-erp-secondary w-100" title="Reset Filters" style="height: 29px;">
+                        <i class="fas fa-undo"></i>
+                    </button>
                 </div>
             </div>
         </div>
 
-        <section class="content">
-            <div class="container-fluid">
-                <!-- FILTER CARD -->
-                <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px;">
-                    <div class="card-body bg-light rounded p-3">
-                        <div class="row align-items-end">
-                            <div class="col-md-2">
-                                <label class="small font-weight-bold text-muted mb-1">Start Date</label>
-                                <input type="date" id="start_date" class="form-control">
-                            </div>
-                            <div class="col-md-2">
-                                <label class="small font-weight-bold text-muted mb-1">End Date</label>
-                                <input type="date" id="end_date" class="form-control">
-                            </div>
-                            <div class="col-md-2">
-                                <label class="small font-weight-bold text-muted mb-1">Vendor</label>
-                                <select id="vendor_filter" class="form-control select2">
-                                    <option value="">All Vendors</option>
-                                    @foreach($vendors as $vendor)
-                                        <option value="{{ $vendor->id }}">{{ $vendor->company_name ?? $vendor->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="small font-weight-bold text-muted mb-1">Customer</label>
-                                <select id="customer_filter" class="form-control select2">
-                                    <option value="">All Customers</option>
-                                    @foreach($customers as $customer)
-                                        <option value="{{ $customer->id }}">{{ $customer->company_name ?? $customer->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="small font-weight-bold text-muted mb-1">Bill No.</label>
-                                <input type="text" id="bill_no_filter" class="form-control" placeholder="Search Bill...">
-                            </div>
-                            <div class="col-md-2">
-                                <label class="small font-weight-bold text-muted mb-1">Production PO</label>
-                                <input type="text" id="po_number_filter" class="form-control" placeholder="Search PO...">
-                            </div>
-                            <div class="col-md-1 mt-3 mt-md-0">
-                                <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block">
-                                    <i class="fas fa-undo"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card card-premium animate-in">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table id="purchaseHistoryTable" class="table mb-0 w-100">
-                                <thead>
-                                    <tr>
-                                        <th class="pl-4">#</th>
-                                        <th>Purchase Date</th>
-                                        <th>Bill No.</th>
-                                        <th>Source</th>
-                                        <th>Production PO</th>
-                                        <th>Total Boxes</th>
-                                        <th>Total Amount</th>
-                                        <th class="text-right pr-4">Action</th>
-                                    </tr>
-                                </thead>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+        <!-- TABLE CARD -->
+        <div class="erp-card p-0">
+            <div class="table-responsive">
+                <table id="purchaseHistoryTable" class="erp-table table-bordered table-hover mb-0 w-100">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">#</th>
+                            <th>Purchase date</th>
+                            <th>Bill no.</th>
+                            <th>Source</th>
+                            <th>Production PO</th>
+                            <th style="text-align: center;">Total boxes</th>
+                            <th style="text-align: right;">Total amount</th>
+                            <th style="width: 130px; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                </table>
             </div>
-        </section>
+        </div>
     </div>
+</div>
 
 @push('scripts')
 <script>
@@ -198,18 +111,21 @@
             },
             order: [[1, 'desc']],
             columns: [
-                { data: 'DT_RowIndex', name: 'DT_RowIndex', className: 'pl-4', orderable: false, searchable: false },
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', className: 'text-center font-weight-bold', orderable: false, searchable: false },
                 { 
                     data: 'purchase_date', 
                     name: 'purchase_date', 
                     render: function(data, type, row) {
                         let dateStr = data ? data : row.created_at;
-                        return `<div class="font-weight-bold">${moment(dateStr).format('DD MMM YYYY')}</div>`;
+                        return `<div class="font-weight-bold text-dark">${moment(dateStr).format('DD MMM YYYY')}</div>`;
                     }
                 },
                 { 
                     data: 'bill_no', 
-                    name: 'bill_no'
+                    name: 'bill_no',
+                    render: function(data) {
+                        return data ? `<span class="font-weight-bold text-dark">${data}</span>` : '<span class="text-muted">-</span>';
+                    }
                 },
                 { 
                     data: 'source', 
@@ -217,28 +133,30 @@
                     orderable: false, 
                     searchable: false,
                     render: function(data) {
-                        return `<span class="badge badge-soft-primary px-2 py-1">${data}</span>`;
+                        return `<span class="badge badge-light border px-2 py-1 text-uppercase">${data}</span>`;
                     }
                 },
                 { 
                     data: 'production_po', 
                     name: 'production_po',
                     render: function(data) {
-                        return data.includes('Manual') ? data : `<span class="badge badge-soft-info px-2 py-1">${data}</span>`;
+                        return data.includes('Manual') ? `<span class="text-muted">${data}</span>` : `<span class="badge badge-light border text-primary font-weight-bold px-2 py-1">${data}</span>`;
                     }
                 },
                 { 
                     data: 'total_boxes', 
                     name: 'total_boxes',
                     searchable: false,
-                    render: (d) => `<span class="badge badge-soft-success px-2 py-1 font-weight-bold">${d || 0} Boxes</span>`
+                    className: 'text-center',
+                    render: (d) => `<span class="badge badge-light border font-weight-bold px-2 py-1">${d || 0} Boxes</span>`
                 },
                 { 
                     data: 'total_amount', 
                     name: 'total_amount', 
-                    render: (d) => `<span class="text-primary font-weight-bold" style="font-size: 1rem;">₹${parseFloat(d).toLocaleString()}</span>` 
+                    className: 'text-right',
+                    render: (d) => `<span class="font-weight-bold" style="color: #05421c; font-size: 0.95rem;">₹${parseFloat(d).toLocaleString()}</span>` 
                 },
-                { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-right pr-4' }
+                { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-right' }
             ],
             language: {
                 search: "_INPUT_",
@@ -247,9 +165,6 @@
                     previous: '<i class="fas fa-chevron-left"></i>',
                     next: '<i class="fas fa-chevron-right"></i>'
                 }
-            },
-            drawCallback: function() {
-                $('.dataTables_paginate > .pagination').addClass('pagination-rounded');
             }
         });
 
@@ -277,7 +192,7 @@
                 text: "This will delete the purchase and revert the added stock levels!",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#ef4444',
+                confirmButtonColor: '#dc2626',
                 cancelButtonColor: '#64748b',
                 confirmButtonText: 'Yes, delete it!'
             }).then((result) => {

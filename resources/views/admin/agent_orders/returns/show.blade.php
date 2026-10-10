@@ -1,155 +1,157 @@
 @extends('admin.layouts.app')
 
+@section('title', 'Sales Return Details')
+
 @section('content')
-<div class="content-wrapper">
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0 font-weight-bold text-dark">Sales Return #SR-{{ $return->id }}</h1>
-                    <p class="text-muted">Against Dispatch: #{{ $return->agent_order_dispatch_id }} | Date: {{ \Carbon\Carbon::parse($return->return_date)->format('d-m-Y') }}</p>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- Header Bar -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title">Sales Return #SR-{{ $return->id }}</h1>
+                <p class="erp-page-subtitle">Against Dispatch: #{{ $return->agent_order_dispatch_id }} | Date: {{ \Carbon\Carbon::parse($return->return_date)->format('d-m-Y') }}</p>
+            </div>
+            <div class="d-flex align-items-center flex-wrap" style="gap: 6px;">
+                <a href="{{ route('admin.agent-orders.returns.index') }}" class="btn-erp btn-erp-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to List
+                </a>
+                <a href="{{ route('admin.agent-orders.returns.edit', $return->id) }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-edit mr-1"></i> Edit
+                </a>
+                <button id="deleteReturnBtn" class="btn-erp btn-erp-danger">
+                    <i class="fas fa-trash mr-1"></i> Delete
+                </button>
+                <a href="{{ route('admin.agent-orders.returns.send-whatsapp-pdf', $return->id) }}" class="btn-erp text-white" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $return->dispatch->shop->phone ?? $return->dispatch->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + '?phone=' + encodeURIComponent(phone); }">
+                    <i class="fab fa-whatsapp mr-1"></i> WhatsApp
+                </a>
+                <a href="{{ route('admin.agent-orders.returns.download-pdf', $return->id) }}" class="btn-erp btn-erp-primary">
+                    <i class="fas fa-file-pdf mr-1"></i> Download PDF
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Left Info Card -->
+            <div class="col-md-4 mb-2">
+                <div class="erp-card p-3 h-100">
+                    <h6 class="font-weight-bold mb-3 pb-2 border-bottom" style="color: #05421c;">
+                        <i class="fas fa-info-circle mr-1"></i> Return Information
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm erp-table mb-0">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 40%; background: #f8fafc;">Party</th>
+                                    <td class="font-weight-bold">{{ $return->dispatch->party->name ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th style="background: #f8fafc;">Agent</th>
+                                    <td>{{ $return->dispatch->agent->name ?? 'Direct' }}</td>
+                                </tr>
+                                <tr>
+                                    <th style="background: #f8fafc;">Return date</th>
+                                    <td>{{ \Carbon\Carbon::parse($return->return_date)->format('d M Y') }}</td>
+                                </tr>
+                                <tr>
+                                    <th style="background: #f8fafc;">Subtotal</th>
+                                    <td>₹{{ number_format($return->total_amount, 2) }}</td>
+                                </tr>
+                                @if($return->discount_amount > 0)
+                                <tr>
+                                    <th style="background: #f8fafc;">Discount ({{ number_format($return->discount_percentage, 2) }}%)</th>
+                                    <td class="text-danger font-weight-bold">-₹{{ number_format($return->discount_amount, 2) }}</td>
+                                </tr>
+                                @endif
+                                <tr>
+                                    <th style="background: #f8fafc;">GST ({{ number_format($return->gst_percentage, 2) }}%)</th>
+                                    <td class="text-success font-weight-bold">+₹{{ number_format($return->gst_amount, 2) }}</td>
+                                </tr>
+                                @if($return->other_charges > 0)
+                                <tr>
+                                    <th style="background: #f8fafc;">Other charges</th>
+                                    <td class="text-success font-weight-bold">+₹{{ number_format($return->other_charges, 2) }}</td>
+                                </tr>
+                                @endif
+                                <tr style="background: #edf5ee;">
+                                    <th style="color: #05421c; font-size: 1rem;">Grand total</th>
+                                    <td class="font-weight-bold" style="color: #05421c; font-size: 1.1rem;">₹{{ number_format($return->grand_total, 2) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    @if($return->remark)
+                    <div class="mt-3 p-2 rounded bg-light border">
+                        <span class="erp-label d-block text-muted mb-1">Remarks:</span>
+                        <p class="mb-0 small text-dark">{{ $return->remark }}</p>
+                    </div>
+                    @endif
+
+                    <div class="mt-3 pt-2 border-top small text-muted text-right">
+                        Processed By: {{ $return->creator->name ?? 'N/A' }}<br>
+                        {{ $return->created_at->format('d/m/Y h:i A') }}
+                    </div>
                 </div>
-                <div class="col-sm-6 text-right">
-                    <a href="{{ route('admin.agent-orders.returns.index') }}" class="btn btn-outline-secondary rounded-pill">
-                        <i class="fas fa-arrow-left mr-1"></i> Back to List
-                    </a>
-                    <a href="{{ route('admin.agent-orders.returns.edit', $return->id) }}" class="btn btn-warning rounded-pill ml-2">
-                        <i class="fas fa-edit mr-1"></i> Edit
-                    </a>
-                    <button id="deleteReturnBtn" class="btn btn-danger rounded-pill ml-2">
-                        <i class="fas fa-trash mr-1"></i> Delete
-                    </button>
-                    <a href="{{ route('admin.agent-orders.returns.send-whatsapp-pdf', $return->id) }}" class="btn text-white rounded-pill ml-2" style="background-color: #25D366; border-color: #25D366;" onclick="event.preventDefault(); let phone = prompt('Enter WhatsApp Number:', '{{ $return->dispatch->shop->phone ?? $return->dispatch->vendor->phone ?? '' }}'); if(phone) { window.location.href = this.href + '?phone=' + encodeURIComponent(phone); }">
-                        <i class="fab fa-whatsapp mr-1"></i> WhatsApp
-                    </a>
-                    <a href="{{ route('admin.agent-orders.returns.download-pdf', $return->id) }}" class="btn btn-primary rounded-pill ml-2">
-                        <i class="fas fa-file-pdf mr-1"></i> Download PDF
-                    </a>
+            </div>
+
+            <!-- Right Items Table Card -->
+            <div class="col-md-8 mb-2">
+                <div class="erp-card p-0 h-100">
+                    <div class="p-2 border-bottom bg-light d-flex justify-content-between align-items-center">
+                        <h6 class="font-weight-bold mb-0" style="color: #05421c;">
+                            <i class="fas fa-box-open mr-1"></i> Returned Items Details
+                        </h6>
+                        <span class="badge-erp-status badge-erp-secondary font-weight-bold">{{ $return->items->count() }} items</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table erp-table table-bordered table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Item description</th>
+                                    <th class="text-center" style="width: 130px;">Returned qty</th>
+                                    <th class="text-right" style="width: 120px;">Price</th>
+                                    <th class="text-right" style="width: 140px;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($return->items as $item)
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge-erp-status badge-erp-info mr-2 px-2 py-1 font-weight-bold">
+                                                    {{ strtoupper($item->item_type) }}
+                                                </span>
+                                                <div>
+                                                    <div class="font-weight-bold text-dark">{{ $item->product_name }}</div>
+                                                    <div class="small text-muted">
+                                                        @if($item->item_type === 'standard')
+                                                            {{ $item->design_number }} | {{ $item->color_name }} | {{ $item->size_set_name }}
+                                                        @else
+                                                            Fabric Roll Return
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center font-weight-bold text-dark">
+                                            {{ number_format($item->quantity, ($item->item_type === 'fabric' ? 2 : 0)) }}
+                                            <small class="text-muted">{{ $item->unit }}</small>
+                                        </td>
+                                        <td class="text-right">₹{{ number_format($item->price, 2) }}</td>
+                                        <td class="text-right font-weight-bold text-dark">₹{{ number_format($item->total, 2) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <section class="content">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px;">
-                        <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0 font-weight-bold">Return Information</h6>
-                        </div>
-                        <div class="card-body">
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between p-2">
-                                    <span class="text-muted">Party:</span>
-                                    <span class="font-weight-bold">{{ $return->dispatch->party->name ?? 'N/A' }}</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between p-2">
-                                    <span class="text-muted">Agent:</span>
-                                    <span class="font-weight-bold">{{ $return->dispatch->agent->name ?? 'Direct' }}</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between p-2">
-                                    <span class="text-muted">Return Date:</span>
-                                    <span class="font-weight-bold">{{ \Carbon\Carbon::parse($return->return_date)->format('d M Y') }}</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between p-2">
-                                    <span class="text-muted">Subtotal:</span>
-                                    <span class="font-weight-bold">₹{{ number_format($return->total_amount, 2) }}</span>
-                                </li>
-                                @if($return->discount_amount > 0)
-                                <li class="list-group-item d-flex justify-content-between p-2">
-                                    <span class="text-muted">Discount ({{ number_format($return->discount_percentage, 2) }}%):</span>
-                                    <span class="font-weight-bold text-danger">-₹{{ number_format($return->discount_amount, 2) }}</span>
-                                </li>
-                                @endif
-                                <li class="list-group-item d-flex justify-content-between p-2">
-                                    <span class="text-muted">GST ({{ number_format($return->gst_percentage, 2) }}%):</span>
-                                    <span class="font-weight-bold text-success">+₹{{ number_format($return->gst_amount, 2) }}</span>
-                                </li>
-                                @if($return->other_charges > 0)
-                                <li class="list-group-item d-flex justify-content-between p-2">
-                                    <span class="text-muted">Other Charges:</span>
-                                    <span class="font-weight-bold text-success">+₹{{ number_format($return->other_charges, 2) }}</span>
-                                </li>
-                                @endif
-                                <li class="list-group-item d-flex justify-content-between p-2 bg-light">
-                                    <span class="h5 mb-0">Grand Total:</span>
-                                    <span class="h5 mb-0 font-weight-bold text-primary">₹{{ number_format($return->grand_total, 2) }}</span>
-                                </li>
-                            </ul>
-                            
-                            <div class="mt-4">
-                                <label class="small font-weight-bold text-muted uppercase">Remark</label>
-                                <p class="mb-0 bg-light p-3 rounded" style="border-left: 4px solid #007bff;">
-                                    {{ $return->remark ?: 'No remarks provided.' }}
-                                </p>
-                            </div>
-
-                            <div class="mt-4 small text-muted text-right">
-                                Processed By: {{ $return->creator->name ?? 'N/A' }}<br>
-                                {{ $return->created_at->format('d/m/Y h:i A') }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-8">
-                    <div class="card shadow-sm border-0" style="border-radius: 15px;">
-                        <div class="card-header bg-dark text-white">
-                            <h6 class="mb-0 font-weight-bold">Returned Items</h6>
-                        </div>
-                        <div class="card-body p-0">
-                            <table class="table table-striped mb-0">
-                                <thead class="bg-light">
-                                    <tr>
-                                        <th>Item Description</th>
-                                        <th class="text-center">Returned Qty</th>
-                                        <th class="text-right">Price</th>
-                                        <th class="text-right">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($return->items as $item)
-                                        @php
-                                            // Pre-fetched in controller for convenience
-                                        @endphp
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="badge badge-light border mr-3 px-2 py-1">
-                                                        {{ strtoupper($item->item_type) }}
-                                                    </div>
-                                                    <div>
-                                                        <div class="font-weight-bold text-dark">{{ $item->product_name }}</div>
-                                                        <small class="text-muted">
-                                                            @if($item->item_type === 'standard')
-                                                                {{ $item->design_number }} | {{ $item->color_name }} | {{ $item->size_set_name }}
-                                                            @else
-                                                                Fabric Roll Return
-                                                            @endif
-                                                        </small>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="text-center">
-                                                <span class="font-weight-bold text-danger">{{ number_format($item->quantity, ($item->item_type === 'fabric' ? 2 : 0)) }}</span>
-                                                <small class="text-muted">{{ $item->unit }}</small>
-                                            </td>
-                                            <td class="text-right">₹{{ number_format($item->price, 2) }}</td>
-                                            <td class="text-right font-weight-bold text-primary">₹{{ number_format($item->total, 2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 </div>
+@endsection
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@section('scripts')
 <script>
     $(document).ready(function() {
         $('#deleteReturnBtn').click(function() {
@@ -158,8 +160,7 @@
                 text: "This will reverse inventory and party balance. This action cannot be undone!",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
+                confirmButtonColor: '#dc2626',
                 confirmButtonText: 'Yes, delete it!'
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -188,13 +189,4 @@
         });
     });
 </script>
-
-<style>
-    @media print {
-        .main-sidebar, .main-footer, .btn, .content-header p, #deleteReturnBtn { display: none !important; }
-        .content-wrapper { margin-left: 0 !important; padding: 0 !important; }
-        .card { box-shadow: none !important; border: 1px solid #ddd !important; }
-        .bg-primary, .bg-dark { background-color: #f8f9fa !important; color: #000 !important; border-bottom: 2px solid #000 !important; }
-    }
-</style>
 @endsection

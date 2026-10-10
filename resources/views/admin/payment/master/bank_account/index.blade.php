@@ -1,121 +1,128 @@
 @extends('admin.layouts.app')
+@section('title', 'Manage Bank Accounts')
+
 @section('content')
-    <div class="content-wrapper">
-        <!-- Content Header (Page header) -->
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-4">
-                        <h1>Manage Bank Accounts</h1>
-                    </div>
-                    <div class="col-sm-8">
-                        <div class="d-flex justify-content-end">
-                            <div class="info-box bg-light border-0 shadow-none m-0 mr-2" style="min-height: 50px; padding: 5px;">
-                                <span class="info-box-icon bg-info" style="width: 40px; font-size: 1rem;"><i class="fas fa-university"></i></span>
-                                <div class="info-box-content" style="padding: 0 10px;">
-                                    <span class="info-box-text text-muted small">Opening ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</span>
-                                    <span class="info-box-number" style="font-size: 0.9rem;">₹ {{ number_format(abs($total_opening_balance), 2) }} {{ $total_opening_balance >= 0 ? 'Cr' : 'Dr' }}</span>
-                                </div>
-                            </div>
-                            <div class="info-box bg-light border-0 shadow-none m-0" style="min-height: 50px; padding: 5px;">
-                                <span class="info-box-icon bg-success" style="width: 40px; font-size: 1rem;"><i class="fas fa-wallet"></i></span>
-                                <div class="info-box-content" style="padding: 0 10px;">
-                                    <span class="info-box-text text-muted small">Current Balance</span>
-                                    <span class="info-box-number" style="font-size: 0.9rem;">₹ {{ number_format(abs($total_current_balance), 2) }} {{ $total_current_balance >= 0 ? 'Cr' : 'Dr' }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- Header Bar -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title">Manage Bank Accounts</h1>
+                <p class="erp-page-subtitle">Master register and ledger balances for company bank accounts</p>
             </div>
-        </section>
+            <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Opening ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</span>
+                    <span class="hud-stat-value text-info font-weight-bold">₹{{ number_format(abs($total_opening_balance), 2) }} {{ $total_opening_balance >= 0 ? 'Cr' : 'Dr' }}</span>
+                </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Current balance</span>
+                    <span class="hud-stat-value text-success font-weight-bold">₹{{ number_format(abs($total_current_balance), 2) }} {{ $total_current_balance >= 0 ? 'Cr' : 'Dr' }}</span>
+                </div>
+                <a href="{{ route('admin.payment.master.bank_account.create') }}" class="btn-erp btn-erp-primary">
+                    <i class="fas fa-plus mr-1"></i> Add Bank Account
+                </a>
+            </div>
+        </div>
 
-        <!-- Main content -->
-        <section class="content">
-            <div class="container-fluid">
-                <div class="card card-default">
-                    <div class="card-body table-responsive">
-                        <table id="bank_accounts_table" class="table table-bordered table-hover">
-                            <thead>
-                                <tr role="row" class="filter">
-                                    <td></td>
-                                    <td><input type="text" class="form-control" name="bank_name" id="bank_name"
-                                            placeholder="Bank Name"></td>
-                                    <td><input type="text" class="form-control" name="account_name" id="account_name"
-                                            placeholder="Account Name"></td>
-                                    <td><input type="text" class="form-control" name="account_number" id="account_number"
-                                            placeholder="Account Number"></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                </tr>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Bank Name</th>
-                                    <th>Account Name</th>
-                                    <th>Account Number</th>
-                                    <th>IFSC Code</th>
-                                    <th>Opening Balance</th>
-                                    <th>Balance</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show mb-2 py-2 px-3" role="alert">
+                <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
+                <button type="button" class="close py-2" data-dismiss="alert">&times;</button>
+            </div>
+        @endif
+
+        <!-- Filter Card -->
+        <div class="erp-card mb-2 p-2">
+            <div class="form-row align-items-end">
+                <div class="col-md-3 mb-1">
+                    <label class="erp-label">Bank name</label>
+                    <input type="text" class="form-control form-control-sm erp-input" name="bank_name" id="bank_name" placeholder="Filter by bank...">
+                </div>
+                <div class="col-md-3 mb-1">
+                    <label class="erp-label">Account name</label>
+                    <input type="text" class="form-control form-control-sm erp-input" name="account_name" id="account_name" placeholder="Filter by account...">
+                </div>
+                <div class="col-md-3 mb-1">
+                    <label class="erp-label">Account number</label>
+                    <input type="text" class="form-control form-control-sm erp-input" name="account_number" id="account_number" placeholder="Filter by number...">
+                </div>
+                <div class="col-md-3 mb-1">
+                    <button type="button" id="btnResetFilters" class="btn-erp btn-erp-secondary w-100">
+                        <i class="fas fa-undo mr-1"></i> Reset Filters
+                    </button>
                 </div>
             </div>
-        </section>
+        </div>
+
+        <!-- Table Card -->
+        <div class="erp-card p-0">
+            <div class="table-responsive">
+                <table id="bank_accounts_table" class="table erp-table table-bordered table-hover mb-0 w-100">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 45px;">#</th>
+                            <th>Bank name</th>
+                            <th>Account name</th>
+                            <th>Account number</th>
+                            <th>IFSC code</th>
+                            <th class="text-right">Opening balance</th>
+                            <th class="text-right">Current balance</th>
+                            <th class="text-center" style="width: 100px;">Status</th>
+                            <th class="text-center" style="width: 90px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
     </div>
+</div>
+@endsection
 
-    <script>
-        $(function () {
-            var oTable = $('#bank_accounts_table').DataTable({
-                processing: true,
-                serverSide: true,
-                stateSave: true,
-                searching: true,
-                ordering: false,
-                lengthMenu: [[25, 100, -1], [25, 100, "All"]],
-                "pageLength": 25,
-                ajax: {
-                    url: '{!! route('admin.payment.master.bank_account.indexList') !!}',
-                    data: function (d) {
-                        d.bank_name = $('#bank_name').val();
-                        d.account_name = $('#account_name').val();
-                        d.account_number = $('#account_number').val();
-                    }
-                },
-                columns: [
-                    { data: 'DT_RowIndex', name: 'id' },
-                    { data: 'bank_name', name: 'bank_name' },
-                    { data: 'account_name', name: 'account_name' },
-                    { data: 'account_number', name: 'account_number' },
-                    { data: 'ifsc_code', name: 'ifsc_code' },
-                    { data: 'opening_balance', name: 'opening_balance' },
-                    { data: 'balance', name: 'balance' },
-                    { data: 'status', name: 'status' },
-                    { data: 'action', name: 'action', searchable: false }
-                ],
-                dom: 'lBfrtip',
-                buttons: [
-                    {
-                        text: 'Add Bank Account',
-                        className: 'btn-datatable',
-                        action: function (e, dt, node, config) {
-                            window.location.href = "{{ route('admin.payment.master.bank_account.create') }}";
-                        }
-                    }
-                ]
-            });
-
-            $('#bank_name, #account_name, #account_number').on('keyup', function (e) {
-                oTable.draw();
-                e.preventDefault();
-            });
+@section('scripts')
+<script>
+    $(function () {
+        var oTable = $('#bank_accounts_table').DataTable({
+            processing: true,
+            serverSide: true,
+            stateSave: true,
+            searching: false,
+            ordering: false,
+            lengthMenu: [[25, 100, -1], [25, 100, "All"]],
+            pageLength: 25,
+            ajax: {
+                url: '{!! route('admin.payment.master.bank_account.indexList') !!}',
+                data: function (d) {
+                    d.bank_name = $('#bank_name').val();
+                    d.account_name = $('#account_name').val();
+                    d.account_number = $('#account_number').val();
+                }
+            },
+            columns: [
+                { data: 'DT_RowIndex', name: 'id', className: 'text-center font-weight-bold text-muted' },
+                { data: 'bank_name', name: 'bank_name' },
+                { data: 'account_name', name: 'account_name' },
+                { data: 'account_number', name: 'account_number' },
+                { data: 'ifsc_code', name: 'ifsc_code' },
+                { data: 'opening_balance', name: 'opening_balance', className: 'text-right' },
+                { data: 'balance', name: 'balance', className: 'text-right font-weight-bold' },
+                { data: 'status', name: 'status', className: 'text-center' },
+                { data: 'action', name: 'action', searchable: false, className: 'text-center' }
+            ]
         });
-    </script>
+
+        $('#bank_name, #account_name, #account_number').on('keyup', function (e) {
+            oTable.draw();
+            e.preventDefault();
+        });
+
+        $('#btnResetFilters').on('click', function () {
+            $('#bank_name').val('');
+            $('#account_name').val('');
+            $('#account_number').val('');
+            oTable.draw();
+        });
+    });
+</script>
 @endsection

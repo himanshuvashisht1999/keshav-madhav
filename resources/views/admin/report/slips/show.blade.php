@@ -1,42 +1,36 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper">
-    <!-- PAGE HEADER -->
-    <section class="content-header pb-2">
-        <div class="container-fluid">
-            <div class="d-flex justify-content-between align-items-center flex-wrap">
-                <div>
-                    <div class="d-flex align-items-center mb-1">
-                        <a href="{{ route('admin.reports.slips') }}" class="btn btn-sm btn-outline-secondary mr-3 shadow-xs">
-                            <i class="fas fa-arrow-left mr-1"></i> Back to Slips Report
-                        </a>
-                        <h1 class="font-weight-bold text-dark m-0" style="font-size: 22px;">
-                            Slip Report <span class="text-primary">#{{ $slip->id }}</span>
-                            @if($slip->bill_number)
-                                <span class="badge badge-light border text-muted ml-2 font-weight-normal" style="font-size: 13px;">
-                                    Bill: <strong>{{ $slip->bill_number }}</strong>
-                                </span>
-                            @endif
-                        </h1>
-                    </div>
-                    <p class="text-muted small mb-0">Detailed entry-by-entry production analysis, size matrix, and outflow tracking</p>
-                </div>
-                <div class="mt-2 mt-md-0">
-                    <button onclick="window.print()" class="btn btn-sm btn-outline-dark shadow-sm px-3 mr-2 font-weight-bold">
-                        <i class="fas fa-print mr-1"></i> Print Report
-                    </button>
-                    <a href="{{ route('admin.reports.slips.pdf', $slip->id) }}" class="btn btn-sm btn-danger shadow-sm px-3 font-weight-bold">
-                        <i class="fas fa-file-pdf mr-1"></i> Download PDF
-                    </a>
-                </div>
+<div class="content-wrapper erp-page p-2">
+    <!-- ERP Header Bar -->
+    <div class="erp-header-bar mb-2">
+        <div>
+            <h1 class="erp-header-title">
+                <i class="fas fa-file-invoice"></i> Slip report: <span class="font-weight-bold text-dark">#{{ $slip->id }}</span>
+                @if($slip->bill_number)
+                    <span class="badge badge-light border text-muted ml-2 font-weight-normal" style="font-size: 13px;">
+                        Bill: <strong>{{ $slip->bill_number }}</strong>
+                    </span>
+                @endif
+            </h1>
+            <div class="erp-report-meta">
+                <span class="meta-item"><i class="fas fa-layer-group text-muted"></i> Entry-by-entry production analysis, size matrix, and outflow tracking</span>
+                <span class="meta-divider">&bull;</span>
+                <span class="meta-item"><i class="far fa-clock text-muted"></i> {{ now()->format('d M Y, h:i A') }}</span>
             </div>
         </div>
-    </section>
-
-    <!-- MAIN CONTENT -->
-    <section class="content">
-        <div class="container-fluid">
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.reports.slips') }}" class="btn-erp btn-erp-outline mr-1">
+                <i class="fas fa-arrow-left mr-1"></i> Back to slips
+            </a>
+            <button onclick="window.print()" class="btn-erp btn-erp-outline mr-1">
+                <i class="fas fa-print mr-1"></i> Print report
+            </button>
+            <a href="{{ route('admin.reports.slips.pdf', $slip->id) }}" class="btn btn-sm btn-outline-danger" style="font-size: 12px;">
+                <i class="fas fa-file-pdf mr-1"></i> Download PDF
+            </a>
+        </div>
+    </div>
 
             <!-- SLIP METADATA & KPI SUMMARY CARD -->
             <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px; overflow: hidden; background: #ffffff;">

@@ -1,77 +1,70 @@
-@extends('admin.layouts.app')
+﻿@extends('admin.layouts.app')
+@section('title', 'General Expense Master')
 
 @section('content')
-    <div class="content-wrapper">
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1>General Expense Master</h1>
-                    </div>
-                    <div class="col-sm-6">
-                        <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                            <li class="breadcrumb-item active">General Expense Master</li>
-                        </ol>
-                    </div>
-                </div>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- Header Bar -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title">General Expense Master</h1>
+                <p class="erp-page-subtitle">Master register for general overhead expenses</p>
             </div>
-        </section>
+            <div class="d-flex align-items-center">
+                <a href="{{ route('admin.payment.master.general_expense.create') }}" class="btn-erp btn-erp-primary">
+                    <i class="fas fa-plus mr-1"></i> Add General Expense
+                </a>
+            </div>
+        </div>
 
-        <section class="content">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <table id="generalExpenseTable" class="table table-bordered table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>S.No</th>
-                                            <th>Name</th>
-                                            <th>Status</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show mb-2 py-2 px-3" role="alert">
+                <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
+                <button type="button" class="close py-2" data-dismiss="alert">&times;</button>
             </div>
-        </section>
+        @endif
+
+        <!-- Table Card -->
+        <div class="erp-card p-0">
+            <div class="table-responsive">
+                <table id="generalExpenseTable" class="table erp-table table-bordered table-hover mb-0 w-100">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 55px;">#</th>
+                            <th>Name</th>
+                            <th class="text-center" style="width: 120px;">Status</th>
+                            <th class="text-center" style="width: 110px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
     </div>
+</div>
 @endsection
 
 @section('scripts')
-    <script>
-        $(function () {
-            $('#generalExpenseTable').DataTable({
-                processing: true,
-                serverSide: true,
-                responsive: true,
-                lengthChange: true,
-                autoWidth: false,
-                dom: 'lBfrtip',
-                buttons: [
-                    {
-                        text: 'Add General Expense',
-                        className: 'btn-datatable',
-                        action: function (e, dt, node, config) {
-                            window.location.href = "{{ route('admin.payment.master.general_expense.create') }}";
-                        }
-                    }
-                ],
-                ajax: {
-                    url: '{!! route('admin.payment.master.general_expense.indexList') !!}',
-                },
-                columns: [
-                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
-                    { data: 'name', name: 'name' },
-                    { data: 'status', name: 'status' },
-                    { data: 'action', name: 'action', orderable: false, searchable: false },
-                ]
-            });
+<script>
+    $(function () {
+        $('#generalExpenseTable').DataTable({
+            processing: true,
+            serverSide: true,
+            responsive: true,
+            lengthChange: true,
+            autoWidth: false,
+            pageLength: 25,
+            lengthMenu: [[25, 50, 100, -1], [25, 50, 100, "All"]],
+            ajax: {
+                url: '{!! route('admin.payment.master.general_expense.indexList') !!}'
+            },
+            columns: [
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-center font-weight-bold text-muted' },
+                { data: 'name', name: 'name' },
+                { data: 'status', name: 'status', className: 'text-center' },
+                { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
+            ]
         });
-    </script>
+    });
+</script>
 @endsection

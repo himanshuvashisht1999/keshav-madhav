@@ -1,402 +1,75 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    <div class="content-wrapper erp-page p-2">
+        <div class="container-fluid p-0">
+            <!-- ERP HEADER BAR -->
+            <div class="erp-header-bar mb-2">
+                <div>
+                    <h1 class="erp-page-title m-0">Self & Sample Production Stock Entry</h1>
+                    <p class="erp-page-subtitle m-0">Add manufactured goods directly into warehouse inventory</p>
+                </div>
+                <div class="d-flex align-items-center" style="gap: 8px;">
+                    <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
+                        <i class="fas fa-arrow-left mr-1"></i> Back to inventory
+                    </a>
+                </div>
+            </div>
 
-        :root {
-            --erp-primary: #4f46e5;
-            --erp-primary-hover: #4338ca;
-            --erp-primary-light: #eef2ff;
-            --erp-success: #059669;
-            --erp-success-light: #ecfdf5;
-            --erp-danger: #dc2626;
-            --erp-danger-light: #fef2f2;
-            --erp-warning: #d97706;
-            --erp-border: #cbd5e1;
-            --erp-bg-header: #f1f5f9;
-            --erp-text: #0f172a;
-            --erp-muted: #64748b;
-        }
+            <form action="{{ route('admin.inventory.store') }}" method="POST" id="addStockForm">
+                @csrf
 
-        .content-wrapper {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #f8fafc;
-            padding-bottom: 90px;
-        }
-
-        /* STICKY ERP TOP HUD BAR */
-        .sticky-erp-hud {
-            position: sticky;
-            top: 0;
-            z-index: 1020;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(12px);
-            border-bottom: 2px solid #e2e8f0;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-            padding: 8px 16px;
-            margin: -0.5rem -0.5rem 12px -0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: nowrap;
-        }
-
-        .hud-stat-box {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 5px 12px;
-            border-radius: 8px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-        }
-
-        .hud-source-box {
-            border-left: 4px solid var(--erp-primary);
-            background: #fafbff;
-            min-width: 220px;
-        }
-
-        .hud-target-box {
-            border-left: 4px solid var(--erp-success);
-            background: #fbfdfb;
-            min-width: 320px;
-        }
-
-        .hud-label {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        .hud-numbers {
-            font-size: 1.1rem;
-            font-weight: 800;
-            line-height: 1.2;
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-        }
-
-        .hud-pills-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 3px;
-            max-height: 42px;
-            overflow-y: auto;
-            max-width: 320px;
-        }
-
-        /* ERP CARDS & TABLES */
-        .erp-card {
-            background: #ffffff;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-            margin-bottom: 12px;
-            overflow: hidden;
-        }
-
-        .erp-card-header {
-            padding: 7px 12px;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .erp-card-title {
-            font-size: 12.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .erp-table {
-            width: 100%;
-            margin-bottom: 0;
-            font-size: 11.5px;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-
-        .erp-table thead th {
-            background: #f1f5f9;
-            color: #334155;
-            font-size: 10.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 5px 6px;
-            border-bottom: 2px solid #cbd5e1;
-            border-top: none;
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        .erp-table tbody td {
-            padding: 4px 5px;
-            vertical-align: middle;
-            border-top: 1px solid #edf2f7;
-            border-bottom: none;
-        }
-
-        .erp-table tbody tr:hover {
-            background-color: #f8fafc;
-        }
-
-        /* COMPACT CONTROLS IN ERP TABLE */
-        .erp-input {
-            height: 29px !important;
-            padding: 2px 6px !important;
-            font-size: 11.5px !important;
-            font-weight: 600;
-            border-radius: 5px !important;
-            border: 1px solid #cbd5e1 !important;
-            background-color: #ffffff;
-            line-height: 1.2;
-        }
-
-        .erp-input:focus {
-            border-color: var(--erp-primary) !important;
-            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15) !important;
-            outline: none;
-        }
-
-        .erp-input[readonly] {
-            background-color: #f1f5f9 !important;
-            color: #475569;
-        }
-
-        /* SELECT2 IN ERP TABLE */
-        .erp-table .select2-container--bootstrap4 .select2-selection {
-            height: 29px !important;
-            min-height: 29px !important;
-            border-radius: 5px !important;
-            border: 1px solid #cbd5e1 !important;
-            padding: 0 !important;
-            display: flex;
-            align-items: center;
-        }
-
-        .erp-table .select2-container--bootstrap4 .select2-selection__rendered {
-            line-height: 27px !important;
-            font-size: 11.5px !important;
-            padding-left: 6px !important;
-            padding-right: 18px !important;
-            color: var(--erp-text);
-        }
-
-        .erp-table .select2-container--bootstrap4 .select2-selection__arrow {
-            height: 27px !important;
-            right: 3px !important;
-            width: 14px !important;
-        }
-
-        .select2-dropdown {
-            border-radius: 8px !important;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12) !important;
-            border: 1px solid #cbd5e1 !important;
-            font-size: 12px !important;
-            z-index: 10050 !important;
-        }
-
-        /* PILLS & BADGES */
-        .erp-pill-gen {
-            display: inline-block;
-            padding: 1px 5px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 700;
-            line-height: 1.3;
-            white-space: nowrap;
-            background: #d1fae5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
-        }
-
-        .erp-badge-info {
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 2px 5px;
-            border-radius: 4px;
-            background: #f1f5f9;
-            color: #334155;
-            border: 1px solid #e2e8f0;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* ACTION BUTTONS */
-        .btn-erp-add {
-            font-size: 11px;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 6px;
-            line-height: 1.4;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-        }
-
-        .btn-erp-icon {
-            width: 26px;
-            height: 26px;
-            padding: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 5px;
-            font-size: 11px;
-            border: none;
-            transition: all 0.15s ease;
-            cursor: pointer;
-        }
-
-        .btn-erp-del {
-            background: #fee2e2;
-            color: #ef4444;
-        }
-        .btn-erp-del:hover {
-            background: #ef4444;
-            color: #fff;
-        }
-
-        .btn-erp-copy {
-            background: #ecfdf5;
-            color: #059669;
-        }
-        .btn-erp-copy:hover {
-            background: #059669;
-            color: #fff;
-        }
-
-        /* SUBMIT BUTTON */
-        .btn-hud-confirm {
-            background: linear-gradient(135deg, var(--erp-primary) 0%, var(--erp-primary-hover) 100%);
-            color: #ffffff !important;
-            font-weight: 700;
-            font-size: 12.5px;
-            border-radius: 7px;
-            padding: 7px 18px;
-            border: none;
-            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
-            white-space: nowrap;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .btn-hud-confirm:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
-        }
-
-        .btn-hud-confirm:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        /* STICKY BOTTOM ACTIONS BAR */
-        .sticky-bottom-bar {
-            position: fixed;
-            bottom: 0;
-            left: 250px;
-            right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 8px 24px;
-            border-top: 1px solid #cbd5e1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 1000;
-            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
-        }
-
-        @media (max-width: 991.98px) {
-            .sticky-bottom-bar {
-                left: 0;
-            }
-            .sticky-erp-hud {
-                flex-wrap: wrap;
-            }
-        }
-    </style>
-
-    <div class="content-wrapper">
-        <section class="content pt-2">
-            <div class="container-fluid px-2">
-                <form action="{{ route('admin.inventory.store') }}" method="POST" id="addStockForm">
-                    @csrf
-
-                    <!-- ========================================================= -->
-                    <!-- 1. STICKY ERP HUD HEADER BAR (ALWAYS VISIBLE WITH ZERO SCROLL) -->
-                    <!-- ========================================================= -->
-                    <div class="sticky-erp-hud">
-                        <!-- Source Type Selector -->
-                        <div class="hud-stat-box hud-source-box">
-                            <div>
-                                <span class="hud-label text-primary"><i class="fas fa-layer-group mr-1"></i> SOURCE TYPE</span>
-                                <select name="source_type" id="sourceType" class="form-control erp-input font-weight-bold text-primary" style="height: 28px !important; min-width: 170px;">
-                                    <option value="production">Self Production</option>
-                                    <option value="sample">Sample Production</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Live Stock Totals Box -->
-                        <div class="hud-stat-box hud-target-box">
-                            <div>
-                                <span class="hud-label text-success"><i class="fas fa-cubes mr-1"></i> TOTAL STOCK TO UPLOAD</span>
-                                <div class="hud-numbers">
-                                    <span id="hudTotalBoxes" class="text-dark">0</span> <small class="text-muted" style="font-size:10px;">Bx</small>
-                                    <span class="text-muted mx-1" style="font-size:12px;">|</span>
-                                    <span id="hudTotalPieces" class="text-success font-weight-bold">0</span> <small class="text-muted" style="font-size:10px;">Pcs</small>
-                                </div>
-                            </div>
-                            <div class="border-left pl-2 ml-auto">
-                                <span class="text-muted d-block" style="font-size:9.5px; font-weight:700;">SIZES BREAKDOWN:</span>
-                                <div id="hudSizePills" class="hud-pills-row">
-                                    <span class="text-muted small font-italic" style="font-size:10px;">None</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Instant Action Button in HUD -->
+                <!-- ========================================================= -->
+                <!-- 1. STICKY ERP HUD HEADER BAR (ALWAYS VISIBLE WITH ZERO SCROLL) -->
+                <!-- ========================================================= -->
+                <div class="sticky-erp-hud mb-2">
+                    <!-- Source Type Selector -->
+                    <div class="hud-stat-box hud-source-box">
                         <div>
-                            <button type="submit" class="btn-hud-confirm" id="btnHudSubmit" disabled>
-                                <i class="fas fa-check-double mr-1"></i> Confirm & Upload Stock
-                            </button>
+                            <span class="hud-label"><i class="fas fa-layer-group mr-1"></i> Source type</span>
+                            <select name="source_type" id="sourceType" class="form-control erp-input font-weight-bold" style="height: 28px !important; min-width: 170px;">
+                                <option value="production">Self Production</option>
+                                <option value="sample">Sample Production</option>
+                            </select>
                         </div>
                     </div>
+
+                    <!-- Live Stock Totals Box -->
+                    <div class="hud-stat-box hud-target-box">
+                        <div>
+                            <span class="hud-label"><i class="fas fa-cubes mr-1"></i> Total stock to upload</span>
+                            <div class="hud-numbers">
+                                <span id="hudTotalBoxes" class="text-dark">0</span> <small class="text-muted" style="font-size:10px;">Bx</small>
+                                <span class="text-muted mx-1" style="font-size:12px;">|</span>
+                                <span id="hudTotalPieces" class="text-success font-weight-bold">0</span> <small class="text-muted" style="font-size:10px;">Pcs</small>
+                            </div>
+                        </div>
+                        <div class="border-left pl-2 ml-auto">
+                            <span class="text-muted d-block" style="font-size:9.5px; font-weight:700;">Sizes breakdown:</span>
+                            <div id="hudSizePills" class="hud-pills-row">
+                                <span class="text-muted small font-italic" style="font-size:10px;">None</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Instant Action Button in HUD -->
+                    <div>
+                        <button type="submit" class="btn-hud-confirm" id="btnHudSubmit" disabled>
+                            <i class="fas fa-check-double mr-1"></i> Confirm & Upload Stock
+                        </button>
+                    </div>
+                </div>
 
                     <!-- ========================================================= -->
                     <!-- 2. PRODUCTION STOCK TABLE (COMPACT ERP TABLE) -->
                     <!-- ========================================================= -->
                     <div class="erp-card">
                         <div class="erp-card-header">
-                            <div class="erp-card-title text-success">
-                                <i class="fas fa-barcode"></i> Self & Sample Production Stock Entry
+                            <div class="erp-card-title">
+                                <i class="fas fa-barcode"></i> Production Stock Lines
                                 <span class="badge badge-light border text-muted ml-2 font-weight-normal" style="font-size:11px;">Add goods directly to warehouse inventory</span>
                             </div>
-                            <button type="button" class="btn btn-outline-success btn-erp-add" id="btnAddItem">
+                            <button type="button" class="btn-erp-add" id="btnAddItem">
                                 <i class="fas fa-plus"></i> Add Stock Row
                             </button>
                         </div>
@@ -480,8 +153,7 @@
                     </div>
                 </form>
             </div>
-        </section>
-    </div>
+        </div>
 
     <!-- Quick Add Rack Modal -->
     <div class="modal fade" id="quickRackModal" tabindex="-1">

@@ -1,109 +1,5 @@
 @php use Carbon\Carbon; @endphp
-<style>
-    /* Dense ERP Side Panel Layout */
-    .wip-widget {
-        font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
-        color: #111827;
-        font-size: 13px;
-    }
-    .wip-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-bottom: 16px;
-    }
-    .wip-box {
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 4px;
-        padding: 8px 10px;
-    }
-    .wip-box label {
-        display: block;
-        font-size: 10px;
-        color: #6b7280;
-        font-weight: 700;
-        margin-bottom: 2px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .wip-box div {
-        font-size: 13px;
-        font-weight: 600;
-        word-break: break-word;
-    }
 
-    .wip-section-title {
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: #374151;
-        margin-bottom: 8px;
-        border-bottom: 1px solid #e5e7eb;
-        padding-bottom: 4px;
-    }
-
-    .wip-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 16px;
-        border: 1px solid #e5e7eb;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-    .wip-table th {
-        text-align: left;
-        background: #f3f4f6;
-        padding: 6px 8px;
-        font-size: 11px;
-        color: #4b5563;
-        font-weight: 600;
-        border-bottom: 1px solid #e5e7eb;
-    }
-    .wip-table td {
-        padding: 6px 8px;
-        font-size: 12px;
-        border-bottom: 1px solid #e5e7eb;
-    }
-    .wip-table tr:last-child td { border-bottom: none; }
-    
-    .wip-stage {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-left: 3px solid #0f62fe;
-        border-radius: 4px;
-        padding: 10px;
-        margin-bottom: 10px;
-        position: relative;
-    }
-    .wip-stage-transfer { border-left-color: #f59e0b; }
-    
-    .wip-stage-badge {
-        position: absolute;
-        top: -8px;
-        right: 10px;
-        font-size: 10px;
-        font-weight: 700;
-        background: #0f62fe;
-        color: #fff;
-        padding: 2px 6px;
-        border-radius: 2px;
-        text-transform: uppercase;
-    }
-    .badge-transfer { background: #f59e0b; }
-    
-    .wip-metrics {
-        display: flex;
-        justify-content: space-between;
-        background: #f9fafb;
-        border: 1px solid #f3f4f6;
-        border-radius: 4px;
-        padding: 6px 8px;
-        margin-top: 8px;
-    }
-    .wip-metric { font-size: 11px; color: #6b7280; }
-    .wip-metric strong { display: block; font-size: 12px; color: #111827; font-weight: 700; }
-</style>
 
 @php 
     $lot = $data['lots_data'][0] ?? null; 
@@ -160,7 +56,7 @@
             @endforeach
             <tr style="background: #f9fafb; font-weight: 700;">
                 <td>Total</td>
-                <td style="text-align: right; color: #0f62fe;">{{ $qtyTotal }}</td>
+                <td style="text-align: right; color: var(--brand-dark-green, #05421c);">{{ $qtyTotal }}</td>
             </tr>
         </tbody>
     </table>
@@ -186,7 +82,7 @@
 
                 $statusColors = [
                     'not_started' => ['bg' => '#f3f4f6', 'text' => '#6b7280', 'label' => 'Not Started'],
-                    'progress' => ['bg' => '#e0e8ff', 'text' => '#0f62fe', 'label' => 'In Progress'],
+                    'progress' => ['bg' => '#edf5ee', 'text' => '#05421c', 'label' => 'In Progress'],
                     'completed' => ['bg' => '#dcfce7', 'text' => '#166534', 'label' => 'Completed'],
                     'delayed' => ['bg' => '#fee2e2', 'text' => '#991b1b', 'label' => 'Delayed'],
                 ];

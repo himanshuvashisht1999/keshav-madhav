@@ -1,87 +1,63 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Manage Item Attributes</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Item Attributes</li>
-                    </ol>
-                </div>
-            </div>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar mb-2 d-flex justify-content-between align-items-center">
+        <div class="erp-header-title">
+            <i class="fas fa-tags text-primary"></i> Manage item attributes
         </div>
-    </section>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.master.item-attributes.create', ['id' => request('id')]) }}" class="btn-erp btn-erp-primary">
+                <i class="fas fa-plus"></i> Add item attribute
+            </a>
+            <a href="{{ route('admin.master.item.index') }}" class="btn-erp btn-erp-outline ml-1">
+                <i class="fas fa-arrow-left mr-1"></i> Back to items
+            </a>
+        </div>
+    </div>
 
-    <!-- Main content -->
-    <section class="content">
-        <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default ">
-                
-                <div class="card-body table-responsive">
-                <table id="customers" class="table table-bordered table-hover">
-                  <thead>
+    <!-- Main Data Table Card -->
+    <div class="erp-card">
+        <div class="erp-card-body p-2 table-responsive">
+            <table id="customers" class="erp-table table table-bordered table-hover">
+                <thead>
                     <tr role="row" class="filter">
+                        <td></td>
                         <td>
+                            <input type="text" class="form-control erp-filter-input" name="sku" id="sku" placeholder="Search SKU..." autocomplete="off">
                         </td>
-                        <td>
-                            <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
-                        </td>
-
-                        
-                        <td>
-                       
-                       </td>
+                        <td></td>
+                        <td></td>
                     </tr>
-                  <tr>
-                    <th>ID</th>
-                    <th>SKU</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  <!-- <tr>
-                    <td>1</td>
-                    <td>wefds</td>
-                    <td>Win 95+</td>
-                    <td> 4</td>
-                    <td>X</td>
-                  </tr> -->
-                  
-                  </tbody>
-                  
-                </table>
-              </div>
-            </div>
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th>SKU</th>
+                        <th style="width: 100px;" class="text-center">Status</th>
+                        <th style="width: 100px;" class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
-    </section>
+    </div>
 </div>
+
 <script>
     $(function () {
-        var i = 1;
         var oTable = $('#customers').DataTable({
             processing: true,
             serverSide: true,
             stateSave: true,
-            searching: true,
-            ordering:false,
+            searching: false,
+            ordering: false,
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
-            "pageLength":25,
+            pageLength: 25,
             ajax: {
-                url: '{!! route('admin.master.item-attributes.indexList',['id' => $id]) !!}',
+                url: '{!! route('admin.master.item-attributes.indexList', ['id' => request('id')]) !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.sku = $('#sku').val();
-                    d.status = $('#status').val();
-                },
-                orderable: false
+                }
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'id'},
@@ -90,45 +66,12 @@
                 {data: 'action', name: 'action', searchable: false}
             ],
             dom: 'lBfrtip',
-            buttons: [
-                {
-                    text: 'Add Item Attribute',
-                    className: 'btn-datatable',
-                    action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.item-attributes.create',['id' => $id]) }}";
-                    }
-                }
-            ]
+            buttons: []
         });
 
-        $('#email-queue-search-form').on('submit', function (e) {
+        $('#sku').on('keyup change', function () {
             oTable.draw();
-            e.preventDefault();
         });
-
-        $('#id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#name').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-         $('#sku').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#status').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });   
-        
-
-    });
-
-    $(document).ready(function () {
-        
     });
 
     function deleteData(id){
@@ -137,16 +80,14 @@
             text: "You won't be able to revert this!",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#3085d6",
+            confirmButtonColor: "var(--erp-green-primary, #05421c)",
             cancelButtonColor: "#d33",
             confirmButtonText: "Yes, delete it!"
         }).then((result) => {
             if (result.isConfirmed) {
-                // If user confirms, trigger the delete route
                 window.location.href = "{{ route('admin.master.item-attributes.delete', ['id' => '']) }}" + id;
             }
         });
     }
 </script>
-
 @endsection

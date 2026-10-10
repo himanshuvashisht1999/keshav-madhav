@@ -1,116 +1,91 @@
 @extends('admin.layouts.app')
-@section('title', 'Transfer History')
+@section('title', 'Fabric Transfer History')
 
 @section('content')
-<style>
-    :root {
-        --primary: #6366f1;
-        --bg-main: #f8fafc;
-        --border: #e2e8f0;
-    }
-    .content-wrapper {
-        background-color: var(--bg-main);
-    }
-    .premium-card {
-        background: #fff;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    }
-    .table thead th {
-        background: #fcfdfe;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.05em;
-        color: #64748b;
-        border-bottom: 1px solid var(--border);
-    }
-    .barcode-display {
-        font-family: monospace;
-        background: #f1f5f9;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.875rem;
-    }
-</style>
-
-<div class="content-wrapper">
-    <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- Header Bar -->
+        <div class="erp-header-bar mb-2">
             <div>
-                <h1 class="h3 font-weight-bold text-dark mb-0">Fabric Transfer History</h1>
-                <p class="text-muted mb-0">Manage your fabric transfer history.</p>
+                <h1 class="erp-page-title">Fabric Transfer History</h1>
+                <p class="erp-page-subtitle">Track and audit roll transfers across warehouses</p>
             </div>
             <div class="d-flex align-items-center">
-                <div class="mr-4 px-4 py-2 rounded shadow-sm bg-white" style="border-left: 4px solid #4e73df;">
-                    <span class="text-xs font-weight-bold text-primary text-uppercase mb-1" style="font-size: 0.75rem;">Total Meters</span>
-                    <div class="h5 mb-0 font-weight-bold text-dark">{{ number_format($total_meters ?? 0, 2) }} M</div>
+                <div class="hud-stat-box mr-3">
+                    <span class="hud-stat-label">Total meters</span>
+                    <span class="hud-stat-value text-success">{{ number_format($total_meters ?? 0, 2) }} M</span>
                 </div>
-                <a href="{{ route('admin.inventory.fabric_transfer.index') }}" class="btn btn-primary px-4 py-2">
-                    <i class="fas fa-plus mr-2"></i> New Transfer
+                <a href="{{ route('admin.inventory.fabric_transfer.index') }}" class="btn-erp btn-erp-primary">
+                    <i class="fas fa-plus mr-1"></i> New Transfer
                 </a>
             </div>
         </div>
 
-        <div class="premium-card mb-4">
-            <div class="card-body">
-                <form action="{{ route('admin.inventory.fabric_transfer.history') }}" method="GET" class="row align-items-end">
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label text-muted small text-uppercase font-weight-bold">Start Date</label>
-                        <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+        <!-- Filter Card -->
+        <div class="erp-card mb-2 p-2">
+            <form action="{{ route('admin.inventory.fabric_transfer.history') }}" method="GET">
+                <div class="form-row align-items-end">
+                    <div class="col-md-2 mb-2">
+                        <label class="erp-label">Start date</label>
+                        <input type="date" name="start_date" class="form-control form-control-sm erp-input" value="{{ request('start_date') }}">
                     </div>
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label text-muted small text-uppercase font-weight-bold">End Date</label>
-                        <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+                    <div class="col-md-2 mb-2">
+                        <label class="erp-label">End date</label>
+                        <input type="date" name="end_date" class="form-control form-control-sm erp-input" value="{{ request('end_date') }}">
                     </div>
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label text-muted small text-uppercase font-weight-bold">From Warehouse</label>
-                        <select name="from_warehouse_id" class="form-control select2">
-                            <option value="">All Warehouses</option>
+                    <div class="col-md-2 mb-2">
+                        <label class="erp-label">From warehouse</label>
+                        <select name="from_warehouse_id" class="form-control form-control-sm erp-input select2">
+                            <option value="">All warehouses</option>
                             @foreach($warehouses as $wh)
                                 <option value="{{ $wh->id }}" {{ request('from_warehouse_id') == $wh->id ? 'selected' : '' }}>{{ $wh->cutting_master_name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label text-muted small text-uppercase font-weight-bold">To Warehouse</label>
-                        <select name="to_warehouse_id" class="form-control select2">
-                            <option value="">All Warehouses</option>
+                    <div class="col-md-2 mb-2">
+                        <label class="erp-label">To warehouse</label>
+                        <select name="to_warehouse_id" class="form-control form-control-sm erp-input select2">
+                            <option value="">All warehouses</option>
                             @foreach($warehouses as $wh)
                                 <option value="{{ $wh->id }}" {{ request('to_warehouse_id') == $wh->id ? 'selected' : '' }}>{{ $wh->cutting_master_name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label text-muted small text-uppercase font-weight-bold">Fabric Name</label>
-                        <select name="fabric_id" class="form-control select2">
-                            <option value="">All Fabrics</option>
+                    <div class="col-md-2 mb-2">
+                        <label class="erp-label">Fabric name</label>
+                        <select name="fabric_id" class="form-control form-control-sm erp-input select2">
+                            <option value="">All fabrics</option>
                             @foreach($fabrics as $fabric)
                                 <option value="{{ $fabric->id }}" {{ request('fabric_id') == $fabric->id ? 'selected' : '' }}>{{ $fabric->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-12 text-right mt-2">
-                        <button type="submit" class="btn btn-primary px-4"><i class="fas fa-search mr-2"></i> Filter</button>
-                        <a href="{{ route('admin.inventory.fabric_transfer.history') }}" class="btn btn-outline-secondary ml-2">Clear</a>
+                    <div class="col-md-2 mb-2 d-flex">
+                        <button type="submit" class="btn-erp btn-erp-primary flex-fill mr-1">
+                            <i class="fas fa-search mr-1"></i> Filter
+                        </button>
+                        <a href="{{ route('admin.inventory.fabric_transfer.history') }}" class="btn-erp btn-erp-secondary">
+                            Clear
+                        </a>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
 
-        <div class="premium-card">
+        <!-- Table Card -->
+        <div class="erp-card p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table erp-table table-bordered table-hover mb-0">
                     <thead>
                         <tr>
-                            <th class="px-4 py-3">#</th>
-                            <th class="py-3">Date</th>
-                            <th class="py-3">From Warehouse</th>
-                            <th class="py-3">To Warehouse</th>
-                            <th class="py-3">Fabric Name</th>
-                            <th class="py-3 text-center">Total Rolls</th>
-                            <th class="py-3 text-center">Total Meters</th>
-                            <th class="py-3 text-right px-4">Actions</th>
+                            <th class="text-center" style="width: 45px;">#</th>
+                            <th style="width: 110px;">Date</th>
+                            <th>From warehouse</th>
+                            <th>To warehouse</th>
+                            <th>Fabric name</th>
+                            <th class="text-center" style="width: 120px;">Total rolls</th>
+                            <th class="text-center" style="width: 130px;">Total meters</th>
+                            <th class="text-center" style="width: 80px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -120,38 +95,38 @@
                             $fabricDetails = implode(', ', $fabricNames) ?: 'N/A';
                         @endphp
                         <tr>
-                            <td class="px-4 align-middle text-muted small">
+                            <td class="text-center text-muted font-weight-bold">
                                 {{ $transfers->firstItem() + $index }}
                             </td>
-                            <td class="align-middle text-muted small">
+                            <td>
                                 {{ \Carbon\Carbon::parse($row->transfer_date)->format('Y-m-d') }}
                             </td>
-                            <td class="align-middle">
+                            <td>
                                 {{ $row->fromWarehouse->cutting_master_name ?? 'N/A' }}
                             </td>
-                            <td class="align-middle">
+                            <td>
                                 {{ $row->toWarehouse->cutting_master_name ?? 'N/A' }}
                             </td>
-                            <td class="align-middle">
-                                <span class="badge badge-light px-2 py-1 border">{{ Str::limit($fabricDetails, 30) }}</span>
+                            <td>
+                                <span class="badge-erp-status badge-erp-secondary">{{ Str::limit($fabricDetails, 30) }}</span>
                             </td>
-                            <td class="align-middle text-center">
-                                <span class="badge badge-info px-3 py-2">{{ $row->items->count() }} Rolls</span>
+                            <td class="text-center">
+                                <span class="badge-erp-status badge-erp-info font-weight-bold">{{ $row->items->count() }} Rolls</span>
                             </td>
-                            <td class="align-middle text-center">
-                                <span class="badge badge-secondary px-3 py-2">{{ number_format($row->items->sum('meter'), 2) }} M</span>
+                            <td class="text-center">
+                                <span class="badge-erp-status badge-erp-primary font-weight-bold">{{ number_format($row->items->sum('meter'), 2) }} M</span>
                             </td>
-                            <td class="align-middle text-right px-4">
-                                <a href="{{ route('admin.inventory.fabric_transfer.show', $row->id) }}" class="btn btn-sm btn-outline-primary" title="View Transfer">
-                                    <i class="fas fa-eye mr-1"></i> View
+                            <td class="text-center">
+                                <a href="{{ route('admin.inventory.fabric_transfer.show', $row->id) }}" class="erp-action-btn erp-btn-view" title="View Transfer">
+                                    <i class="fas fa-eye"></i>
                                 </a>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-center py-5 text-muted">
-                                <i class="fas fa-history fa-3x mb-3"></i>
-                                <p>No transfer history found.</p>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                <i class="fas fa-history fa-2x mb-2 text-secondary"></i>
+                                <div>No transfer history found.</div>
                             </td>
                         </tr>
                         @endforelse
@@ -159,7 +134,7 @@
                 </table>
             </div>
             @if($transfers->hasPages())
-            <div class="card-footer bg-white border-0">
+            <div class="p-2 border-top bg-white">
                 {{ $transfers->links('pagination::bootstrap-4') }}
             </div>
             @endif

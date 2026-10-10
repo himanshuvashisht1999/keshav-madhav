@@ -36,7 +36,7 @@
             font-size: 1.5rem;
             font-weight: 700;
             margin: 0;
-            color: #6366f1;
+            color: #05421c;
         }
         .product-name {
             color: #64748b;
@@ -44,8 +44,8 @@
         }
         .size-badge {
             display: inline-block;
-            background: #eef2ff;
-            color: #4f46e5;
+            background: #edf5ee;
+            color: #05421c;
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
             font-weight: 600;

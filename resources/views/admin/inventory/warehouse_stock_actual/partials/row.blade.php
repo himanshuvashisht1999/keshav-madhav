@@ -23,7 +23,7 @@
     </td>
     <td class="text-center font-weight-bold">{{ $row->total_boxes * $row->quantity }}</td>
     <td class="text-center">
-        <a href="{{ route('admin.inventory.warehouse_stock_actual.show', [$row->product_id ?? 0, $row->size_set_id ?? 0, $row->rack_id ?? 0]) }}" class="btn btn-xs btn-primary shadow-xs mr-1" title="View Actual Details">
+        <a href="{{ route('admin.inventory.warehouse_stock_actual.show', [$row->product_id ?? 0, $row->size_set_id ?? 0, $row->rack_id ?? 0]) }}" class="erp-action-btn erp-btn-view" title="View Actual Details">
             <i class="fas fa-eye"></i>
         </a>
     </td>

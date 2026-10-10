@@ -23,14 +23,18 @@ class AdminMasterStoreroomController extends Controller
                 ->addIndexColumn()
                 ->editColumn('status', function ($row) {
                     $status = $row->status;
-                    return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-primary">Inactive</span>';
+                    return ($status == 1) 
+                        ? '<span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 8px;">Active</span>' 
+                        : '<span class="badge badge-secondary" style="font-size: 11px; padding: 3px 8px;">Inactive</span>';
                 })
                 ->addColumn('action', function($row){
                     $parameter = $row->id;
                     return '
-                    <a href="' . route('admin.master.storeroom.racks', ['id' => $parameter]) . '" class="btn btn-sm btn-info" data-toggle="tooltip" data-placement="top" title="View Racks"><i class="fas fa-list text-white"></i> Racks</a>
-                    <a href="' . route('admin.master.storeroom.edit', ['id' => $parameter]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                    <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash text-danger"></i></a>
+                    <div class="d-inline-flex align-items-center" style="gap: 4px;">
+                        <a href="' . route('admin.master.storeroom.racks', ['id' => $parameter]) . '" class="btn-erp btn-erp-outline py-0 px-2" style="font-size: 11px;" title="View Racks"><i class="fas fa-list text-primary"></i> Racks</a>
+                        <a href="' . route('admin.master.storeroom.edit', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
+                        <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="erp-action-btn erp-btn-delete" title="Delete"><i class="fas fa-trash"></i></a>
+                    </div>
                     ';
                 })
                 ->rawColumns(['action', 'status'])

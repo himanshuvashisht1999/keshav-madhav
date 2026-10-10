@@ -1,161 +1,164 @@
 @extends('admin.layouts.app')
+@section('title', 'Multiple Payment Adjustments')
 
 @section('content')
-<div class="content-wrapper">
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Multiple Payment Adjustments</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                        <li class="breadcrumb-item active">Multiple Adjustments</li>
-                    </ol>
-                </div>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- Header Bar -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title">Multiple Payment Adjustments</h1>
+                <p class="erp-page-subtitle">Batch multi-entity credit/debit account balancing</p>
+            </div>
+            <div class="d-flex align-items-center">
+                <a href="{{ route('admin.payment.adjustment.index') }}" class="btn-erp btn-erp-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to List
+                </a>
             </div>
         </div>
-    </section>
 
-    <section class="content">
-        <div class="container-fluid">
-            <div class="card card-primary">
-                <div class="card-header">
-                    <h3 class="card-title">Record Adjustments</h3>
+        <form action="{{ route('admin.payment.adjustment.store') }}" method="POST">
+            @csrf
+
+            <!-- Batch Parameters Card -->
+            <div class="erp-card p-3 mb-2">
+                <div class="row">
+                    <div class="col-md-2 mb-2">
+                        <label class="erp-label">Date <span class="text-danger">*</span></label>
+                        <input type="date" name="date" class="form-control form-control-sm erp-input" value="{{ date('Y-m-d') }}" required>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="erp-label">Type <span class="text-danger">*</span></label>
+                        <select name="type" id="bulk_type" class="form-control form-control-sm erp-input" required>
+                            <option value="credit">Credit (+)</option>
+                            <option value="debit">Debit (-)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label class="erp-label">To mode <span class="text-danger">*</span></label>
+                        <select name="payment_mode" id="bulk_payment_mode" class="form-control form-control-sm erp-input" required>
+                            <option value="">-- Mode --</option>
+                            <option value="bank">Bank</option>
+                            <option value="cash">Cash</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label class="erp-label">To account <span class="text-danger">*</span></label>
+                        <select name="payment_account_id" id="bulk_account_id" class="form-control form-control-sm erp-input select2" required disabled style="width: 100%;">
+                            <option value="">-- Select Account --</option>
+                        </select>
+                        <small id="bulk_account_balance" class="text-muted d-block mt-1 font-weight-bold" style="font-size: 0.75rem;"></small>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="erp-label">Expected total <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" name="total_expected_amount" id="total_expected_amount" class="form-control form-control-sm erp-input font-weight-bold" style="background-color: #f0fdf4; border-color: #86efac; color: #166534;" placeholder="0.00" required>
+                    </div>
+                    <div class="col-md-12">
+                        <div id="amount_alert" class="alert alert-warning py-1 mt-2 mb-0" style="display:none; font-size: 0.85rem; border-radius: 6px;">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> Batch Total: <strong id="running_total_display">0</strong> | Remaining: <strong id="remaining_total_display">0</strong>
+                        </div>
+                    </div>
                 </div>
-                <form action="{{ route('admin.payment.adjustment.store') }}" method="POST">
-                    @csrf
-                    <div class="card-body">
-                        <div class="row mb-3 bg-light p-3 border rounded shadow-sm">
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Date <span class="text-danger">*</span></label>
-                                    <input type="date" name="date" class="form-control" value="{{ date('Y-m-d') }}" required>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Type <span class="text-danger">*</span></label>
-                                    <select name="type" id="bulk_type" class="form-control" required>
-                                        <option value="credit">Credit (+)</option>
-                                        <option value="debit">Debit (-)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>To Mode <span class="text-danger">*</span></label>
-                                    <select name="payment_mode" id="bulk_payment_mode" class="form-control" required>
-                                        <option value="">-- Mode --</option>
-                                        <option value="bank">Bank</option>
-                                        <option value="cash">Cash</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>To Account <span class="text-danger">*</span></label>
-                                    <select name="payment_account_id" id="bulk_account_id" class="form-control select2" required disabled>
-                                        <option value="">-- Select Account --</option>
-                                    </select>
-                                    <small id="bulk_account_balance" class="text-muted"></small>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Expected Total <span class="text-danger">*</span></label>
-                                    <input type="number" step="0.01" name="total_expected_amount" id="total_expected_amount" class="form-control font-weight-bold" style="background-color: #e3f2fd;" placeholder="0.00" required>
-                                </div>
-                            </div>
-                            <div class="col-md-12">
-                                <div id="amount_alert" class="alert alert-warning py-1 mt-2 mb-0" style="display:none; font-size: 0.9rem;">
-                                    <i class="fas fa-exclamation-triangle"></i> Batch Total: <strong id="running_total_display">0</strong> | Remaining: <strong id="remaining_total_display">0</strong>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table table-bordered" id="adjustment_table">
-                                <thead>
-                                    <tr>
-                                        <th style="min-width: 300px;">Master Type & Item (FROM)</th>
-                                        <th style="width: 200px;">Amount</th>
-                                        <th>Remarks</th>
-                                        <th style="width: 50px;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="adjustment_rows">
-                                    <tr class="adjustment-row" data-row="0">
-                                        <td>
-                                            <select name="adjustment_master_id[]" class="form-control select2 master-type" required>
-                                                <option value="">-- Master Type --</option>
-                                                @foreach($masters as $master)
-                                                    <option value="{{ $master->id }}">{{ $master->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <select name="ref_id[]" class="form-control select2 master-item mt-2" required disabled>
-                                                <option value="">-- Select Item --</option>
-                                            </select>
-                                        </td>
-                                        <td>
-                                            <input type="number" step="0.01" name="amount[]" class="form-control row-amount" placeholder="Amount" required style="height: 40px; font-size: 1.2rem;">
-                                        </td>
-                                        <td>
-                                            <textarea name="remarks[]" class="form-control" rows="2" placeholder="Remarks"></textarea>
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn btn-danger btn-sm remove-row"><i class="fas fa-trash"></i></button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                                <tfoot>
-                                    <tr class="bg-light">
-                                        <th class="text-right">Running Total:</th>
-                                        <th id="footer_running_total" class="font-weight-bold">0.00</th>
-                                        <th colspan="2"></th>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                        <button type="button" class="btn btn-success btn-sm mt-2" id="add_more"><i class="fas fa-plus"></i> Add Another Row</button>
-                    </div>
-                    <div class="card-footer text-right">
-                        <button type="submit" class="btn btn-primary">Save All Adjustments</button>
-                    </div>
-                </form>
             </div>
-        </div>
-    </section>
+
+            <!-- Items Table Card -->
+            <div class="erp-card p-0 mb-2">
+                <div class="p-2 border-bottom d-flex align-items-center justify-content-between">
+                    <span class="font-weight-bold" style="font-size: 0.85rem; color: #0f172a;">
+                        Adjustment entries
+                    </span>
+                    <button type="button" class="btn-erp btn-erp-secondary btn-sm" id="add_more">
+                        <i class="fas fa-plus mr-1"></i> Add Row
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table erp-table table-bordered mb-0 w-100" id="adjustment_table">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 320px;">Master type & item (FROM)</th>
+                                <th style="width: 200px;">Amount</th>
+                                <th>Remarks</th>
+                                <th class="text-center" style="width: 50px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adjustment_rows">
+                            <tr class="adjustment-row" data-row="0">
+                                <td>
+                                    <select name="adjustment_master_id[]" class="form-control form-control-sm erp-input select2 master-type" required style="width: 100%;">
+                                        <option value="">-- Master Type --</option>
+                                        @foreach($masters as $master)
+                                            <option value="{{ $master->id }}">{{ $master->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="mt-2">
+                                        <select name="ref_id[]" class="form-control form-control-sm erp-input select2 master-item" required disabled style="width: 100%;">
+                                            <option value="">-- Select Item --</option>
+                                        </select>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" name="amount[]" class="form-control form-control-sm erp-input row-amount font-weight-bold" placeholder="Amount" required style="height: 38px; font-size: 1.05rem;">
+                                </td>
+                                <td>
+                                    <textarea name="remarks[]" class="form-control form-control-sm erp-input" rows="2" placeholder="Remarks"></textarea>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <button type="button" class="erp-action-btn erp-btn-delete remove-row" title="Remove row">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background-color: #f8fafc;">
+                                <th class="text-right font-weight-bold">Running total:</th>
+                                <th id="footer_running_total" class="font-weight-bold text-success" style="font-size: 1rem;">0.00</th>
+                                <th colspan="2"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Submit Section -->
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn-erp btn-erp-primary px-4 py-2" style="font-size: 0.95rem;">
+                    <i class="fas fa-save mr-1"></i> Save All Adjustments
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
-
 
 <!-- Template Row (Hidden) -->
 <table style="display:none;">
     <tr id="row_template">
         <td>
-            <select name="adjustment_master_id[]" class="form-control master-type" required>
+            <select name="adjustment_master_id[]" class="form-control form-control-sm erp-input master-type" required style="width: 100%;">
                 <option value="">-- Master Type --</option>
                 @foreach($masters as $master)
                     <option value="{{ $master->id }}">{{ $master->name }}</option>
                 @endforeach
             </select>
-            <select name="ref_id[]" class="form-control master-item mt-2" required disabled>
-                <option value="">-- Select Item --</option>
-            </select>
+            <div class="mt-2">
+                <select name="ref_id[]" class="form-control form-control-sm erp-input master-item" required disabled style="width: 100%;">
+                    <option value="">-- Select Item --</option>
+                </select>
+            </div>
         </td>
         <td>
-            <input type="number" step="0.01" name="amount[]" class="form-control row-amount" placeholder="Amount" required style="height: 40px; font-size: 1.2rem;">
+            <input type="number" step="0.01" name="amount[]" class="form-control form-control-sm erp-input row-amount font-weight-bold" placeholder="Amount" required style="height: 38px; font-size: 1.05rem;">
         </td>
         <td>
-            <textarea name="remarks[]" class="form-control" rows="2" placeholder="Remarks"></textarea>
+            <textarea name="remarks[]" class="form-control form-control-sm erp-input" rows="2" placeholder="Remarks"></textarea>
         </td>
-        <td>
-            <button type="button" class="btn btn-danger btn-sm remove-row"><i class="fas fa-trash"></i></button>
+        <td class="text-center align-middle">
+            <button type="button" class="erp-action-btn erp-btn-delete remove-row" title="Remove row">
+                <i class="fas fa-trash"></i>
+            </button>
         </td>
     </tr>
 </table>
-
 @endsection
 
 @push('scripts')
@@ -296,14 +299,13 @@
 
         // Handle Master Type Change
         $(document).on('change', '.master-type', function(e, isAutoFill) {
-            if (isAutoFill) return; // Prevent loop
+            if (isAutoFill) return;
 
             var $row = $(this).closest('tr');
             var masterId = $(this).val();
             var $itemSelect = $row.find('.master-item');
             
             if (masterId) {
-                // Filter allMasterItems for this masterId
                 var filteredItems = allMasterItems.filter(function(item) {
                     return item.master_id == masterId;
                 });
@@ -320,7 +322,6 @@
                 });
                 $itemSelect.prop('disabled', false).trigger('change.select2');
             } else {
-                // Restore all items if master type is cleared
                 $itemSelect.empty().append('<option value="">-- Select Item --</option>');
                 $.each(allMasterItems, function(key, value) {
                     $itemSelect.append('<option value="' + value.id + '" data-master-id="' + value.master_id + '" data-balance="' + value.balance + '">' + value.name + '</option>');
@@ -329,7 +330,7 @@
             }
         });
 
-        // Handle Master Item Change (to auto-fill Master Type)
+        // Handle Master Item Change
         $(document).on('change', '.master-item', function() {
             var $row = $(this).closest('tr');
             var $masterTypeSelect = $row.find('.master-type');
@@ -338,7 +339,6 @@
             
             if (masterId && !$masterTypeSelect.val()) {
                 $masterTypeSelect.val(masterId).trigger('change', [true]);
-                // Re-trigger change to let other handlers (like shipment picker) react to the newly set master-type
                 $(this).trigger('change');
                 return;
             }
@@ -347,8 +347,8 @@
             var $balanceDisplay = $row.find('.item-balance-display');
             
             if ($balanceDisplay.length == 0) {
-                $balanceDisplay = $('<small class="text-muted item-balance-display d-block"></small>');
-                $(this).after($balanceDisplay);
+                $balanceDisplay = $('<small class="text-muted item-balance-display d-block font-weight-bold" style="font-size: 0.72rem;"></small>');
+                $(this).parent().append($balanceDisplay);
             }
 
             if (balance !== undefined && !$(this).val().includes(',')) {
@@ -359,7 +359,6 @@
                 $balanceDisplay.text('');
             }
         });
-
     });
 </script>
 @endpush

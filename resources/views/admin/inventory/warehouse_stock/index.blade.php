@@ -1,296 +1,214 @@
 @extends('admin.layouts.app')
 @section('content')
-    <div class="content-wrapper">
-        <!-- PAGE HEADER -->
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-                    <!-- Left: Title -->
-                    <div>
-                        <h1 class="m-0 font-weight-bold text-dark">Warehouse Stock After Order</h1>
-                        <small class="text-muted">Manage inventory physical locations and transfers (Stock after active order deductions)</small>
+    <div class="content-wrapper erp-page p-2">
+        <div class="container-fluid p-0">
+            <!-- PAGE HEADER -->
+            <div class="erp-header-bar mb-2">
+                <div>
+                    <h1 class="erp-page-title">Warehouse Stock After Order</h1>
+                    <p class="erp-page-subtitle">Manage inventory physical locations and transfers (Stock after active order deductions)</p>
+                </div>
+                <div class="erp-header-actions d-flex align-items-center" style="gap: 8px;">
+                    <div class="d-flex align-items-center bg-white px-2 py-1 rounded border shadow-sm">
+                        <span class="text-muted mr-2 font-weight-bold" style="font-size: 11px;">Total boxes:</span>
+                        <span class="font-weight-bold text-success" id="header_total_boxes" style="font-size: 13px;">0</span>
                     </div>
-
-                    <!-- Center: Totals -->
-                    <div class="d-flex">
-                        <div class="card shadow-sm border-0 bg-primary text-white mb-0" style="border-radius: 12px; min-width: 200px;">
-                            <div class="card-body p-2 d-flex align-items-center">
-                                <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 40px; height: 40px;">
-                                    <i class="fas fa-box fa-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0 text-white-50" style="font-size: 13px;">Total Boxes</h6>
-                                    <h5 class="mb-0 font-weight-bold" id="header_total_boxes">0</h5>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card shadow-sm border-0 bg-success text-white mb-0 ml-3" style="border-radius: 12px; min-width: 200px;">
-                            <div class="card-body p-2 d-flex align-items-center">
-                                <div class="bg-white text-success rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 40px; height: 40px;">
-                                    <i class="fas fa-tshirt fa-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="mb-0 text-white-50" style="font-size: 13px;">Total Pcs</h6>
-                                    <h5 class="mb-0 font-weight-bold" id="header_total_pcs">0</h5>
-                                </div>
-                            </div>
+                    <div class="d-flex align-items-center bg-white px-2 py-1 rounded border shadow-sm">
+                        <span class="text-muted mr-2 font-weight-bold" style="font-size: 11px;">Total pcs:</span>
+                        <span class="font-weight-bold text-primary" id="header_total_pcs" style="font-size: 13px;">0</span>
+                    </div>
+                    <div class="dropdown d-inline-block">
+                        <button class="btn-erp btn-erp-success dropdown-toggle" type="button" id="exportDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-download mr-1"></i> Export
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="exportDropdown">
+                            <a class="dropdown-item" href="#" id="export_pdf"><i class="fas fa-file-pdf text-danger mr-2"></i> Download PDF</a>
+                            <a class="dropdown-item" href="#" id="export_excel"><i class="fas fa-file-excel text-success mr-2"></i> Download Excel</a>
+                            <a class="dropdown-item" href="#" id="export_excel_price"><i class="fas fa-file-excel text-success mr-2"></i> Download Excel (With Price)</a>
                         </div>
                     </div>
+                    <a href="{{ route('admin.inventory.warehouse_stock.history') }}" class="btn-erp btn-erp-outline">
+                        <i class="fas fa-history mr-1"></i> Transfer History
+                    </a>
+                </div>
+            </div>
 
-                    <!-- Right: Action Button -->
-                    <div>
-                        <div class="dropdown d-inline-block">
-                            <button class="btn btn-outline-success shadow-sm dropdown-toggle mr-2" type="button" id="exportDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-download mr-1"></i> Export
+            <!-- FILTERS CARD -->
+            <div class="erp-card mb-2">
+                <div class="erp-card-body p-2">
+                    <div class="row align-items-end">
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Warehouse</label>
+                            <select id="storeroom_filter" class="form-control select2">
+                                <option value="">All Warehouses</option>
+                                @foreach($storerooms as $storeroom)
+                                    <option value="{{ $storeroom->id }}" {{ isset($defaultStoreroomId) && $defaultStoreroomId == $storeroom->id ? 'selected' : '' }}>{{ $storeroom->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Rack</label>
+                            <select id="rack_filter" class="form-control select2">
+                                <option value="">All Racks</option>
+                                <!-- Populated via JS -->
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Series</label>
+                            <select id="series_filter" class="form-control select2">
+                                <option value="">All Series</option>
+                                @foreach($series as $s)
+                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Brand</label>
+                            <select id="brand_filter" class="form-control select2">
+                                <option value="">All Brands</option>
+                                @foreach($brands as $b)
+                                    <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Design no.</label>
+                            <select id="design_filter" class="form-control select2">
+                                <option value="">All Design Nos.</option>
+                                @foreach($designs as $design)
+                                    <option value="{{ $design->design_number }}">{{ $design->design_number }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Product</label>
+                            <select id="product_filter" class="form-control select2">
+                                <option value="">All Products</option>
+                                @foreach($products as $prod)
+                                    <option value="{{ $prod->id }}">{{ ($prod->series->name ?? '') . ' ' . $prod->name_of_garment }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Size set</label>
+                            <select id="size_set_filter" class="form-control select2">
+                                <option value="">All Size Sets</option>
+                                @foreach($size_sets as $set)
+                                    <option value="{{ $set->id }}">{{ $set->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Fitting</label>
+                            <select id="fitting_filter" class="form-control select2">
+                                <option value="">All Fittings</option>
+                                @foreach($fittings as $f)
+                                    <option value="{{ $f->id }}">{{ $f->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Pattern</label>
+                            <select id="pattern_filter" class="form-control select2">
+                                <option value="">All Patterns</option>
+                                @foreach($patterns as $p)
+                                    <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Product nature</label>
+                            <select id="nature_filter" class="form-control select2">
+                                <option value="">All Natures</option>
+                                @foreach($natures as $n)
+                                    <option value="{{ $n->id }}">{{ $n->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Fabric type</label>
+                            <select id="fabric_type_filter" class="form-control select2">
+                                <option value="">All Fabric Types</option>
+                                @foreach($fabric_types as $ft)
+                                    <option value="{{ $ft->id }}">{{ $ft->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Min boxes</label>
+                            <input type="number" id="min_boxes_filter" class="form-control" placeholder="Min Qty" min="0" value="1">
+                        </div>
+
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">Max boxes</label>
+                            <input type="number" id="max_boxes_filter" class="form-control" placeholder="Max Qty" min="0">
+                        </div>
+
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">MRP from</label>
+                            <div class="input-group input-group-sm">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">₹</span>
+                                </div>
+                                <input type="number" id="mrp_from_filter" class="form-control" placeholder="Min MRP" min="0" step="any">
+                            </div>
+                        </div>
+
+                        <div class="col-md-2 mb-2">
+                            <label class="erp-label">MRP to</label>
+                            <div class="input-group input-group-sm">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">₹</span>
+                                </div>
+                                <input type="number" id="mrp_to_filter" class="form-control" placeholder="Max MRP" min="0" step="any">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-1 mb-2">
+                            <button id="reset_filters" class="btn-erp btn-erp-secondary w-100" title="Reset Filters" style="height: 33px;">
+                                <i class="fas fa-undo"></i>
                             </button>
-                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="exportDropdown">
-                                <a class="dropdown-item" href="#" id="export_pdf"><i class="fas fa-file-pdf text-danger mr-2"></i> Download PDF</a>
-                                <a class="dropdown-item" href="#" id="export_excel"><i class="fas fa-file-excel text-success mr-2"></i> Download Excel</a>
-                                <a class="dropdown-item" href="#" id="export_excel_price"><i class="fas fa-file-excel text-success mr-2"></i> Download Excel (With Price)</a>
-                            </div>
-                        </div>
-                        <a href="{{ route('admin.inventory.warehouse_stock.history') }}" class="btn btn-outline-primary shadow-sm">
-                            <i class="fas fa-history mr-1"></i> Transfer History
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- CONTENT -->
-        <section class="content">
-            <div class="container-fluid">
-
-                <!-- SINGLE CONSOLIDATED FILTER CARD -->
-                <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
-                    <div class="card-body bg-light rounded p-4">
-                        <div class="row align-items-end">
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Warehouse</label>
-                                <select id="storeroom_filter" class="form-control select2">
-                                    <option value="">All Warehouses</option>
-                                    @foreach($storerooms as $storeroom)
-                                        <option value="{{ $storeroom->id }}" {{ isset($defaultStoreroomId) && $defaultStoreroomId == $storeroom->id ? 'selected' : '' }}>{{ $storeroom->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Rack</label>
-                                <select id="rack_filter" class="form-control select2">
-                                    <option value="">All Racks</option>
-                                    <!-- Populated via JS -->
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Series</label>
-                                <select id="series_filter" class="form-control select2">
-                                    <option value="">All Series</option>
-                                    @foreach($series as $s)
-                                        <option value="{{ $s->id }}">{{ $s->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Brand</label>
-                                <select id="brand_filter" class="form-control select2">
-                                    <option value="">All Brands</option>
-                                    @foreach($brands as $b)
-                                        <option value="{{ $b->id }}">{{ $b->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Design No.</label>
-                                <select id="design_filter" class="form-control select2">
-                                    <option value="">All Design Nos.</option>
-                                    @foreach($designs as $design)
-                                        <option value="{{ $design->design_number }}">{{ $design->design_number }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Product</label>
-                                <select id="product_filter" class="form-control select2">
-                                    <option value="">All Products</option>
-                                    @foreach($products as $prod)
-                                        <option value="{{ $prod->id }}">{{ ($prod->series->name ?? '') . ' ' . $prod->name_of_garment }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Size Set</label>
-                                <select id="size_set_filter" class="form-control select2">
-                                    <option value="">All Size Sets</option>
-                                    @foreach($size_sets as $set)
-                                        <option value="{{ $set->id }}">{{ $set->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Fitting</label>
-                                <select id="fitting_filter" class="form-control select2">
-                                    <option value="">All Fittings</option>
-                                    @foreach($fittings as $f)
-                                        <option value="{{ $f->id }}">{{ $f->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Pattern</label>
-                                <select id="pattern_filter" class="form-control select2">
-                                    <option value="">All Patterns</option>
-                                    @foreach($patterns as $p)
-                                        <option value="{{ $p->id }}">{{ $p->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Product Nature</label>
-                                <select id="nature_filter" class="form-control select2">
-                                    <option value="">All Natures</option>
-                                    @foreach($natures as $n)
-                                        <option value="{{ $n->id }}">{{ $n->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Fabric Type</label>
-                                <select id="fabric_type_filter" class="form-control select2">
-                                    <option value="">All Fabric Types</option>
-                                    @foreach($fabric_types as $ft)
-                                        <option value="{{ $ft->id }}">{{ $ft->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Min Boxes</label>
-                                <input type="number" id="min_boxes_filter" class="form-control" placeholder="Min Qty" min="0" value="1">
-                            </div>
-
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">Max Boxes</label>
-                                <input type="number" id="max_boxes_filter" class="form-control" placeholder="Max Qty" min="0">
-                            </div>
-
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">MRP From</label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">₹</span>
-                                    </div>
-                                    <input type="number" id="mrp_from_filter" class="form-control" placeholder="Min MRP" min="0" step="any">
-                                </div>
-                            </div>
-
-                            <div class="col-md-2 mb-3">
-                                <label class="small font-weight-bold text-muted mb-1">MRP To</label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">₹</span>
-                                    </div>
-                                    <input type="number" id="mrp_to_filter" class="form-control" placeholder="Max MRP" min="0" step="any">
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-1 mb-3">
-                                <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block" title="Reset Filters">
-                                    <i class="fas fa-undo"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TABLE CARD -->
-                <div class="card shadow border-0" style="border-radius: 12px; overflow: hidden;">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table id="inventoryTable" class="table table-hover mb-0">
-                                <thead class="bg-light contrast-text">
-                                    <tr>
-                                        <th class="py-3">#</th>
-                                        <th class="py-3 text-center">Image</th>
-                                        <th class="py-3">Product Name</th>
-                                        <th class="py-3">Design No.</th>
-                                        <th class="py-3">Size Set</th>
-                                        <th class="py-3">Location (WH / Rack)</th>
-                                        <th class="py-3 text-center">Total Boxes</th>
-                                        <th class="py-3 text-center">Quantity</th>
-                                        <th class="py-3 text-center">MRP</th>
-                                        <th class="py-3 text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        <div id="loading-spinner" class="text-center py-3" style="display: none;">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="sr-only">Loading...</span>
-                            </div>
-                        </div>
-                        <div id="no-more-data" class="text-center py-3 text-muted small" style="display: none;">
-                            No more records to load.
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
+
+            <!-- TABLE CARD -->
+            <div class="erp-card">
+                <div class="erp-card-body p-0">
+                    <div class="table-responsive">
+                        <table id="inventoryTable" class="erp-table table-bordered table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 45px;">#</th>
+                                    <th class="text-center" style="width: 55px;">Image</th>
+                                    <th>Product name</th>
+                                    <th>Design no.</th>
+                                    <th>Size set</th>
+                                    <th>Location (WH / Rack)</th>
+                                    <th class="text-center">Total boxes</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-center">MRP</th>
+                                    <th class="text-center" style="width: 70px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div id="loading-spinner" class="text-center py-3" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                    <div id="no-more-data" class="text-center py-3 text-muted small" style="display: none;">
+                        No more records to load.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <style>
-        .contrast-text th {
-            color: #444;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 0.5px;
-        }
-
-        .table tbody td {
-            vertical-align: middle;
-            padding: 1rem 0.75rem;
-        }
-
-        .badge {
-            padding: 0.5em 0.8em;
-            border-radius: 6px;
-        }
-
-        .form-control {
-            border-radius: 8px;
-        }
-
-        /* Image Gallery Modal Styles */
-        #main-gallery-image {
-            width: 100%;
-            height: auto;
-            max-height: 400px;
-            object-fit: contain;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-        .thumbnail-strip {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding: 10px 0;
-            scrollbar-width: thin;
-        }
-        .thumbnail-strip img {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 4px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: border-color 0.2s;
-        }
-        .thumbnail-strip img:hover, .thumbnail-strip img.active {
-            border-color: #0f62fe;
-        }
-    </style>
 
     <!-- Image Gallery Modal -->
     <div class="modal fade" id="imageGalleryModal" tabindex="-1" role="dialog" aria-labelledby="imageGalleryModalLabel" aria-hidden="true">

@@ -2,108 +2,125 @@
 @section('title', 'Fabric Return Report')
 
 @section('content')
-<div class="content-wrapper">
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="d-flex justify-content-between align-items-center">
-                <h3 class="m-0">Fabric Return Report</h3>
+<div class="content-wrapper erp-page p-2">
+
+    {{-- Header Bar --}}
+    <div class="erp-header-bar mb-2">
+        <div>
+            <h1 class="erp-header-title">
+                <i class="fas fa-undo"></i> Fabric return report
+            </h1>
+            <div class="erp-report-meta">
+                <span class="meta-item"><i class="fas fa-list text-muted"></i> Vendor return transactions</span>
+                <span class="meta-divider">&bull;</span>
+                <span class="meta-item"><i class="far fa-clock text-muted"></i> {{ now()->format('d M Y, h:i A') }}</span>
             </div>
         </div>
-    </section>
-
-    <section class="content">
-        <div class="container-fluid">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <form method="GET" action="{{ route('admin.report.fabric_return') }}" class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label small">Supplier</label>
-                            <select name="vendor_id" class="form-control form-control-sm select2">
-                                <option value="">All Suppliers</option>
-                                @foreach($vendors as $vendor)
-                                    <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>{{ $vendor->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small">Start Date</label>
-                            <input type="date" name="start_date" class="form-control form-control-sm" value="{{ request('start_date') }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small">End Date</label>
-                            <input type="date" name="end_date" class="form-control form-control-sm" value="{{ request('end_date') }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small">Shipment No</label>
-                            <input type="text" name="search" class="form-control form-control-sm" placeholder="Search Shipment SKU..." value="{{ request('search') }}">
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fas fa-search"></i> Filter</button>
-                            <a href="{{ route('admin.report.fabric_return') }}" class="btn btn-sm btn-secondary ms-2"><i class="fas fa-sync"></i></a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <div class="card shadow-sm">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped mb-0">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th class="ps-3">Sr.No</th>
-                                    <th>Date</th>
-                                    <th>Supplier</th>
-                                    <th>Shipment SKU</th>
-                                    <th class="text-end">Sub Total</th>
-                                    <th class="text-end">Tax Amount</th>
-                                    <th class="text-end">Total Amount</th>
-                                    <th class="text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($data as $row)
-                                <tr>
-                                    <td class="ps-3">{{ $loop->iteration }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($row->date)->format('d M Y') }}</td>
-                                    <td>{{ $row->receipt->vendor->name ?? '-' }}</td>
-                                    <td>
-                                        <span class="badge bg-info text-dark">{{ $row->receipt->sku ?? '-' }}</span>
-                                    </td>
-                                    <td class="text-end">{{ number_format($row->sub_total, 2) }}</td>
-                                    <td class="text-end">{{ number_format($row->gst_amount, 2) }}</td>
-                                    <td class="text-end fw-bold text-danger">{{ number_format($row->total_amount, 2) }}</td>
-                                    <td class="text-center">
-                                        <div class="btn-group">
-                                            <a href="{{ route('admin.report.fabric_return_view', $row->id) }}" class="btn btn-sm btn-outline-primary py-0" title="View Detail">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{{ route('admin.fabric_receipt.edit_return', $row->id) }}" class="btn btn-sm btn-outline-info py-0" title="Edit Return">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="javascript:void(0)" onclick="confirmDelete('{{ route('admin.fabric_receipt.delete_return', $row->id) }}')" class="btn btn-sm btn-outline-danger py-0" title="Delete Return">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-@empty
-@endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                @if($data->hasPages())
-                <div class="card-footer bg-white">
-                    {{ $data->appends(request()->query())->links() }}
-                </div>
-                @endif
-            </div>
+        <div class="erp-header-actions">
+            @if(Route::has('admin.fabric_receipt.return'))
+            <a href="{{ route('admin.fabric_receipt.return') }}" class="btn-erp btn-erp-primary">
+                <i class="fas fa-plus mr-1"></i> Create fabric return
+            </a>
+            @endif
         </div>
-    </section>
+    </div>
+
+    {{-- Filter Card --}}
+    <div class="erp-card mb-2 p-2">
+        <form method="GET" action="{{ route('admin.report.fabric_return') }}" class="mb-0">
+            <div class="form-row align-items-end">
+                <div class="col-md-3 col-sm-6 mb-1">
+                    <label class="small text-muted font-weight-bold mb-1">Supplier</label>
+                    <select name="vendor_id" class="form-control form-control-sm select2 erp-filter-select">
+                        <option value="">All suppliers</option>
+                        @foreach($vendors as $vendor)
+                            <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>{{ $vendor->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2 col-sm-6 mb-1">
+                    <label class="small text-muted font-weight-bold mb-1">From date</label>
+                    <input type="date" name="start_date" class="form-control form-control-sm erp-filter-input" value="{{ request('start_date') }}">
+                </div>
+                <div class="col-md-2 col-sm-6 mb-1">
+                    <label class="small text-muted font-weight-bold mb-1">To date</label>
+                    <input type="date" name="end_date" class="form-control form-control-sm erp-filter-input" value="{{ request('end_date') }}">
+                </div>
+                <div class="col-md-3 col-sm-6 mb-1">
+                    <label class="small text-muted font-weight-bold mb-1">Shipment SKU</label>
+                    <input type="text" name="search" class="form-control form-control-sm erp-filter-input" placeholder="Search shipment SKU..." value="{{ request('search') }}">
+                </div>
+                <div class="col-md-2 col-sm-12 mb-1 d-flex gap-1">
+                    <button type="submit" class="btn-erp btn-erp-primary btn-sm flex-fill" title="Apply filter">
+                        <i class="fas fa-filter mr-1"></i> Apply
+                    </button>
+                    <a href="{{ route('admin.report.fabric_return') }}" class="btn-erp btn-erp-outline btn-sm" title="Reset filter">
+                        <i class="fas fa-undo"></i>
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {{-- Report Table Card --}}
+    <div class="erp-card p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover erp-table mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 45px;" class="text-center">#</th>
+                        <th>Return date</th>
+                        <th>Supplier</th>
+                        <th>Shipment SKU</th>
+                        <th class="text-right">Subtotal</th>
+                        <th class="text-right">Tax amount</th>
+                        <th class="text-right">Total amount</th>
+                        <th class="text-center" style="width: 120px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($data as $row)
+                    <tr>
+                        <td class="text-center text-muted">{{ $loop->iteration }}</td>
+                        <td>{{ \Carbon\Carbon::parse($row->date)->format('d M Y') }}</td>
+                        <td><strong>{{ $row->receipt->vendor->name ?? '-' }}</strong></td>
+                        <td><code>{{ $row->receipt->sku ?? '-' }}</code></td>
+                        <td class="text-right">₹ {{ number_format($row->sub_total, 2) }}</td>
+                        <td class="text-right">₹ {{ number_format($row->gst_amount, 2) }}</td>
+                        <td class="text-right font-weight-bold text-danger">₹ {{ number_format($row->total_amount, 2) }}</td>
+                        <td class="text-center text-nowrap">
+                            <a href="{{ route('admin.report.fabric_return_view', $row->id) }}" class="btn-erp btn-erp-outline btn-sm py-0 px-2 mr-1" style="font-size: 11px;" title="View detail">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            @if(Route::has('admin.fabric_receipt.edit_return'))
+                            <a href="{{ route('admin.fabric_receipt.edit_return', $row->id) }}" class="btn-erp btn-erp-outline btn-sm py-0 px-2 mr-1" style="font-size: 11px;" title="Edit return">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            @endif
+                            @if(Route::has('admin.fabric_receipt.delete_return'))
+                            <a href="javascript:void(0)" onclick="confirmDelete('{{ route('admin.fabric_receipt.delete_return', $row->id) }}')" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 11px;" title="Delete return">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            @endif
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">No fabric return records found.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        @if($data->hasPages())
+            <div class="p-2 border-top bg-light">
+                {{ $data->appends(request()->query())->links() }}
+            </div>
+        @endif
+    </div>
+
 </div>
-
-{{-- Delete Confirmation Modal or JS --}}
 @endsection
 
 @section('scripts')
@@ -116,13 +133,13 @@ function confirmDelete(url) {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
+        cancelButtonColor: '#64748b',
         confirmButtonText: 'Yes, delete it!'
     }).then((result) => {
         if (result.isConfirmed) {
             window.location.href = url;
         }
-    })
+    });
 }
 </script>
 @endsection

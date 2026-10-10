@@ -85,35 +85,39 @@ class ContractorVoucherDataTable
                 }
             })
             ->editColumn('voucher_date', function ($row) {
-                return date('d M Y', strtotime($row->voucher_date));
+                return '<span class="text-nowrap text-secondary font-weight-500">' . date('d M Y', strtotime($row->voucher_date)) . '</span>';
+            })
+            ->editColumn('voucher_number', function ($row) {
+                return '<span class="font-weight-600 text-dark">' . e($row->voucher_number) . '</span>';
             })
             ->editColumn('total_amount', function ($row) {
-                return '₹ ' . number_format($row->total_amount, 2);
+                return '<span class="font-weight-600" style="color: #05421c;">₹ ' . number_format($row->total_amount, 2) . '</span>';
             })
             ->addColumn('lot_number', function ($row) {
                 if ($row->orderLot && $row->orderLot->lot_no) {
-                    return '<span class="badge badge-light border">' . e($row->orderLot->lot_no) . '</span>';
+                    return '<span class="badge-erp-status badge-erp-info font-weight-bold">' . e($row->orderLot->lot_no) . '</span>';
                 }
                 $itemLots = $row->items->filter(function($i) { return $i->orderLot && $i->orderLot->lot_no; })
                     ->map(function($i) { return $i->orderLot->lot_no; })->unique();
                 if ($itemLots->count() > 0) {
-                    return $itemLots->map(function($l) { return '<span class="badge badge-light border">' . e($l) . '</span>'; })->implode(' ');
+                    return $itemLots->map(function($l) { return '<span class="badge-erp-status badge-erp-info font-weight-bold mr-1">' . e($l) . '</span>'; })->implode(' ');
                 }
-                return '<span class="text-muted">N/A</span>';
+                return '<span class="text-muted" style="font-size: 11px;">N/A</span>';
             })
             ->addColumn('document', function ($row) {
                 if ($row->document) {
-                    return '<a href="' . asset($row->document) . '" target="_blank" class="btn btn-xs btn-info"><i class="fas fa-file-download mr-1"></i> View</a>';
+                    return '<a href="' . asset($row->document) . '" target="_blank" class="erp-action-btn erp-btn-view" data-toggle="tooltip" title="View Document"><i class="fas fa-file-pdf"></i></a>';
                 }
-                return '<span class="badge badge-secondary">No Slip</span>';
+                return '<span class="text-muted" style="font-size: 11px;">No slip</span>';
             })
             ->addColumn('action', function ($row) {
                 return '
-                <a href="' . route('admin.payment.voucher.contractor.edit', ['id' => $row->id]) . '" class="" data-toggle="tooltip" data-placement="top" title="Edit"><i class="fas fa-edit text-muted"></i></a>
-                <a href="' . route('admin.payment.voucher.contractor.delete', ['id' => $row->id]) . '" class="ml-2" data-toggle="tooltip" data-placement="top" title="Delete" onclick="return confirm(\'Are you sure you want to delete this voucher?\')"><i class="fas fa-trash text-danger"></i></a>
-                ';
+                <div class="d-flex align-items-center justify-content-center" style="gap: 6px;">
+                    <a href="' . route('admin.payment.voucher.contractor.edit', ['id' => $row->id]) . '" class="erp-action-btn erp-btn-edit" data-toggle="tooltip" title="Edit"><i class="fas fa-edit"></i></a>
+                    <a href="' . route('admin.payment.voucher.contractor.delete', ['id' => $row->id]) . '" class="erp-action-btn erp-btn-delete" data-toggle="tooltip" title="Delete" onclick="return confirm(\'Are you sure you want to delete this voucher?\')"><i class="fas fa-trash"></i></a>
+                </div>';
             })
-            ->rawColumns(['action', 'document', 'lot_number'])
+            ->rawColumns(['voucher_date', 'voucher_number', 'total_amount', 'action', 'document', 'lot_number'])
             ->make(true);
     }
 }

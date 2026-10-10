@@ -1,119 +1,111 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="content-wrapper">
-        <div class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-3 align-items-center">
-                    <div class="col-sm-6">
-                        <h1 class="m-0 font-weight-bold text-dark">
-                            <i class="fas fa-layer-group mr-2 text-primary"></i>Product Group Details
-                        </h1>
-                        <small class="text-muted">Viewing details for: {{ $group_info->product_name }} ({{ $group_info->design_number }})</small>
-                    </div>
-                    <div class="col-sm-6 text-right">
-                        <a href="{{ route('admin.inventory.index') }}" class="btn btn-secondary shadow-sm">
-                            <i class="fas fa-arrow-left mr-1"></i> Back to Inventory
-                        </a>
-                    </div>
+    <div class="content-wrapper erp-page p-2">
+        <div class="container-fluid p-0">
+            <div class="erp-header-bar mb-2">
+                <div>
+                    <h1 class="erp-page-title">Product Group Details</h1>
+                    <p class="erp-page-subtitle">Viewing details for: {{ $group_info->product_name }} ({{ $group_info->design_number }})</p>
+                </div>
+                <div class="erp-header-actions">
+                    <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
+                        <i class="fas fa-arrow-left mr-1"></i> Back to Inventory
+                    </a>
                 </div>
             </div>
-        </div>
 
-        <section class="content">
-            <div class="container-fluid">
-                <div class="row">
-                    <!-- LEFT COLUMN: INFO -->
-                    <div class="col-md-4">
-                        <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
-                            <div class="card-header bg-primary py-3">
-                                <h3 class="card-title font-weight-bold mb-0">General Information</h3>
-                            </div>
-                            <div class="card-body p-0">
-                                <table class="table table-hover mb-0">
-                                    <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Image</th>
-                                        <td class="py-3">
-                                            @php
-                                                $imgSrc = $group_info->product_image ? asset('assets/products/' . $group_info->product_image) : asset('images/image-placeholder.png');
-                                            @endphp
-                                            <a href="javascript:void(0)" onclick="openVariantImageModal({{ $group_info->variant_id ?? 'null' }}, '{{ $imgSrc }}')">
-                                                <img src="{{ $imgSrc }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" onerror="this.src='{{ asset('images/image-placeholder.png') }}'">
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Product Name</th>
-                                        <td class="py-3 font-weight-bold">{{ $group_info->product_name }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Design Number</th>
-                                        <td class="py-3 font-weight-bold text-primary">{{ $group_info->design_number }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Size Set</th>
-                                        <td class="py-3"><span class="badge badge-light border">{{ $group_info->size_set_name }}</span></td>
-                                    </tr>
-
-                                    <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Fitting</th>
-                                        <td class="py-3 font-weight-bold">{{ $group_info->fitting_name ?? 'N/A' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Pattern</th>
-                                        <td class="py-3 font-weight-bold">{{ $group_info->pattern_name ?? 'N/A' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">MRP</th>
-                                        <td class="py-3 font-weight-bold text-dark">₹{{ number_format($group_info->mrp, 2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Total Boxes</th>
-                                        <td class="py-3 font-weight-bold text-success">{{ $items->sum('total_boxes') }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Total Order</th>
-                                        <td class="py-3 font-weight-bold text-danger">{{ $total_order }} Boxes</td>
-                                    </tr>
-                                    <tr>
-                                        <th class="pl-4 py-3 text-muted small text-uppercase">Total Quantity</th>
-                                        <td class="py-3 font-weight-bold text-primary" style="font-size: 1.2rem;">
-                                            {{ $items->sum(function($item) { return $item->quantity * $item->total_boxes; }) }} <small>Pcs</small>
-                                        </td>
-                                    </tr>
-
-                                </table>
-                            </div>
+            <div class="row">
+                <!-- LEFT COLUMN: INFO -->
+                <div class="col-md-4">
+                    <div class="erp-card mb-2">
+                        <div class="erp-card-header">
+                            <h3 class="erp-card-title"><i class="fas fa-info-circle mr-1"></i> General information</h3>
+                        </div>
+                        <div class="erp-card-body p-0">
+                            <table class="erp-table table-bordered mb-0">
+                                <tr>
+                                    <th style="width: 130px;">Image</th>
+                                    <td>
+                                        @php
+                                            $imgSrc = $group_info->product_image ? asset('assets/products/' . $group_info->product_image) : asset('images/image-placeholder.png');
+                                        @endphp
+                                        <a href="javascript:void(0)" onclick="openVariantImageModal({{ $group_info->variant_id ?? 'null' }}, '{{ $imgSrc }}')">
+                                            <img src="{{ $imgSrc }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" onerror="this.src='{{ asset('images/image-placeholder.png') }}'">
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Product name</th>
+                                    <td class="font-weight-bold">{{ $group_info->product_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Design number</th>
+                                    <td class="font-weight-bold text-success">{{ $group_info->design_number }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Size set</th>
+                                    <td><span class="badge badge-light border">{{ $group_info->size_set_name }}</span></td>
+                                </tr>
+                                <tr>
+                                    <th>Fitting</th>
+                                    <td class="font-weight-bold">{{ $group_info->fitting_name ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Pattern</th>
+                                    <td class="font-weight-bold">{{ $group_info->pattern_name ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>MRP</th>
+                                    <td class="font-weight-bold text-dark">₹{{ number_format($group_info->mrp, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Total boxes</th>
+                                    <td class="font-weight-bold text-success">{{ $items->sum('total_boxes') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Total order</th>
+                                    <td class="font-weight-bold text-danger">{{ $total_order }} Boxes</td>
+                                </tr>
+                                <tr>
+                                    <th>Total quantity</th>
+                                    <td class="font-weight-bold text-primary" style="font-size: 1.1rem;">
+                                        {{ $items->sum(function($item) { return $item->quantity * $item->total_boxes; }) }} <small>Pcs</small>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
+                </div>
 
-                    <!-- RIGHT COLUMN: TABLE -->
-                    <div class="col-md-8">
-                        <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
-                            <div class="card-header bg-success py-3 d-flex justify-content-between align-items-center">
-                                <h3 class="card-title font-weight-bold mb-0">Content Details</h3>
-                                <select id="colorFilter" class="form-control form-control-sm w-auto">
-                                    <option value="">All Colors</option>
-                                    @php
-                                        $unique_colors = $items->pluck('color_name')->unique()->filter();
-                                    @endphp
-                                    @foreach($unique_colors as $color)
-                                        <option value="{{ $color }}">{{ $color }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="card-body p-0">
-                                <table class="table table-striped table-hover mb-0">
-                                    <thead class="bg-light contrast-text">
+                <!-- RIGHT COLUMN: TABLE -->
+                <div class="col-md-8">
+                    <div class="erp-card mb-2">
+                        <div class="erp-card-header">
+                            <h3 class="erp-card-title"><i class="fas fa-boxes mr-1"></i> Content details</h3>
+                            <select id="colorFilter" class="form-control form-control-sm w-auto" style="height: 28px !important; font-size: 12px;">
+                                <option value="">All Colors</option>
+                                @php
+                                    $unique_colors = $items->pluck('color_name')->unique()->filter();
+                                @endphp
+                                @foreach($unique_colors as $color)
+                                    <option value="{{ $color }}">{{ $color }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="erp-card-body p-0">
+                            <div class="table-responsive">
+                                <table class="erp-table table-bordered table-striped table-hover mb-0">
+                                    <thead>
                                         <tr>
-                                            <th class="pl-4 py-3">Warehouse</th>
-                                            <th class="py-3">Rack</th>
-                                            <th class="py-3">Barcode</th>
-                                            <th class="py-3">Color</th>
-                                            <th class="py-3">Pcs/Box</th>
-                                            <th class="text-center py-3">Total Boxes</th>
-                                            <th class="text-center py-3">Total Order</th>
-                                            <th class="text-center py-3">Total Qty</th>
+                                            <th>Warehouse</th>
+                                            <th>Rack</th>
+                                            <th>Barcode</th>
+                                            <th>Color</th>
+                                            <th class="text-center">Pcs/box</th>
+                                            <th class="text-center">Total boxes</th>
+                                            <th class="text-center">Total order</th>
+                                            <th class="text-center">Total qty</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -125,26 +117,26 @@
                                                 @continue
                                             @endif
                                             <tr class="item-row" data-color="{{ $item->color_name ?? 'N/A' }}">
-                                                <td class="pl-4 py-3">
+                                                <td>
                                                     @if($item->rack && $item->rack->storeroom)
                                                         <span class="badge badge-secondary">{{ $item->rack->storeroom->name }}</span>
                                                     @else
                                                         <span class="text-muted">Unassigned</span>
                                                     @endif
                                                 </td>
-                                                <td class="py-3">
+                                                <td>
                                                     @if($item->rack)
                                                         <span class="badge badge-info">{{ $item->rack->name }}</span>
                                                     @else
                                                         <span class="text-muted">Unassigned</span>
                                                     @endif
                                                 </td>
-                                                <td class="py-3 font-weight-bold text-dark">{{ $item->barcode }}</td>
-                                                <td class="py-3 font-weight-bold">{{ $item->color_name ?? 'N/A' }}</td>
-                                                <td class="py-3 text-center">{{ $item->quantity }}</td>
-                                                <td class="text-center py-3 font-weight-bold text-success">{{ $item->total_boxes }}</td>
-                                                <td class="text-center py-3 font-weight-bold text-danger">{{ $item->color_total_order }}</td>
-                                                <td class="text-center py-3 font-weight-bold text-success" style="font-size: 1.1rem;">{{ $total_qty }}</td>
+                                                <td class="font-weight-bold text-dark">{{ $item->barcode }}</td>
+                                                <td class="font-weight-bold">{{ $item->color_name ?? 'N/A' }}</td>
+                                                <td class="text-center">{{ $item->quantity }}</td>
+                                                <td class="text-center font-weight-bold text-success">{{ $item->total_boxes }}</td>
+                                                <td class="text-center font-weight-bold text-danger">{{ $item->color_total_order }}</td>
+                                                <td class="text-center font-weight-bold text-success">{{ $total_qty }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -154,21 +146,8 @@
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
     </div>
-
-    <style>
-        .contrast-text th {
-            color: #444;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-        }
-        .card-header {
-            border: none;
-        }
-    </style>
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>

@@ -1,99 +1,66 @@
 @extends('admin.layouts.app')
+
 @section('content')
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Manage Stage Units ({{$stage_data->name}})</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Stage Units</li>
-                    </ol>
-                </div>
-            </div>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar">
+        <div class="erp-header-title">
+            <i class="fas fa-tasks text-primary"></i> Manage Stage Units ({{ $stage_data->name }})
         </div>
-    </section>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.master.product_stage.index') }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left"></i> Back to Stages
+            </a>
+            <a href="{{ route('admin.master.product-sub-stage.create', ['stage_id' => $stage_data->id]) }}" class="btn-erp btn-erp-primary">
+                <i class="fas fa-plus"></i> Add Stage Unit
+            </a>
+        </div>
+    </div>
 
-    <!-- Main content -->
-    <section class="content">
-        <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default ">
-                 <!-- <div class="row" >
-                    <div class="col-9 card-header">
-                        <h3 class="card-title">Manage Production Stage</h3>
-                    </div>
-                    <div class="col-3 card-header">
-                        <a href="{{route('admin.master.product_stage.create')}}" class="btn btn-primary" style =" float: right;  width: max-content;">Add Production Stage</a>
-                    </div>
-                </div> -->
-
-                <div class="card-body table-responsive">
-                <table id="customers" class="table table-bordered table-hover">
-                  <thead>
+    <!-- Main Data Table Card -->
+    <div class="erp-card">
+        <div class="erp-card-body p-2 table-responsive">
+            <table id="customers" class="erp-table table table-bordered table-hover">
+                <thead>
                     <tr role="row" class="filter">
+                        <td></td>
                         <td>
-                            <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
+                            <input type="text" class="form-control erp-filter-input" name="name" id="name" placeholder="Search name..." autocomplete="off">
                         </td>
                         <td>
-                            <input type="text" class="form-control" name="name" id="name" autocomplete="off">
+                            <input type="text" class="form-control erp-filter-input" name="sku" id="sku" placeholder="Search SKU..." autocomplete="off">
                         </td>
-                        <td>
-                            <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
-                        </td>
-
-                        
-                        <td>
-                       
-                       </td>
+                        <td></td>
                     </tr>
-                  <tr>
-                    <th>ID</th>
-                    <th>Stage Units</th>
-                    <th>SKU</th>
-                    
-                    <th>Action</th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  <!-- <tr>
-                    <td>1</td>
-                    <td>wefds</td>
-                    <td>Win 95+</td>
-                    <td> 4</td>
-                    <td>X</td>
-                  </tr> -->
-                  
-                  </tbody>
-                  
-                </table>
-              </div>
-            </div>
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th>Stage Units</th>
+                        <th>SKU</th>
+                        <th style="width: 100px;" class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
-    </section>
+    </div>
 </div>
+
 <script>
     $(function () {
-        var i = 1;
         var oTable = $('#customers').DataTable({
             processing: true,
             serverSide: true,
             stateSave: true,
             searching: true,
-            ordering:false,
+            ordering: false,
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
-            "pageLength":25,
+            pageLength: 25,
             ajax: {
                 url: '{!! route('admin.master.product-sub-stage.subStageList',['stage_id' => $stage_data->id]) !!}',
                 data: function (d) {
                     d.id = $('#id').val();
                     d.name = $('#name').val();
                     d.sku = $('#sku').val();
-                  
                 },
                 orderable: false
             },
@@ -101,45 +68,19 @@
                 {data: 'DT_RowIndex', name: 'id'},
                 {data: 'name', name: 'name'},
                 {data: 'sku', name: 'sku'},
-                {data: 'action', name: 'action', searchable: false}
-            ],
-            dom: 'lBfrtip',
-            buttons: [
-                {
-                    text: 'Add Stage Units',
-                    className: 'btn-datatable',
-                    action: function (e, dt, node, config) {
-                        window.location.href = "{{ route('admin.master.product-sub-stage.create', ['stage_id' => $stage_data->id]) }}";
-                    }
-                }
+                {data: 'action', name: 'action', searchable: false, className: 'text-center'}
             ]
-        });
-
-        $('#email-queue-search-form').on('submit', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
         });
 
         $('#name').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
+
         $('#sku').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
-
-        
-
-    });
-
-    $(document).ready(function () {
-        
     });
 
     function deleteData(id){
@@ -153,11 +94,9 @@
             confirmButtonText: "Yes, delete it!"
         }).then((result) => {
             if (result.isConfirmed) {
-                // If user confirms, trigger the delete route
-                window.location.href = "{{ route('admin.master.colors.delete', ['id' => '']) }}" + id;
+                window.location.href = "{{ route('admin.master.product-sub-stage.delete') }}?id=" + id;
             }
         });
     }
 </script>
-
 @endsection

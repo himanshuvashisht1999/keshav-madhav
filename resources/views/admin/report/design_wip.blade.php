@@ -1,206 +1,31 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<style>
-    /* ENTERPRISE ERP DESIGN (SAP / ZOHO STYLE) */
-    :root {
-        --erp-bg: #f5f6f8;
-        --erp-panel-bg: #ffffff;
-        --erp-border: #d1d5db;
-        --erp-primary: #0f62fe;
-        --erp-primary-light: #e0e8ff;
-        --erp-text-main: #111827;
-        --erp-text-muted: #6b7280;
-        --erp-active-bg: #f4f8ff;
-        --erp-radius: 4px;
-        --font-base: 13px;
-    }
+<div class="content-wrapper erp-page p-2">
 
-    body {
-        background-color: var(--erp-bg);
-        font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
-    }
-
-    .spa-container {
-        display: flex;
-        height: calc(100vh - 60px);
-        width: 100%;
-        background: var(--erp-bg);
-        overflow-x: auto;
-        overflow-y: hidden;
-        gap: 8px;
-        padding: 8px;
-        box-sizing: border-box;
-    }
-
-    .spa-panel {
-        background: var(--erp-panel-bg);
-        border: 1px solid var(--erp-border);
-        border-radius: var(--erp-radius);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    }
-
-    .panel-customers { flex: 0 0 240px; }
-    .panel-orders { flex: 0 0 240px; }
-    .panel-designs { flex: 0 0 320px; }
-    .panel-lots { flex: 0 0 240px; }
-    .panel-details { flex: 1 0 400px; min-width: 400px; }
-
-    .spa-panel-header {
-        padding: 12px 16px;
-        background: #f9fafb;
-        border-bottom: 1px solid var(--erp-border);
-    }
-
-    .spa-panel-title {
-        margin: 0;
-        font-size: 14px;
-        font-weight: 700;
-        color: var(--erp-text-main);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .spa-panel-body {
-        flex: 1;
-        overflow-y: auto;
-        padding: 12px;
-        background: #fff;
-    }
-
-    .spa-search-box { position: relative; margin-bottom: 12px; }
-    .spa-search-box input {
-        width: 100%;
-        padding: 8px 10px 8px 30px;
-        border: 1px solid var(--erp-border);
-        border-radius: var(--erp-radius);
-        font-size: var(--font-base);
-        outline: none;
-        transition: border-color 0.15s;
-    }
-    .spa-search-box input:focus { border-color: var(--erp-primary); box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.1); }
-    .spa-search-box i { position: absolute; left: 10px; top: 10px; color: var(--erp-text-muted); font-size: 12px; }
-    .spa-search-box button {
-        background: var(--erp-primary);
-        color: #fff;
-        border: none;
-        border-radius: var(--erp-radius);
-        font-size: var(--font-base);
-        font-weight: 600;
-        padding: 6px;
-        margin-top: 8px;
-        cursor: pointer;
-        width: 100%;
-    }
-    .spa-search-box button:hover { background: #0050e6; }
-
-    .list-item {
-        background: #fff;
-        padding: 10px 12px;
-        border-radius: var(--erp-radius);
-        margin-bottom: 8px;
-        border: 1px solid #e5e7eb;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        transition: all 0.15s ease;
-        position: relative;
-    }
-    .list-item:hover { background: #f9fafb; border-color: #d1d5db; }
-    .list-item.active { background: var(--erp-active-bg); border-color: var(--erp-primary-light); border-left: 4px solid var(--erp-primary); }
-    .list-item-title { font-size: 13px; font-weight: 600; color: var(--erp-text-main); margin: 0; }
-    
-    .qty-badge {
-        font-size: 12px;
-        font-weight: 700;
-        background: #f3f4f6;
-        color: #374151;
-        padding: 2px 8px;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-    }
-    .list-item.active .qty-badge { background: #fff; border-color: var(--erp-primary-light); color: var(--erp-primary); }
-
-    .lot-item {
-        background: #fff;
-        padding: 10px 12px;
-        border-radius: var(--erp-radius);
-        margin-bottom: 8px;
-        border: 1px solid #e5e7eb;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        transition: all 0.15s ease;
-    }
-    .lot-item:hover { background: #f9fafb; }
-    .lot-item.active { background: var(--erp-active-bg); border-color: var(--erp-primary-light); border-left: 4px solid var(--erp-primary); }
-    
-    .lot-icon {
-        width: 24px;
-        height: 24px;
-        border-radius: 4px;
-        background: #f3f4f6;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 10px;
-        color: var(--erp-text-muted);
-        font-size: 11px;
-    }
-    .lot-item.active .lot-icon { background: var(--erp-primary-light); color: var(--erp-primary); }
-
-    .details-placeholder {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: var(--erp-text-muted);
-        text-align: center;
-        font-size: 13px;
-    }
-    .details-placeholder i { font-size: 2.5rem; margin-bottom: 12px; color: #d1d5db; }
-
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-    .loader { border: 2px solid #f3f3f3; border-top: 2px solid var(--erp-primary); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 20px auto; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-    .panel-details .content-wrapper { min-height: auto !important; padding: 0 !important; background: transparent !important; }
-    .panel-details .content { padding: 0 !important; }
-    .panel-details .container-fluid { padding-left: 0; padding-right: 0; }
-
-    </style>
-
-<div class="content-wrapper">
-    <!-- <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 style="font-weight: 800; color: #1e293b; margin: 0;">
-            <i class="fas fa-chart-pie mr-2" style="color: var(--primary);"></i> Design WIP Dashboard
-        </h2>
+    {{-- HEADER BAR --}}
+    <div class="erp-header-bar mb-2">
         <div>
-            <button class="btn btn-primary" onclick="loadDesigns()" style="border-radius: 8px; font-weight: 600;">
-                <i class="fas fa-sync-alt mr-1"></i> Refresh Data
+            <h1 class="erp-header-title">Design WIP Dashboard</h1>
+        </div>
+        <div class="d-flex align-items-center" style="gap: 8px;">
+            <div class="erp-report-meta">
+                Date : {{ now()->format('d M Y h:i A') }}
+            </div>
+            <button type="button" class="btn-erp btn-erp-primary" onclick="loadDesigns()">
+                <i class="fas fa-sync-alt mr-1"></i> Refresh
             </button>
         </div>
-    </div> -->
+    </div>
 
     <div class="spa-container">
         <!-- 0a. Customers Panel -->
         <div class="spa-panel panel-customers">
             <div class="spa-panel-header">
-                <h3 class="spa-panel-title" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span><i class="fas fa-users"></i> Customers</span>
-                    <button onclick="clearAllFilters()" class="btn btn-sm btn-light" style="padding: 2px 8px; font-size: 11px; font-weight: 600; color: #dc2626; background: #fee2e2; border: none; border-radius: 4px;">Clear All</button>
-                </h3>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="spa-panel-title"><i class="fas fa-users"></i> Customers</span>
+                    <button type="button" onclick="clearAllFilters()" class="btn-erp btn-erp-danger" style="padding: 2px 6px; font-size: 10px;">Clear</button>
+                </div>
                 <div class="spa-search-box">
                     <i class="fas fa-search"></i>
                     <input type="text" id="filter_customer" placeholder="Search Customer...">

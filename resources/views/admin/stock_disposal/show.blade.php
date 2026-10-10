@@ -3,83 +3,101 @@
 @section('title', 'Stock Disposal Details')
 
 @section('content')
-<div class="content-wrapper">
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Stock Disposal Details</h1>
-                </div>
-                <div class="col-sm-6 text-right">
-                    <a href="{{ route('admin.inventory.stock_disposal.index') }}" class="btn btn-default shadow-sm">
-                        <i class="fas fa-arrow-left mr-1"></i> Back to History
-                    </a>
-                </div>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- Header Bar -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title">Disposal Details: {{ $main->disposal_no }}</h1>
+                <p class="erp-page-subtitle">Audit log for disposed items and reversal history</p>
+            </div>
+            <div>
+                <a href="{{ route('admin.inventory.stock_disposal.index') }}" class="btn-erp btn-erp-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to History
+                </a>
             </div>
         </div>
-    </section>
 
-    <section class="content">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card card-info card-outline shadow-sm border-0">
-                        <div class="card-header bg-white">
-                            <h3 class="card-title font-weight-bold">Disposal No: {{ $main->disposal_no }}</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-4 pb-3 border-bottom">
-                                <div class="col-md-4">
-                                    <label class="text-muted small text-uppercase mb-1">Date</label>
-                                    <p class="font-weight-bold text-dark mb-0">{{ $main->created_at->format('D MMM YYYY') }}</p>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="text-muted small text-uppercase mb-1">Reason</label>
-                                    <p class="font-weight-bold text-dark mb-0">{{ $main->reason }}</p>
-                                </div>
-                                <div class="col-md-4 text-md-right">
-                                    <label class="text-muted small text-uppercase mb-1">Remarks</label>
-                                    <p class="text-dark mb-0">{{ $main->remarks ?: 'No remarks provided.' }}</p>
-                                </div>
-                            </div>
-                            
-                            <h5 class="font-weight-bold mb-3">Disposed Items ({{ ucfirst($main->item_type) }})</h5>
-                            
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-striped table-hover">
-                                    <thead class="bg-light">
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Item Details</th>
-                                            <th class="text-right">Quantity Disposed</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($main->items as $item)
-                                            <tr>
-                                                <td>{{ $loop->iteration }}</td>
-                                                <td>
-                                                    @if($main->item_type === 'fabric')
-                                                        Roll: <span class="badge badge-info">{{ optional($item->fabricReceiptDetail)->roll_number }}</span>
-                                                        <div class="small text-muted">{{ optional(optional($item->fabricReceiptDetail)->fabric)->name }}</div>
-                                                    @else
-                                                        <span class="font-weight-bold">{{ optional(optional($item->domesticInventory)->product)->design_number }}</span>
-                                                        <div class="small text-muted">{{ optional(optional($item->domesticInventory)->color)->name }} / {{ optional(optional($item->domesticInventory)->sizeSet)->name }}</div>
-                                                    @endif
-                                                </td>
-                                                <td class="text-right">
-                                                    <strong>{{ $item->quantity }}</strong> {{ $main->item_type === 'fabric' ? 'Mtr' : 'Boxes' }}
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Summary Card -->
+        <div class="erp-card mb-2 p-3">
+            <h6 class="font-weight-bold mb-3 pb-2 border-bottom" style="color: #05421c;">
+                <i class="fas fa-info-circle mr-1"></i> Disposal Information
+            </h6>
+            <div class="table-responsive">
+                <table class="table table-sm erp-table mb-0">
+                    <tbody>
+                        <tr>
+                            <th style="width: 20%; background: #f8fafc;">Disposal no.</th>
+                            <td class="font-weight-bold">{{ $main->disposal_no }}</td>
+                            <th style="width: 20%; background: #f8fafc;">Date</th>
+                            <td>{{ $main->created_at->format('D, d M Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th style="background: #f8fafc;">Item type</th>
+                            <td>
+                                @if($main->item_type === 'fabric')
+                                    <span class="badge-erp-status badge-erp-info font-weight-bold"><i class="fas fa-scroll mr-1"></i> Fabric</span>
+                                @else
+                                    <span class="badge-erp-status badge-erp-primary font-weight-bold"><i class="fas fa-boxes mr-1"></i> Domestic</span>
+                                @endif
+                            </td>
+                            <th style="background: #f8fafc;">Reason</th>
+                            <td><span class="badge-erp-status badge-erp-danger font-weight-bold">{{ $main->reason }}</span></td>
+                        </tr>
+                        <tr>
+                            <th style="background: #f8fafc;">Remarks</th>
+                            <td colspan="3" class="text-muted">{{ $main->remarks ?: 'No remarks provided.' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </section>
+
+        <!-- Disposed Items Table Card -->
+        <div class="erp-card p-0">
+            <div class="p-2 border-bottom bg-light d-flex justify-content-between align-items-center">
+                <h6 class="font-weight-bold mb-0" style="color: #05421c;">
+                    <i class="fas fa-boxes mr-1"></i> Disposed Items ({{ ucfirst($main->item_type) }})
+                </h6>
+                <span class="badge-erp-status badge-erp-secondary font-weight-bold">{{ $main->items->count() }} Items</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table erp-table table-bordered table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 45px;">#</th>
+                            <th>Item details</th>
+                            <th class="text-right" style="width: 180px;">Quantity disposed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($main->items as $item)
+                            <tr>
+                                <td class="text-center text-muted font-weight-bold">{{ $loop->iteration }}</td>
+                                <td>
+                                    @if($main->item_type === 'fabric')
+                                        <div class="font-weight-bold">
+                                            Roll: <span class="badge-erp-status badge-erp-info font-weight-bold">{{ optional($item->fabricReceiptDetail)->roll_number }}</span>
+                                        </div>
+                                        <div class="small text-muted">{{ optional(optional($item->fabricReceiptDetail)->fabric)->name }}</div>
+                                    @else
+                                        <div class="font-weight-bold text-dark">
+                                            {{ optional(optional($item->domesticInventory)->product)->design_number }}
+                                        </div>
+                                        <div class="small text-muted">
+                                            {{ optional(optional($item->domesticInventory)->color)->name }} / {{ optional(optional($item->domesticInventory)->sizeSet)->name }}
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="text-right font-weight-bold text-dark">
+                                    {{ $item->quantity }} {{ $main->item_type === 'fabric' ? 'Mtr' : 'Boxes' }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

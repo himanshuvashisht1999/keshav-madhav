@@ -222,7 +222,7 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                 @else
-                                    <a href="{{ route('admin.domestic_inventory_purchases.view', ['id' => $item->ref_id]) }}"
+                                    <a href="{{ route('admin.inventory.purchase_history.show', $item->ref_id) }}"
                                        class="erp-action-btn erp-btn-view" title="View Purchase Receipt">
                                         <i class="fas fa-eye"></i>
                                     </a>

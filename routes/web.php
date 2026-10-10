@@ -1395,6 +1395,17 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             });
         });
 
+        // Backward-compatible Route Aliases for Ledger Views
+        Route::get('/domestic-order-dispatch/view/{id?}', function (\Illuminate\Http\Request $request, $id = null) {
+            $id = $id ?? $request->get('id');
+            return redirect()->route('admin.agent-orders.dispatches.show', $id);
+        })->name('domestic_order_dispatch.view');
+
+        Route::get('/domestic-inventory-purchases/view/{id?}', function (\Illuminate\Http\Request $request, $id = null) {
+            $id = $id ?? $request->get('id');
+            return redirect()->route('admin.inventory.purchase_history.show', $id);
+        })->name('domestic_inventory_purchases.view');
+
         Route::prefix('/reports')->name('reports.')->group(function () {
             Route::get('/fabric-receipt', [AdminReportController::class, 'fabricReceipt'])->name('fabricReceipt');
             Route::get('/fabric-receipt-list', [AdminReportController::class, 'fabricReceiptList'])->name('fabricReceiptList');

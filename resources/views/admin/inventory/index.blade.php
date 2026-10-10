@@ -1,213 +1,204 @@
 @extends('admin.layouts.app')
 @section('content')
-    <div class="content-wrapper">
-        <!-- PAGE HEADER -->
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-3 align-items-center">
-                    <div class="col-sm-6">
-                        <h1 class="m-0 font-weight-bold text-dark">Domestic Inventory</h1>
-                        <small class="text-muted">Manage and track packed domestic orders in inventory</small>
+    <div class="content-wrapper erp-page p-2">
+        <div class="container-fluid p-0">
+            <!-- Header Bar -->
+            <div class="erp-header-bar mb-2">
+                <div>
+                    <h1 class="erp-page-title">Domestic Inventory</h1>
+                    <p class="erp-page-subtitle">Manage and track packed domestic orders in inventory</p>
+                </div>
+                <div class="erp-header-actions d-flex align-items-center" style="gap: 8px;">
+                    <div class="d-flex align-items-center bg-white px-2 py-1 rounded border shadow-sm">
+                        <span class="text-muted mr-2 font-weight-bold" style="font-size: 11px;">Total boxes:</span>
+                        <span class="font-weight-bold text-success" id="grand_total_boxes" style="font-size: 13px;">-</span>
                     </div>
-                    <div class="col-sm-6 text-right">
-                        <div class="d-inline-block bg-white shadow-sm border rounded px-3 py-2 mr-2 text-left">
-                            <span class="text-muted small font-weight-bold text-uppercase">Total Boxes</span>
-                            <h5 class="mb-0 font-weight-bold text-success" id="grand_total_boxes">-</h5>
-                        </div>
-                        <div class="d-inline-block bg-white shadow-sm border rounded px-3 py-2 text-left">
-                            <span class="text-muted small font-weight-bold text-uppercase">Total Orders</span>
-                            <h5 class="mb-0 font-weight-bold text-primary" id="grand_total_orders">-</h5>
-                        </div>
+                    <div class="d-flex align-items-center bg-white px-2 py-1 rounded border shadow-sm">
+                        <span class="text-muted mr-2 font-weight-bold" style="font-size: 11px;">Total orders:</span>
+                        <span class="font-weight-bold text-primary" id="grand_total_orders" style="font-size: 13px;">-</span>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <!-- CONTENT -->
-        <section class="content">
-            <div class="container-fluid">
-                <!-- FILTER CARD -->
-                <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px;">
-                    <div class="card-body bg-light rounded p-2">
-                        <!-- Primary Filters Row -->
-                        <div class="row align-items-end">
-                            <div class="col-md mb-2">
-                                <label class="small font-weight-bold text-muted mb-1">Design Number</label>
-                                <div class="input-group input-group-sm">
-                                    <div class="input-group-prepend"><span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span></div>
-                                    <input type="text" id="design_number" class="form-control border-left-0" placeholder="Search Design...">
-                                </div>
-                            </div>
-                            <div class="col-md mb-2">
-                                <label class="small font-weight-bold text-muted mb-1">Product</label>
-                                <select id="product_filter" class="form-control select2 form-control-sm">
-                                    <option value="">All Products</option>
-                                    @foreach($products as $prod)
-                                        <option value="{{ $prod->product_id }}">{{ $prod->product_name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md mb-2">
-                                <label class="small font-weight-bold text-muted mb-1">Size Set</label>
-                                <select id="size_set_filter" class="form-control select2 form-control-sm">
-                                    <option value="">All Size Sets</option>
-                                    @foreach($size_sets as $set)
-                                        <option value="{{ $set->size_set_id }}">{{ $set->size_set_name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md mb-2">
-                                <label class="small font-weight-bold text-muted mb-1">Color</label>
-                                <select id="color_filter" class="form-control select2 form-control-sm">
-                                    <option value="">All Colors</option>
-                                    @foreach($colors as $color)
-                                        <option value="{{ $color->color_id }}">{{ $color->color_name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md mb-2">
-                                <label class="small font-weight-bold text-muted mb-1">Report Type</label>
-                                <select id="report_type" class="form-control select2 form-control-sm">
-                                    <option value="size_set">Size Set Wise</option>
-                                    <option value="color">Color Wise</option>
-                                </select>
-                            </div>
-                            <div class="col-md-auto mb-2 text-right">
-                                <button class="btn btn-sm btn-outline-primary shadow-sm mr-1" type="button" data-toggle="collapse" data-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
-                                    <i class="fas fa-sliders-h"></i> Advanced
-                                </button>
-                                <button id="reset_filters" class="btn btn-sm btn-secondary shadow-sm" title="Reset Filters">
-                                    <i class="fas fa-undo"></i>
-                                </button>
-                                <a href="#" id="export_excel" class="btn btn-sm btn-success shadow-sm ml-1" title="Export Excel">
-                                    <i class="fas fa-file-excel"></i>
-                                </a>
-                                <a href="#" id="export_pdf" class="btn btn-sm btn-danger shadow-sm ml-1" title="Export PDF">
-                                    <i class="fas fa-file-pdf"></i>
-                                </a>
-
+            <!-- Filter Card -->
+            <div class="erp-card mb-2">
+                <div class="erp-card-body p-2">
+                    <!-- Primary Filters Row -->
+                    <div class="row align-items-end">
+                        <div class="col-md mb-2">
+                            <label class="erp-label">Design number</label>
+                            <div class="input-group input-group-sm">
+                                <div class="input-group-prepend"><span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span></div>
+                                <input type="text" id="design_number" class="form-control border-left-0" placeholder="Search Design...">
                             </div>
                         </div>
+                        <div class="col-md mb-2">
+                            <label class="erp-label">Product</label>
+                            <select id="product_filter" class="form-control select2 form-control-sm">
+                                <option value="">All Products</option>
+                                @foreach($products as $prod)
+                                    <option value="{{ $prod->product_id }}">{{ $prod->product_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md mb-2">
+                            <label class="erp-label">Size set</label>
+                            <select id="size_set_filter" class="form-control select2 form-control-sm">
+                                <option value="">All Size Sets</option>
+                                @foreach($size_sets as $set)
+                                    <option value="{{ $set->size_set_id }}">{{ $set->size_set_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md mb-2">
+                            <label class="erp-label">Color</label>
+                            <select id="color_filter" class="form-control select2 form-control-sm">
+                                <option value="">All Colors</option>
+                                @foreach($colors as $color)
+                                    <option value="{{ $color->color_id }}">{{ $color->color_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md mb-2">
+                            <label class="erp-label">Report type</label>
+                            <select id="report_type" class="form-control select2 form-control-sm">
+                                <option value="size_set">Size Set Wise</option>
+                                <option value="color">Color Wise</option>
+                            </select>
+                        </div>
+                        <div class="col-md-auto mb-2 text-right">
+                            <button class="btn-erp btn-erp-outline mr-1" type="button" data-toggle="collapse" data-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
+                                <i class="fas fa-sliders-h mr-1"></i> Advanced
+                            </button>
+                            <button id="reset_filters" class="btn-erp btn-erp-secondary mr-1" title="Reset Filters">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                            <a href="#" id="export_excel" class="btn-erp btn-erp-success mr-1" title="Export Excel">
+                                <i class="fas fa-file-excel"></i>
+                            </a>
+                            <a href="#" id="export_pdf" class="btn-erp btn-erp-danger" title="Export PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                        </div>
+                    </div>
 
-                        <!-- Advanced Filters Collapse -->
-                        <div class="collapse mt-2" id="advancedFilters">
-                            <div class="p-4 bg-light rounded border">
-                                <div class="row">
-                                    <div class="col-md-2 mb-3">
-                                        <label class="small font-weight-bold text-muted mb-1">Stock Status</label>
-                                        <select id="stock_status_filter" class="form-control select2">
-                                            <option value="">All Items</option>
-                                            <option value="shortage">Shortage (Orders > Stock)</option>
-                                            <option value="in_stock">In Stock</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 mb-3">
-                                        <label class="small font-weight-bold text-muted mb-1">Min MRP</label>
-                                        <input type="number" id="mrp_filter" class="form-control" placeholder="Min MRP">
-                                    </div>
-                                    <div class="col-md-2 mb-3">
-                                        <label class="small font-weight-bold text-muted mb-1">Min Total Boxes</label>
-                                        <input type="number" id="min_boxes_filter" class="form-control" placeholder="Min Boxes">
-                                    </div>
-                                    <div class="col-md-2 mb-3">
-                                        <label class="small font-weight-bold text-muted mb-1">Min Total Order</label>
-                                        <input type="number" id="min_order_filter" class="form-control" placeholder="Min Order">
-                                    </div>
-                                    <div class="col-md-2 mb-3">
-                                        <label class="small font-weight-bold text-muted mb-1">Series</label>
-                                        <select id="series_filter" class="form-control select2">
-                                            <option value="">All Series</option>
-                                            @foreach($master_series as $s)
-                                                <option value="{{ $s->id }}">{{ $s->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 mb-3">
-                                        <label class="small font-weight-bold text-muted mb-1">Brand</label>
-                                        <select id="brand_filter" class="form-control select2">
-                                            <option value="">All Brands</option>
-                                            @foreach($brands as $b)
-                                                <option value="{{ $b->id }}">{{ $b->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 mb-3">
-                                        <label class="small font-weight-bold text-muted mb-1">Fitting</label>
-                                        <select id="fitting_filter" class="form-control select2">
-                                            <option value="">All Fittings</option>
-                                            @foreach($master_fittings as $f)
-                                                <option value="{{ $f->id }}">{{ $f->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 mb-3">
-                                        <label class="small font-weight-bold text-muted mb-1">Pattern</label>
-                                        <select id="pattern_filter" class="form-control select2">
-                                            <option value="">All Patterns</option>
-                                            @foreach($master_patterns as $p)
-                                                <option value="{{ $p->id }}">{{ $p->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 mb-3">
-                                        <label class="small font-weight-bold text-muted mb-1">Product Nature</label>
-                                        <select id="nature_filter" class="form-control select2">
-                                            <option value="">All Natures</option>
-                                            @foreach($natures as $n)
-                                                <option value="{{ $n->id }}">{{ $n->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 mb-3">
-                                        <label class="small font-weight-bold text-muted mb-1">Fabric Type</label>
-                                        <select id="fabric_type_filter" class="form-control select2">
-                                            <option value="">All Fabric Types</option>
-                                            @foreach($fabric_types as $ft)
-                                                <option value="{{ $ft->id }}">{{ $ft->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                    <!-- Advanced Filters Collapse -->
+                    <div class="collapse mt-2" id="advancedFilters">
+                        <div class="p-3 bg-light rounded border">
+                            <div class="row">
+                                <div class="col-md-2 mb-2">
+                                    <label class="erp-label">Stock status</label>
+                                    <select id="stock_status_filter" class="form-control select2">
+                                        <option value="">All Items</option>
+                                        <option value="shortage">Shortage (Orders > Stock)</option>
+                                        <option value="in_stock">In Stock</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="erp-label">Min MRP</label>
+                                    <input type="number" id="mrp_filter" class="form-control" placeholder="Min MRP">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="erp-label">Min total boxes</label>
+                                    <input type="number" id="min_boxes_filter" class="form-control" placeholder="Min Boxes">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="erp-label">Min total order</label>
+                                    <input type="number" id="min_order_filter" class="form-control" placeholder="Min Order">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="erp-label">Series</label>
+                                    <select id="series_filter" class="form-control select2">
+                                        <option value="">All Series</option>
+                                        @foreach($master_series as $s)
+                                            <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="erp-label">Brand</label>
+                                    <select id="brand_filter" class="form-control select2">
+                                        <option value="">All Brands</option>
+                                        @foreach($brands as $b)
+                                            <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="erp-label">Fitting</label>
+                                    <select id="fitting_filter" class="form-control select2">
+                                        <option value="">All Fittings</option>
+                                        @foreach($master_fittings as $f)
+                                            <option value="{{ $f->id }}">{{ $f->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="erp-label">Pattern</label>
+                                    <select id="pattern_filter" class="form-control select2">
+                                        <option value="">All Patterns</option>
+                                        @foreach($master_patterns as $p)
+                                            <option value="{{ $p->id }}">{{ $p->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="erp-label">Product nature</label>
+                                    <select id="nature_filter" class="form-control select2">
+                                        <option value="">All Natures</option>
+                                        @foreach($natures as $n)
+                                            <option value="{{ $n->id }}">{{ $n->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <label class="erp-label">Fabric type</label>
+                                    <select id="fabric_type_filter" class="form-control select2">
+                                        <option value="">All Fabric Types</option>
+                                        @foreach($fabric_types as $ft)
+                                            <option value="{{ $ft->id }}">{{ $ft->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- TABLE CARD -->
-                <div class="card shadow border-0" style="border-radius: 12px; overflow: hidden;">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table id="inventoryTable" class="table table-hover mb-0">
-                                <thead class="bg-light contrast-text">
-                                    <tr>
-                                        <th width="5%" class="text-center py-3">#</th>
-                                        <th class="py-3">Product Name</th>
-                                        <th class="py-3">Design No.</th>
-                                        <th class="py-3" id="attribute_header">Size Set</th>
-                                        <th class="py-3">Fitting</th>
-                                        <th class="py-3">Pattern</th>
-                                        <th class="py-3">MRP</th>
-                                        <th class="text-center py-3">Total Boxes</th>
-                                        <th class="text-center py-3">Total Order</th>
-                                        <!-- <th class="text-center py-3">Available</th> -->
-                                        <th class="text-center py-3" width="15%">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
+            <!-- Table Card -->
+            <div class="erp-card">
+                <div class="erp-card-body p-0">
+                    <div class="table-responsive">
+                        <table id="inventoryTable" class="erp-table table-bordered table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 45px;" class="text-center">#</th>
+                                    <th>Product name</th>
+                                    <th>Design no.</th>
+                                    <th id="attribute_header">Size set</th>
+                                    <th>Fitting</th>
+                                    <th>Pattern</th>
+                                    <th class="text-right">MRP</th>
+                                    <th class="text-center">Total boxes</th>
+                                    <th class="text-center">Total order</th>
+                                    <th class="text-center" style="width: 80px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div id="loading-spinner" class="text-center py-3" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
                         </div>
-                        <div id="loading-spinner" class="text-center py-3" style="display: none;">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="sr-only">Loading...</span>
-                            </div>
-                        </div>
-                        <div id="no-more-data" class="text-center py-3 text-muted small" style="display: none;">
-                            No more records to load.
-                        </div>
+                    </div>
+                    <div id="no-more-data" class="text-center py-3 text-muted small" style="display: none;">
+                        No more records to load.
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
     </div>
 
     <!-- Edit Attributes Modal -->
@@ -454,31 +445,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <style>
-        .contrast-text th {
-            color: #444;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 0.5px;
-        }
-
-        .table tbody td {
-            vertical-align: middle;
-            padding: 1rem 0.75rem;
-        }
-
-        .badge {
-            padding: 0.5em 0.8em;
-            border-radius: 6px;
-        }
-
-        .form-control {
-            border-radius: 8px;
-        }
-    </style>
 
     <script>
         $(function () {
@@ -998,19 +964,4 @@
         }
 
     </script>
-    <style>
-        .btn-icon {
-            width: 38px;
-            height: 38px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-        }
-
-        .btn-sm.btn-icon {
-            width: 32px;
-            height: 32px;
-        }
-    </style>
 @endsection

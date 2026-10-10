@@ -34,12 +34,16 @@ class SalesAgentShopController extends Controller
             })
             ->editColumn('status', function ($queue) {
                 $status = $queue->status;
-                return ($status == 1) ? '<span class="badge badge-xs badge-success">Active</span>' : '<span class="badge badge-xs badge-danger">Inactive</span>';
+                return ($status == 1) 
+                    ? '<span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 8px;">Active</span>' 
+                    : '<span class="badge badge-secondary" style="font-size: 11px; padding: 3px 8px;">Inactive</span>';
             })
             ->addColumn('action', function ($queue) use ($agent_id) {
                 $parameter = $queue->id;
                 return '
-                <a href="' . route('admin.master.sales-agent-shops.edit', ['agent_id' => $agent_id, 'id' => $parameter]) . '" class="btn btn-sm btn-icon shadow-sm" style="background-color: #f8f9fa;" data-toggle="tooltip" title="Edit"><i class="fas fa-edit text-muted"></i></a>
+                <div class="d-inline-flex" style="gap: 4px;">
+                    <a href="' . route('admin.master.sales-agent-shops.edit', ['agent_id' => $agent_id, 'id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
+                </div>
                 ';
             })
             ->rawColumns(['action', 'status'])

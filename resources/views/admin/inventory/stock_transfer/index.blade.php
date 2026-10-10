@@ -1,20 +1,22 @@
 @extends('admin.layouts.app')
 @section('content')
-    <div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
         <!-- PAGE HEADER -->
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-3 align-items-center">
-                    <div class="col-sm-6">
-                        <h1 class="m-0 font-weight-bold text-dark">Stock Transfer</h1>
-                        <small class="text-muted">Transfer inventory between warehouses and racks</small>
-                    </div>
-                </div>
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title m-0">Stock Transfer</h1>
+                <p class="erp-page-subtitle m-0">Transfer inventory between warehouses and racks (Manual or Barcode scan)</p>
             </div>
-        </section>
-
-        <section class="content">
-            <div class="container-fluid">
+            <div class="d-flex align-items-center" style="gap: 8px;">
+                <a href="{{ route('admin.inventory.warehouse_stock.history') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-history mr-1"></i> Transfer history
+                </a>
+                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to inventory
+                </a>
+            </div>
+        </div>
 
                 <!-- MODE TABS -->
                 <ul class="nav nav-pills mb-4" id="transferModeTabs" role="tablist">
@@ -36,15 +38,15 @@
                     <div class="tab-pane fade show active" id="manual-mode" role="tabpanel">
 
                         <!-- STEP 1 -->
-                        <div class="card shadow-sm border-0 mb-4" style="border-radius:12px;">
-                            <div class="card-header bg-white border-0 py-3">
-                                <h6 class="mb-0 font-weight-bold text-primary"><i class="fas fa-search mr-2"></i> Step 1: Find Source Stock</h6>
+                        <div class="erp-card mb-2" style="border-radius:12px;">
+                            <div class="p-2 border-bottom bg-light">
+                                <h6 class="mb-0 font-weight-bold" style="color: #05421c;"><i class="fas fa-search mr-2"></i> Step 1: Find Source Stock</h6>
                             </div>
-                            <div class="card-body bg-light rounded-bottom p-4">
+                            <div class="p-3">
                                 <div class="row align-items-end">
                                     <div class="col-md-2">
-                                        <label class="small font-weight-bold text-muted mb-1">Source Warehouse</label>
-                                        <select id="storeroom_filter" class="form-control select2">
+                                        <label class="small font-weight-bold text-muted mb-1">Source warehouse</label>
+                                        <select id="storeroom_filter" class="form-control form-control-sm select2">
                                             <option value="">All Warehouses</option>
                                             @foreach($storerooms as $storeroom)
                                                 <option value="{{ $storeroom->id }}">{{ $storeroom->name }}</option>
@@ -52,14 +54,14 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="small font-weight-bold text-muted mb-1">Source Rack</label>
-                                        <select id="rack_filter" class="form-control select2">
+                                        <label class="small font-weight-bold text-muted mb-1">Source rack</label>
+                                        <select id="rack_filter" class="form-control form-control-sm select2">
                                             <option value="">All Racks</option>
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="small font-weight-bold text-muted mb-1">Design No.</label>
-                                        <select id="design_filter" class="form-control select2">
+                                        <label class="small font-weight-bold text-muted mb-1">Design no.</label>
+                                        <select id="design_filter" class="form-control form-control-sm select2">
                                             <option value="">All Design Nos.</option>
                                             @foreach($designs as $design)
                                                 <option value="{{ $design->design_number }}">{{ $design->design_number }}</option>
@@ -68,7 +70,7 @@
                                     </div>
                                     <div class="col-md-2">
                                         <label class="small font-weight-bold text-muted mb-1">Product</label>
-                                        <select id="product_filter" class="form-control select2">
+                                        <select id="product_filter" class="form-control form-control-sm select2">
                                             <option value="">All Products</option>
                                             @foreach($products as $product)
                                                 <option value="{{ $product->id }}">{{ $product->series ? $product->series->name . ' ' : '' }}{{ $product->name_of_garment }}</option>
@@ -77,7 +79,7 @@
                                     </div>
                                     <div class="col-md-2">
                                         <label class="small font-weight-bold text-muted mb-1">Color</label>
-                                        <select id="color_filter" class="form-control select2">
+                                        <select id="color_filter" class="form-control form-control-sm select2">
                                             <option value="">All Colors</option>
                                             @foreach($colors as $color)
                                                 <option value="{{ $color->id }}">{{ $color->name }}</option>
@@ -85,16 +87,16 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <label class="small font-weight-bold text-muted mb-1">Size Set</label>
-                                        <select id="size_set_filter" class="form-control select2">
-                                            <option value="">All Size Sets</option>
+                                        <label class="small font-weight-bold text-muted mb-1">Size set</label>
+                                        <select id="size_set_filter" class="form-control form-control-sm select2">
+                                            <option value="">All Size sets</option>
                                             @foreach($size_sets as $set)
                                                 <option value="{{ $set->id }}">{{ $set->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="col-md-2 mt-3">
-                                        <button id="reset_filters" class="btn btn-secondary shadow-sm btn-block">
+                                        <button id="reset_filters" class="btn-erp btn-erp-secondary btn-block">
                                             <i class="fas fa-undo mr-1"></i> Reset
                                         </button>
                                     </div>
@@ -107,9 +109,9 @@
                             @csrf
                             <div class="row">
                                 <div class="col-md-9">
-                                    <div class="card shadow border-0" style="border-radius:12px; overflow:hidden;">
-                                        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0 font-weight-bold text-primary"><i class="fas fa-list mr-2"></i> Step 2: Select Items to Transfer</h6>
+                                    <div class="erp-card mb-2" style="border-radius:12px; overflow:hidden;">
+                                        <div class="p-2 border-bottom bg-light d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0 font-weight-bold" style="color: #05421c;"><i class="fas fa-list mr-2"></i> Step 2: Select Items to Transfer</h6>
                                             <div class="custom-control custom-checkbox">
                                                 <input type="checkbox" class="custom-control-input" id="select-all">
                                                 <label class="custom-control-label small font-weight-bold" for="select-all">Select All</label>
@@ -117,7 +119,7 @@
                                         </div>
                                         <div class="card-body p-0">
                                             <div class="table-responsive">
-                                                <table id="inventoryTable" class="table table-hover mb-0">
+                                                <table id="inventoryTable" class="erp-table table-bordered table-hover mb-0">
                                                     <thead class="bg-light contrast-text">
                                                         <tr>
                                                             <th class="py-3 text-center" style="width:50px;"></th>
@@ -139,14 +141,14 @@
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="card shadow border-0" style="border-radius:12px; position:sticky; top:20px;">
-                                        <div class="card-header bg-white border-0 py-3">
-                                            <h6 class="mb-0 font-weight-bold text-primary"><i class="fas fa-map-marker-alt mr-2"></i> Step 3: Destination</h6>
+                                    <div class="erp-card mb-2" style="border-radius:12px; position:sticky; top:20px;">
+                                        <div class="p-2 border-bottom bg-light">
+                                            <h6 class="mb-0 font-weight-bold" style="color: #05421c;"><i class="fas fa-map-marker-alt mr-2"></i> Step 3: Destination</h6>
                                         </div>
                                         <div class="card-body">
                                             <div class="form-group mb-3">
-                                                <label class="small font-weight-bold text-muted mb-1">Target Warehouse</label>
-                                                <select id="target_storeroom" class="form-control select2" required>
+                                                <label class="small font-weight-bold text-muted mb-1">Target warehouse</label>
+                                                <select id="target_storeroom" class="form-control form-control-sm select2" required>
                                                     <option value="">Select Warehouse</option>
                                                     @foreach($storerooms as $storeroom)
                                                         <option value="{{ $storeroom->id }}">{{ $storeroom->name }}</option>
@@ -154,14 +156,14 @@
                                                 </select>
                                             </div>
                                             <div class="form-group mb-4">
-                                                <label class="small font-weight-bold text-muted mb-1">Target Rack</label>
-                                                <select name="target_rack_id" id="target_rack" class="form-control select2" required>
+                                                <label class="small font-weight-bold text-muted mb-1">Target rack</label>
+                                                <select name="target_rack_id" id="target_rack" class="form-control form-control-sm select2" required>
                                                     <option value="">Select Rack</option>
                                                 </select>
                                             </div>
                                             <hr>
-                                            <button type="submit" id="btn-submit-transfer" class="btn btn-primary btn-block py-2 font-weight-bold shadow-sm">
-                                                <i class="fas fa-exchange-alt mr-2"></i> PERFORM TRANSFER
+                                            <button type="submit" id="btn-submit-transfer" class="btn-erp btn-erp-primary btn-block py-2 font-weight-bold">
+                                                <i class="fas fa-exchange-alt mr-2"></i> Perform transfer
                                             </button>
                                         </div>
                                     </div>
@@ -176,14 +178,14 @@
                             <div class="col-md-9">
 
                                 {{-- Locations --}}
-                                <div class="card shadow-sm border-0 mb-4" style="border-radius:12px;">
-                                    <div class="card-header bg-white border-0 py-3">
-                                        <h6 class="mb-0 font-weight-bold text-primary"><i class="fas fa-map-marker-alt mr-2"></i> Step 1: Select Locations</h6>
+                                <div class="erp-card mb-2" style="border-radius:12px;">
+                                    <div class="p-2 border-bottom bg-light">
+                                        <h6 class="mb-0 font-weight-bold" style="color: #05421c;"><i class="fas fa-map-marker-alt mr-2"></i> Step 1: Select Locations</h6>
                                     </div>
-                                    <div class="card-body bg-light rounded-bottom py-3 px-4">
+                                    <div class="p-3">
                                         <div class="row align-items-end">
                                             <div class="col-md-3">
-                                                <label class="small font-weight-bold text-muted mb-1">FROM Warehouse</label>
+                                                <label class="small font-weight-bold text-muted mb-1">From warehouse</label>
                                                 <select id="scan_from_storeroom" class="form-control">
                                                     <option value="">Select Warehouse</option>
                                                     @foreach($storerooms as $storeroom)
@@ -192,13 +194,13 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-3">
-                                                <label class="small font-weight-bold text-muted mb-1">FROM Rack</label>
+                                                <label class="small font-weight-bold text-muted mb-1">From rack</label>
                                                 <select id="scan_from_rack" class="form-control">
                                                     <option value="">Select Rack</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-3">
-                                                <label class="small font-weight-bold text-muted mb-1">TO Warehouse</label>
+                                                <label class="small font-weight-bold text-muted mb-1">To warehouse</label>
                                                 <select id="scan_to_storeroom" class="form-control">
                                                     <option value="">Select Warehouse</option>
                                                     @foreach($storerooms as $storeroom)
@@ -207,7 +209,7 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-3">
-                                                <label class="small font-weight-bold text-muted mb-1">TO Rack</label>
+                                                <label class="small font-weight-bold text-muted mb-1">To rack</label>
                                                 <select id="scan_to_rack" class="form-control">
                                                     <option value="">Select Rack</option>
                                                 </select>
@@ -217,15 +219,15 @@
                                 </div>
 
                                 {{-- Scanner Input --}}
-                                <div class="card shadow-sm border-0 mb-4" style="border-radius:12px;">
-                                    <div class="card-header bg-white border-0 py-3">
-                                        <h6 class="mb-0 font-weight-bold text-primary"><i class="fas fa-barcode mr-2"></i> Step 2: Scan Barcode</h6>
+                                <div class="erp-card mb-2" style="border-radius:12px;">
+                                    <div class="p-2 border-bottom bg-light">
+                                        <h6 class="mb-0 font-weight-bold" style="color: #05421c;"><i class="fas fa-barcode mr-2"></i> Step 2: Scan Barcode</h6>
                                     </div>
-                                    <div class="card-body py-3 px-4">
+                                    <div class="p-3">
                                         <div class="d-flex align-items-center flex-wrap">
                                             <div class="input-group mr-3" style="max-width:460px;">
                                                 <div class="input-group-prepend">
-                                                    <span class="input-group-text bg-primary text-white border-primary" style="border-radius:8px 0 0 8px;">
+                                                    <span class="input-group-text" style="background: #05421c; color: #fff; border-color: #05421c;" style="border-radius:8px 0 0 8px;">
                                                         <i class="fas fa-barcode"></i>
                                                     </span>
                                                 </div>
@@ -233,7 +235,7 @@
                                                     placeholder="Scan or type barcode here, then press Enter..."
                                                     autocomplete="off" style="font-size:1.05rem; border-radius:0 8px 8px 0;">
                                             </div>
-                                            <button id="btn_scan_manual" class="btn btn-outline-primary px-4 mr-3">
+                                            <button id="btn_scan_manual" class="btn-erp btn-erp-outline px-4 mr-3">
                                                 <i class="fas fa-search mr-1"></i> Add
                                             </button>
                                             <span id="scan-spinner" class="text-muted" style="display:none;">
@@ -245,19 +247,19 @@
                                 </div>
 
                                 {{-- Scanned Table --}}
-                                <div class="card shadow border-0" style="border-radius:12px; overflow:hidden;">
-                                    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0 font-weight-bold text-primary">
+                                <div class="erp-card mb-2" style="border-radius:12px; overflow:hidden;">
+                                    <div class="p-2 border-bottom bg-light d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0 font-weight-bold" style="color: #05421c;">
                                             <i class="fas fa-list mr-2"></i> Step 3: Scanned Items
-                                            <span id="scanned-count" class="badge badge-primary ml-2">0</span>
+                                            <span id="scanned-count" class="badge-erp-status badge-erp-primary ml-2">0</span>
                                         </h6>
-                                        <button type="button" id="btn-clear-scan-list" class="btn btn-sm btn-outline-danger" style="display:none;">
+                                        <button type="button" id="btn-clear-scan-list" class="btn-erp btn-erp-danger btn-sm" style="display:none;">
                                             <i class="fas fa-trash mr-1"></i> Clear All
                                         </button>
                                     </div>
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
-                                            <table class="table table-hover mb-0" id="scanned-table">
+                                            <table class="erp-table table-bordered table-hover mb-0" id="scanned-table">
                                                 <thead class="bg-light contrast-text">
                                                     <tr>
                                                         <th class="py-3" style="width:40px;">#</th>
@@ -286,8 +288,8 @@
 
                             <!-- Summary Panel -->
                             <div class="col-md-3">
-                                <div class="card shadow border-0" style="border-radius:12px; position:sticky; top:20px;">
-                                    <div class="card-header bg-white border-0 py-3">
+                                <div class="erp-card mb-2" style="border-radius:12px; position:sticky; top:20px;">
+                                    <div class="p-2 border-bottom bg-light">
                                         <h6 class="mb-0 font-weight-bold text-success"><i class="fas fa-exchange-alt mr-2"></i> Transfer Summary</h6>
                                     </div>
                                     <div class="card-body">
@@ -308,34 +310,17 @@
                                             <div id="summary-boxes" class="h2 mb-0 font-weight-bold" style="color:#4338ca;">0</div>
                                         </div>
                                         <hr>
-                                        <button id="btn-perform-scan-transfer" class="btn btn-success btn-block py-2 font-weight-bold shadow-sm">
-                                            <i class="fas fa-exchange-alt mr-2"></i> PERFORM TRANSFER
+                                        <button id="btn-perform-scan-transfer" class="btn-erp btn-erp-primary btn-block py-2 font-weight-bold">
+                                            <i class="fas fa-exchange-alt mr-2"></i> Perform transfer
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </div><!-- /tab-content -->
             </div>
-        </section>
-    </div>
-
-    <style>
-        .contrast-text th {
-            color: #444; font-weight: 700; text-transform: uppercase;
-            font-size: 0.75rem; letter-spacing: 0.5px;
-        }
-        .table tbody td { vertical-align: middle; padding: 0.75rem; font-size: 0.9rem; }
-        .select2-container--bootstrap4 .select2-selection--single { height: calc(1.8125rem + 10px) !important; }
-        .qty-input { text-align: center; font-weight: bold; }
-        #barcode_input:focus { border-color: #3b82f6; box-shadow: 0 0 0 0.2rem rgba(59,130,246,.25); }
-        @keyframes highlightRow { 0% { background-color: #d1fae5; } 100% { background-color: transparent; } }
-        .scan-row-new td { animation: highlightRow 1.4s ease; }
-        .nav-pills .nav-link { border-radius: 8px; color: #6b7280; }
-        .nav-pills .nav-link.active { background: #3b82f6; color: #fff; }
-    </style>
+        </div>
 
     <script>
     $(function () {
@@ -414,10 +399,10 @@
             $.ajax({
                 url: "{{ route('admin.inventory.stock_transfer.transfer') }}", type: "POST", data: $(this).serialize(),
                 success: function(res) {
-                    btn.prop('disabled', false).html('<i class="fas fa-exchange-alt mr-2"></i> PERFORM TRANSFER');
+                    btn.prop('disabled', false).html('<i class="fas fa-exchange-alt mr-2"></i> Perform transfer');
                     if (res.status == 'success') { toastr.success(res.message); loadMore(true); } else { toastr.error(res.message); }
                 },
-                error: function() { btn.prop('disabled', false).html('<i class="fas fa-exchange-alt mr-2"></i> PERFORM TRANSFER'); toastr.error('An error occurred during transfer.'); }
+                error: function() { btn.prop('disabled', false).html('<i class="fas fa-exchange-alt mr-2"></i> Perform transfer'); toastr.error('An error occurred during transfer.'); }
             });
         });
 
@@ -517,7 +502,7 @@
                                 data-inv-id="${invId}" style="width:80px; margin:0 auto;">
                         </td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-scan" data-inv-id="${invId}">
+                            <button type="button" class="btn-erp btn-erp-danger btn-sm btn-remove-scan" data-inv-id="${invId}">
                                 <i class="fas fa-times"></i>
                             </button>
                         </td>
@@ -602,7 +587,7 @@
             $.ajax({
                 url: "{{ route('admin.inventory.stock_transfer.transfer') }}", type: "POST", data: formData,
                 success: function(res) {
-                    btn.prop('disabled', false).html('<i class="fas fa-exchange-alt mr-2"></i> PERFORM TRANSFER');
+                    btn.prop('disabled', false).html('<i class="fas fa-exchange-alt mr-2"></i> Perform transfer');
                     if (res.status === 'success') {
                         toastr.success(res.message);
                         scannedItems = {}; scanRowCount = 0;
@@ -612,7 +597,7 @@
                         updateSummary();
                     } else { toastr.error(res.message); }
                 },
-                error: function() { btn.prop('disabled', false).html('<i class="fas fa-exchange-alt mr-2"></i> PERFORM TRANSFER'); toastr.error('An error occurred during transfer.'); }
+                error: function() { btn.prop('disabled', false).html('<i class="fas fa-exchange-alt mr-2"></i> Perform transfer'); toastr.error('An error occurred during transfer.'); }
             });
         });
 

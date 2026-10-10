@@ -81,7 +81,9 @@ class ProductionGoodsDataTable  {
            
             ->editColumn('status', function ($queue) {
 				$status= $queue->status;
-                return ($status == 1) ? '<span class="badge badge-xs badge-success">Published</span>' : '<span class="badge badge-xs badge-primary">Pending</span>';
+                return ($status == 1) 
+                    ? '<span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 8px;">Published</span>' 
+                    : '<span class="badge badge-secondary" style="font-size: 11px; padding: 3px 8px;">Pending</span>';
             })
             ->addColumn('action', function ($queue) {
 				$parameter= $queue->id;
@@ -89,15 +91,17 @@ class ProductionGoodsDataTable  {
 
                 $deleteBtn = '';
                 if (!$isInInv) {
-                    $deleteBtn = '<a href="javascript:void(0);" onclick="deleteData(' . $parameter . ')" class="" title="Delete"><i class="fas fa-trash text-danger"></i></a>';
+                    $deleteBtn = '<a href="javascript:void(0);" onclick="deleteData(' . $parameter . ')" class="erp-action-btn erp-btn-delete" title="Delete"><i class="fas fa-trash"></i></a>';
                 } else {
-                    $deleteBtn = '<a href="javascript:void(0);" class="text-muted" title="Locked (Stock in Inventory)"><i class="fas fa-trash"></i></a>';
+                    $deleteBtn = '<span class="erp-action-btn text-muted" style="opacity: 0.5; cursor: not-allowed;" title="Locked (Stock in Inventory)"><i class="fas fa-trash"></i></span>';
                 }
 
                 return '
-                <a href="' . route('admin.master.production-goods.view', ['id' => $parameter]) . '" class="mr-2" title="View"><i class="fas fa-eye text-info"></i></a>
-                <a href="' . route('admin.master.production-goods.edit', ['id' => $parameter]) . '" class="mr-2" title="Edit"><i class="fas fa-edit text-primary"></i></a>
-                ' . $deleteBtn;
+                <div class="d-inline-flex" style="gap: 4px;">
+                    <a href="' . route('admin.master.production-goods.view', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-view" title="View"><i class="fas fa-eye"></i></a>
+                    <a href="' . route('admin.master.production-goods.edit', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
+                    ' . $deleteBtn . '
+                </div>';
             })
             ->addColumn('main_image', function ($queue) {
                 $img = $queue->mainImage; // relationship

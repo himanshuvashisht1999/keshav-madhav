@@ -1,140 +1,61 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <style>
-        :root {
-            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            --bg-main: #f8fafc;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- PAGE HEADER -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title m-0">Inbound Stock Session History</h1>
+                <p class="erp-page-subtitle m-0">Track and view all manual stock entry sessions</p>
+            </div>
+            <div class="d-flex align-items-center" style="gap: 8px;">
+                <a href="{{ route('admin.inventory.create') }}" class="btn-erp btn-erp-primary">
+                    <i class="fas fa-plus mr-1"></i> New stock generate
+                </a>
+                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to inventory
+                </a>
+            </div>
+        </div>
 
-        .content-wrapper {
-            background-color: var(--bg-main);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        }
-
-        .premium-page-header {
-            padding: 0.75rem 0;
-            background: #fff;
-            border-bottom: 1px solid #e2e8f0;
-            margin-bottom: 1rem;
-        }
-
-        .page-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text-main);
-            letter-spacing: -0.015em;
-            margin: 0;
-        }
-
-        .card-premium {
-            border: none;
-            border-radius: 1rem;
-            box-shadow: var(--shadow-md);
-            overflow: hidden;
-            background: #fff;
-        }
-
-        .table thead th {
-            background: #f8fafc;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            font-weight: 700;
-            color: var(--text-muted);
-            border-top: none;
-            padding: 0.75rem 1rem;
-        }
-
-        .table td {
-            padding: 0.75rem 1rem;
-            vertical-align: middle;
-            color: var(--text-main);
-            font-size: 0.875rem;
-            border-color: #f1f5f9;
-        }
-
-        .btn-soft-primary {
-            background: #eef2ff;
-            color: #4f46e5;
-            border: none;
-        }
-
-        .btn-soft-primary:hover { background: #e0e7ff; color: #4338ca; }
-
-        .badge-soft-success { background: #ecfdf5; color: #059669; }
-
-        .animate-in {
-            animation: slideUp 0.4s ease-out forwards;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
-
-    <div class="content-wrapper">
-        <div class="premium-page-header">
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h1 class="page-title">Inbound Stock Session History</h1>
-                        <p class="text-muted mb-0 small">Track and view all manual stock entry sessions</p>
-                    </div>
-                    <a href="{{ route('admin.inventory.create') }}" class="btn btn-primary btn-sm shadow-sm" style="border-radius: 0.5rem; padding: 0.4rem 1rem; font-weight: 600;">
-                        <i class="fas fa-plus mr-1"></i>New Stock Generate
-                    </a>
+        <!-- FILTER CARD -->
+        <div class="erp-card mb-2 p-2">
+            <div class="row align-items-end">
+                <div class="col-md-3 mb-1">
+                    <label class="erp-label mb-1">Start date</label>
+                    <input type="date" id="start_date" class="form-control form-control-sm erp-input">
+                </div>
+                <div class="col-md-3 mb-1">
+                    <label class="erp-label mb-1">End date</label>
+                    <input type="date" id="end_date" class="form-control form-control-sm erp-input">
+                </div>
+                <div class="col-md-2 mb-1">
+                    <button id="reset_filters" class="btn-erp btn-erp-secondary w-100" style="height: 29px;">
+                        <i class="fas fa-undo mr-1"></i> Reset filters
+                    </button>
                 </div>
             </div>
         </div>
 
-        <section class="content">
-            <div class="container-fluid">
-                <!-- FILTER CARD -->
-                <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px;">
-                    <div class="card-body bg-light rounded p-2">
-                        <div class="row align-items-end">
-                            <div class="col-md-3 mb-1">
-                                <label class="small font-weight-bold text-muted mb-0">Start Date</label>
-                                <input type="date" id="start_date" class="form-control form-control-sm">
-                            </div>
-                            <div class="col-md-3 mb-1">
-                                <label class="small font-weight-bold text-muted mb-0">End Date</label>
-                                <input type="date" id="end_date" class="form-control form-control-sm">
-                            </div>
-                            <div class="col-md-2 mb-1">
-                                <button id="reset_filters" class="btn btn-secondary btn-sm shadow-sm btn-block">
-                                    <i class="fas fa-undo"></i> Reset Filters
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card card-premium animate-in">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table id="entryHistoryTable" class="table mb-0 w-100">
-                                <thead>
-                                    <tr>
-                                        <th class="pl-4">#</th>
-                                        <th>Date</th>
-                                        <th>Session ID</th>
-                                        <th>Total Boxes</th>
-                                        <th class="text-right pr-4">Action</th>
-                                    </tr>
-                                </thead>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+        <!-- TABLE CARD -->
+        <div class="erp-card p-0">
+            <div class="table-responsive">
+                <table id="entryHistoryTable" class="erp-table table-bordered table-hover mb-0 w-100">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">#</th>
+                            <th>Date</th>
+                            <th>Session ID</th>
+                            <th style="text-align: center;">Total boxes</th>
+                            <th style="width: 100px; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                </table>
             </div>
-        </section>
+        </div>
     </div>
+</div>
 
 @push('scripts')
 <script>
@@ -151,19 +72,19 @@
             },
             order: [[0, 'desc']],
             columns: [
-                { data: 'DT_RowIndex', name: 'DT_RowIndex', className: 'pl-4', orderable: false, searchable: false },
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', className: 'text-center font-weight-bold', orderable: false, searchable: false },
                 { 
                     data: 'date', 
                     name: 'date', 
                     render: function(data) {
-                        return `<div class="font-weight-bold text-primary">${data}</div>`;
+                        return `<div class="font-weight-bold text-dark">${data}</div>`;
                     }
                 },
                 { 
                     data: 'id', 
                     name: 'id',
                     render: function(data) {
-                        return `<b>SESSION-${data}</b>`;
+                        return `<span class="badge badge-light border text-dark font-weight-bold">SESSION-${data}</span>`;
                     }
                 },
                 { 
@@ -171,9 +92,10 @@
                     name: 'total_boxes',
                     searchable: false,
                     orderable: false,
-                    render: (d) => `<span class="badge badge-soft-success px-2 py-1 font-weight-bold">${d || 0} Boxes</span>`
+                    className: 'text-center',
+                    render: (d) => `<span class="badge badge-light border font-weight-bold px-2 py-1">${d || 0} Boxes</span>`
                 },
-                { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-right pr-4' }
+                { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-right' }
             ],
             language: {
                 search: "_INPUT_",
@@ -182,9 +104,6 @@
                     previous: '<i class="fas fa-chevron-left"></i>',
                     next: '<i class="fas fa-chevron-right"></i>'
                 }
-            },
-            drawCallback: function() {
-                $('.dataTables_paginate > .pagination').addClass('pagination-rounded');
             }
         });
 

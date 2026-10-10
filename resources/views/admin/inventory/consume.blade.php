@@ -1,595 +1,238 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        :root {
-            --erp-primary: #4f46e5;
-            --erp-primary-hover: #4338ca;
-            --erp-primary-light: #eef2ff;
-            --erp-success: #059669;
-            --erp-success-light: #ecfdf5;
-            --erp-danger: #dc2626;
-            --erp-danger-light: #fef2f2;
-            --erp-warning: #d97706;
-            --erp-border: #cbd5e1;
-            --erp-bg-header: #f1f5f9;
-            --erp-text: #0f172a;
-            --erp-muted: #64748b;
-        }
-
-        .content-wrapper {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #f8fafc;
-            padding-bottom: 90px;
-        }
-
-        /* STICKY ERP TOP HUD BAR */
-        .sticky-erp-hud {
-            position: sticky;
-            top: 0;
-            z-index: 1020;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(12px);
-            border-bottom: 2px solid #e2e8f0;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-            padding: 8px 16px;
-            margin: -0.5rem -0.5rem 12px -0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: nowrap;
-        }
-
-        .hud-stat-box {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 5px 12px;
-            border-radius: 8px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            min-width: 250px;
-        }
-
-        .hud-source-box {
-            border-left: 4px solid var(--erp-primary);
-            background: #fafbff;
-        }
-
-        .hud-target-box {
-            border-left: 4px solid var(--erp-success);
-            background: #fbfdfb;
-        }
-
-        .hud-label {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        .hud-numbers {
-            font-size: 1.1rem;
-            font-weight: 800;
-            line-height: 1.2;
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-        }
-
-        .hud-pills-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 3px;
-            max-height: 42px;
-            overflow-y: auto;
-            max-width: 260px;
-        }
-
-        .hud-match-center {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 0 10px;
-            min-width: 200px;
-            text-align: center;
-        }
-
-        .badge-erp-status {
-            font-size: 11.5px;
-            font-weight: 700;
-            padding: 6px 14px;
-            border-radius: 20px;
-            letter-spacing: 0.2px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        /* ERP CARDS & TABLES */
-        .erp-card {
-            background: #ffffff;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-            margin-bottom: 12px;
-            overflow: hidden;
-        }
-
-        .erp-card-header {
-            padding: 7px 12px;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .erp-card-title {
-            font-size: 12.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .erp-table {
-            width: 100%;
-            margin-bottom: 0;
-            font-size: 11.5px;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-
-        .erp-table thead th {
-            background: #f1f5f9;
-            color: #334155;
-            font-size: 10.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 5px 6px;
-            border-bottom: 2px solid #cbd5e1;
-            border-top: none;
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        .erp-table tbody td {
-            padding: 4px 5px;
-            vertical-align: middle;
-            border-top: 1px solid #edf2f7;
-            border-bottom: none;
-        }
-
-        .erp-table tbody tr:hover {
-            background-color: #f8fafc;
-        }
-
-        /* COMPACT CONTROLS IN ERP TABLE */
-        .erp-input {
-            height: 29px !important;
-            padding: 2px 6px !important;
-            font-size: 11.5px !important;
-            font-weight: 600;
-            border-radius: 5px !important;
-            border: 1px solid #cbd5e1 !important;
-            background-color: #ffffff;
-            line-height: 1.2;
-        }
-
-        .erp-input:focus {
-            border-color: var(--erp-primary) !important;
-            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15) !important;
-            outline: none;
-        }
-
-        .erp-input[readonly] {
-            background-color: #f1f5f9 !important;
-            color: #475569;
-        }
-
-        /* SELECT2 IN ERP TABLE */
-        .erp-table .select2-container--bootstrap4 .select2-selection {
-            height: 29px !important;
-            min-height: 29px !important;
-            border-radius: 5px !important;
-            border: 1px solid #cbd5e1 !important;
-            padding: 0 !important;
-            display: flex;
-            align-items: center;
-        }
-
-        .erp-table .select2-container--bootstrap4 .select2-selection__rendered {
-            line-height: 27px !important;
-            font-size: 11.5px !important;
-            padding-left: 6px !important;
-            padding-right: 18px !important;
-            color: var(--erp-text);
-        }
-
-        .erp-table .select2-container--bootstrap4 .select2-selection__arrow {
-            height: 27px !important;
-            right: 3px !important;
-            width: 14px !important;
-        }
-
-        .select2-dropdown {
-            border-radius: 8px !important;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12) !important;
-            border: 1px solid #cbd5e1 !important;
-            font-size: 12px !important;
-            z-index: 10050 !important;
-        }
-
-        /* PILLS & BADGES */
-        .erp-pill {
-            display: inline-block;
-            padding: 1px 5px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 700;
-            line-height: 1.3;
-            white-space: nowrap;
-        }
-
-        .erp-pill-source {
-            background: #e0e7ff;
-            color: #3730a3;
-            border: 1px solid #c7d2fe;
-        }
-
-        .erp-pill-gen {
-            background: #d1fae5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
-        }
-
-        .erp-badge-info {
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 2px 5px;
-            border-radius: 4px;
-            background: #f1f5f9;
-            color: #334155;
-            border: 1px solid #e2e8f0;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* ACTION BUTTONS */
-        .btn-erp-add {
-            font-size: 11px;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 6px;
-            line-height: 1.4;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-        }
-
-        .btn-erp-icon {
-            width: 26px;
-            height: 26px;
-            padding: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 5px;
-            font-size: 11px;
-            border: none;
-            transition: all 0.15s ease;
-            cursor: pointer;
-        }
-
-        .btn-erp-del {
-            background: #fee2e2;
-            color: #ef4444;
-        }
-        .btn-erp-del:hover {
-            background: #ef4444;
-            color: #fff;
-        }
-
-        .btn-erp-copy {
-            background: #ecfdf5;
-            color: #059669;
-        }
-        .btn-erp-copy:hover {
-            background: #059669;
-            color: #fff;
-        }
-
-        /* SUBMIT BUTTON */
-        .btn-hud-confirm {
-            background: linear-gradient(135deg, var(--erp-primary) 0%, var(--erp-primary-hover) 100%);
-            color: #ffffff !important;
-            font-weight: 700;
-            font-size: 12.5px;
-            border-radius: 7px;
-            padding: 7px 18px;
-            border: none;
-            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
-            white-space: nowrap;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .btn-hud-confirm:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
-        }
-
-        .btn-hud-confirm:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        /* STICKY BOTTOM ACTIONS BAR */
-        .sticky-bottom-bar {
-            position: fixed;
-            bottom: 0;
-            left: 250px;
-            right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 8px 24px;
-            border-top: 1px solid #cbd5e1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 1000;
-            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
-        }
-
-        @media (max-width: 991.98px) {
-            .sticky-bottom-bar {
-                left: 0;
-            }
-            .sticky-erp-hud {
-                flex-wrap: wrap;
-            }
-        }
-    </style>
-
-    <div class="content-wrapper">
-        <section class="content pt-2">
-            <div class="container-fluid px-2">
-                <form action="{{ route('admin.inventory.store') }}" method="POST" id="addStockForm" novalidate>
-                    @csrf
-                    <input type="hidden" name="source_type" id="sourceType" value="consume">
-
-                    <!-- ========================================================= -->
-                    <!-- 1. STICKY ERP HUD HEADER BAR (ALWAYS VISIBLE WITH ZERO SCROLL) -->
-                    <!-- ========================================================= -->
-                    <div class="sticky-erp-hud">
-                        <!-- Consumed Stat Box -->
-                        <div class="hud-stat-box hud-source-box">
-                            <div>
-                                <span class="hud-label text-primary"><i class="fas fa-box-open mr-1"></i> CONSUMED SOURCES</span>
-                                <div class="hud-numbers">
-                                    <span id="hudSourceBoxes" class="text-dark">0</span> <small class="text-muted" style="font-size:10px;">Bx</small>
-                                    <span class="text-muted mx-1" style="font-size:12px;">|</span>
-                                    <span id="hudSourcePieces" class="text-primary font-weight-bold">0</span> <small class="text-muted" style="font-size:10px;">Pcs</small>
-                                </div>
-                            </div>
-                            <div class="border-left pl-2 ml-auto">
-                                <span class="text-muted d-block" style="font-size:9.5px; font-weight:700;">SIZES CONSUMED:</span>
-                                <div id="hudSourcePills" class="hud-pills-row">
-                                    <span class="text-muted small font-italic" style="font-size:10px;">None</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Match Status Center -->
-                        <div class="hud-match-center">
-                            <span id="hudMatchBadge" class="badge-erp-status badge-secondary text-white">
-                                <i class="fas fa-balance-scale"></i> Select Sources & Targets
-                            </span>
-                            <div class="mt-1" style="font-size:10.5px;">
-                                <span class="text-muted font-weight-bold">Diff: </span>
-                                <span id="hudDiffPieces" class="font-weight-bold text-secondary">0 pcs</span>
-                            </div>
-                        </div>
-
-                        <!-- Generated Stat Box -->
-                        <div class="hud-stat-box hud-target-box">
-                            <div>
-                                <span class="hud-label text-success"><i class="fas fa-cubes mr-1"></i> TARGET GENERATED</span>
-                                <div class="hud-numbers">
-                                    <span id="hudGenBoxes" class="text-dark">0</span> <small class="text-muted" style="font-size:10px;">Bx</small>
-                                    <span class="text-muted mx-1" style="font-size:12px;">|</span>
-                                    <span id="hudGenPieces" class="text-success font-weight-bold">0</span> <small class="text-muted" style="font-size:10px;">Pcs</small>
-                                </div>
-                            </div>
-                            <div class="border-left pl-2 ml-auto">
-                                <span class="text-muted d-block" style="font-size:9.5px; font-weight:700;">SIZES GENERATED:</span>
-                                <div id="hudGenPills" class="hud-pills-row">
-                                    <span class="text-muted small font-italic" style="font-size:10px;">None</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Instant Action Button in HUD -->
-                        <div>
-                            <button type="submit" class="btn-hud-confirm" id="btnHudSubmit" disabled>
-                                <i class="fas fa-check-double mr-1"></i> Confirm & Upload
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- ========================================================= -->
-                    <!-- 2. SECTION 1: SOURCES TO CONSUME (COMPACT ERP TABLE) -->
-                    <!-- ========================================================= -->
-                    <div class="erp-card">
-                        <div class="erp-card-header">
-                            <div class="erp-card-title text-primary">
-                                <i class="fas fa-boxes"></i> 1. Consumed Domestic Inventory (Sources)
-                                <span class="badge badge-light border text-muted ml-2 font-weight-normal" style="font-size:11px;">Select source boxes to deduct from stock</span>
-                            </div>
-                            <button type="button" class="btn btn-outline-primary btn-erp-add" id="btnAddSourceBox">
-                                <i class="fas fa-plus"></i> Add Source Box
-                            </button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="erp-table table table-sm table-hover" id="sourcesTable">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 3%; text-align: center;">#</th>
-                                        <th style="width: 21%;">Design No *</th>
-                                        <th style="width: 12%;">Pattern & Fit</th>
-                                        <th style="width: 12%;">Warehouse *</th>
-                                        <th style="width: 12%;">Rack *</th>
-                                        <th style="width: 12%;">Size Set *</th>
-                                        <th style="width: 11%;">Color *</th>
-                                        <th style="width: 6%; text-align: center;">Avail Stk</th>
-                                        <th style="width: 5%; text-align: center;">Boxes *</th>
-                                        <th style="width: 4%; text-align: right;">Total Pcs</th>
-                                        <th style="width: 4%; text-align: center;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="sourcesTableBody">
-                                    <!-- Dynamic rows inserted here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- ========================================================= -->
-                    <!-- 3. SECTION 2: GENERATED TARGET STOCK (COMPACT ERP TABLE) -->
-                    <!-- ========================================================= -->
-                    <div class="erp-card">
-                        <div class="erp-card-header">
-                            <div class="erp-card-title text-success">
-                                <i class="fas fa-barcode"></i> 2. Generated Stock to Produce (Targets)
-                                <span class="badge badge-light border text-muted ml-2 font-weight-normal" style="font-size:11px;">Create new stock boxes from the consumed pieces</span>
-                            </div>
-                            <button type="button" class="btn btn-outline-success btn-erp-add" id="btnAddGeneratedItem">
-                                <i class="fas fa-plus"></i> Add Generated Stock
-                            </button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="erp-table table table-sm table-hover" id="generatedTable">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 3%; text-align: center;">#</th>
-                                        <th style="width: 20%;">
-                                            Design No *
-                                            <a href="{{ route('admin.master.production-goods.create') }}" target="_blank" class="text-primary ml-1" title="Create New Design" style="font-size:10px;"><i class="fas fa-plus"></i></a>
-                                            <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="design" title="Refresh Designs" style="font-size:10px;"><i class="fas fa-sync-alt"></i></a>
-                                        </th>
-                                        <th style="width: 11%;">Pattern & Fit</th>
-                                        <th style="width: 11%;">
-                                            Warehouse *
-                                            <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="warehouse" title="Refresh Warehouses" style="font-size:10px;"><i class="fas fa-sync-alt"></i></a>
-                                        </th>
-                                        <th style="width: 11%;">
-                                            Rack *
-                                            <a href="javascript:void(0)" class="text-primary ml-1 btn-add-new-rack" title="Quick Add Rack" style="font-size:10px;"><i class="fas fa-plus"></i></a>
-                                            <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="rack" title="Refresh Racks" style="font-size:10px;"><i class="fas fa-sync-alt"></i></a>
-                                        </th>
-                                        <th style="width: 12%;">
-                                            Size Set *
-                                            <a href="{{ route('admin.master.size-measurement.index') }}" target="_blank" class="text-primary ml-1" title="Size Master" style="font-size:10px;"><i class="fas fa-plus"></i></a>
-                                        </th>
-                                        <th style="width: 10%;">
-                                            Color *
-                                            <a href="{{ route('admin.master.colors.index') }}" target="_blank" class="text-primary ml-1" title="Color Master" style="font-size:10px;"><i class="fas fa-plus"></i></a>
-                                        </th>
-                                        <th style="width: 5%; text-align: center;">Boxes *</th>
-                                        <th style="width: 4%; text-align: center;">Pcs/Bx</th>
-                                        <th style="width: 4%; text-align: right;">Total Pcs</th>
-                                        <th style="width: 5%; text-align: right;">MRP</th>
-                                        <th style="width: 4%; text-align: center;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="generatedTableBody">
-                                    <!-- Dynamic rows inserted here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- ========================================================= -->
-                    <!-- 4. COLLAPSIBLE SIZE BREAKDOWN AUDIT ACCORDION -->
-                    <!-- ========================================================= -->
-                    <div class="erp-card mb-4">
-                        <div class="erp-card-header" style="cursor: pointer;" data-toggle="collapse" data-target="#auditCollapse">
-                            <div class="erp-card-title text-dark font-weight-bold" style="font-size:11.5px;">
-                                <i class="fas fa-list-check text-info"></i> Detailed Per-Size Balance & Piece Breakdown
-                                <span class="text-muted font-weight-normal ml-2" style="font-size:10.5px;">(Click to view exact size by size comparison)</span>
-                            </div>
-                            <span class="text-muted"><i class="fas fa-chevron-down"></i></span>
-                        </div>
-                        <div class="collapse" id="auditCollapse">
-                            <div class="p-3 bg-white border-top">
-                                <div class="row">
-                                    <div class="col-md-5 border-right">
-                                        <h6 class="font-weight-bold text-primary mb-2 border-bottom pb-1" style="font-size:12px;">
-                                            <i class="fas fa-arrow-circle-down mr-1"></i> Consumed Sources Breakdown (<span id="auditSourceTotalPieces">0</span> pcs)
-                                        </h6>
-                                        <ul class="list-unstyled mb-0" id="auditSourceList" style="font-size:12px;">
-                                            <li class="text-muted font-italic">No source boxes selected</li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-5 border-right">
-                                        <h6 class="font-weight-bold text-success mb-2 border-bottom pb-1" style="font-size:12px;">
-                                            <i class="fas fa-arrow-circle-up mr-1"></i> Generated Targets Breakdown (<span id="auditGenTotalPieces">0</span> pcs)
-                                        </h6>
-                                        <ul class="list-unstyled mb-0" id="auditGenList" style="font-size:12px;">
-                                            <li class="text-muted font-italic">No target stock added</li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-2 text-center d-flex flex-column justify-content-center">
-                                        <span class="text-muted small font-weight-bold d-block">PIECE DIFFERENCE</span>
-                                        <span id="auditDiffPieces" class="font-weight-bold h4 d-block mb-1 text-secondary">0</span>
-                                        <div id="auditStatusMessage" class="small text-muted font-weight-bold">Sizes must match 1:1.</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ========================================================= -->
-                    <!-- 5. STICKY BOTTOM ACTIONS BAR -->
-                    <!-- ========================================================= -->
-                    <div class="sticky-bottom-bar">
-                        <div>
-                            <a href="{{ route('admin.inventory.index') }}" class="text-secondary font-weight-bold mr-3" style="font-size:12px;">
-                                <i class="fas fa-arrow-left mr-1"></i> Cancel and Exit
-                            </a>
-                            <span class="text-muted small">All changes are verified in real time before submission.</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-3">
-                            <span id="bottomStatusBadge" class="badge badge-secondary px-3 py-2 mr-3 font-weight-bold" style="font-size:11.5px;">
-                                Incomplete Selection
-                            </span>
-                            <button type="submit" class="btn-hud-confirm" id="btnSubmitStock" disabled>
-                                <i class="fas fa-check-double mr-1"></i> Confirm and Upload Stock
-                            </button>
-                        </div>
-                    </div>
-                </form>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- ERP HEADER BAR -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title m-0">Stock Consumption & Production</h1>
+                <p class="erp-page-subtitle m-0">Deduct source domestic boxes and generate newly packed stock with 1:1 piece verification</p>
             </div>
-        </section>
+            <div class="d-flex align-items-center" style="gap: 8px;">
+                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to inventory
+                </a>
+            </div>
+        </div>
+
+        <form action="{{ route('admin.inventory.store') }}" method="POST" id="addStockForm" novalidate>
+            @csrf
+            <input type="hidden" name="source_type" id="sourceType" value="consume">
+
+            <!-- ========================================================= -->
+            <!-- 1. STICKY ERP HUD HEADER BAR (ALWAYS VISIBLE WITH ZERO SCROLL) -->
+            <!-- ========================================================= -->
+            <div class="sticky-erp-hud">
+                <!-- Consumed Stat Box -->
+                <div class="hud-stat-box hud-source-box">
+                    <div>
+                        <span class="hud-label text-primary"><i class="fas fa-box-open mr-1"></i> Consumed sources</span>
+                        <div class="hud-numbers">
+                            <span id="hudSourceBoxes" class="text-dark">0</span> <small class="text-muted" style="font-size:10px;">Bx</small>
+                            <span class="text-muted mx-1" style="font-size:12px;">|</span>
+                            <span id="hudSourcePieces" class="text-primary font-weight-bold">0</span> <small class="text-muted" style="font-size:10px;">Pcs</small>
+                        </div>
+                    </div>
+                    <div class="border-left pl-2 ml-auto">
+                        <span class="text-muted d-block" style="font-size:9.5px; font-weight:700;">Sizes consumed:</span>
+                        <div id="hudSourcePills" class="hud-pills-row">
+                            <span class="text-muted small font-italic" style="font-size:10px;">None</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Match Status Center -->
+                <div class="hud-match-center">
+                    <span id="hudMatchBadge" class="badge-erp-status badge-secondary text-white">
+                        <i class="fas fa-balance-scale"></i> Select sources & targets
+                    </span>
+                    <div class="mt-1" style="font-size:10.5px;">
+                        <span class="text-muted font-weight-bold">Diff: </span>
+                        <span id="hudDiffPieces" class="font-weight-bold text-secondary">0 pcs</span>
+                    </div>
+                </div>
+
+                <!-- Generated Stat Box -->
+                <div class="hud-stat-box hud-target-box">
+                    <div>
+                        <span class="hud-label text-success"><i class="fas fa-cubes mr-1"></i> Target generated</span>
+                        <div class="hud-numbers">
+                            <span id="hudGenBoxes" class="text-dark">0</span> <small class="text-muted" style="font-size:10px;">Bx</small>
+                            <span class="text-muted mx-1" style="font-size:12px;">|</span>
+                            <span id="hudGenPieces" class="text-success font-weight-bold">0</span> <small class="text-muted" style="font-size:10px;">Pcs</small>
+                        </div>
+                    </div>
+                    <div class="border-left pl-2 ml-auto">
+                        <span class="text-muted d-block" style="font-size:9.5px; font-weight:700;">Sizes generated:</span>
+                        <div id="hudGenPills" class="hud-pills-row">
+                            <span class="text-muted small font-italic" style="font-size:10px;">None</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instant Action Button in HUD -->
+                <div>
+                    <button type="submit" class="btn-hud-confirm" id="btnHudSubmit" disabled>
+                        <i class="fas fa-check-double mr-1"></i> Confirm & upload
+                    </button>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 2. SECTION 1: SOURCES TO CONSUME (COMPACT ERP TABLE) -->
+            <!-- ========================================================= -->
+            <div class="erp-card">
+                <div class="erp-card-header">
+                    <div class="erp-card-title">
+                        <i class="fas fa-boxes"></i> 1. Consumed Domestic Inventory (Sources)
+                        <span class="badge badge-light border text-muted ml-2 font-weight-normal" style="font-size:11px;">Select source boxes to deduct from stock</span>
+                    </div>
+                    <button type="button" class="btn-erp-add" id="btnAddSourceBox">
+                        <i class="fas fa-plus"></i> Add Source Box
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="erp-table table table-sm table-hover" id="sourcesTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 3%; text-align: center;">#</th>
+                                <th style="width: 21%;">Design no *</th>
+                                <th style="width: 12%;">Pattern & fit</th>
+                                <th style="width: 12%;">Warehouse *</th>
+                                <th style="width: 12%;">Rack *</th>
+                                <th style="width: 12%;">Size set *</th>
+                                <th style="width: 11%;">Color *</th>
+                                <th style="width: 6%; text-align: center;">Avail stk</th>
+                                <th style="width: 5%; text-align: center;">Boxes *</th>
+                                <th style="width: 4%; text-align: right;">Total pcs</th>
+                                <th style="width: 4%; text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sourcesTableBody">
+                            <!-- Dynamic rows inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 3. SECTION 2: GENERATED TARGET STOCK (COMPACT ERP TABLE) -->
+            <!-- ========================================================= -->
+            <div class="erp-card">
+                <div class="erp-card-header">
+                    <div class="erp-card-title">
+                        <i class="fas fa-barcode"></i> 2. Generated Stock to Produce (Targets)
+                        <span class="badge badge-light border text-muted ml-2 font-weight-normal" style="font-size:11px;">Create new stock boxes from the consumed pieces</span>
+                    </div>
+                    <button type="button" class="btn-erp-add" id="btnAddGeneratedItem">
+                        <i class="fas fa-plus"></i> Add Generated Stock
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="erp-table table table-sm table-hover" id="generatedTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 3%; text-align: center;">#</th>
+                                <th style="width: 20%;">
+                                    Design no *
+                                    <a href="{{ route('admin.master.production-goods.create') }}" target="_blank" class="text-primary ml-1" title="Create New Design" style="font-size:10px;"><i class="fas fa-plus"></i></a>
+                                    <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="design" title="Refresh Designs" style="font-size:10px;"><i class="fas fa-sync-alt"></i></a>
+                                </th>
+                                <th style="width: 11%;">Pattern & fit</th>
+                                <th style="width: 11%;">
+                                    Warehouse *
+                                    <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="warehouse" title="Refresh Warehouses" style="font-size:10px;"><i class="fas fa-sync-alt"></i></a>
+                                </th>
+                                <th style="width: 11%;">
+                                    Rack *
+                                    <a href="javascript:void(0)" class="text-primary ml-1 btn-add-new-rack" title="Quick Add Rack" style="font-size:10px;"><i class="fas fa-plus"></i></a>
+                                    <a href="javascript:void(0)" class="text-info ml-1 btn-refresh-master" data-type="rack" title="Refresh Racks" style="font-size:10px;"><i class="fas fa-sync-alt"></i></a>
+                                </th>
+                                <th style="width: 12%;">
+                                    Size set *
+                                    <a href="{{ route('admin.master.size-measurement.index') }}" target="_blank" class="text-primary ml-1" title="Size Master" style="font-size:10px;"><i class="fas fa-plus"></i></a>
+                                </th>
+                                <th style="width: 10%;">
+                                    Color *
+                                    <a href="{{ route('admin.master.colors.index') }}" target="_blank" class="text-primary ml-1" title="Color Master" style="font-size:10px;"><i class="fas fa-plus"></i></a>
+                                </th>
+                                <th style="width: 5%; text-align: center;">Boxes *</th>
+                                <th style="width: 4%; text-align: center;">Pcs/bx</th>
+                                <th style="width: 4%; text-align: right;">Total pcs</th>
+                                <th style="width: 5%; text-align: right;">MRP</th>
+                                <th style="width: 4%; text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="generatedTableBody">
+                            <!-- Dynamic rows inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 4. COLLAPSIBLE SIZE BREAKDOWN AUDIT ACCORDION -->
+            <!-- ========================================================= -->
+            <div class="erp-card mb-4">
+                <div class="erp-card-header" style="cursor: pointer;" data-toggle="collapse" data-target="#auditCollapse">
+                    <div class="erp-card-title text-dark font-weight-bold" style="font-size:11.5px;">
+                        <i class="fas fa-list-check text-info"></i> Detailed per-size balance & piece breakdown
+                        <span class="text-muted font-weight-normal ml-2" style="font-size:10.5px;">(Click to view exact size by size comparison)</span>
+                    </div>
+                    <span class="text-muted"><i class="fas fa-chevron-down"></i></span>
+                </div>
+                <div class="collapse" id="auditCollapse">
+                    <div class="p-3 bg-white border-top">
+                        <div class="row">
+                            <div class="col-md-5 border-right">
+                                <h6 class="font-weight-bold text-primary mb-2 border-bottom pb-1" style="font-size:12px;">
+                                    <i class="fas fa-arrow-circle-down mr-1"></i> Consumed sources breakdown (<span id="auditSourceTotalPieces">0</span> pcs)
+                                </h6>
+                                <ul class="list-unstyled mb-0" id="auditSourceList" style="font-size:12px;">
+                                    <li class="text-muted font-italic">No source boxes selected</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-5 border-right">
+                                <h6 class="font-weight-bold text-success mb-2 border-bottom pb-1" style="font-size:12px;">
+                                    <i class="fas fa-arrow-circle-up mr-1"></i> Generated targets breakdown (<span id="auditGenTotalPieces">0</span> pcs)
+                                </h6>
+                                <ul class="list-unstyled mb-0" id="auditGenList" style="font-size:12px;">
+                                    <li class="text-muted font-italic">No target stock added</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-2 text-center d-flex flex-column justify-content-center">
+                                <span class="text-muted small font-weight-bold d-block">Piece difference</span>
+                                <span id="auditDiffPieces" class="font-weight-bold h4 d-block mb-1 text-secondary">0</span>
+                                <div id="auditStatusMessage" class="small text-muted font-weight-bold">Sizes must match 1:1.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 5. STICKY BOTTOM ACTIONS BAR -->
+            <!-- ========================================================= -->
+            <div class="sticky-bottom-bar">
+                <div>
+                    <a href="{{ route('admin.inventory.index') }}" class="text-secondary font-weight-bold mr-3" style="font-size:12px;">
+                        <i class="fas fa-arrow-left mr-1"></i> Cancel and exit
+                    </a>
+                    <span class="text-muted small">All changes are verified in real time before submission.</span>
+                </div>
+                <div class="d-flex align-items-center" style="gap: 12px;">
+                    <span id="bottomStatusBadge" class="badge badge-secondary px-3 py-2 mr-3 font-weight-bold" style="font-size:11.5px;">
+                        Incomplete selection
+                    </span>
+                    <button type="submit" class="btn-hud-confirm" id="btnSubmitStock" disabled>
+                        <i class="fas fa-check-double mr-1"></i> Confirm and upload stock
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
+</div>
 
     <!-- Quick Add Rack Modal -->
     <div class="modal fade" id="quickRackModal" tabindex="-1">

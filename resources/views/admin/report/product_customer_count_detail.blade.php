@@ -1,243 +1,166 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<style>
-    /* ENTERPRISE ERP DESIGN (SAP / ZOHO STYLE) */
-    :root {
-        --erp-bg: #f5f6f8;
-        --erp-panel-bg: #ffffff;
-        --erp-border: #d1d5db;
-        --erp-primary: #0f62fe;
-        --erp-primary-light: #e0e8ff;
-        --erp-text-main: #111827;
-        --erp-text-muted: #6b7280;
-        --erp-active-bg: #f4f8ff;
-        --erp-radius: 4px;
-        --font-base: 13px;
-    }
+<div class="content-wrapper erp-page p-2">
 
-    .erp-container {
-        padding: 16px;
-        background: var(--erp-bg);
-        min-height: calc(100vh - 60px);
-        font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
-        font-size: var(--font-base);
-        color: var(--erp-text-main);
-    }
-
-    .erp-card {
-        background: var(--erp-panel-bg);
-        border: 1px solid var(--erp-border);
-        border-radius: var(--erp-radius);
-        margin-bottom: 16px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    }
-
-    .erp-card-header {
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--erp-border);
-        background-color: #fafafa;
-        font-weight: 600;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .erp-card-body {
-        padding: 16px;
-    }
-
-    .erp-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-    }
-
-    .erp-table th, .erp-table td {
-        border: 1px solid var(--erp-border);
-        padding: 8px 12px;
-        text-align: left;
-        white-space: nowrap;
-    }
-
-    .erp-table th {
-        background-color: #f3f4f6;
-        color: var(--erp-text-muted);
-        text-transform: uppercase;
-        font-size: 11px;
-        letter-spacing: 0.5px;
-        font-weight: 600;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
-
-    .erp-table tbody tr:hover {
-        background-color: var(--erp-active-bg);
-    }
-</style>
-
-<div class="content-wrapper">
-    <section class="content" style="padding-top: 20px;">
-        <div class="container-fluid">
-            <div class="erp-container" style="min-height: auto; padding: 0;">
-                <div class="erp-card">
-                    <div class="erp-card-header">
-                        <div>
-                            <i class="fas fa-list mr-2"></i> Details for Design: <strong>{{ $design_number }}</strong>
-                            <span class="badge badge-success ml-3 px-2 py-1" style="font-size: 13px;">Total Sold: {{ $totalQuantitySold }}</span>
-                        </div>
-                        <div>
-                            <a href="{{ route('admin.report.product-customer-count') }}" class="btn btn-sm btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Back to Report
-                            </a>
-                        </div>
-                    </div>
-                    <div class="erp-card-body">
-                        <form action="{{ route('admin.report.product-customer-count.detail', $design_number) }}" method="GET" class="mb-3">
-                            <div class="row mb-3">
-                                <div class="col-md-2">
-                                    <label>Start Date</label>
-                                    <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
-                                </div>
-                                <div class="col-md-2">
-                                    <label>End Date</label>
-                                    <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
-                                </div>
-                                <div class="col-md-2">
-                                    <label>Order No (SKU)</label>
-                                    <input type="text" name="order_number" class="form-control" placeholder="Search..." value="{{ request('order_number') }}">
-                                </div>
-                                <div class="col-md-3">
-                                    <label>Customer Name</label>
-                                    <input type="text" name="customer_name" class="form-control" placeholder="Search..." value="{{ request('customer_name') }}">
-                                </div>
-                                <div class="col-md-3" id="parent-agents">
-                                    <label>Agent</label>
-                                    <select class="form-control select2" name="agent_id[]" multiple data-placeholder="Select Agents">
-                                        @foreach($agents as $agent)
-                                            <option value="{{ $agent->id }}" {{ (is_array(request('agent_id')) && in_array($agent->id, request('agent_id'))) ? 'selected' : '' }}>
-                                                {{ $agent->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-3" id="parent-products">
-                                    <label>Product Name</label>
-                                    <select class="form-control select2" name="product_name[]" multiple data-placeholder="Select Products">
-                                        @foreach($products as $product)
-                                            <option value="{{ $product }}" {{ (is_array(request('product_name')) && in_array($product, request('product_name'))) ? 'selected' : '' }}>
-                                                {{ $product }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-3" id="parent-sizesets">
-                                    <label>Size Set</label>
-                                    <select class="form-control select2" name="size_set_name[]" multiple data-placeholder="Select Size Sets">
-                                        @foreach($sizeSets as $set)
-                                            <option value="{{ $set }}" {{ (is_array(request('size_set_name')) && in_array($set, request('size_set_name'))) ? 'selected' : '' }}>
-                                                {{ $set }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-3" id="parent-colors">
-                                    <label>Color</label>
-                                    <select class="form-control select2" name="color_name[]" multiple data-placeholder="Select Colors">
-                                        @foreach($colors as $color)
-                                            <option value="{{ $color }}" {{ (is_array(request('color_name')) && in_array($color, request('color_name'))) ? 'selected' : '' }}>
-                                                {{ $color }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="d-none d-md-block">&nbsp;</label>
-                                    <button type="submit" class="btn btn-primary" style="background-color: var(--erp-primary); border-color: var(--erp-primary);">
-                                        <i class="fas fa-filter"></i> Filter
-                                    </button>
-                                    <a href="{{ route('admin.report.product-customer-count.detail', $design_number) }}" class="btn btn-secondary">Clear</a>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="erp-card">
-                    <div class="erp-card-body" style="padding: 0;">
-                        <div style="overflow-x: auto; max-height: 600px;">
-                            <table class="erp-table">
-                                <thead>
-                                    <tr>
-                                        <th>Order Date</th>
-                                        <th>Order No (SKU)</th>
-                                        <th>Customer Name</th>
-                                        <th>Sales Agent</th>
-                                        <th>Product Name</th>
-                                        <th>Color</th>
-                                        <th>Size Set</th>
-                                        <th>Quantity Sold</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($items as $row)
-                                        <tr>
-                                            <td>{{ $row->order ? \Carbon\Carbon::parse($row->order->order_date)->format('d-m-Y') : 'N/A' }}</td>
-                                            <td>
-                                                @if($row->order)
-                                                    <strong>
-                                                        <a href="{{ route('admin.agent-orders.show', $row->order->id) }}" target="_blank" style="color: var(--erp-primary); text-decoration: underline;">
-                                                            #ORD-{{ str_pad($row->order->id, 5, '0', STR_PAD_LEFT) }}
-                                                        </a>
-                                                    </strong>
-                                                @else
-                                                    <strong>N/A</strong>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if($row->order && $row->order->shop)
-                                                    {{ $row->order->shop->name }}
-                                                @else
-                                                    N/A
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if($row->order && $row->order->shop && $row->order->shop->agent)
-                                                    <span class="badge badge-secondary">{{ $row->order->shop->agent->name }}</span>
-                                                @else
-                                                    N/A
-                                                @endif
-                                            </td>
-                                            <td>{{ $row->product_name }}</td>
-                                            <td>{{ $row->color_name }}</td>
-                                            <td>{{ $row->size_set_name }}</td>
-                                            <td>
-                                                <span class="badge badge-info" style="font-size: 12px; background-color: var(--erp-primary-light); color: var(--erp-primary);">
-                                                    {{ $row->quantity }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="7" class="text-center text-muted py-4">No order details found for this design.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    @if($items->hasPages())
-                    <div class="erp-card-body" style="border-top: 1px solid var(--erp-border); background-color: #fafafa;">
-                        {{ $items->appends(request()->query())->links() }}
-                    </div>
-                    @endif
-                </div>
+    {{-- HEADER BAR --}}
+    <div class="erp-header-bar mb-3">
+        <div>
+            <h1 class="erp-header-title">Design Details: {{ $design_number }}</h1>
+            <div class="erp-report-meta">
+                Date : {{ now()->format('d M Y h:i A') }}
             </div>
         </div>
-    </section>
+        <div class="d-flex align-items-center" style="gap: 12px;">
+            <span class="erp-stat-pill">Total Sold: <strong>{{ number_format($totalQuantitySold) }} Pcs</strong></span>
+            <a href="{{ route('admin.report.product-customer-count') }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Report
+            </a>
+        </div>
+    </div>
+
+    {{-- FILTERS CARD --}}
+    <div class="erp-card mb-3">
+        <div class="card-body p-3">
+            <form action="{{ route('admin.report.product-customer-count.detail', $design_number) }}" method="GET">
+                <div class="row">
+                    <div class="col-md-2 mb-2">
+                        <label class="erp-form-label">Start Date</label>
+                        <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="erp-form-label">End Date</label>
+                        <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <label class="erp-form-label">Order Number (SKU)</label>
+                        <input type="text" name="order_number" class="form-control" placeholder="Search SKU..." value="{{ request('order_number') }}">
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <label class="erp-form-label">Customer Name</label>
+                        <input type="text" name="customer_name" class="form-control" placeholder="Search Customer..." value="{{ request('customer_name') }}">
+                    </div>
+                    <div class="col-md-3 mb-2" id="parent-agents">
+                        <label class="erp-form-label">Agent</label>
+                        <select class="form-control select2" name="agent_id[]" multiple data-placeholder="Select Agents">
+                            @foreach($agents as $agent)
+                                <option value="{{ $agent->id }}" {{ (is_array(request('agent_id')) && in_array($agent->id, request('agent_id'))) ? 'selected' : '' }}>
+                                    {{ $agent->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="row align-items-end">
+                    <div class="col-md-3 mb-2" id="parent-products">
+                        <label class="erp-form-label">Product Name</label>
+                        <select class="form-control select2" name="product_name[]" multiple data-placeholder="Select Products">
+                            @foreach($products as $product)
+                                <option value="{{ $product }}" {{ (is_array(request('product_name')) && in_array($product, request('product_name'))) ? 'selected' : '' }}>
+                                    {{ $product }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2" id="parent-sizesets">
+                        <label class="erp-form-label">Size Set</label>
+                        <select class="form-control select2" name="size_set_name[]" multiple data-placeholder="Select Size Sets">
+                            @foreach($sizeSets as $set)
+                                <option value="{{ $set }}" {{ (is_array(request('size_set_name')) && in_array($set, request('size_set_name'))) ? 'selected' : '' }}>
+                                    {{ $set }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2" id="parent-colors">
+                        <label class="erp-form-label">Color</label>
+                        <select class="form-control select2" name="color_name[]" multiple data-placeholder="Select Colors">
+                            @foreach($colors as $color)
+                                <option value="{{ $color }}" {{ (is_array(request('color_name')) && in_array($color, request('color_name'))) ? 'selected' : '' }}>
+                                    {{ $color }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2 d-flex align-items-center" style="gap: 8px;">
+                        <button type="submit" class="btn-erp btn-erp-primary">
+                            <i class="fas fa-search mr-1"></i> Filter
+                        </button>
+                        <a href="{{ route('admin.report.product-customer-count.detail', $design_number) }}" class="btn-erp btn-erp-secondary">
+                            <i class="fas fa-undo mr-1"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- TABLE CARD --}}
+    <div class="erp-card">
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                <table class="erp-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Order Date</th>
+                            <th>Order Number (SKU)</th>
+                            <th>Customer Name</th>
+                            <th>Sales Agent</th>
+                            <th>Product Name</th>
+                            <th>Color</th>
+                            <th>Size Set</th>
+                            <th class="text-right">Quantity Sold</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($items as $row)
+                            <tr>
+                                <td>{{ $row->order ? \Carbon\Carbon::parse($row->order->order_date)->format('d-m-Y') : 'N/A' }}</td>
+                                <td>
+                                    @if($row->order)
+                                        <a href="{{ route('admin.agent-orders.show', $row->order->id) }}" target="_blank" class="font-weight-bold">
+                                            #ORD-{{ str_pad($row->order->id, 5, '0', STR_PAD_LEFT) }}
+                                        </a>
+                                    @else
+                                        <span class="text-muted">N/A</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($row->order && $row->order->shop)
+                                        {{ $row->order->shop->name }}
+                                    @else
+                                        <span class="text-muted">N/A</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($row->order && $row->order->shop && $row->order->shop->agent)
+                                        <span class="badge badge-light border">{{ $row->order->shop->agent->name }}</span>
+                                    @else
+                                        <span class="text-muted">N/A</span>
+                                    @endif
+                                </td>
+                                <td>{{ $row->product_name }}</td>
+                                <td>{{ $row->color_name }}</td>
+                                <td>{{ $row->size_set_name }}</td>
+                                <td class="text-right font-weight-bold">
+                                    {{ number_format($row->quantity) }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">No order details found for this design.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @if($items->hasPages())
+        <div class="card-footer bg-white border-top py-2 d-flex justify-content-end">
+            {{ $items->appends(request()->query())->links() }}
+        </div>
+        @endif
+    </div>
 </div>
 
 @push('scripts')

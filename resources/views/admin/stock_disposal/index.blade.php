@@ -3,52 +3,42 @@
 @section('title', 'Stock Disposal History')
 
 @section('content')
-<div class="content-wrapper">
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Stock Disposal History</h1>
-                </div>
-                <div class="col-sm-6 text-right">
-                    <a href="{{ route('admin.inventory.stock_disposal.create') }}" class="btn btn-primary shadow-sm">
-                        <i class="fas fa-plus mr-1"></i> New Disposal
-                    </a>
-                </div>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- Header Bar -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title">Stock Disposal History</h1>
+                <p class="erp-page-subtitle">Audit logs and records of disposed fabric rolls and domestic stock</p>
+            </div>
+            <div>
+                <a href="{{ route('admin.inventory.stock_disposal.create') }}" class="btn-erp btn-erp-primary">
+                    <i class="fas fa-plus mr-1"></i> New Disposal
+                </a>
             </div>
         </div>
-    </section>
 
-    <section class="content">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card card-primary card-outline shadow-sm border-0">
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table id="disposalTable" class="table table-bordered table-striped table-hover w-100">
-                                    <thead class="bg-light">
-                                        <tr>
-                                            <th width="40">#</th>
-                                            <th>Disposal No</th>
-                                            <th>Date</th>
-                                            <th>Type</th>
-                                            <th>Total Items</th>
-                                            <th>Reason</th>
-                                            <th width="60">Action</th>
-                                        </tr>
-                                    </thead>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Table Card -->
+        <div class="erp-card p-0">
+            <div class="table-responsive">
+                <table id="disposalTable" class="table erp-table table-bordered table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 45px;">#</th>
+                            <th>Disposal no.</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th class="text-center">Total items</th>
+                            <th>Reason</th>
+                            <th class="text-center" style="width: 90px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
-    </section>
+    </div>
 </div>
-
-
 @endsection
 
 @section('scripts')
@@ -59,8 +49,8 @@
             serverSide: true,
             ajax: "{{ route('admin.inventory.stock_disposal.list') }}",
             columns: [
-                {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'disposal_no', name: 'disposal_no'},
+                {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-center text-muted font-weight-bold'},
+                {data: 'disposal_no', name: 'disposal_no', className: 'font-weight-bold'},
                 {
                     data: 'created_at',
                     name: 'created_at',
@@ -73,15 +63,16 @@
                     name: 'item_type',
                     render: function(data) {
                         return data === 'fabric' 
-                            ? '<span class="badge badge-info px-2 py-1"><i class="fas fa-scroll mr-1"></i> Fabric</span>' 
-                            : '<span class="badge badge-primary px-2 py-1"><i class="fas fa-box mr-1"></i> Domestic</span>';
+                            ? '<span class="badge-erp-status badge-erp-info"><i class="fas fa-scroll mr-1"></i> Fabric</span>' 
+                            : '<span class="badge-erp-status badge-erp-primary"><i class="fas fa-box mr-1"></i> Domestic</span>';
                     }
                 },
                 {
                     data: 'items_count',
                     name: 'items_count',
+                    className: 'text-center',
                     render: function(data) {
-                        return '<span class="badge badge-secondary px-2 py-1">' + data + ' Items</span>';
+                        return '<span class="badge-erp-status badge-erp-secondary font-weight-bold">' + data + ' Items</span>';
                     }
                 },
                 {
@@ -91,16 +82,15 @@
                         return '<span class="text-capitalize font-weight-bold">' + data + '</span>';
                     }
                 },
-                {data: 'action', name: 'action', orderable: false, searchable: false}
+                {data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center'}
             ],
             order: [[2, 'desc']],
             language: {
                 search: "_INPUT_",
-                searchPlaceholder: "Search history..."
+                searchPlaceholder: "Search history...",
+                processing: '<i class="fas fa-spinner fa-spin fa-2x text-success"></i>'
             }
         });
-
-
 
         // Delete Disposal
         $(document).on('click', '.delete-disposal', function() {
@@ -110,7 +100,7 @@
                 text: "This will permanently delete the record and RESTORE the stock to inventory.",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
+                confirmButtonColor: '#dc2626',
                 confirmButtonText: 'Yes, Restore Stock & Delete'
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -132,8 +122,4 @@
         });
     });
 </script>
-<style>
-    .badge { font-weight: 500; font-size: 85%; }
-    code { background: #f8f9fa; padding: 2px 5px; border-radius: 4px; border: 1px solid #eee; }
-</style>
 @endsection

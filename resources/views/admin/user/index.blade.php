@@ -1,99 +1,106 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="content-wrapper">
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1>User Management</h1>
-                    </div>
-                    <div class="col-sm-6">
-                        <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                            <li class="breadcrumb-item active">Users</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="content">
-            <div class="container-fluid">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">User List</h3>
-                        <div class="card-tools">
-                            <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-plus"></i> Add New User
-                            </a>
-                        </div>
-                    </div>
-                    <div class="card-body p-0 table-responsive">
-                        <table class="table table-striped table-hover mt-2" id="user-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 10px">#</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Status</th>
-                                    <th style="width: 150px">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Data will be loaded via script or initial loop if small -->
-                                @foreach(\App\Models\User::all() as $user)
-                                    <tr>
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $user->first_name }} {{ $user->last_name }}</td>
-                                        <td>{{ $user->email }}</td>
-                                        <td>
-                                            @foreach($user->roles as $role)
-                                                <span class="badge badge-success">{{ $role->name }}</span>
-                                            @endforeach
-                                        </td>
-                                        <td>
-                                            @if($user->status == 1)
-                                                <span class="badge badge-primary">Active</span>
-                                            @else
-                                                <span class="badge badge-danger">Inactive</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <a href="{{ route('admin.users.edit', $user->id) }}" class="btn btn-info btn-sm">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-danger btn-sm"
-                                                onclick="deleteUser({{ $user->id }})">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar">
+        <div class="erp-header-title">
+            <i class="fas fa-users-cog text-primary"></i> User Management
+        </div>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.users.create') }}" class="btn-erp btn-erp-primary">
+                <i class="fas fa-plus"></i> Add New User
+            </a>
+        </div>
     </div>
 
-    <script>
-        function deleteUser(id) {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = "{{ url('admin/users/delete') }}/" + id;
-                }
-            })
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show mb-2" role="alert">
+            {{ session('success') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
+    <!-- Main Data Table Card -->
+    <div class="erp-card">
+        <div class="erp-card-body p-2 table-responsive">
+            <table class="erp-table table table-bordered table-hover" id="user-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;" class="text-center">#</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th style="width: 100px;" class="text-center">Status</th>
+                        <th style="width: 100px;" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach(\App\Models\User::all() as $user)
+                        <tr>
+                            <td class="text-center text-muted">{{ $loop->iteration }}</td>
+                            <td class="font-weight-bold">{{ $user->first_name }} {{ $user->last_name }}</td>
+                            <td>{{ $user->email }}</td>
+                            <td>
+                                @foreach($user->roles as $role)
+                                    <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 8px; font-weight: 600;">
+                                        {{ $role->name }}
+                                    </span>
+                                @endforeach
+                            </td>
+                            <td class="text-center">
+                                @if($user->status == 1)
+                                    <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 8px;">Active</span>
+                                @else
+                                    <span class="badge badge-secondary" style="font-size: 11px; padding: 3px 8px;">Inactive</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                <div class="d-inline-flex" style="gap: 4px;">
+                                    <a href="{{ route('admin.users.edit', $user->id) }}" class="erp-action-btn erp-btn-edit" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="erp-action-btn erp-btn-delete" title="Delete" onclick="deleteUser({{ $user->id }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        if (!$.fn.DataTable.isDataTable('#user-table')) {
+            $('#user-table').DataTable({
+                pageLength: 25,
+                responsive: true,
+                order: [[0, 'asc']]
+            });
         }
-    </script>
+    });
+
+    function deleteUser(id) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#1d5a2a',
+            cancelButtonColor: '#dc3545',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "{{ url('admin/users/delete') }}/" + id;
+            }
+        });
+    }
+</script>
 @endsection

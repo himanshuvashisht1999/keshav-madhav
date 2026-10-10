@@ -1,80 +1,59 @@
-@extends('admin.layouts.app')
+﻿@extends('admin.layouts.app')
+@section('title', 'Create Washing Master')
 
 @section('content')
-    <div class="content-wrapper">
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1>Create Washing Master</h1>
-                    </div>
-                    <div class="col-sm-6">
-                        <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                            <li class="breadcrumb-item"><a href="{{route('admin.payment.master.washing_master.index')}}">Manage Washing Master</a></li>
-                            <li class="breadcrumb-item active">Create</li>
-                        </ol>
-                    </div>
-                </div>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        <!-- Header Bar -->
+        <div class="erp-header-bar mb-2">
+            <div>
+                <h1 class="erp-page-title">Create Washing Master</h1>
+                <p class="erp-page-subtitle">Add a new account to Washing Master</p>
             </div>
-        </section>
+            <div class="d-flex align-items-center">
+                <a href="{{ route('admin.payment.master.washing_master.index') }}" class="btn-erp btn-erp-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to List
+                </a>
+            </div>
+        </div>
 
-        <section class="content">
-            <div class="container-fluid">
-                <div class="row justify-content-center">
-                    <div class="col-md-8">
-                        <div class="card card-outline card-primary shadow-sm">
-                            <div class="card-header">
-                                <h3 class="card-title"><i class="fas fa-plus mr-2"></i>Washing Master Details</h3>
-                            </div>
-                            <form action="{{route('admin.payment.master.washing_master.store')}}" method="post">
-                                @csrf
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <div class="form-group">
-                                                <label for="name"><i class="fas fa-tag mr-1 text-primary"></i> Name <span class="text-danger">*</span></label>
-                                                <input type="text" name="name" class="form-control form-control-lg" id="name"
-                                                    placeholder="Enter Washing Master Name" required value="{{ old('name') }}">
-                                                @error('name')
-                                                    <span class="text-danger small">{{ $message }}</span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label><i class="fas fa-money-bill-wave mr-1 text-success"></i> Balance</label>
-                                                <div class="input-group">
-                                                    <div class="input-group-prepend">
-                                                        <span class="input-group-text">₹</span>
-                                                    </div>
-                                                    <input type="number" step="0.01" name="balance" class="form-control"
-                                                        placeholder="0.00" value="{{ old('balance', 0) }}">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label><i class="fas fa-exchange-alt mr-1 text-info"></i> Balance Type</label>
-                                                <select name="balance_type" class="form-control select2" style="width: 100%;">
-                                                    <option value="Credit" {{ old('balance_type') == 'Credit' ? 'selected' : '' }}>Credit (Cr)</option>
-                                                    <option value="Debit" {{ old('balance_type') == 'Debit' ? 'selected' : '' }}>Debit (Dr)</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-white text-right">
-                                    <a href="{{ route('admin.payment.master.washing_master.index') }}" class="btn btn-default mr-2">Cancel</a>
-                                    <button type="submit" class="btn btn-primary px-4">Create Master</button>
-                                </div>
-                            </form>
-                        </div>
+        <!-- Form Card -->
+        <div class="erp-card p-3">
+            <form action="{{ route('admin.payment.master.washing_master.store') }}" method="post">
+                @csrf
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="erp-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control form-control-sm erp-input @error('name') is-invalid @enderror" id="name" placeholder="Enter name" required value="{{ old('name') }}">
+                        @error('name')
+                            <span class="text-danger small font-weight-bold mt-1 d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="erp-label">Opening balance (â‚¹)</label>
+                        <input type="number" step="0.01" name="balance" class="form-control form-control-sm erp-input" placeholder="0.00" value="{{ old('balance', 0) }}">
+                        @error('balance')
+                            <span class="text-danger small font-weight-bold mt-1 d-block">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="erp-label">Balance type</label>
+                        <select name="balance_type" class="form-control form-control-sm erp-input select2" style="width: 100%;">
+                            <option value="Credit" {{ old('balance_type') == 'Credit' ? 'selected' : '' }}>Credit (Cr)</option>
+                            <option value="Debit" {{ old('balance_type') == 'Debit' ? 'selected' : '' }}>Debit (Dr)</option>
+                        </select>
+                        @error('balance_type')
+                            <span class="text-danger small font-weight-bold mt-1 d-block">{{ $message }}</span>
+                        @enderror
                     </div>
                 </div>
-            </div>
-        </section>
+                <div class="d-flex justify-content-end pt-2 border-top">
+                    <button type="submit" class="btn-erp btn-erp-primary">
+                        <i class="fas fa-save mr-1"></i> Save
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
+</div>
 @endsection

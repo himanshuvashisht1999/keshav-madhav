@@ -1,75 +1,71 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="content-wrapper">
-
-        <section class="content-header">
-            <div class="container-fluid">
-                <h4 class="text-center">Stage Units</h4>
-            </div>
-        </section>
-
-        <section class="content">
-            <div class="container-fluid">
-
-                <form action="{{ route('admin.master.stage_unit.update') }}" method="post">
-                    @csrf
-
-                    {{-- hidden warehouse --}}
-                    <input type="hidden" name="warehouse_id" id="warehouse_id">
-
-                    <div class="row mb-2">
-                        <div class="col-md-6">
-                            <label>Production Warehouse</label>
-
-                            <select class="form-control select2" id="warehouseSelect"
-                                onchange="changeWarehouse(this.value)">
-                                <option value="">Select</option>
-
-                                @foreach($master_warehouse_fabrics as $index => $warehouse)
-                                    <option value="{{ $warehouse->id }}" {{ $index === 0 ? 'selected' : '' }}>
-                                        {{ $warehouse->cutting_master_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-6 text-right">
-                            <button type="submit" class="btn btn-primary btn-sm mt-4">
-                                Save Stage Units
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm">
-                            <thead>
-                                <tr>
-                                    <th width="20%">Stage</th>
-                                    <th width="20%">Unit Name</th>
-                                    <th width="15%">Phone</th>
-                                    <th width="15%">Employee ID</th>
-                                    <th width="15%">Password</th>
-                                    <th width="10%">Time (Days)</th>
-                                    <th width="10%">Action</th>
-                                </tr>
-                            </thead>
-
-                            <tbody id="stageUnitContainer">
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted">
-                                        Select warehouse
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                </form>
-
-            </div>
-        </section>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar">
+        <div class="erp-header-title">
+            <i class="fas fa-boxes text-primary"></i> Stage Units
+        </div>
+        <div class="erp-header-actions">
+            <button type="submit" form="stageUnitForm" class="btn-erp btn-erp-primary">
+                <i class="fas fa-save"></i> Save Stage Units
+            </button>
+        </div>
     </div>
+
+    <!-- Main Content Card -->
+    <div class="erp-card">
+        <div class="erp-card-body p-3">
+            <form id="stageUnitForm" action="{{ route('admin.master.stage_unit.update') }}" method="post">
+                @csrf
+
+                {{-- hidden warehouse --}}
+                <input type="hidden" name="warehouse_id" id="warehouse_id">
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-5">
+                        <label class="form-label font-weight-bold" style="font-size: 13px;">Production Warehouse</label>
+                        <select class="form-control select2 erp-filter-select" id="warehouseSelect"
+                            onchange="changeWarehouse(this.value)">
+                            <option value="">Select Warehouse</option>
+                            @foreach($master_warehouse_fabrics as $index => $warehouse)
+                                <option value="{{ $warehouse->id }}" {{ $index === 0 ? 'selected' : '' }}>
+                                    {{ $warehouse->cutting_master_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="erp-table table table-bordered table-hover">
+                        <thead>
+                            <tr>
+                                <th width="20%">Stage</th>
+                                <th width="20%">Unit Name</th>
+                                <th width="15%">Phone</th>
+                                <th width="15%">Employee ID</th>
+                                <th width="15%">Password</th>
+                                <th width="10%">Time (Days)</th>
+                                <th width="10%" class="text-center">Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="stageUnitContainer">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    Select warehouse
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
 
     {{-- Modal --}}
     <div class="modal fade" id="getLinkModal" tabindex="-1">
@@ -88,9 +84,9 @@
                 </div>
 
                 <div class="modal-footer py-2">
-                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="copyStageLink()">Copy</button>
-                    <button type="button" class="btn btn-success btn-sm" onclick="downloadStageLink()">Download</button>
+                    <button type="button" class="btn-erp btn-erp-outline btn-sm" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn-erp btn-erp-outline btn-sm" onclick="copyStageLink()">Copy</button>
+                    <button type="button" class="btn-erp btn-erp-primary btn-sm" onclick="downloadStageLink()">Download</button>
                 </div>
 
             </div>
@@ -117,11 +113,11 @@
                         <div class="text-center mb-3">
                             <div id="camera-container" style="display:none;">
                                 <video id="admin-video" autoplay playsinline style="width:100%; border-radius:8px;"></video>
-                                <button type="button" class="btn btn-info btn-sm mt-2" id="admin-capture-btn">Capture Photo</button>
+                                <button type="button" class="btn-erp btn-erp-primary btn-sm mt-2" id="admin-capture-btn">Capture Photo</button>
                             </div>
                             <div id="preview-container" style="display:none;">
                                 <img id="admin-preview" style="width:100%; border-radius:8px; border:1px solid #ddd;">
-                                <button type="button" class="btn btn-warning btn-sm mt-2" id="admin-retake-btn">Retake</button>
+                                <button type="button" class="btn-erp btn-erp-outline btn-sm mt-2" id="admin-retake-btn">Retake</button>
                             </div>
                             <canvas id="admin-canvas" style="display:none;"></canvas>
                         </div>
@@ -130,15 +126,15 @@
                             <label>Select File or Use Camera</label>
                             <div class="d-flex justify-content-between">
                                 <input type="file" id="admin-file-input" accept="image/*" class="form-control-file w-auto">
-                                <button type="button" class="btn btn-primary btn-sm" id="admin-open-camera-btn">
+                                <button type="button" class="btn-erp btn-erp-outline btn-sm" id="admin-open-camera-btn">
                                     <i class="fa fa-camera"></i> Camera
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer py-2">
-                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success btn-sm" id="admin-submit-btn" disabled>Submit Slip</button>
+                        <button type="button" class="btn-erp btn-erp-outline btn-sm" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn-erp btn-erp-primary btn-sm" id="admin-submit-btn" disabled>Submit Slip</button>
                     </div>
                 </form>
             </div>
@@ -271,13 +267,14 @@
 
                         // header
                         html += `
-                                <tr class="table-primary">
+                                <tr style="background: #f1f5f9; font-weight: 600; color: #1e293b;">
                                     <td colspan="6"><strong>${stage.stage_name}</strong></td>
                                     <td class="text-right">
                                         <button type="button"
-                                                class="btn btn-success btn-sm add-unit-btn"
+                                                class="btn-erp btn-erp-primary add-unit-btn py-1 px-2"
+                                                style="font-size: 11px;"
                                                 data-stage-id="${stageId}">
-                                            + Add New
+                                            + Add Unit
                                         </button>
                                     </td>
                                 </tr>`;
@@ -292,20 +289,20 @@
                                                 <td>
                                                     <input type="hidden" name="rows[${rowIndex}][id]" value="">
                                                     <input type="hidden" name="rows[${rowIndex}][master_stage_id]" value="${stageId}">
-                                                    <input type="text" name="rows[${rowIndex}][name]" class="form-control form-control-sm">
+                                                    <input type="text" name="rows[${rowIndex}][name]" class="form-control form-control-sm erp-filter-input">
                                                 </td>
 
                                                 <td>
-                                                    <input type="text" name="rows[${rowIndex}][phone]" class="form-control form-control-sm">
+                                                    <input type="text" name="rows[${rowIndex}][phone]" class="form-control form-control-sm erp-filter-input">
                                                 </td>
                                                 <td>
-                                                    <input type="text" name="rows[${rowIndex}][employee_id]" class="form-control form-control-sm">
+                                                    <input type="text" name="rows[${rowIndex}][employee_id]" class="form-control form-control-sm erp-filter-input">
                                                 </td>
                                                 <td>
-                                                    <input type="text" name="rows[${rowIndex}][password]" class="form-control form-control-sm">
+                                                    <input type="text" name="rows[${rowIndex}][password]" class="form-control form-control-sm erp-filter-input">
                                                 </td>
                                                 <td>
-                                                    <input type="number" name="rows[${rowIndex}][lot_time_in_days]" class="form-control form-control-sm" value="1">
+                                                    <input type="number" name="rows[${rowIndex}][lot_time_in_days]" class="form-control form-control-sm erp-filter-input" value="1">
                                                 </td>
                                                 <td>-</td>
                                             </tr>`;
@@ -322,29 +319,29 @@
                                                 <td>
                                                     <input type="hidden" name="rows[${rowIndex}][id]" value="${row.id ?? ''}">
                                                     <input type="hidden" name="rows[${rowIndex}][master_stage_id]" value="${row.master_stage_id}">
-                                                    <input type="text" name="rows[${rowIndex}][name]" class="form-control form-control-sm"
+                                                    <input type="text" name="rows[${rowIndex}][name]" class="form-control form-control-sm erp-filter-input"
                                                            value="${row.name ?? ''}">
                                                 </td>
 
                                                 <td>
-                                                    <input type="text" name="rows[${rowIndex}][phone]" class="form-control form-control-sm"
+                                                    <input type="text" name="rows[${rowIndex}][phone]" class="form-control form-control-sm erp-filter-input"
                                                            value="${row.phone ?? ''}">
                                                 </td>
                                                  <td>
-                                                    <input type="text" name="rows[${rowIndex}][employee_id]" class="form-control form-control-sm"
+                                                    <input type="text" name="rows[${rowIndex}][employee_id]" class="form-control form-control-sm erp-filter-input"
                                                            value="${row.employee_id ?? ''}">
                                                 </td>
                                                  <td>
-                                                    <input type="text" name="rows[${rowIndex}][password]" class="form-control form-control-sm"
+                                                    <input type="text" name="rows[${rowIndex}][password]" class="form-control form-control-sm erp-filter-input"
                                                            value="${row.password ?? ''}">
                                                 </td>
                                                 <td>
-                                                    <input type="number" name="rows[${rowIndex}][lot_time_in_days]" class="form-control form-control-sm"
+                                                    <input type="number" name="rows[${rowIndex}][lot_time_in_days]" class="form-control form-control-sm erp-filter-input"
                                                            value="${row.lot_time_in_days ?? 1}">
                                                 </td>
-                                                <td>
-                                                    <button type="button" class="btn btn-info btn-xs" onclick="openUploadModal('${row.encrypted_id}', '${row.name}')">
-                                                        <i class="fa fa-upload"></i> Upload
+                                                <td class="text-center">
+                                                    <button type="button" class="btn-erp btn-erp-outline py-0 px-2" style="font-size: 11px;" onclick="openUploadModal('${row.encrypted_id}', '${row.name}')">
+                                                        <i class="fa fa-upload text-primary"></i> Upload
                                                     </button>
                                                 </td>
                                             </tr>`;
@@ -375,20 +372,20 @@
                                     <td>
                                         <input type="hidden" name="rows[${index}][id]" value="">
                                         <input type="hidden" name="rows[${index}][master_stage_id]" value="${stageId}">
-                                        <input type="text" name="rows[${index}][name]" class="form-control form-control-sm">
+                                        <input type="text" name="rows[${index}][name]" class="form-control form-control-sm erp-filter-input">
                                     </td>
 
                                     <td>
-                                        <input type="text" name="rows[${index}][phone]" class="form-control form-control-sm">
+                                        <input type="text" name="rows[${index}][phone]" class="form-control form-control-sm erp-filter-input">
                                     </td>
                                     <td>
-                                        <input type="text" name="rows[${index}][employee_id]" class="form-control form-control-sm">
+                                        <input type="text" name="rows[${index}][employee_id]" class="form-control form-control-sm erp-filter-input">
                                     </td>
                                      <td>
-                                        <input type="text" name="rows[${index}][password]" class="form-control form-control-sm">
+                                        <input type="text" name="rows[${index}][password]" class="form-control form-control-sm erp-filter-input">
                                     </td>
                                     <td>
-                                        <input type="number" name="rows[${index}][lot_time_in_days]" class="form-control form-control-sm" value="1">
+                                        <input type="number" name="rows[${index}][lot_time_in_days]" class="form-control form-control-sm erp-filter-input" value="1">
                                     </td>
                                     <td>-</td>
                                 </tr>
