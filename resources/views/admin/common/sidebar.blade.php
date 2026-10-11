@@ -6,9 +6,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
 
 <aside class="main-sidebar sidebar-dark-primary elevation-4 km-sidebar">
     <!-- Brand Logo -->
+    @php
+        $sidebarLogo = file_exists(public_path('assets/general-settings-image/logo-mascot.png'))
+            ? asset('assets/general-settings-image/logo-mascot.png')
+            : $general_setting->logo;
+    @endphp
     <a href="{{ route('admin.user.profileEdit') }}" class="brand-link">
-        <img src="{{ $general_setting->logo }}" alt="Snapkid" class="brand-image img-circle elevation-3"
-            style="opacity: 1;">
+        <img src="{{ $sidebarLogo }}" alt="Snapkid" class="brand-image" style="opacity: 1;">
         <span class="brand-text font-weight-bold ml-1">SNAPKID</span>
     </a>
 

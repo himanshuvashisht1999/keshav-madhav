@@ -565,7 +565,7 @@ function generateFairBulkTspl($samples, $type = 'barcode')
         $count = $sample->barcode_count ?? 1;
         for ($i = 0; $i < $count; $i++) {
             $labels[] = (object) [
-                'product_name' => trim(($sample->product->series->name ?? '') . ' ' . ($sample->product->name_of_garment ?? '')),
+                'product_name' => trim(($sample->product->series->name ?? '') . ' ' . ($sample->product->name_of_garment ?? '')) ?: ($sample->product->design_number ?? ''),
                 'fitting_name' => $sample->product->fitting->name ?? '',
                 'pattern_name' => $sample->product->pattern->name ?? '',
                 'size_group' => $sample->sizeSet->name,
@@ -597,38 +597,40 @@ CLS
         $tspl .= "CLS\n";
 
         if ($left) {
-            $tspl .= "TEXT 20,110,\"3\",0,2,2,\"{$left->product_name}\"\n";
-            // More space after product name, smaller font
-            $tspl .= "TEXT 20,200,\"2\",0,2,2,\"{$left->size_group}\"\n";
-            $tspl .= "TEXT 20,260,\"2\",0,2,2,\"{$left->fitting_name}\"\n";
-            // Increase height of WSP line
-            $tspl .= "TEXT 20,320,\"2\",0,2,3,\"{$left->wsp}\"\n";
-            // Barcode/QR more bottom
+            // Shifted upper: Design number / Product name at Y=30
+            $tspl .= "TEXT 20,30,\"3\",0,2,2,\"{$left->product_name}\"\n";
+            // Size set at Y=90
+            $tspl .= "TEXT 20,90,\"2\",0,2,2,\"{$left->size_group}\"\n";
+            // Fitting name at Y=145
+            $tspl .= "TEXT 20,145,\"2\",0,2,2,\"{$left->fitting_name}\"\n";
+            // WSP line at Y=200
+            $tspl .= "TEXT 20,200,\"2\",0,2,3,\"{$left->wsp}\"\n";
+            // QR code shifted up to Y=275 with Model 2 (M2,S7) and ECC level M for optimal readability
             if ($type === 'qrcode') {
-                $tspl .= "QRCODE 20,380,L,7,A,0,\"{$left->barcode}\"\n";
-                $tspl .= "TEXT 20,570,\"2\",0,1,1,\"{$left->barcode}\"\n";
+                $tspl .= "QRCODE 20,275,M,7,A,0,M2,S7,\"{$left->barcode}\"\n";
+                $tspl .= "TEXT 20,490,\"2\",0,1,1,\"{$left->barcode}\"\n";
             } else {
-                $tspl .= "BARCODE 20,420,\"128\",120,0,0,3,6,\"{$left->barcode}\"\n";
-                // Barcode text under Barcode
-                $tspl .= "TEXT 20,560,\"2\",0,1,1,\"{$left->barcode}\"\n";
+                $tspl .= "BARCODE 20,275,\"128\",110,0,0,3,6,\"{$left->barcode}\"\n";
+                $tspl .= "TEXT 20,400,\"2\",0,1,1,\"{$left->barcode}\"\n";
             }
         }
 
         if ($right) {
-            $tspl .= "TEXT 420,110,\"3\",0,2,2,\"{$right->product_name}\"\n";
-            // More space after product name, smaller font
-            $tspl .= "TEXT 420,200,\"2\",0,2,2,\"{$right->size_group}\"\n";
-            $tspl .= "TEXT 420,260,\"2\",0,2,2,\"{$right->fitting_name}\"\n";
-            // Increase height of WSP line
-            $tspl .= "TEXT 420,320,\"2\",0,2,3,\"{$right->wsp}\"\n";
-            // Barcode/QR more bottom
+            // Shifted upper: Design number / Product name at Y=30
+            $tspl .= "TEXT 420,30,\"3\",0,2,2,\"{$right->product_name}\"\n";
+            // Size set at Y=90
+            $tspl .= "TEXT 420,90,\"2\",0,2,2,\"{$right->size_group}\"\n";
+            // Fitting name at Y=145
+            $tspl .= "TEXT 420,145,\"2\",0,2,2,\"{$right->fitting_name}\"\n";
+            // WSP line at Y=200
+            $tspl .= "TEXT 420,200,\"2\",0,2,3,\"{$right->wsp}\"\n";
+            // QR code shifted up to Y=275 with Model 2 (M2,S7) and ECC level M for optimal readability
             if ($type === 'qrcode') {
-                $tspl .= "QRCODE 420,380,L,7,A,0,\"{$right->barcode}\"\n";
-                $tspl .= "TEXT 420,570,\"2\",0,1,1,\"{$right->barcode}\"\n";
+                $tspl .= "QRCODE 420,275,M,7,A,0,M2,S7,\"{$right->barcode}\"\n";
+                $tspl .= "TEXT 420,490,\"2\",0,1,1,\"{$right->barcode}\"\n";
             } else {
-                $tspl .= "BARCODE 420,420,\"128\",120,0,0,3,6,\"{$right->barcode}\"\n";
-                // Barcode text under Barcode
-                $tspl .= "TEXT 420,560,\"2\",0,1,1,\"{$right->barcode}\"\n";
+                $tspl .= "BARCODE 420,275,\"128\",110,0,0,3,6,\"{$right->barcode}\"\n";
+                $tspl .= "TEXT 420,400,\"2\",0,1,1,\"{$right->barcode}\"\n";
             }
         }
 
