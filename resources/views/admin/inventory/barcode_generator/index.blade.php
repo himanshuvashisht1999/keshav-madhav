@@ -4,15 +4,14 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- Header Bar -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Barcode Generator</h1>
-                <p class="erp-page-subtitle">Generate and print TSPL / PRN barcode labels by design, warehouse location, or custom barcode list</p>
+            <div class="erp-header-title">
+                <i class="fas fa-barcode text-primary"></i> Barcode Generator
             </div>
-            <div>
-                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
-                    <i class="fas fa-boxes mr-1"></i> Inventory Overview
+            <div class="erp-header-actions">
+                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-boxes"></i> Inventory Overview
                 </a>
             </div>
         </div>

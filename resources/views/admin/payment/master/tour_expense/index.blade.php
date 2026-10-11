@@ -1,4 +1,4 @@
-﻿@extends('admin.layouts.app')
+@extends('admin.layouts.app')
 @section('title', 'Tour Expense Master')
 
 @section('content')
@@ -6,13 +6,12 @@
     <div class="container-fluid p-0">
         <!-- Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Tour Expense Master</h1>
-                <p class="erp-page-subtitle">Master register for travel and tour accounts</p>
+            <div class="erp-header-title">
+                <i class="fas fa-plane-departure text-primary mr-2"></i> Tour Expense Master
             </div>
-            <div class="d-flex align-items-center">
+            <div class="erp-header-actions">
                 <a href="{{ route('admin.payment.master.tour_expense.create') }}" class="btn-erp btn-erp-primary">
-                    <i class="fas fa-plus mr-1"></i> Add Tour Expense
+                    <i class="fas fa-plus"></i> Add Tour Expense
                 </a>
             </div>
         </div>
@@ -25,8 +24,8 @@
         @endif
 
         <!-- Table Card -->
-        <div class="erp-card p-0">
-            <div class="table-responsive">
+        <div class="erp-card">
+            <div class="erp-card-body p-2 table-responsive">
                 <table id="tourExpenseTable" class="table erp-table table-bordered table-hover mb-0 w-100">
                     <thead>
                         <tr>

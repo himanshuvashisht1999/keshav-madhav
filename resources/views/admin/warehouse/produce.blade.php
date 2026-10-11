@@ -1,23 +1,18 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper">
-
-    <!-- HEADER -->
-    <section class="content-header py-3 border-bottom bg-white shadow-sm mb-3">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 text-primary">
-                <i class="fas fa-industry mr-1"></i> First Stage
-            </h5>
-            <a href="{{ route('admin.warehouse.index') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-arrow-left mr-1"></i> Back
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-industry text-primary"></i> First Stage Production &mdash; {{ $data->sku }}
+        </div>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.warehouse.index') }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left"></i> Back
             </a>
         </div>
-    </section>
-
-    <!-- MAIN -->
-    <section class="content">
-        <div class="container-fluid">
+    </div>
 
             <!-- ORDER SUMMARY -->
             <div class="card border-0 shadow-sm mb-4">

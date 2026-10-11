@@ -2,31 +2,30 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- PAGE HEADER -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title m-0">Attribute Change History</h1>
-                <p class="erp-page-subtitle m-0">Detailed log of all manual inventory attribute modifications</p>
+            <div class="erp-header-title">
+                <i class="fas fa-history text-primary"></i> Attribute Change History
             </div>
-            <div class="d-flex align-items-center" style="gap: 8px;">
-                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
-                    <i class="fas fa-arrow-left mr-1"></i> Back to inventory
+            <div class="erp-header-actions">
+                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-arrow-left"></i> Back to Inventory
                 </a>
             </div>
         </div>
 
-        <!-- FILTER CARD -->
-        <div class="erp-card mb-2 p-2">
+        <!-- Compact ERP Filter Bar -->
+        <div class="erp-filter-bar mb-2">
             <div class="row align-items-end">
                 <div class="col-md-4 mb-1">
-                    <label class="erp-label mb-1">Search design no.</label>
-                    <input type="text" id="design_search" class="form-control form-control-sm erp-input"
-                        placeholder="Search design (old or new)...">
+                    <label class="erp-filter-label"><i class="fas fa-search mr-1"></i> Search Design No.</label>
+                    <input type="text" id="design_search" class="form-control erp-input"
+                        placeholder="Search design (old or new)..." autocomplete="off">
                 </div>
                 <div class="col-md-3 mb-1">
-                    <label class="erp-label mb-1">Movement type</label>
-                    <select id="type_filter" class="form-control form-control-sm custom-select">
-                        <option value="">All types</option>
+                    <label class="erp-filter-label"><i class="fas fa-exchange-alt mr-1"></i> Movement Type</label>
+                    <select id="type_filter" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">-- ALL TYPES --</option>
                         <option value="creation">Entry</option>
                         <option value="packing">Packing</option>
                         <option value="attribute_change">Update</option>
@@ -35,18 +34,20 @@
                         <option value="deletion">Deletion</option>
                     </select>
                 </div>
-                <div class="col-md-2 mb-1">
-                    <button id="reset_filters" class="btn-erp btn-erp-secondary w-100" style="height: 31px;">
-                        <i class="fas fa-undo mr-1"></i> Reset
-                    </button>
+                <div class="col-auto mb-1 ml-auto">
+                    <div class="erp-filter-actions">
+                        <button id="reset_filters" class="btn-erp btn-erp-outline">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- TABLE CARD -->
-        <div class="erp-card p-0">
-            <div class="table-responsive">
-                <table id="historyTable" class="erp-table table-bordered table-hover mb-0 w-100">
+        <!-- Table Card -->
+        <div class="erp-card">
+            <div class="erp-card-body p-2 table-responsive">
+                <table id="historyTable" class="erp-table table table-bordered table-hover mb-0 w-100">
                     <thead>
                         <tr>
                             <th style="width: 3%; text-align: center;">#</th>

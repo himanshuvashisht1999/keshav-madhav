@@ -4,13 +4,12 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- Header Bar -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Manage Bank Accounts</h1>
-                <p class="erp-page-subtitle">Master register and ledger balances for company bank accounts</p>
+            <div class="erp-header-title">
+                <i class="fas fa-university text-primary"></i> Bank Account Master
             </div>
-            <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+            <div class="erp-header-actions">
                 <div class="hud-stat-box">
                     <span class="hud-stat-label">Opening ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</span>
                     <span class="hud-stat-value text-info font-weight-bold">₹{{ number_format(abs($total_opening_balance), 2) }} {{ $total_opening_balance >= 0 ? 'Cr' : 'Dr' }}</span>
@@ -20,7 +19,7 @@
                     <span class="hud-stat-value text-success font-weight-bold">₹{{ number_format(abs($total_current_balance), 2) }} {{ $total_current_balance >= 0 ? 'Cr' : 'Dr' }}</span>
                 </div>
                 <a href="{{ route('admin.payment.master.bank_account.create') }}" class="btn-erp btn-erp-primary">
-                    <i class="fas fa-plus mr-1"></i> Add Bank Account
+                    <i class="fas fa-plus"></i> Add Bank Account
                 </a>
             </div>
         </div>
@@ -32,32 +31,34 @@
             </div>
         @endif
 
-        <!-- Filter Card -->
-        <div class="erp-card mb-2 p-2">
-            <div class="form-row align-items-end">
-                <div class="col-md-3 mb-1">
-                    <label class="erp-label">Bank name</label>
-                    <input type="text" class="form-control form-control-sm erp-input" name="bank_name" id="bank_name" placeholder="Filter by bank...">
+        <!-- Compact ERP Filter Bar -->
+        <div class="erp-filter-bar mb-2">
+            <div class="row align-items-end">
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-university mr-1"></i> Bank Name</label>
+                    <input type="text" class="form-control erp-input" name="bank_name" id="bank_name" placeholder="Filter by bank...">
                 </div>
-                <div class="col-md-3 mb-1">
-                    <label class="erp-label">Account name</label>
-                    <input type="text" class="form-control form-control-sm erp-input" name="account_name" id="account_name" placeholder="Filter by account...">
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-user mr-1"></i> Account Name</label>
+                    <input type="text" class="form-control erp-input" name="account_name" id="account_name" placeholder="Filter by account...">
                 </div>
-                <div class="col-md-3 mb-1">
-                    <label class="erp-label">Account number</label>
-                    <input type="text" class="form-control form-control-sm erp-input" name="account_number" id="account_number" placeholder="Filter by number...">
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-credit-card mr-1"></i> Account Number</label>
+                    <input type="text" class="form-control erp-input" name="account_number" id="account_number" placeholder="Filter by number...">
                 </div>
-                <div class="col-md-3 mb-1">
-                    <button type="button" id="btnResetFilters" class="btn-erp btn-erp-secondary w-100">
-                        <i class="fas fa-undo mr-1"></i> Reset Filters
-                    </button>
+                <div class="col-auto mb-1 ml-auto">
+                    <div class="erp-filter-actions">
+                        <button type="button" id="btnResetFilters" class="btn-erp btn-erp-outline" title="Reset Filters">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Table Card -->
-        <div class="erp-card p-0">
-            <div class="table-responsive">
+        <div class="erp-card">
+            <div class="erp-card-body p-2 table-responsive">
                 <table id="bank_accounts_table" class="table erp-table table-bordered table-hover mb-0 w-100">
                     <thead>
                         <tr>

@@ -5,27 +5,26 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- Header Bar -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Sales Returns</h1>
-                <p class="erp-page-subtitle">Track customer returned goods from dispatches and reconcile ledger accounts</p>
+            <div class="erp-header-title">
+                <i class="fas fa-undo-alt text-primary"></i> Sales Returns
             </div>
-            <div>
+            <div class="erp-header-actions">
                 <a href="{{ route('admin.agent-orders.dispatches.index') }}" class="btn-erp btn-erp-primary">
-                    <i class="fas fa-plus mr-1"></i> New Return (From Dispatch)
+                    <i class="fas fa-plus"></i> New Return (From Dispatch)
                 </a>
             </div>
         </div>
 
-        <!-- Filter Card -->
-        <div class="erp-card mb-2 p-2">
+        <!-- Compact ERP Filter Bar -->
+        <div class="erp-filter-bar mb-2">
             <form action="{{ route('admin.agent-orders.returns.index') }}" method="GET">
-                <div class="form-row align-items-end">
-                    <div class="col-md-3 mb-2">
-                        <label class="erp-label">Filter by party</label>
-                        <select name="shop_id" class="form-control form-control-sm erp-input select2">
-                            <option value="">All parties</option>
+                <div class="row align-items-end">
+                    <div class="col-md-3 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-store mr-1"></i> Party</label>
+                        <select name="shop_id" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">-- ALL PARTIES --</option>
                             @foreach($shops as $shop)
                                 <option value="{{ $shop->id }}" {{ request('shop_id') == $shop->id ? 'selected' : '' }}>
                                     {{ $shop->name }}
@@ -33,10 +32,10 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-3 mb-2">
-                        <label class="erp-label">Filter by vendor</label>
-                        <select name="vendor_id" class="form-control form-control-sm erp-input select2">
-                            <option value="">All vendors</option>
+                    <div class="col-md-3 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-user-tie mr-1"></i> Vendor</label>
+                        <select name="vendor_id" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">-- ALL VENDORS --</option>
                             @foreach($vendors as $vendor)
                                 <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>
                                     {{ $vendor->name }}
@@ -44,30 +43,32 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">From date</label>
-                        <input type="date" name="from_date" class="form-control form-control-sm erp-input" value="{{ request('from_date') }}">
+                    <div class="col-md-2 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> From Date</label>
+                        <input type="date" name="from_date" class="form-control erp-input" value="{{ request('from_date') }}">
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">To date</label>
-                        <input type="date" name="to_date" class="form-control form-control-sm erp-input" value="{{ request('to_date') }}">
+                    <div class="col-md-2 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-calendar-check mr-1"></i> To Date</label>
+                        <input type="date" name="to_date" class="form-control erp-input" value="{{ request('to_date') }}">
                     </div>
-                    <div class="col-md-2 mb-2 d-flex">
-                        <button type="submit" class="btn-erp btn-erp-primary flex-fill mr-1">
-                            <i class="fas fa-filter mr-1"></i> Apply
-                        </button>
-                        <a href="{{ route('admin.agent-orders.returns.index') }}" class="btn-erp btn-erp-secondary">
-                            Clear
-                        </a>
+                    <div class="col-auto mb-1 ml-auto">
+                        <div class="erp-filter-actions">
+                            <button type="submit" class="btn-erp btn-erp-primary">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                            <a href="{{ route('admin.agent-orders.returns.index') }}" class="btn-erp btn-erp-outline">
+                                <i class="fas fa-undo"></i> Reset
+                            </a>
+                        </div>
                     </div>
                 </div>
             </form>
         </div>
 
         <!-- Table Card -->
-        <div class="erp-card p-0">
-            <div class="table-responsive">
-                <table class="table erp-table table-bordered table-hover mb-0">
+        <div class="erp-card">
+            <div class="erp-card-body p-2 table-responsive">
+                <table class="erp-table table table-bordered table-hover mb-0 w-100">
                     <thead>
                         <tr>
                             <th class="text-center" style="width: 110px;">Return id</th>

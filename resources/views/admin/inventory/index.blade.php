@@ -4,83 +4,80 @@
         <div class="container-fluid p-0">
             <!-- Header Bar -->
             <div class="erp-header-bar mb-2">
-                <div>
-                    <h1 class="erp-page-title">Domestic Inventory</h1>
-                    <p class="erp-page-subtitle">Manage and track packed domestic orders in inventory</p>
+                <div class="erp-header-title">
+                    <i class="fas fa-boxes text-primary"></i> Domestic Inventory
                 </div>
-                <div class="erp-header-actions d-flex align-items-center" style="gap: 8px;">
-                    <div class="d-flex align-items-center bg-white px-2 py-1 rounded border shadow-sm">
-                        <span class="text-muted mr-2 font-weight-bold" style="font-size: 11px;">Total boxes:</span>
-                        <span class="font-weight-bold text-success" id="grand_total_boxes" style="font-size: 13px;">-</span>
+                <div class="erp-header-actions">
+                    <div class="hud-stat-box">
+                        <span class="hud-stat-label">Total boxes</span>
+                        <span class="hud-stat-value text-success" id="grand_total_boxes">-</span>
                     </div>
-                    <div class="d-flex align-items-center bg-white px-2 py-1 rounded border shadow-sm">
-                        <span class="text-muted mr-2 font-weight-bold" style="font-size: 11px;">Total orders:</span>
-                        <span class="font-weight-bold text-primary" id="grand_total_orders" style="font-size: 13px;">-</span>
+                    <div class="hud-stat-box">
+                        <span class="hud-stat-label">Total orders</span>
+                        <span class="hud-stat-value text-primary" id="grand_total_orders">-</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Filter Card -->
-            <div class="erp-card mb-2">
-                <div class="erp-card-body p-2">
-                    <!-- Primary Filters Row -->
-                    <div class="row align-items-end">
-                        <div class="col-md mb-2">
-                            <label class="erp-label">Design number</label>
-                            <div class="input-group input-group-sm">
-                                <div class="input-group-prepend"><span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted"></i></span></div>
-                                <input type="text" id="design_number" class="form-control border-left-0" placeholder="Search Design...">
-                            </div>
-                        </div>
-                        <div class="col-md mb-2">
-                            <label class="erp-label">Product</label>
-                            <select id="product_filter" class="form-control select2 form-control-sm">
-                                <option value="">All Products</option>
-                                @foreach($products as $prod)
-                                    <option value="{{ $prod->product_id }}">{{ $prod->product_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md mb-2">
-                            <label class="erp-label">Size set</label>
-                            <select id="size_set_filter" class="form-control select2 form-control-sm">
-                                <option value="">All Size Sets</option>
-                                @foreach($size_sets as $set)
-                                    <option value="{{ $set->size_set_id }}">{{ $set->size_set_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md mb-2">
-                            <label class="erp-label">Color</label>
-                            <select id="color_filter" class="form-control select2 form-control-sm">
-                                <option value="">All Colors</option>
-                                @foreach($colors as $color)
-                                    <option value="{{ $color->color_id }}">{{ $color->color_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md mb-2">
-                            <label class="erp-label">Report type</label>
-                            <select id="report_type" class="form-control select2 form-control-sm">
-                                <option value="size_set">Size Set Wise</option>
-                                <option value="color">Color Wise</option>
-                            </select>
-                        </div>
-                        <div class="col-md-auto mb-2 text-right">
-                            <button class="btn-erp btn-erp-outline mr-1" type="button" data-toggle="collapse" data-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
-                                <i class="fas fa-sliders-h mr-1"></i> Advanced
+            <!-- Filter Bar -->
+            <div class="erp-filter-bar mb-2">
+                <!-- Primary Filters Row -->
+                <div class="row align-items-end">
+                    <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-hashtag mr-1"></i> Design Number</label>
+                        <input type="text" id="design_number" class="form-control erp-input" placeholder="Search Design...">
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-tshirt mr-1"></i> Product</label>
+                        <select id="product_filter" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">-- ALL PRODUCTS --</option>
+                            @foreach($products as $prod)
+                                <option value="{{ $prod->product_id }}">{{ $prod->product_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-ruler mr-1"></i> Size Set</label>
+                        <select id="size_set_filter" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">-- ALL SIZE SETS --</option>
+                            @foreach($size_sets as $set)
+                                <option value="{{ $set->size_set_id }}">{{ $set->size_set_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-palette mr-1"></i> Color</label>
+                        <select id="color_filter" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">-- ALL COLORS --</option>
+                            @foreach($colors as $color)
+                                <option value="{{ $color->color_id }}">{{ $color->color_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-chart-pie mr-1"></i> Report Type</label>
+                        <select id="report_type" class="form-control erp-input">
+                            <option value="size_set">Size Set Wise</option>
+                            <option value="color">Color Wise</option>
+                        </select>
+                    </div>
+                    <div class="col-auto mb-1 ml-auto">
+                        <div class="erp-filter-actions">
+                            <button class="btn-erp btn-erp-outline" type="button" data-toggle="collapse" data-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
+                                <i class="fas fa-sliders-h"></i> Advanced
                             </button>
-                            <button id="reset_filters" class="btn-erp btn-erp-secondary mr-1" title="Reset Filters">
-                                <i class="fas fa-undo"></i>
+                            <button id="reset_filters" class="btn-erp btn-erp-outline" title="Reset Filters">
+                                <i class="fas fa-undo"></i> Reset
                             </button>
-                            <a href="#" id="export_excel" class="btn-erp btn-erp-success mr-1" title="Export Excel">
-                                <i class="fas fa-file-excel"></i>
-                            </a>
-                            <a href="#" id="export_pdf" class="btn-erp btn-erp-danger" title="Export PDF">
-                                <i class="fas fa-file-pdf"></i>
-                            </a>
+                            <button type="button" id="export_excel" class="btn-erp btn-erp-outline" title="Export Excel">
+                                <i class="fas fa-file-excel text-success"></i> Excel
+                            </button>
+                            <button type="button" id="export_pdf" class="btn-erp btn-erp-outline" title="Export PDF">
+                                <i class="fas fa-file-pdf text-danger"></i> PDF
+                            </button>
                         </div>
                     </div>
+                </div>
 
                     <!-- Advanced Filters Collapse -->
                     <div class="collapse mt-2" id="advancedFilters">
@@ -164,7 +161,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
             <!-- Table Card -->
             <div class="erp-card">

@@ -1,84 +1,94 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
 
-    <!--  Header (Simplified & Compact) -->
-    <section class="content-header py-2 border-bottom">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold text-dark">
-                <i class="fas fa-tasks text-secondary"></i> Warehouse
-            </h5>
-            <ol class="breadcrumb float-sm-right mb-0 small">
-                <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-primary">Home</a></li>
-                <li class="breadcrumb-item active text-muted">Manage Warehouse</li>
-            </ol>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-warehouse text-primary mr-2"></i> Warehouse Stock Listing
         </div>
-    </section>
+        <div class="erp-header-actions">
+            <!-- Action buttons if needed -->
+        </div>
+    </div>
 
-    <!--  Table Section -->
-    <section class="content mt-3">
-        <div class="container-fluid">
-            <div class="card shadow-sm border-0 rounded-3">
-                <!-- <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 fw-bold text-secondary">
-                        <i class="fas fa-table"></i> Stage Overview
-                    </h6>
-                </div> -->
-
-                <div class="card-body p-2">
-                    <div class="table-responsive">
-                        <table id="order_stage" class="table table-sm table-bordered text-center align-middle mb-0" style="font-size: 13px;">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>#</th>
-                                    <th>Order No</th>
-                                    <th>Product SKU</th>
-                                    <th>Lot No.</th>
-                                    <th>From Stage</th>
-                                    <th>Rack</th>
-                                    <th>Qty</th>
-                                    <!-- <th>Status</th> -->
-                                    <th>Received</th>
-                                    <!-- <th>Action</th> -->
-                                </tr>
-                                <tr class="bg-white">
-                                    <td></td>
-                                    <td><input type="text" class="form-control form-control-sm" id="sku" placeholder="Order No"></td>
-                                    <td><input type="text" class="form-control form-control-sm" id="order_product_id" placeholder="Product SKU"></td>
-                                    <td><input type="text" class="form-control form-control-sm" id="lot_no" placeholder="Lot No."></td>
-                                    
-                                    <td>
-                                        <select id="from_stage_id" class="form-control form-control-sm">
-                                            <option value="">All</option>
-                                            @foreach($product_stage as $stage)
-                                                <option value="{{ $stage->id }}">{{ $stage->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <select id="master_warehouse_block_id" class="form-control form-control-sm">
-                                            <option value="">All</option>
-                                            @foreach($master_blocks as $stage)
-                                                <option value="{{ $stage->id }}">{{ $stage->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td><input type="text" class="form-control form-control-sm" id="original_qty" placeholder="Qty"></td>
-
-                                    <td><input type="date" class="form-control form-control-sm" id="created_at"></td>
-                                    <!-- <td></td> -->
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
+    <!-- Compact ERP Filter Bar -->
+    <div class="erp-filter-bar mb-2">
+        <div class="row align-items-end">
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-hashtag mr-1"></i> Order No</label>
+                <input type="text" class="form-control erp-input" id="sku" placeholder="Order No">
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-barcode mr-1"></i> Product SKU</label>
+                <input type="text" class="form-control erp-input" id="order_product_id" placeholder="Product SKU">
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-boxes mr-1"></i> Lot No.</label>
+                <input type="text" class="form-control erp-input" id="lot_no" placeholder="Lot No.">
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-random mr-1"></i> From Stage</label>
+                <select id="from_stage_id" class="form-control select2 erp-input" style="width: 100%;">
+                    <option value="">-- ALL STAGES --</option>
+                    @foreach($product_stage as $stage)
+                        <option value="{{ $stage->id }}">{{ $stage->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-th mr-1"></i> Rack / Block</label>
+                <select id="master_warehouse_block_id" class="form-control select2 erp-input" style="width: 100%;">
+                    <option value="">-- ALL RACKS --</option>
+                    @foreach($master_blocks as $stage)
+                        <option value="{{ $stage->id }}">{{ $stage->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-lg-1 col-md-2 col-sm-3 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-calculator mr-1"></i> Qty</label>
+                <input type="text" class="form-control erp-input" id="original_qty" placeholder="Qty">
+            </div>
+            <div class="col-lg-1 col-md-2 col-sm-3 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> Received</label>
+                <input type="date" class="form-control erp-input" id="created_at">
+            </div>
+            <div class="col-auto mb-1 ml-auto">
+                <div class="erp-filter-actions">
+                    <button type="button" class="btn-erp btn-erp-primary" id="btnApplyFilter" title="Apply Filter">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <button type="button" class="btn-erp btn-erp-outline" id="btnResetFilter" title="Reset Filters">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+
+    <!-- Table Card -->
+    <div class="erp-card">
+        <div class="erp-card-body p-2 table-responsive">
+            <table id="order_stage" class="erp-table table table-bordered table-hover mb-0 w-100">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Order No</th>
+                        <th>Product SKU</th>
+                        <th>Lot No.</th>
+                        <th>From Stage</th>
+                        <th>Rack</th>
+                        <th>Qty</th>
+                        <th>Received</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
-<!--  JS Section -->
+<!-- JS Section -->
 <script>
 $(function () {
     var oTable = $('#order_stage').DataTable({
@@ -86,7 +96,8 @@ $(function () {
         serverSide: true,
         ordering: false,
         searching: false,
-        pageLength: 10,
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
         ajax: {
             url: '{!! route('admin.warehouse.indexListListing') !!}',
             data: function (d) {
@@ -100,71 +111,42 @@ $(function () {
             }
         },
         columns: [
-            { data: 'DT_RowIndex', name: 'id', width: '5%' },
-            { data: 'sku', name: 'sku', width: '10%' },
-            { data: 'order_product_id', name: 'order_product_id', width: '12%' },
-            { data: 'lot_no', name: 'lot_no' },
-            { data: 'from_stage_id', name: 'from_stage_id', width: '10%' },
-            { data: 'master_warehouse_block_id', name: 'master_warehouse_block_id' },
-            { data: 'original_qty', name: 'original_qty', width: '7%' },
-            { data: 'created_at', name: 'created_at', width: '12%' },
-            // { data: 'action', name: 'action', width: '10%', orderable: false, searchable: false }
-        ]
+            { data: 'DT_RowIndex', name: 'id', width: '5%', orderable: false, searchable: false },
+            { data: 'sku', name: 'sku', width: '12%' },
+            { data: 'order_product_id', name: 'order_product_id', width: '15%' },
+            { data: 'lot_no', name: 'lot_no', width: '12%' },
+            { data: 'from_stage_id', name: 'from_stage_id', width: '14%' },
+            { data: 'master_warehouse_block_id', name: 'master_warehouse_block_id', width: '14%' },
+            { data: 'original_qty', name: 'original_qty', width: '10%' },
+            { data: 'created_at', name: 'created_at', width: '14%' }
+        ],
+        dom: "<'row mb-2'<'col-sm-6'l><'col-sm-6'f>>rt<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>"
     });
 
-    $('#email-queue-search-form').on('submit', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+    $('#btnApplyFilter').on('click', function (e) {
+        e.preventDefault();
+        oTable.draw();
+    });
 
-        $('#id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+    $('#btnResetFilter').on('click', function (e) {
+        e.preventDefault();
+        $('#sku').val('');
+        $('#order_product_id').val('');
+        $('#lot_no').val('');
+        $('#from_stage_id').val('').trigger('change');
+        $('#master_warehouse_block_id').val('').trigger('change');
+        $('#original_qty').val('');
+        $('#created_at').val('');
+        oTable.draw();
+    });
 
-        $('#sku').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#order_product_id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#from_stage_id').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
+    $('#sku, #order_product_id, #lot_no, #original_qty').on('keyup', function (e) {
+        if (e.keyCode === 13) oTable.draw();
+    });
 
-        $('#master_warehouse_block_id').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#original_qty').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#lot_no').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        })
-        
-        $('#order_product_id').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-       
-        $('#created_at').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#status').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });        
-
+    $('#from_stage_id, #master_warehouse_block_id, #created_at').on('change', function () {
+        oTable.draw();
+    });
 });
 </script>
-
 @endsection

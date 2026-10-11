@@ -4,15 +4,14 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- Header Bar -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Multiple Payment Adjustments</h1>
-                <p class="erp-page-subtitle">Batch multi-entity credit/debit account balancing</p>
+            <div class="erp-header-title">
+                <i class="fas fa-balance-scale text-primary"></i> Multiple Payment Adjustments
             </div>
-            <div class="d-flex align-items-center">
-                <a href="{{ route('admin.payment.adjustment.index') }}" class="btn-erp btn-erp-secondary">
-                    <i class="fas fa-arrow-left mr-1"></i> Back to List
+            <div class="erp-header-actions">
+                <a href="{{ route('admin.payment.adjustment.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-arrow-left"></i> Back to List
                 </a>
             </div>
         </div>

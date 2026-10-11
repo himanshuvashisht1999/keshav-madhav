@@ -5,34 +5,33 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- Header Bar -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Sales Agent Orders</h1>
-                <p class="erp-page-subtitle">Review, track, and dispatch customer orders placed by sales agents</p>
+            <div class="erp-header-title">
+                <i class="fas fa-user-tag text-primary"></i> Sales Agent Orders
             </div>
-            <div class="d-flex align-items-center" style="gap: 6px;">
+            <div class="erp-header-actions">
                 <a href="{{ route('admin.agent-orders.dispatches.index') }}" class="btn-erp btn-erp-outline">
-                    <i class="fas fa-truck mr-1"></i> View Dispatches
+                    <i class="fas fa-truck"></i> View Dispatches
                 </a>
                 <a href="{{ route('admin.agent-orders.create') }}" class="btn-erp btn-erp-primary">
-                    <i class="fas fa-plus mr-1"></i> Create Sales Order
+                    <i class="fas fa-plus"></i> Create Sales Order
                 </a>
             </div>
         </div>
 
-        <!-- Filter Card -->
-        <div class="erp-card mb-2 p-2">
+        <!-- Compact ERP Filter Bar -->
+        <div class="erp-filter-bar mb-2">
             <form action="{{ route('admin.agent-orders.index') }}" method="GET">
-                <div class="form-row align-items-end">
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">Order id</label>
-                        <input type="text" name="order_id" class="form-control form-control-sm erp-input" placeholder="Search order ID..." value="{{ request('order_id') }}">
+                <div class="row align-items-end">
+                    <div class="col-md-2 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-barcode mr-1"></i> Order ID</label>
+                        <input type="text" name="order_id" class="form-control erp-input" placeholder="Search order ID..." value="{{ request('order_id') }}" autocomplete="off">
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">Filter by agent</label>
-                        <select name="agent_id" id="agent_id" class="form-control form-control-sm erp-input select2">
-                            <option value="">All agents</option>
+                    <div class="col-md-2 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-user-tie mr-1"></i> Agent</label>
+                        <select name="agent_id" id="agent_id" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">-- ALL AGENTS --</option>
                             @foreach($agents as $agent)
                                 <option value="{{ $agent->id }}" {{ request('agent_id') == $agent->id ? 'selected' : '' }}>
                                     {{ $agent->name }}
@@ -41,10 +40,10 @@
                             <option value="direct" {{ request('agent_id') == 'direct' ? 'selected' : '' }}>Direct (No Agent)</option>
                         </select>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">Filter by party</label>
-                        <select name="party_id" id="party_id" class="form-control form-control-sm erp-input select2">
-                            <option value="">All parties</option>
+                    <div class="col-md-2 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-store mr-1"></i> Party</label>
+                        <select name="party_id" id="party_id" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">-- ALL PARTIES --</option>
                             @foreach($parties as $party)
                                 <option value="{{ $party->combined_id }}" {{ request('party_id') == $party->combined_id ? 'selected' : '' }}>
                                     {{ $party->name }} ({{ ucfirst($party->type) }})
@@ -52,10 +51,10 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">Status</label>
-                        <select name="status" class="form-control form-control-sm erp-input select2">
-                            <option value="">Any status</option>
+                    <div class="col-md-2 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-tasks mr-1"></i> Status</label>
+                        <select name="status" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">-- ANY STATUS --</option>
                             <optgroup label="1. PENDING">
                                 <option value="all_pending" {{ request('status') == 'all_pending' ? 'selected' : '' }}>All pending</option>
                                 <option value="fully_pending" {{ in_array(request('status'), ['fully_pending', 'pending']) ? 'selected' : '' }}>Fully pending</option>
@@ -69,30 +68,32 @@
                             </optgroup>
                         </select>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">Sale type</label>
-                        <select name="sale_type" class="form-control form-control-sm erp-input select2">
-                            <option value="">Any type</option>
-                            <option value="item" {{ request('sale_type') == 'item' ? 'selected' : '' }}>ITEM (Box)</option>
-                            <option value="fabric" {{ request('sale_type') == 'fabric' ? 'selected' : '' }}>FABRIC (Roll)</option>
+                    <div class="col-md-1 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-tag mr-1"></i> Type</label>
+                        <select name="sale_type" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">ANY</option>
+                            <option value="item" {{ request('sale_type') == 'item' ? 'selected' : '' }}>ITEM</option>
+                            <option value="fabric" {{ request('sale_type') == 'fabric' ? 'selected' : '' }}>FABRIC</option>
                         </select>
                     </div>
-                    <div class="col-md-1 mb-2">
-                        <label class="erp-label">From date</label>
-                        <input type="date" name="from_date" class="form-control form-control-sm erp-input" value="{{ request('from_date') }}">
+                    <div class="col-md-1 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> From</label>
+                        <input type="date" name="from_date" class="form-control erp-input" value="{{ request('from_date') }}">
                     </div>
-                    <div class="col-md-1 mb-2">
-                        <label class="erp-label">To date</label>
-                        <input type="date" name="to_date" class="form-control form-control-sm erp-input" value="{{ request('to_date') }}">
+                    <div class="col-md-1 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-calendar-check mr-1"></i> To</label>
+                        <input type="date" name="to_date" class="form-control erp-input" value="{{ request('to_date') }}">
                     </div>
-                </div>
-                <div class="text-right mt-1">
-                    <button type="submit" class="btn-erp btn-erp-primary mr-1">
-                        <i class="fas fa-filter mr-1"></i> Apply
-                    </button>
-                    <a href="{{ route('admin.agent-orders.index') }}" class="btn-erp btn-erp-secondary">
-                        <i class="fas fa-undo mr-1"></i> Reset
-                    </a>
+                    <div class="col-auto mb-1 ml-auto">
+                        <div class="erp-filter-actions">
+                            <button type="submit" class="btn-erp btn-erp-primary">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                            <a href="{{ route('admin.agent-orders.index') }}" class="btn-erp btn-erp-outline">
+                                <i class="fas fa-undo"></i> Reset
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>

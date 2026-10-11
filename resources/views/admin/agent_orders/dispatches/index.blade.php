@@ -5,30 +5,29 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- Header Bar -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Dispatch Records</h1>
-                <p class="erp-page-subtitle">Historical records and audit logs of all outgoing customer order shipments</p>
+            <div class="erp-header-title">
+                <i class="fas fa-truck text-primary"></i> Dispatch Records
             </div>
-            <div class="d-flex align-items-center" style="gap: 6px;">
+            <div class="erp-header-actions">
                 <a href="{{ route('admin.agent-orders.index') }}" class="btn-erp btn-erp-outline">
-                    <i class="fas fa-list mr-1"></i> Agent Orders
+                    <i class="fas fa-list"></i> Agent Orders
                 </a>
-                <a href="{{ route('admin.agent-orders.returns.index') }}" class="btn-erp btn-erp-secondary">
-                    <i class="fas fa-undo mr-1"></i> Sales Returns
+                <a href="{{ route('admin.agent-orders.returns.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-undo"></i> Sales Returns
                 </a>
             </div>
         </div>
 
-        <!-- Filter Card -->
-        <div class="erp-card mb-2 p-2">
+        <!-- Compact ERP Filter Bar -->
+        <div class="erp-filter-bar mb-2">
             <form action="{{ route('admin.agent-orders.dispatches.index') }}" method="GET">
-                <div class="form-row align-items-end">
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">Filter by party</label>
-                        <select name="shop_id" class="form-control form-control-sm erp-input select2">
-                            <option value="">All parties</option>
+                <div class="row align-items-end">
+                    <div class="col-md-2 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-store mr-1"></i> Party</label>
+                        <select name="shop_id" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">-- ALL PARTIES --</option>
                             @foreach($shops as $shop)
                                 <option value="{{ $shop->id }}" {{ request('shop_id') == $shop->id ? 'selected' : '' }}>
                                     {{ $shop->name }}
@@ -36,10 +35,10 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">Filter by vendor</label>
-                        <select name="vendor_id" class="form-control form-control-sm erp-input select2">
-                            <option value="">All vendors</option>
+                    <div class="col-md-2 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-user-tie mr-1"></i> Vendor</label>
+                        <select name="vendor_id" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">-- ALL VENDORS --</option>
                             @foreach($vendors as $vendor)
                                 <option value="{{ $vendor->id }}" {{ request('vendor_id') == $vendor->id ? 'selected' : '' }}>
                                     {{ $vendor->name }}
@@ -47,10 +46,10 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">Filter by agent</label>
-                        <select name="agent_id" class="form-control form-control-sm erp-input select2">
-                            <option value="">All agents</option>
+                    <div class="col-md-2 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-user mr-1"></i> Agent</label>
+                        <select name="agent_id" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">-- ALL AGENTS --</option>
                             @foreach($agents as $agent)
                                 <option value="{{ $agent->id }}" {{ request('agent_id') == $agent->id ? 'selected' : '' }}>
                                     {{ $agent->name }}
@@ -58,45 +57,47 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">Source</label>
-                        <select name="source_type" class="form-control form-control-sm erp-input select2">
-                            <option value="">All sources</option>
-                            <option value="agent" {{ request('source_type') === 'agent' ? 'selected' : '' }}>Agent Orders</option>
+                    <div class="col-md-1 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-layer-group mr-1"></i> Source</label>
+                        <select name="source_type" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">ALL</option>
+                            <option value="agent" {{ request('source_type') === 'agent' ? 'selected' : '' }}>Agent</option>
                             <option value="corporate" {{ request('source_type') === 'corporate' ? 'selected' : '' }}>Corporate</option>
                         </select>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">Dispatch type</label>
-                        <select name="dispatch_type" class="form-control form-control-sm erp-input select2">
-                            <option value="">All types</option>
+                    <div class="col-md-1 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-tag mr-1"></i> Type</label>
+                        <select name="dispatch_type" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="">ALL</option>
                             <option value="item" {{ request('dispatch_type') === 'item' ? 'selected' : '' }}>Item</option>
                             <option value="fabric" {{ request('dispatch_type') === 'fabric' ? 'selected' : '' }}>Fabric</option>
                         </select>
                     </div>
-                    <div class="col-md-1 mb-2">
-                        <label class="erp-label">From date</label>
-                        <input type="date" name="from_date" class="form-control form-control-sm erp-input" value="{{ request('from_date') }}">
+                    <div class="col-md-1 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> From</label>
+                        <input type="date" name="from_date" class="form-control erp-input" value="{{ request('from_date') }}">
                     </div>
-                    <div class="col-md-1 mb-2">
-                        <label class="erp-label">To date</label>
-                        <input type="date" name="to_date" class="form-control form-control-sm erp-input" value="{{ request('to_date') }}">
+                    <div class="col-md-1 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-calendar-check mr-1"></i> To</label>
+                        <input type="date" name="to_date" class="form-control erp-input" value="{{ request('to_date') }}">
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">Bill no</label>
-                        <input type="text" name="bill_no" class="form-control form-control-sm erp-input" value="{{ request('bill_no') }}" placeholder="Enter Bill No">
+                    <div class="col-md-1 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-file-invoice mr-1"></i> Bill No</label>
+                        <input type="text" name="bill_no" class="form-control erp-input" value="{{ request('bill_no') }}" placeholder="Bill No..." autocomplete="off">
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="erp-label">Order id</label>
-                        <input type="text" name="order_id" class="form-control form-control-sm erp-input" value="{{ request('order_id') }}" placeholder="e.g. 45 or #ORD-00045">
+                    <div class="col-md-1 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-barcode mr-1"></i> Order ID</label>
+                        <input type="text" name="order_id" class="form-control erp-input" value="{{ request('order_id') }}" placeholder="Order ID..." autocomplete="off">
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <button type="submit" class="btn-erp btn-erp-primary mr-1">
-                            <i class="fas fa-filter mr-1"></i> Apply
-                        </button>
-                        <a href="{{ route('admin.agent-orders.dispatches.index') }}" class="btn-erp btn-erp-secondary">
-                            <i class="fas fa-undo mr-1"></i> Reset
-                        </a>
+                    <div class="col-auto mb-1 ml-auto">
+                        <div class="erp-filter-actions">
+                            <button type="submit" class="btn-erp btn-erp-primary">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                            <a href="{{ route('admin.agent-orders.dispatches.index') }}" class="btn-erp btn-erp-outline">
+                                <i class="fas fa-undo"></i> Reset
+                            </a>
+                        </div>
                     </div>
                 </div>
             </form>

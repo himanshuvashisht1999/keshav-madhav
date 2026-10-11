@@ -1,79 +1,64 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
-    <!-- PAGE HEADER -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-3 align-items-center">
-                <div class="col-sm-6">
-                    <h1 class="m-0 font-weight-bold text-dark">Order Summary Report</h1>
-                    <small class="text-muted">360-degree view of all orders</small>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-chart-pie text-primary mr-2"></i> Order Summary Report
+        </div>
+        <div class="erp-header-actions">
+            <!-- Space for actions/export if needed -->
+        </div>
+    </div>
+
+    <!-- Compact ERP Filter Bar -->
+    <div class="erp-filter-bar mb-2">
+        <div class="row align-items-end">
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-hashtag mr-1"></i> Order No (SKU)</label>
+                <input type="text" id="order_no" class="form-control erp-input" placeholder="Enter Order No...">
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-user-tie mr-1"></i> Customer</label>
+                <select id="customer_id" class="form-control select2 erp-input" style="width: 100%;">
+                    <option value="">-- ALL CUSTOMERS --</option>
+                    @foreach($customers as $customer)
+                        <option value="{{$customer->id}}">{{$customer->name}}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-auto mb-1 ml-auto">
+                <div class="erp-filter-actions">
+                    <button type="button" class="btn-erp btn-erp-primary" id="searchBtn" title="Apply Filter">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <button type="button" class="btn-erp btn-erp-outline" id="btnResetFilter" title="Reset Filters">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- CONTENT -->
-    <section class="content">
-        <div class="container-fluid">
-
-            <!-- FILTER CARD -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body bg-light rounded">
-                    <div class="row">
-                        <div class="col-md-4 mb-2">
-                            <label class="small font-weight-bold text-muted">Search Order No</label>
-                            <input type="text" id="order_no" class="form-control" placeholder="Enter Order No...">
-                        </div>
-                        <div class="col-md-4 mb-2">
-                            <label class="small font-weight-bold text-muted">Customer</label>
-                            <select id="customer_id" class="form-control select2">
-                                <option value="">All Customers</option>
-                                @foreach($customers as $customer)
-                                    <option value="{{$customer->id}}">{{$customer->name}}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4 mb-2 d-flex align-items-end">
-                            <button class="btn btn-primary w-100" id="searchBtn">
-                                <i class="fas fa-search mr-1"></i> Search
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TABLE CARD -->
-            <div class="card shadow border-0">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table id="reportTable" class="table table-hover table-striped mb-0">
-                            <thead class="bg-primary text-white">
-                                <tr>
-                                    <th width="5%" class="text-center">#</th>
-                                    <th>Order No</th>
-                                    <th>Customer</th>
-                                    <th>Order Date</th>
-                                    <th class="text-center">Status</th>
-                                    <th class="text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
+    <!-- Table Card -->
+    <div class="erp-card">
+        <div class="erp-card-body p-2 table-responsive">
+            <table id="reportTable" class="erp-table table table-bordered table-hover mb-0 w-100">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;" class="text-center">#</th>
+                        <th>Order No</th>
+                        <th>Customer</th>
+                        <th>Order Date</th>
+                        <th class="text-center" style="width: 110px;">Status</th>
+                        <th class="text-center" style="width: 90px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
-    </section>
+    </div>
 </div>
-
-<style>
-    .card { border-radius: 8px; }
-    .form-control { border-radius: 6px; }
-    .table thead th { border: none; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
-    .table tbody td { vertical-align: middle; font-size: 0.95rem; }
-</style>
 
 <script>
     $(function () {
@@ -97,17 +82,27 @@
                 {data: 'customer_name', name: 'customer.name'},
                 {data: 'created_at', name: 'created_at'},
                 {data: 'status', name: 'status', className: 'text-center', render: function(data) {
-                    return '<span class="badge badge-info">Active</span>'; // Placeholder
+                    return '<span class="badge erp-badge-yellow">Active</span>';
                 }},
-                {data: 'action', name: 'action', className: 'text-right'}
+                {data: 'action', name: 'action', className: 'text-center'}
             ]
         });
 
         $('#searchBtn').on('click', function() {
             table.draw();
         });
+
+        $('#btnResetFilter').on('click', function() {
+            $('#order_no').val('');
+            $('#customer_id').val('').trigger('change');
+            table.draw();
+        });
         
-        $('#order_no, #customer_id').on('keyup change', function() {
+        $('#order_no').on('keyup', function(e) {
+            if (e.keyCode === 13) table.draw();
+        });
+
+        $('#customer_id').on('change', function() {
             table.draw();
         });
     });

@@ -787,20 +787,74 @@ body.km-admin .report-meta {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
-.erp-header-title {
+.erp-header-title,
+.erp-page-title,
+h1.erp-page-title {
     font-family: 'Roboto', sans-serif !important;
     font-size: 16px !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     color: #1e293b !important;
     margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.25 !important;
     text-transform: none !important;
     letter-spacing: normal !important;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
 }
 
-.erp-header-title i {
+.erp-page-subtitle {
+    font-size: 11.5px !important;
+    color: #64748b !important;
+    margin: 2px 0 0 0 !important;
+    padding: 0 !important;
+    font-weight: 400 !important;
+    line-height: 1.25 !important;
+}
+
+.erp-label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.4px !important;
+    color: var(--erp-text-muted, #05421c) !important;
+    margin-bottom: 2px !important;
+    display: block !important;
+    white-space: nowrap !important;
+}
+
+/* Metric / HUD Stat Boxes in Header */
+.hud-stat-box {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+    padding: 2px 8px !important;
+    display: inline-flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    line-height: 1.1 !important;
+}
+
+.hud-stat-label {
+    font-size: 9.5px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    line-height: 1.1 !important;
+    margin-bottom: 1px !important;
+}
+
+.hud-stat-value {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    font-family: 'Roboto', sans-serif !important;
+}
+
+.erp-header-title i,
+.erp-page-title i {
     color: var(--brand-dark-green, #05421c) !important;
 }
 
@@ -1428,6 +1482,18 @@ body.km-admin .report-meta {
     background-color: var(--erp-green-light) !important;
     color: var(--erp-text-heading) !important;
     border-color: var(--erp-green-primary) !important;
+}
+
+.btn-erp-secondary {
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+.btn-erp-secondary:hover {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
 }
 
 .btn-erp-danger {

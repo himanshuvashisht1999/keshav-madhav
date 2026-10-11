@@ -2,44 +2,45 @@
 @section('content')
     <div class="content-wrapper erp-page p-2">
         <!-- 1. HEADER SECTION -->
-        <div class="erp-header-bar mb-3">
-            <div>
-                <h1 class="erp-header-title">Packing Dashboard</h1>
-                <p class="erp-header-subtitle">Monitor and manage order packing sessions & carton barcodes</p>
+        <div class="erp-header-bar mb-2">
+            <div class="erp-header-title">
+                <i class="fas fa-box-open text-primary"></i> Packing Dashboard
             </div>
-            <div class="erp-header-actions d-flex flex-wrap" style="gap: 8px;">
-                <a href="{{ route('admin.packing.reworkList') }}" class="btn-erp btn-erp-outline" style="color: #fff; border-color: rgba(255,255,255,0.4);">
+            <div class="erp-header-actions">
+                <a href="{{ route('admin.packing.reworkList') }}" class="btn-erp btn-erp-outline">
                     <i class="fas fa-tools text-warning"></i> Defect / Rework List
                 </a>
-                <a href="{{ route('admin.uploaded-slips.index') }}" class="btn-erp btn-erp-primary" style="background: #fcee21; color: #05421c; border-color: #fcee21; font-weight: 700;">
+                <a href="{{ route('admin.uploaded-slips.index') }}" class="btn-erp btn-erp-yellow">
                     <i class="fas fa-plus"></i> Start New Packing
                 </a>
             </div>
         </div>
 
         <!-- 2. FILTER BAR -->
-        <div class="erp-filter-bar mb-3">
+        <div class="erp-filter-bar mb-2">
             <div class="row align-items-end">
-                <div class="col-md mb-2">
-                    <label class="erp-label">Order No</label>
+                <div class="col-md col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-hashtag mr-1"></i> Order No</label>
                     <input type="text" id="order_no" class="form-control erp-input" placeholder="Search Order...">
                 </div>
-                <div class="col-md mb-2">
-                    <label class="erp-label">Customer Name</label>
+                <div class="col-md col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-user-tie mr-1"></i> Customer Name</label>
                     <input type="text" id="customer_name" class="form-control erp-input" placeholder="Search Customer...">
                 </div>
-                <div class="col-md mb-2">
-                    <label class="erp-label">Start Date</label>
+                <div class="col-md col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> Start Date</label>
                     <input type="date" id="start_date" class="form-control erp-input">
                 </div>
-                <div class="col-md mb-2">
-                    <label class="erp-label">End Date</label>
+                <div class="col-md col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-check mr-1"></i> End Date</label>
                     <input type="date" id="end_date" class="form-control erp-input">
                 </div>
-                <div class="col-md-auto mb-2 text-right">
-                    <button id="resetFilters" class="btn-erp btn-erp-outline">
-                        <i class="fas fa-undo"></i> Reset
-                    </button>
+                <div class="col-auto mb-1 ml-auto">
+                    <div class="erp-filter-actions">
+                        <button id="resetFilters" class="btn-erp btn-erp-outline" title="Reset Filters">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

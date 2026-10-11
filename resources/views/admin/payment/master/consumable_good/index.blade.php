@@ -1,4 +1,4 @@
-﻿@extends('admin.layouts.app')
+@extends('admin.layouts.app')
 @section('title', 'Consumable Good Master')
 
 @section('content')
@@ -6,25 +6,24 @@
     <div class="container-fluid p-0">
         <!-- Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Consumable Good Master</h1>
-                <p class="erp-page-subtitle">Master register for consumables, packaging and factory supplies</p>
+            <div class="erp-header-title">
+                <i class="fas fa-boxes text-primary mr-2"></i> Consumable Good Master
             </div>
-            <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
-                <div class="hud-stat-box" style="padding: 4px 10px; font-size: 0.8rem;">
-                    <div class="hud-stat-label text-muted" style="font-size: 0.65rem;">Opening ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</div>
-                    <div class="hud-stat-value text-info font-weight-bold">
-                        â‚¹ {{ number_format(abs($total_opening_balance), 2) }} {{ $total_opening_balance >= 0 ? 'Cr' : 'Dr' }}
-                    </div>
+            <div class="erp-header-actions">
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Opening ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</span>
+                    <span class="hud-stat-value text-info font-weight-bold">
+                        ₹ {{ number_format(abs($total_opening_balance), 2) }} {{ $total_opening_balance >= 0 ? 'Cr' : 'Dr' }}
+                    </span>
                 </div>
-                <div class="hud-stat-box" style="padding: 4px 10px; font-size: 0.8rem;">
-                    <div class="hud-stat-label text-muted" style="font-size: 0.65rem;">Current balance</div>
-                    <div class="hud-stat-value text-success font-weight-bold">
-                        â‚¹ {{ number_format(abs($total_current_balance), 2) }} {{ $total_current_balance >= 0 ? 'Cr' : 'Dr' }}
-                    </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Current balance</span>
+                    <span class="hud-stat-value text-success font-weight-bold">
+                        ₹ {{ number_format(abs($total_current_balance), 2) }} {{ $total_current_balance >= 0 ? 'Cr' : 'Dr' }}
+                    </span>
                 </div>
                 <a href="{{ route('admin.payment.master.consumable_good.create') }}" class="btn-erp btn-erp-primary">
-                    <i class="fas fa-plus mr-1"></i> Add Consumable Good
+                    <i class="fas fa-plus"></i> Add Consumable Good
                 </a>
             </div>
         </div>
@@ -37,8 +36,8 @@
         @endif
 
         <!-- Table Card -->
-        <div class="erp-card p-0">
-            <div class="table-responsive">
+        <div class="erp-card">
+            <div class="erp-card-body p-2 table-responsive">
                 <table id="consumableGoodTable" class="table erp-table table-bordered table-hover mb-0 w-100">
                     <thead>
                         <tr>

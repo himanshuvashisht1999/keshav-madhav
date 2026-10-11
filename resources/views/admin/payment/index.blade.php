@@ -393,106 +393,100 @@
                 </script>
     @else
             {{-- ================= ADMIN PORTAL DESIGN ================= --}}
-            <div class="content-wrapper">
-                <section class="content-header">
-                    <div class="container-fluid">
-                        <div class="row mb-2">
-                            <div class="col-sm-6">
-                                <h1>Payment History</h1>
+            <div class="content-wrapper erp-page p-2">
+                <!-- Slim ERP Header Bar -->
+                <div class="erp-header-bar mb-2">
+                    <div class="erp-header-title">
+                        <i class="fas fa-history text-primary"></i> Payment History
+                    </div>
+                </div>
+
+                <!-- Compact ERP Filter Bar -->
+                <div class="erp-filter-bar mb-2">
+                    <form method="GET" action="{{ route(($routePrefix ?? 'admin.payment.history.') . 'index') }}" class="w-100">
+                        <div class="row align-items-end">
+                            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                                <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> From</label>
+                                <input type="date" class="form-control erp-input" name="from_date" value="{{ request('from_date') }}" onchange="this.form.submit()">
                             </div>
-                            <div class="col-sm-6">
-                                <ol class="breadcrumb float-sm-right">
-                                    <li class="breadcrumb-item"><a href="{{ route($homeRoute ?? 'admin.dashboard') }}">Home</a></li>
-                                    <li class="breadcrumb-item active">Payment History</li>
-                                </ol>
+                            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                                <label class="erp-filter-label"><i class="fas fa-calendar-check mr-1"></i> To</label>
+                                <input type="date" class="form-control erp-input" name="to_date" value="{{ request('to_date') }}" onchange="this.form.submit()">
+                            </div>
+                            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                                <label class="erp-filter-label"><i class="fas fa-tags mr-1"></i> Category</label>
+                                <select class="form-control erp-input" name="payment_category" onchange="this.form.submit()">
+                                    <option value="">All Categories</option>
+                                    @foreach($categories as $category)
+                                        <option value="{{ $category }}" {{ request('payment_category') == $category ? 'selected' : '' }}>
+                                            {{ ucfirst(str_replace('_', ' ', $category)) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-lg-3 col-md-3 col-sm-6 mb-1">
+                                <label class="erp-filter-label"><i class="fas fa-credit-card mr-1"></i> Mode</label>
+                                <select class="form-control erp-input select2" name="payment_mode" onchange="this.form.submit()" style="width: 100%;">
+                                    <option value="">All Modes</option>
+                                    <option value="Bank" {{ request('payment_mode') == 'Bank' ? 'selected' : '' }}>All Banks</option>
+                                    <option value="Cash" {{ request('payment_mode') == 'Cash' ? 'selected' : '' }}>All Cash</option>
+                                    <optgroup label="Specific Banks">
+                                        @foreach($banks as $bank)
+                                            <option value="Bank:{{ $bank->id }}" {{ request('payment_mode') == "Bank:{$bank->id}" ? 'selected' : '' }}>
+                                                {{ $bank->bank_name }} ({{ substr($bank->account_number, -4) }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                    <optgroup label="Specific Cash">
+                                        @foreach($cashAccounts as $cash)
+                                            <option value="Cash:{{ $cash->id }}" {{ request('payment_mode') == "Cash:{$cash->id}" ? 'selected' : '' }}>
+                                                {{ $cash->name }}
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                                <label class="erp-filter-label"><i class="fas fa-exchange-alt mr-1"></i> Type</label>
+                                <select class="form-control erp-input" name="payment_type" onchange="this.form.submit()">
+                                    <option value="">All Types</option>
+                                    @foreach($types as $type)
+                                        <option value="{{ $type }}" {{ request('payment_type') == $type ? 'selected' : '' }}>
+                                            {{ ucfirst($type) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-auto mb-1 ml-auto">
+                                <div class="erp-filter-actions">
+                                    <button type="submit" class="btn-erp btn-erp-primary" title="Apply Filter">
+                                        <i class="fas fa-filter"></i> Filter
+                                    </button>
+                                    <a href="{{ route(($routePrefix ?? 'admin.payment.history.') . 'index') }}" class="btn-erp btn-erp-outline" title="Reset Filters">
+                                        <i class="fas fa-undo"></i> Reset
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </form>
+                </div>
 
-                <section class="content">
-                    <div class="container-fluid">
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="card shadow-sm border-0">
-                                    <div class="card-header bg-white border-bottom-0 pt-3">
-                                        <form method="GET" action="{{ route(($routePrefix ?? 'admin.payment.history.') . 'index') }}" class="w-100">
-                                            <div class="row align-items-end">
-                                                <div class="col-md-2 mb-2">
-                                                    <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-calendar-alt mr-1"></i> From</label>
-                                                    <input type="date" class="form-control form-control-sm" name="from_date" value="{{ request('from_date') }}" onchange="this.form.submit()">
-                                                </div>
-                                                <div class="col-md-2 mb-2">
-                                                    <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-calendar-alt mr-1"></i> To</label>
-                                                    <input type="date" class="form-control form-control-sm" name="to_date" value="{{ request('to_date') }}" onchange="this.form.submit()">
-                                                </div>
-                                                <div class="col-md-2 mb-2">
-                                                    <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-tags mr-1"></i> Category</label>
-                                                    <select class="form-control form-control-sm" name="payment_category" onchange="this.form.submit()">
-                                                        <option value="">All Categories</option>
-                                                        @foreach($categories as $category)
-                                                            <option value="{{ $category }}" {{ request('payment_category') == $category ? 'selected' : '' }}>
-                                                                {{ ucfirst(str_replace('_', ' ', $category)) }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2 mb-2">
-                                                    <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-credit-card mr-1"></i> Mode</label>
-                                                    <select class="form-control form-control-sm" name="payment_mode" onchange="this.form.submit()">
-                                                        <option value="">All Modes</option>
-                                                        <option value="Bank" {{ request('payment_mode') == 'Bank' ? 'selected' : '' }}>All Banks</option>
-                                                        <option value="Cash" {{ request('payment_mode') == 'Cash' ? 'selected' : '' }}>All Cash</option>
-                                                        <optgroup label="Specific Banks">
-                                                            @foreach($banks as $bank)
-                                                                <option value="Bank:{{ $bank->id }}" {{ request('payment_mode') == "Bank:{$bank->id}" ? 'selected' : '' }}>
-                                                                    {{ $bank->bank_name }} ({{ substr($bank->account_number, -4) }})
-                                                                </option>
-                                                            @endforeach
-                                                        </optgroup>
-                                                        <optgroup label="Specific Cash">
-                                                            @foreach($cashAccounts as $cash)
-                                                                <option value="Cash:{{ $cash->id }}" {{ request('payment_mode') == "Cash:{$cash->id}" ? 'selected' : '' }}>
-                                                                    {{ $cash->name }}
-                                                                </option>
-                                                            @endforeach
-                                                        </optgroup>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2 mb-2">
-                                                    <label class="small font-weight-bold text-muted mb-1"><i class="fas fa-exchange-alt mr-1"></i> Type</label>
-                                                    <select class="form-control form-control-sm" name="payment_type" onchange="this.form.submit()">
-                                                        <option value="">All Types</option>
-                                                        @foreach($types as $type)
-                                                            <option value="{{ $type }}" {{ request('payment_type') == $type ? 'selected' : '' }}>
-                                                                {{ ucfirst($type) }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2 mb-2 text-right">
-                                                    <div class="d-inline-flex">
-                                                        <a href="{{ route(($routePrefix ?? 'admin.payment.history.') . 'index') }}" class="btn btn-sm btn-outline-secondary mr-2">
-                                                            <i class="fas fa-undo"></i>
-                                                        </a>
-                                                        <button type="submit" class="btn btn-sm btn-primary px-3 shadow-sm">
-                                                            <i class="fas fa-filter"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </form>
-                                    </div>
-
-                                    <div class="card-body p-0">
-                                        <div class="table-responsive">
-                                            <table id="paymentTable" class="table table-hover mb-0" style="width:100%">
-                                                <thead class="bg-light">
-                                                    <tr>
-                                                        <th class="border-top-0 py-3 px-4 text-primary small font-weight-bold uppercase">Date</th>
-                                                        <th class="border-top-0 py-3 text-primary small font-weight-bold uppercase">Category</th>
-                                                        <th class="border-top-0 py-3 text-primary small font-weight-bold uppercase">Type</th>
-                                                        <th class="border-top-0 py-3 text-primary small font-weight-bold uppercase">Payee</th>
+                <!-- Table Card -->
+                <div class="erp-card">
+                    <div class="erp-card-body p-2 table-responsive">
+                        <table id="paymentTable" class="table erp-table table-bordered table-hover mb-0 w-100">
+                            <thead>
+                                <tr>
+                                    <th style="width: 105px;">Date</th>
+                                    <th>Category</th>
+                                    <th class="text-center" style="width: 100px;">Type</th>
+                                    <th>Payee</th>
+                                    <th class="text-right" style="width: 130px;">Amount</th>
+                                    <th>Mode</th>
+                                    <th>Ref #</th>
+                                    <th class="text-center" style="width: 90px;">Actions</th>
+                                </tr>
+                            </thead>
                                                         <th class="border-top-0 py-3 text-primary small font-weight-bold uppercase">Amount</th>
                                                         <th class="border-top-0 py-3 text-primary small font-weight-bold uppercase">Mode</th>
                                                         <th class="border-top-0 py-3 text-primary small font-weight-bold uppercase">Ref #</th>

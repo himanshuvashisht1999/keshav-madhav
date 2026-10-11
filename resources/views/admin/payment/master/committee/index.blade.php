@@ -1,57 +1,55 @@
 @extends('admin.layouts.app')
-@section('content')
-    <div class="content-wrapper">
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-4">
-                        <h1>Manage Committees</h1>
-                    </div>
-                    <div class="col-sm-8">
-                        <div class="d-flex justify-content-end">
-                            <div class="info-box bg-light border-0 shadow-none m-0 mr-2" style="min-height: 50px; padding: 5px;">
-                                <span class="info-box-icon bg-info" style="width: 40px; font-size: 1rem;"><i class="fas fa-users"></i></span>
-                                <div class="info-box-content" style="padding: 0 10px;">
-                                    <span class="info-box-text text-muted small">Opening ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</span>
-                                    <span class="info-box-number" style="font-size: 0.9rem;">₹ {{ number_format(abs($total_opening_balance), 2) }} {{ $total_opening_balance >= 0 ? 'Cr' : 'Dr' }}</span>
-                                </div>
-                            </div>
-                            <div class="info-box bg-light border-0 shadow-none m-0" style="min-height: 50px; padding: 5px;">
-                                <span class="info-box-icon bg-success" style="width: 40px; font-size: 1rem;"><i class="fas fa-wallet"></i></span>
-                                <div class="info-box-content" style="padding: 0 10px;">
-                                    <span class="info-box-text text-muted small">Current Balance</span>
-                                    <span class="info-box-number" style="font-size: 0.9rem;">₹ {{ number_format(abs($total_current_balance), 2) }} {{ $total_current_balance >= 0 ? 'Cr' : 'Dr' }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+@section('title', 'Committee Master')
 
-        <section class="content">
-            <div class="container-fluid">
-                <div class="card card-default">
-                    <div class="card-body table-responsive">
-                        <table id="committees_table" class="table table-bordered table-hover">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Amount</th>
-                                    <th>Opening Balance</th>
-                                    <th>Balance</th>
-                                    <th>Period</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
+@section('content')
+    <div class="content-wrapper erp-page p-2">
+        <!-- Slim ERP Header Bar -->
+        <div class="erp-header-bar mb-2">
+            <div class="erp-header-title">
+                <i class="fas fa-users text-primary"></i> Committee Master
             </div>
-        </section>
+            <div class="erp-header-actions">
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Opening ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</span>
+                    <span class="hud-stat-value text-info font-weight-bold">₹{{ number_format(abs($total_opening_balance), 2) }} {{ $total_opening_balance >= 0 ? 'Cr' : 'Dr' }}</span>
+                </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Current Balance</span>
+                    <span class="hud-stat-value text-success font-weight-bold">₹{{ number_format(abs($total_current_balance), 2) }} {{ $total_current_balance >= 0 ? 'Cr' : 'Dr' }}</span>
+                </div>
+                <a href="{{ route('admin.payment.master.committee.create') }}" class="btn-erp btn-erp-primary">
+                    <i class="fas fa-plus"></i> Add Committee
+                </a>
+            </div>
+        </div>
+
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show mb-2 py-2 px-3" role="alert">
+                <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
+                <button type="button" class="close py-2" data-dismiss="alert">&times;</button>
+            </div>
+        @endif
+
+        <!-- Table Card -->
+        <div class="erp-card">
+            <div class="erp-card-body p-2 table-responsive">
+                <table id="committees_table" class="table erp-table table-bordered table-hover mb-0 w-100">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 50px;">#</th>
+                            <th>Name</th>
+                            <th>Amount</th>
+                            <th>Opening Balance</th>
+                            <th>Balance</th>
+                            <th>Period</th>
+                            <th class="text-center" style="width: 100px;">Status</th>
+                            <th class="text-center" style="width: 110px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -76,16 +74,6 @@
                     { data: 'period', name: 'period' },
                     { data: 'status', name: 'status' },
                     { data: 'action', name: 'action', searchable: false }
-                ],
-                dom: 'lBfrtip',
-                buttons: [
-                    {
-                        text: 'Add Committee',
-                        className: 'btn btn-primary',
-                        action: function (e, dt, node, config) {
-                            window.location.href = "{{ route('admin.payment.master.committee.create') }}";
-                        }
-                    }
                 ]
             });
         });

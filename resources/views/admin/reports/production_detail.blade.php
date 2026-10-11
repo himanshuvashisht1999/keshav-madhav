@@ -2,29 +2,23 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper">
-
-    {{-- PAGE HEADER --}}
-    <section class="content-header">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h3 class="mb-0">Production Detail</h3>
-            <div>
-                <a href="{{ route('admin.reports.productionDetail', ['id' => $orderMain->id]) }}"
-                   class="btn btn-sm btn-secondary">
-                    Refresh
-                </a>
-                {{-- 
-                <a href="{{ route('admin.reports.productionExcel', ['id' => $orderMain->id]) }}"
-                   class="btn btn-sm btn-success">
-                    Download Excel
-                </a> 
-                --}}
-            </div>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-industry text-primary"></i> Production Detail &mdash; {{ $orderMain->sku }}
         </div>
-        <small class="text-muted">Product wise → Stage wise overview</small>
-    </section>
-
-    <section class="content">
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.reports.productionDetail', ['id' => $orderMain->id]) }}"
+               class="btn-erp btn-erp-outline">
+                <i class="fas fa-sync"></i> Refresh
+            </a>
+            <a href="{{ route('admin.reports.production') }}"
+               class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left"></i> Back to Production
+            </a>
+        </div>
+    </div>
 
         {{-- ===== TOP SUMMARY CARDS ===== --}}
         @php

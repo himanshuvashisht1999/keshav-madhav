@@ -5,64 +5,66 @@
 <div class="content-wrapper erp-page p-2">
 
     {{-- ================= HEADER ================= --}}
-    <div class="erp-header-bar mb-3">
-        <div class="d-flex align-items-center">
-            <h1 class="erp-page-title mb-0">Dispatch order report</h1>
-            <div class="erp-report-meta ml-3">
-                <span class="meta-item"><i class="fas fa-file-alt mr-1 text-muted"></i> Report no: RJ-5</span>
-                <span class="meta-divider">•</span>
-                <span class="meta-item"><i class="far fa-clock mr-1 text-muted"></i> Date: {{ now()->format('d M Y h:i A') }}</span>
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-truck text-primary mr-2"></i> Dispatch Order Report
+        </div>
+        <div class="erp-header-actions">
+            <div class="hud-stat-box mr-1">
+                <span class="hud-stat-label">Report No</span>
+                <span class="hud-stat-value">RJ-5</span>
+            </div>
+            <div class="hud-stat-box">
+                <span class="hud-stat-label">Generated</span>
+                <span class="hud-stat-value">{{ now()->format('d M Y h:i A') }}</span>
             </div>
         </div>
     </div>
 
     {{-- ================= FILTER ================= --}}
-    <div class="card erp-card mb-3">
-        <div class="card-body p-2">
-            <form method="GET" action="{{ route('admin.report.dispatch-order') }}">
-                <div class="row g-2 align-items-end">
+    <div class="erp-filter-bar mb-2">
+        <form method="GET" action="{{ route('admin.report.dispatch-order') }}">
+            <div class="row align-items-end">
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-hashtag mr-1"></i> Order No</label>
+                    <input type="text"
+                        name="order_no"
+                        class="form-control erp-input"
+                        placeholder="Enter order no"
+                        value="{{ request('order_no') }}">
+                </div>
 
-                    <div class="col-md-3">
-                        <label class="erp-label mb-1">Order no</label>
-                        <input type="text"
-                            name="order_no"
-                            class="form-control form-control-sm"
-                            placeholder="Enter order no"
-                            value="{{ request('order_no') }}">
-                    </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-user-tie mr-1"></i> Customer</label>
+                    <select name="customer_id" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">-- ALL CUSTOMERS --</option>
+                        @foreach($customers as $customer)
+                            <option value="{{ $customer->id }}"
+                                {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
+                                {{ $customer->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-                    <div class="col-md-3">
-                        <label class="erp-label mb-1">Customer</label>
-                        <select name="customer_id" class="form-control form-control-sm select2">
-                            <option value="">All customers</option>
-                            @foreach($customers as $customer)
-                                <option value="{{ $customer->id }}"
-                                    {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
-                                    {{ $customer->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn-erp btn-erp-primary mr-2">
-                            <i class="fas fa-filter mr-1"></i> Filter
+                <div class="col-auto mb-1 ml-auto">
+                    <div class="erp-filter-actions">
+                        <button type="submit" class="btn-erp btn-erp-primary">
+                            <i class="fas fa-filter"></i> Filter
                         </button>
                         <a href="{{ route('admin.report.dispatch-order') }}" class="btn-erp btn-erp-outline">
-                            <i class="fas fa-undo mr-1"></i> Reset
+                            <i class="fas fa-undo"></i> Reset
                         </a>
                     </div>
-
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
     {{-- ================= TABLE ================= --}}
-    <div class="card erp-card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table erp-table mb-0">
+    <div class="erp-card">
+        <div class="erp-card-body p-2 table-responsive">
+            <table class="table erp-table table-bordered table-hover mb-0 w-100">
                     <thead>
                         <tr>
                             <th class="text-center" style="width: 50px;">#</th>

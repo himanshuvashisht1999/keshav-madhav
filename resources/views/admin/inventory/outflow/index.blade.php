@@ -4,47 +4,48 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- Header Bar -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Unit Movement & Loss Report</h1>
-                <p class="erp-page-subtitle">Track dead stock, sampling, and unit debits across production</p>
+            <div class="erp-header-title">
+                <i class="fas fa-chart-line text-primary"></i> Unit Movement & Loss Report
             </div>
-            <div>
-                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
-                    <i class="fas fa-boxes mr-1"></i> Inventory Overview
+            <div class="erp-header-actions">
+                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-boxes"></i> Inventory Overview
                 </a>
             </div>
         </div>
 
-        <!-- Filter Card -->
-        <div class="erp-card mb-2 p-2">
-            <div class="form-row align-items-end">
-                <div class="col-md-3 mb-2">
-                    <label class="erp-label">Movement type</label>
-                    <select id="type_filter" class="form-control form-control-sm erp-input select2">
-                        <option value="">All types</option>
+        <!-- Compact ERP Filter Bar -->
+        <div class="erp-filter-bar mb-2">
+            <div class="row align-items-end">
+                <div class="col-md-3 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-exchange-alt mr-1"></i> Movement Type</label>
+                    <select id="type_filter" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">-- ALL TYPES --</option>
                         <option value="dead">Dead stock (Damage)</option>
                         <option value="sampling">Sampling</option>
                         <option value="debit">Unit debit</option>
                     </select>
                 </div>
-                <div class="col-md-4 mb-2">
-                    <label class="erp-label">Design / order no.</label>
-                    <input type="text" id="search_filter" class="form-control form-control-sm erp-input" placeholder="Search design or order...">
+                <div class="col-md-4 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-search mr-1"></i> Design / Order No.</label>
+                    <input type="text" id="search_filter" class="form-control erp-input" placeholder="Search design or order..." autocomplete="off">
                 </div>
-                <div class="col-md-2 mb-2">
-                    <button id="reset_filters" class="btn-erp btn-erp-secondary w-100">
-                        <i class="fas fa-undo mr-1"></i> Reset
-                    </button>
+                <div class="col-auto mb-1 ml-auto">
+                    <div class="erp-filter-actions">
+                        <button id="reset_filters" class="btn-erp btn-erp-outline">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Table Card -->
-        <div class="erp-card p-0">
-            <div class="table-responsive">
-                <table id="outflowTable" class="table erp-table table-bordered table-hover mb-0">
+        <div class="erp-card">
+            <div class="erp-card-body p-2 table-responsive">
+                <table id="outflowTable" class="erp-table table table-bordered table-hover mb-0 w-100">
                     <thead>
                         <tr>
                             <th class="text-center" style="width: 45px;">#</th>

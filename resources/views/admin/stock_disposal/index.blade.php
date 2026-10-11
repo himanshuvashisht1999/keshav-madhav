@@ -7,21 +7,20 @@
     <div class="container-fluid p-0">
         <!-- Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Stock Disposal History</h1>
-                <p class="erp-page-subtitle">Audit logs and records of disposed fabric rolls and domestic stock</p>
+            <div class="erp-header-title">
+                <i class="fas fa-trash-alt text-primary mr-2"></i> Stock Disposal History
             </div>
-            <div>
+            <div class="erp-header-actions">
                 <a href="{{ route('admin.inventory.stock_disposal.create') }}" class="btn-erp btn-erp-primary">
-                    <i class="fas fa-plus mr-1"></i> New Disposal
+                    <i class="fas fa-plus"></i> New Disposal
                 </a>
             </div>
         </div>
 
         <!-- Table Card -->
-        <div class="erp-card p-0">
-            <div class="table-responsive">
-                <table id="disposalTable" class="table erp-table table-bordered table-hover mb-0">
+        <div class="erp-card">
+            <div class="erp-card-body p-2 table-responsive">
+                <table id="disposalTable" class="table erp-table table-bordered table-hover mb-0 w-100">
                     <thead>
                         <tr>
                             <th class="text-center" style="width: 45px;">#</th>

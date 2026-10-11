@@ -1,203 +1,131 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-8">
-                    <h3 style="font-size:1.2rem;">Fabric Stock SKU : <span class="text-muted">{{ $fabrics->sku }}</span></h3>
-                </div>
-                <div class="col-sm-4">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Fabric Stock</li>
-                    </ol>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-layer-group text-primary"></i> Fabric Stock SKU: <span class="badge erp-badge-yellow ml-2">{{ $fabrics->sku }}</span>
+        </div>
+        <div class="erp-header-actions">
+            <button id="generatePDFBtn" class="btn-erp btn-erp-outline">
+                <i class="fas fa-file-pdf text-danger"></i> PDF
+            </button>
+            <button id="generateExcelBtn" class="btn-erp btn-erp-outline">
+                <i class="fas fa-file-excel text-success"></i> Excel
+            </button>
+            <a href="{{ route('admin.stock.fabricQuantityExcel') }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-download"></i> Fabric Quantity
+            </a>
+            <a href="{{ route('admin.stock.fabricIndex') }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Compact ERP Filter Bar -->
+    <div class="erp-filter-bar mb-2">
+        <input type="hidden" name="sku" id="sku" value="{{$fabrics->sku}}">
+        <div class="row align-items-end">
+            <div class="col-md-2 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> Date</label>
+                <input type="date" class="form-control erp-input" name="date" id="date" autocomplete="off">
+            </div>
+            <div class="col-md-2 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-ruler mr-1"></i> Meter</label>
+                <input type="text" class="form-control erp-input" name="meter" id="meter" placeholder="Filter meter..." autocomplete="off">
+            </div>
+            <div class="col-md-2 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-barcode mr-1"></i> Unique No</label>
+                <input type="text" class="form-control erp-input" name="unique_number" id="unique_number" placeholder="Unique No..." autocomplete="off">
+            </div>
+            <div class="col-md-2 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-tag mr-1"></i> Batch No</label>
+                <input type="text" class="form-control erp-input" name="batch_no" id="batch_no" placeholder="Batch No..." autocomplete="off">
+            </div>
+            <div class="col-auto mb-1 ml-auto">
+                <div class="erp-filter-actions">
+                    <button type="button" class="btn-erp btn-erp-primary" id="btnApplyFilter">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <button type="button" class="btn-erp btn-erp-outline" id="btnResetFilter">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Main content -->
-    <section class="content">
-        <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default ">
-                 <!-- <div class="row" >
-                    <div class="col-12 card-header">
-                        <h3 class="card-title">Manage Fabric Stock</h3>
-                    </div>
-                </div> -->
-                
-                <div class="card-body table-responsive">
-                <!-- <div class="d-flex justify-content-end me-3 ">
-                    <button id="generatePDF" class="btn btn-primary m-1" name="generatePDF">
-                        <i class="nav-icon fas fa-download"></i> PDF Reports
-                    </button>
-                    <button id="generateExcel" class="btn btn-primary m-1" name="generateExcel">
-                        <i class="nav-icon fas fa-download"></i> Excel Reports
-                    </button>
-                    <button name="fabric_quantity" class="btn btn-primary m-1 " onclick="window.location.href='{{ route('admin.stock.fabricQuantityExcel') }}'">
-                        <i class="nav-icon fas fa-download"></i> Fabric Quantity
-                    </button>
-                </div> -->
-                
-                <table id="customers" class="table table-bordered table-hover">
-                  <thead>
-                    <tr role="row" class="filter">
-                        
-                        <td>
-                           <input type="hidden" class="form-control" name="sku" id="sku" value="{{$fabrics->sku}}" autocomplete="off">
-                        </td>
-                        
-                        <td>
-                            <input type="date" class="form-control" name="date" id="date" autocomplete="off">
-                        </td>
-                        
-                        
-                        <td>
-                            <input type="text" class="form-control" name="meter" id="meter" autocomplete="off">
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="unique_number" id="unique_number" autocomplete="off">
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="batch_no" id="batch_no" autocomplete="off">
-                        </td>  
-                        <td>
-                       
-                       </td>
-                    </tr>
+    <!-- Table Card -->
+    <div class="erp-card">
+        <div class="erp-card-body p-2 table-responsive">
+            <table id="customers" class="erp-table table table-bordered table-hover mb-0 w-100">
+                <thead>
                     <tr>
-                        <th>ID</th>
+                        <th style="width: 50px;" class="text-center">#</th>
                         <th>Date</th>
                         <th>Meter</th>
                         <th>Unique No</th>
                         <th>Batch No</th>
-                        <th>Action</th>
+                        <th style="width: 100px;" class="text-center">Action</th>
                     </tr>
-                  </thead>
-                  <tbody>
-                  <!-- <tr>
-                    <td>1</td>
-                    <td>wefds</td>
-                    <td>Win 95+</td>
-                    <td> 4</td>
-                    <td>X</td>
-                  </tr> -->
-                  
-                  </tbody>
-                  
-                </table>
-              </div>
-            </div>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
         </div>
-    </section>
+    </div>
 </div>
+
 <script>
     $(function () {
-        var i = 1;
         var oTable = $('#customers').DataTable({
             processing: true,
             serverSide: true,
             stateSave: true,
             searching: true,
-            ordering:false,
+            ordering: false,
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
-            "pageLength":25,
+            pageLength: 25,
             ajax: {
                 url: '{!! route('admin.stock.indexList') !!}',
                 data: function (d) {
-                    d.id = $('#id').val();
                     d.sku = $('#sku').val();
                     d.date = $('#date').val();
                     d.meter = $('#meter').val();
                     d.unique_number = $('#unique_number').val();
                     d.batch_no = $('#batch_no').val();
-                  
                 },
                 orderable: false
             },
             columns: [
-                {data: 'DT_RowIndex', name: 'id'},
+                {data: 'DT_RowIndex', name: 'id', className: 'text-center'},
                 {data: 'date', name: 'date'},
                 {data: 'meter', name: 'meter'},
                 {data: 'unique_number', name: 'unique_number'},
                 {data: 'batch_no', name: 'batch_no'},
-                {data: 'action', name: 'action', searchable: false}
+                {data: 'action', name: 'action', searchable: false, className: 'text-center'}
             ],
-            dom: 'lBfrtip',
-            buttons: [
-                {
-                    text: `<i class="nav-icon fas fa-download"></i> PDF Reports`,
-                    attr: {
-                        id: 'generatePDF',
-                        name: 'generatePDF'
-                    },
-                    className: 'btn-datatable',
-                    action: function (e, dt, node, config) {
-                        e.preventDefault();
-                        // Add your PDF generation logic here
-                    }
-                },
-                {
-                    text: `<i class="nav-icon fas fa-download"></i> Excel Reports`,
-                    attr: {
-                        id: 'generateExcel',
-                        name: 'generateExcel'
-                    },
-                    className: 'btn-datatable',
-                    action: function (e, dt, node, config) {
-                        e.preventDefault();
-                        // Add your Excel generation logic here
-                    }
-                },
-                {
-                    text: `<i class="nav-icon fas fa-download"></i> Fabric Quantity`,
-                    attr: {
-                        id: 'fabric_quantity',
-                        name: 'fabric_quantity'
-                    },
-                    className: 'btn-datatable',
-                    action: function (e, dt, node, config) {
-                        // Redirect to your Laravel route
-                        window.location.href = "{{ route('admin.stock.fabricQuantityExcel') }}";
-                    }
-                }
-            ]
+            dom: '<"top"lf>rt<"bottom"ip><"clear">'
         });
 
-        $('#id').on('keyup', function (e) {
+        $('#btnApplyFilter').on('click', function (e) {
             oTable.draw();
-            e.preventDefault();
         });
-        
-        $('#date').on('change', function (e) {
+
+        $('#date, #meter, #unique_number, #batch_no').on('change keyup', function (e) {
             oTable.draw();
-            e.preventDefault();
         });
 
-        $('#unique_number').on('keyup', function (e) {
+        $('#btnResetFilter').on('click', function (e) {
+            $('#date').val('');
+            $('#meter').val('');
+            $('#unique_number').val('');
+            $('#batch_no').val('');
             oTable.draw();
-            e.preventDefault();
         });
 
-        $('#meter').on('keyup', function (e) {
-            oTable.draw();
+        $('#generatePDFBtn').on('click', function (e) {
             e.preventDefault();
-        });
-        $('#batch_no').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-    });
-
-    $(document).ready(function () {
-        $('#generatePDF').on('click', function (e) {
-            e.preventDefault(); // prevent default behavior
-
-            // Collect filter values
             var data = {
                 sku: $('#sku').val(),
                 date: $('#date').val(),
@@ -207,7 +135,6 @@
                 _token: '{{ csrf_token() }}'
             };
 
-            // Create a hidden form for POST submission (so file download works)
             var form = $('<form>', {
                 action: '{{ route("admin.stock.generatePdf") }}',
                 method: 'POST',
@@ -220,10 +147,9 @@
             form.submit();
             form.remove();
         });
-        $('#generateExcel').on('click', function (e) {
-            e.preventDefault(); // prevent default behavior
 
-            // Collect filter values
+        $('#generateExcelBtn').on('click', function (e) {
+            e.preventDefault();
             var data = {
                 sku: $('#sku').val(),
                 date: $('#date').val(),
@@ -233,7 +159,6 @@
                 _token: '{{ csrf_token() }}'
             };
 
-            // Create a hidden form for POST submission (so file download works)
             var form = $('<form>', {
                 action: '{{ route("admin.stock.generateExcel") }}',
                 method: 'POST',
@@ -247,7 +172,6 @@
             form.remove();
         });
     });
-
 </script>
 
 @endsection

@@ -5,15 +5,14 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- Header Bar -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">New Stock Disposal</h1>
-                <p class="erp-page-subtitle">Dispose damaged fabric rolls or defective domestic stock</p>
+            <div class="erp-header-title">
+                <i class="fas fa-trash-alt text-primary mr-2"></i> New Stock Disposal
             </div>
-            <div>
-                <a href="{{ route('admin.inventory.stock_disposal.index') }}" class="btn-erp btn-erp-secondary">
-                    <i class="fas fa-arrow-left mr-1"></i> Back to History
+            <div class="erp-header-actions">
+                <a href="{{ route('admin.inventory.stock_disposal.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-arrow-left"></i> Back to History
                 </a>
             </div>
         </div>

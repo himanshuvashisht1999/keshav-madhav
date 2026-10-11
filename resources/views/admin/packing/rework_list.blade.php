@@ -17,33 +17,9 @@
 
     .content-wrapper {
         background-color: var(--erp-bg);
-    }
-
-    /* 1. Header Bar */
-    .erp-header-bar {
-        background: linear-gradient(135deg, #05421c 0%, #0a5c28 100%) !important;
-        border-radius: 6px;
-        padding: 0.65rem 1rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        color: #ffffff !important;
-        border: none !important;
-        box-shadow: 0 2px 6px rgba(5,66,28,0.2) !important;
-        margin-bottom: 0.75rem;
-    }
-    .erp-header-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #ffffff !important;
-        margin: 0;
-        display: flex;
-        align-items: center;
-    }
-    .erp-header-subtitle {
-        color: rgba(255,255,255,0.85);
-        font-size: 0.8rem;
-        margin: 0;
+    /* 1. Reset Content Wrapper */
+    .content-wrapper {
+        background-color: var(--erp-bg);
     }
 
     /* 2. Filter Bar */
@@ -164,18 +140,6 @@
         margin-bottom: 0;
         border-collapse: collapse;
     }
-    .erp-table thead th {
-        background-color: #edf7e4 !important;
-        color: #05421c !important;
-        font-size: 0.74rem !important;
-        font-weight: 700 !important;
-        text-transform: uppercase;
-        padding: 0.65rem 0.75rem !important;
-        border-bottom: 2px solid #c3e6cb !important;
-        letter-spacing: 0.4px;
-        vertical-align: middle;
-        white-space: nowrap;
-    }
     .erp-table tbody td {
         vertical-align: middle;
         padding: 0.55rem 0.75rem;
@@ -235,75 +199,85 @@
 </style>
 
 <div class="content-wrapper erp-page p-2">
-    <!-- 1. PAGE HEADER WITH EMBEDDED INLINE STATS -->
-    <div class="erp-header-bar mb-3">
-        <div>
-            <h1 class="erp-header-title">
-                <i class="fas fa-tools mr-2 text-warning"></i> Defect & Rework Management
-            </h1>
-            <p class="erp-header-subtitle">Items stored in rack awaiting admin rework assignment</p>
+    <!-- 1. PAGE HEADER -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-tools text-primary"></i> Defect & Rework Management
         </div>
-        
-        <!-- COMPACT INLINE STATS & ACTIONS -->
-        <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
-            <div class="px-3 py-1 rounded d-flex align-items-center" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);">
-                <i class="fas fa-warehouse mr-2 text-warning" style="font-size: 1.1rem;"></i>
-                <div style="line-height: 1.1;">
-                    <span class="text-uppercase d-block" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.75);">In Rack</span>
-                    <div class="font-weight-bold text-white" id="statStored" style="font-size: 0.95rem;">{{ $totalStoredPieces ?? 0 }} Pcs</div>
-                </div>
-            </div>
-
-            <div class="px-3 py-1 rounded d-flex align-items-center" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);">
-                <i class="fas fa-check-circle mr-2" style="font-size: 1.1rem; color: #4ade80 !important;"></i>
-                <div style="line-height: 1.1;">
-                    <span class="text-uppercase d-block" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.75);">Assigned</span>
-                    <div class="font-weight-bold text-white" id="statAssigned" style="font-size: 0.95rem;">{{ $totalAssignedPieces ?? 0 }} Pcs</div>
-                </div>
-            </div>
-
-            <div class="px-3 py-1 rounded d-flex align-items-center" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);">
-                <i class="fas fa-cubes mr-2 text-warning" style="font-size: 1.1rem;"></i>
-                <div style="line-height: 1.1;">
-                    <span class="text-uppercase d-block" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.75);">Active Lots</span>
-                    <div class="font-weight-bold text-white" id="statLots" style="font-size: 0.95rem;">{{ $totalActiveLots ?? 0 }} Lots</div>
-                </div>
-            </div>
-
-            <a href="{{ route('admin.packing.index') }}" class="btn-erp btn-erp-outline" style="color: #fff; border-color: rgba(255,255,255,0.4);">
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.packing.index') }}" class="btn-erp btn-erp-outline">
                 <i class="fas fa-box-open mr-1"></i> Packing Module
             </a>
-            <button id="btnRefresh" class="btn-erp btn-erp-outline" style="color: #fff; border-color: rgba(255,255,255,0.4);" title="Refresh List">
-                <i class="fas fa-sync-alt"></i>
+            <button id="btnRefresh" class="btn-erp btn-erp-outline" title="Refresh List">
+                <i class="fas fa-sync-alt"></i> Refresh
             </button>
         </div>
     </div>
 
-    <!-- 2. STREAMLINED FILTER BAR -->
-    <div class="erp-filter-bar mb-3">
-        <div class="row align-items-end" style="row-gap: 8px;">
-            <div class="col-lg-3 col-md-6">
-                <label class="erp-filter-label">Search</label>
-                <div class="input-group input-group-sm">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text bg-light border-right-0"><i class="fas fa-search text-muted small"></i></span>
+    <!-- Filter Summary Metrics Strip -->
+    <div class="row mb-2">
+        <div class="col-md-4 col-sm-6 mb-1">
+            <div class="erp-card erp-metric-card-left-yellow py-2 px-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-yellow-bg); color: var(--erp-yellow-dark); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg); border: 1px solid var(--erp-yellow-badge-border);">
+                        <i class="fas fa-warehouse"></i>
                     </div>
-                    <input type="text" id="filterSearch" class="form-control form-control-sm border-left-0 erp-input" placeholder="Order, Lot, Design, Customer...">
+                    <div>
+                        <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">In Rack (Pending)</div>
+                        <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-yellow-dark); line-height: 1.2;" id="statStored">{{ $totalStoredPieces ?? 0 }} Pcs</div>
+                    </div>
                 </div>
+                <span class="badge erp-badge-yellow" style="padding: 4px 9px;">In Rack</span>
             </div>
+        </div>
+        <div class="col-md-4 col-sm-6 mb-1">
+            <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Assigned Rework</div>
+                        <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-green-primary); line-height: 1.2;" id="statAssigned">{{ $totalAssignedPieces ?? 0 }} Pcs</div>
+                    </div>
+                </div>
+                <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">Assigned</span>
+            </div>
+        </div>
+        <div class="col-md-4 col-sm-6 mb-1">
+            <div class="erp-card erp-metric-card-neutral py-2 px-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
+                        <i class="fas fa-cubes"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Active Lots</div>
+                        <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: #1e293b; line-height: 1.2;" id="statLots">{{ $totalActiveLots ?? 0 }} Lots</div>
+                    </div>
+                </div>
+                <span class="badge badge-secondary" style="font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">Active</span>
+            </div>
+        </div>
+    </div>
 
-            <div class="col-lg-2 col-md-3">
-                <label class="erp-filter-label">Status</label>
-                <select id="filterStatus" class="form-control form-control-sm custom-select erp-input">
+    <!-- 2. STREAMLINED FILTER BAR -->
+    <div class="erp-filter-bar mb-2">
+        <div class="row align-items-end">
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-search mr-1"></i> Search</label>
+                <input type="text" id="filterSearch" class="form-control erp-input" placeholder="Order, Lot, Customer...">
+            </div>
+            <div class="col-lg-2 col-md-4 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-tasks mr-1"></i> Status</label>
+                <select id="filterStatus" class="form-control erp-input">
                     <option value="">All Statuses</option>
                     <option value="stored" selected>In Rack (Pending)</option>
                     <option value="assigned">Assigned for Rework</option>
                 </select>
             </div>
-
-            <div class="col-lg-3 col-md-3">
-                <label class="erp-filter-label">Storeroom / Rack</label>
-                <select id="filterRack" class="form-control form-control-sm select2">
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-warehouse mr-1"></i> Storeroom / Rack</label>
+                <select id="filterRack" class="form-control select2 erp-input" style="width: 100%;">
                     <option value="">All Storerooms / Racks</option>
                     @foreach($storerooms as $store)
                         <optgroup label="{{ $store->name }}">
@@ -314,24 +288,23 @@
                     @endforeach
                 </select>
             </div>
-
-            <div class="col-lg-2 col-md-4">
-                <label class="erp-filter-label">Date From</label>
-                <input type="date" id="filterStartDate" class="form-control form-control-sm erp-input">
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> Date From</label>
+                <input type="date" id="filterStartDate" class="form-control erp-input">
             </div>
-
-            <div class="col-lg-2 col-md-4">
-                <label class="erp-filter-label">Date To</label>
-                <input type="date" id="filterEndDate" class="form-control form-control-sm erp-input">
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-calendar-check mr-1"></i> Date To</label>
+                <input type="date" id="filterEndDate" class="form-control erp-input">
             </div>
-
-            <div class="col-12 col-md-auto d-flex ml-auto align-items-end mt-2 mt-md-0" style="gap: 6px;">
-                <button id="btnFilterApply" class="btn-erp btn-erp-primary font-weight-bold" title="Apply Filter">
-                    <i class="fas fa-filter mr-1"></i> Filter
-                </button>
-                <button id="btnResetFilters" class="btn-erp btn-erp-outline" style="border-color: #ced4da; color: #475569;" title="Reset Filters">
-                    <i class="fas fa-undo mr-1"></i> Reset
-                </button>
+            <div class="col-auto mb-1 ml-auto">
+                <div class="erp-filter-actions">
+                    <button id="btnFilterApply" class="btn-erp btn-erp-primary" title="Apply Filter">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <button id="btnResetFilters" class="btn-erp btn-erp-outline" title="Reset Filters">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                </div>
             </div>
         </div>
     </div>

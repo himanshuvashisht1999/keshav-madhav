@@ -3,71 +3,72 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- PAGE HEADER -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title m-0">Purchase History</h1>
-                <p class="erp-page-subtitle m-0">Manage and track all inventory stock inward entries</p>
+            <div class="erp-header-title">
+                <i class="fas fa-shopping-cart text-primary"></i> Purchase History
             </div>
-            <div class="d-flex align-items-center" style="gap: 8px;">
+            <div class="erp-header-actions">
                 <a href="{{ route('admin.inventory.purchase') }}" class="btn-erp btn-erp-primary">
-                    <i class="fas fa-plus mr-1"></i> New purchase
+                    <i class="fas fa-plus"></i> New Purchase
                 </a>
-                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
-                    <i class="fas fa-arrow-left mr-1"></i> Back to inventory
+                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-arrow-left"></i> Back to Inventory
                 </a>
             </div>
         </div>
 
-        <!-- FILTER CARD -->
-        <div class="erp-card mb-2 p-2">
+        <!-- Compact ERP Filter Bar -->
+        <div class="erp-filter-bar mb-2">
             <div class="row align-items-end">
                 <div class="col-md-2 mb-1">
-                    <label class="erp-label mb-1">Start date</label>
-                    <input type="date" id="start_date" class="form-control form-control-sm erp-input">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> Start Date</label>
+                    <input type="date" id="start_date" class="form-control erp-input">
                 </div>
                 <div class="col-md-2 mb-1">
-                    <label class="erp-label mb-1">End date</label>
-                    <input type="date" id="end_date" class="form-control form-control-sm erp-input">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-check mr-1"></i> End Date</label>
+                    <input type="date" id="end_date" class="form-control erp-input">
                 </div>
                 <div class="col-md-2 mb-1">
-                    <label class="erp-label mb-1">Vendor</label>
-                    <select id="vendor_filter" class="form-control form-control-sm select2">
-                        <option value="">All vendors</option>
+                    <label class="erp-filter-label"><i class="fas fa-user-tie mr-1"></i> Vendor</label>
+                    <select id="vendor_filter" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">-- ALL VENDORS --</option>
                         @foreach($vendors as $vendor)
                             <option value="{{ $vendor->id }}">{{ $vendor->company_name ?? $vendor->name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-2 mb-1">
-                    <label class="erp-label mb-1">Customer</label>
-                    <select id="customer_filter" class="form-control form-control-sm select2">
-                        <option value="">All customers</option>
+                    <label class="erp-filter-label"><i class="fas fa-building mr-1"></i> Customer</label>
+                    <select id="customer_filter" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">-- ALL CUSTOMERS --</option>
                         @foreach($customers as $customer)
                             <option value="{{ $customer->id }}">{{ $customer->company_name ?? $customer->name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-2 mb-1">
-                    <label class="erp-label mb-1">Bill no.</label>
-                    <input type="text" id="bill_no_filter" class="form-control form-control-sm erp-input" placeholder="Search bill...">
+                    <label class="erp-filter-label"><i class="fas fa-file-invoice mr-1"></i> Bill No.</label>
+                    <input type="text" id="bill_no_filter" class="form-control erp-input" placeholder="Search bill..." autocomplete="off">
                 </div>
                 <div class="col-md-1 mb-1">
-                    <label class="erp-label mb-1">PO no.</label>
-                    <input type="text" id="po_number_filter" class="form-control form-control-sm erp-input" placeholder="Search PO...">
+                    <label class="erp-filter-label"><i class="fas fa-barcode mr-1"></i> PO No.</label>
+                    <input type="text" id="po_number_filter" class="form-control erp-input" placeholder="PO..." autocomplete="off">
                 </div>
-                <div class="col-md-1 mb-1">
-                    <button id="reset_filters" class="btn-erp btn-erp-secondary w-100" title="Reset Filters" style="height: 29px;">
-                        <i class="fas fa-undo"></i>
-                    </button>
+                <div class="col-auto mb-1 ml-auto">
+                    <div class="erp-filter-actions">
+                        <button id="reset_filters" class="btn-erp btn-erp-outline" title="Reset Filters">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- TABLE CARD -->
-        <div class="erp-card p-0">
-            <div class="table-responsive">
-                <table id="purchaseHistoryTable" class="erp-table table-bordered table-hover mb-0 w-100">
+        <!-- Table Card -->
+        <div class="erp-card">
+            <div class="erp-card-body p-2 table-responsive">
+                <table id="purchaseHistoryTable" class="erp-table table table-bordered table-hover mb-0 w-100">
                     <thead>
                         <tr>
                             <th style="width: 40px; text-align: center;">#</th>

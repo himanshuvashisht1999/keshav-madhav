@@ -1,27 +1,18 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper">
-
-    {{-- PAGE HEADER --}}
-    <section class="content-header">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="mb-1">Package Details</h1>
-                <small class="text-muted">Package #{{ $package->id }}</small>
-            </div>
-
-            <div>
-                <a href="{{ url()->previous() }}" class="btn btn-sm btn-secondary mr-2">
-                    <i class="fas fa-arrow-left"></i> Back
-                </a>
-            </div>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-box text-primary"></i> Package Details &mdash; Package #{{ $package->id }}
         </div>
-    </section>
-
-    {{-- MAIN CONTENT --}}
-    <section class="content">
-        <div class="container-fluid">
+        <div class="erp-header-actions">
+            <a href="{{ url()->previous() }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
 
             @php
                 $totalBoxes = $package->package_boxes->count();

@@ -4,15 +4,14 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- Header Bar -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Manage Cash Payments</h1>
-                <p class="erp-page-subtitle">Master register for cash payment accounts</p>
+            <div class="erp-header-title">
+                <i class="fas fa-coins text-primary"></i> Cash Payment Master
             </div>
-            <div class="d-flex align-items-center">
+            <div class="erp-header-actions">
                 <a href="{{ route('admin.payment.master.cash_payment.create') }}" class="btn-erp btn-erp-primary">
-                    <i class="fas fa-plus mr-1"></i> Add Cash Payment
+                    <i class="fas fa-plus"></i> Add Cash Payment
                 </a>
             </div>
         </div>
@@ -24,19 +23,19 @@
             </div>
         @endif
 
-        <!-- Filter Card -->
-        <div class="erp-card mb-2 p-2">
-            <div class="form-row align-items-end">
-                <div class="col-md-4">
-                    <label class="erp-label">Search by account name</label>
-                    <input type="text" class="form-control form-control-sm erp-input" name="name" id="name" placeholder="Type account name to filter...">
+        <!-- Compact ERP Filter Bar -->
+        <div class="erp-filter-bar mb-2">
+            <div class="row align-items-end">
+                <div class="col-md-4 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-search mr-1"></i> Account Name</label>
+                    <input type="text" class="form-control erp-input" name="name" id="name" placeholder="Type account name to filter...">
                 </div>
             </div>
         </div>
 
         <!-- Table Card -->
-        <div class="erp-card p-0">
-            <div class="table-responsive">
+        <div class="erp-card">
+            <div class="erp-card-body p-2 table-responsive">
                 <table id="cash_payments_table" class="table erp-table table-bordered table-hover mb-0 w-100">
                     <thead>
                         <tr>

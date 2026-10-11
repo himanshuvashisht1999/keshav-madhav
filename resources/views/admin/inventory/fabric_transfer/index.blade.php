@@ -4,18 +4,17 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- PAGE HEADER -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title m-0">Fabric Transfer</h1>
-                <p class="erp-page-subtitle m-0">Transfer fabric rolls between cutting masters and warehouses</p>
+            <div class="erp-header-title">
+                <i class="fas fa-random text-primary"></i> Fabric Transfer
             </div>
-            <div class="d-flex align-items-center" style="gap: 8px;">
+            <div class="erp-header-actions">
                 <a href="{{ route('admin.inventory.fabric_transfer.history') }}" class="btn-erp btn-erp-outline">
-                    <i class="fas fa-history mr-1"></i> Transfer history
+                    <i class="fas fa-history"></i> Transfer History
                 </a>
-                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
-                    <i class="fas fa-arrow-left mr-1"></i> Back to inventory
+                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-arrow-left"></i> Back to Inventory
                 </a>
             </div>
         </div>

@@ -3,99 +3,96 @@
 <div class="content-wrapper erp-page p-2">
     <!-- 1. SLIM ERP HEADER BAR -->
     <div class="erp-header-bar mb-2">
-        <div class="erp-header-title d-flex align-items-center flex-wrap" style="gap: 8px;">
-            <i class="fas {{ !empty($is_packing) ? 'fa-box-open' : 'fa-file-invoice' }}" style="color: var(--erp-green-primary);"></i>
+        <div class="erp-header-title">
+            <i class="fas {{ !empty($is_packing) ? 'fa-box-open' : 'fa-file-invoice' }} text-primary"></i>
             <span>{{ !empty($is_packing) ? 'Uploaded Slips (Packing)' : 'Uploaded Slips' }}</span>
-            <span class="erp-badge-yellow px-2 py-0.5 rounded font-weight-bold" style="font-size: 0.85rem;">
-                {{ $slips->total() }} Total
-            </span>
         </div>
-        <div class="erp-header-actions d-flex align-items-center flex-wrap" style="gap: 6px;">
+        <div class="erp-header-actions">
             <a href="{{ route('admin.reports.slips') }}" class="btn-erp btn-erp-outline">
-                <i class="fas fa-chart-bar mr-1"></i> Slip-wise Report
+                <i class="fas fa-chart-bar"></i> Slip-wise Report
             </a>
             @if(!empty($is_packing))
                 <a href="{{ route('admin.uploaded-slips.index') }}" class="btn-erp btn-erp-outline">
-                    <i class="fas fa-file-upload mr-1"></i> All Slips
+                    <i class="fas fa-file-upload"></i> All Slips
                 </a>
             @else
                 <a href="{{ route('admin.uploaded-slips.packing') }}" class="btn-erp btn-erp-outline">
-                    <i class="fas fa-box-open mr-1"></i> Packing Slips
+                    <i class="fas fa-box-open"></i> Packing Slips
                 </a>
             @endif
         </div>
     </div>
 
-    <!-- 2. ERP FILTER CARD -->
-    <div class="erp-card mb-2" style="border-top: 3px solid var(--erp-yellow-bright); background: #ffffff;">
-        <div class="erp-card-body p-2 px-3">
-            <form method="GET" action="{{ !empty($is_packing) ? route('admin.uploaded-slips.packing') : route('admin.uploaded-slips.index') }}">
-                <div class="row align-items-end g-2">
-                    <div class="col-md col-sm-6 mb-1">
-                        <label class="small font-weight-bold text-muted mb-1 text-uppercase" style="font-size: 11px;">Lot Number</label>
-                        <input type="text" name="lot_no" class="form-control form-control-sm erp-input" placeholder="Search Lot..." value="{{ request('lot_no') }}">
-                    </div>
-                    <div class="col-md col-sm-6 mb-1">
-                        <label class="small font-weight-bold text-muted mb-1 text-uppercase" style="font-size: 11px;">Bill No</label>
-                        <input type="text" name="bill_number" class="form-control form-control-sm erp-input" placeholder="Search Bill..." value="{{ request('bill_number') }}">
-                    </div>
-                    <div class="col-md col-sm-6 mb-1">
-                        <label class="small font-weight-bold text-muted mb-1 text-uppercase" style="font-size: 11px;">From Stage</label>
-                        <select name="from_stage_id" class="form-control select2 form-control-sm erp-input">
-                            <option value="">-- All Stages --</option>
-                            @foreach($stages as $stage)
-                                <option value="{{ $stage->id }}" {{ request('from_stage_id') == $stage->id ? 'selected' : '' }}>
-                                    {{ $stage->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md col-sm-6 mb-1">
-                        <label class="small font-weight-bold text-muted mb-1 text-uppercase" style="font-size: 11px;">To Stage</label>
-                        <select name="to_stage_id" class="form-control select2 form-control-sm erp-input">
-                            <option value="">-- All Stages --</option>
-                            @foreach($stages as $stage)
-                                <option value="{{ $stage->id }}" {{ request('to_stage_id') == $stage->id ? 'selected' : '' }}>
-                                    {{ $stage->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md col-sm-6 mb-1">
-                        <label class="small font-weight-bold text-muted mb-1 text-uppercase" style="font-size: 11px;">Unit</label>
-                        <select name="stage_master_unit_id" class="form-control select2 form-control-sm erp-input">
-                            <option value="">-- All Units --</option>
-                            @foreach($units as $unit)
-                                <option value="{{ $unit->id }}" {{ request('stage_master_unit_id') == $unit->id ? 'selected' : '' }}>
-                                    {{ $unit->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md col-sm-6 mb-1">
-                        <label class="small font-weight-bold text-muted mb-1 text-uppercase" style="font-size: 11px;">Status</label>
-                        <select name="status" class="form-control select2 form-control-sm erp-input">
-                            <option value="all" {{ request('status') === 'all' || !request()->has('status') ? 'selected' : '' }}>-- Show All --</option>
-                            <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Pending</option>
-                            <option value="1" {{ request('status') == 1 ? 'selected' : '' }}>Digitized</option>
-                            <option value="2" {{ request('status') == 2 ? 'selected' : '' }}>Skipped</option>
-                        </select>
-                    </div>
-                    <div class="col-md col-sm-6 mb-1">
-                        <label class="small font-weight-bold text-muted mb-1 text-uppercase" style="font-size: 11px;">Date</label>
-                        <input type="date" name="date" class="form-control form-control-sm erp-input" value="{{ request('date') }}">
-                    </div>
-                    <div class="col-md-auto mb-1 text-right">
-                        <button type="submit" class="btn-erp btn-erp-primary mr-1" title="Apply Filter">
-                            <i class="fas fa-filter mr-1"></i> Filter
+    <!-- 2. COMPACT ERP FILTER BAR -->
+    <div class="erp-filter-bar mb-2">
+        <form method="GET" action="{{ !empty($is_packing) ? route('admin.uploaded-slips.packing') : route('admin.uploaded-slips.index') }}">
+            <div class="row align-items-end">
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-barcode mr-1"></i> Lot Number</label>
+                    <input type="text" name="lot_no" class="form-control erp-input" placeholder="Search Lot..." value="{{ request('lot_no') }}">
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-file-invoice mr-1"></i> Bill No</label>
+                    <input type="text" name="bill_number" class="form-control erp-input" placeholder="Search Bill..." value="{{ request('bill_number') }}">
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-sign-out-alt mr-1"></i> From Stage</label>
+                    <select name="from_stage_id" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">-- ALL STAGES --</option>
+                        @foreach($stages as $stage)
+                            <option value="{{ $stage->id }}" {{ request('from_stage_id') == $stage->id ? 'selected' : '' }}>
+                                {{ $stage->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-sign-in-alt mr-1"></i> To Stage</label>
+                    <select name="to_stage_id" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">-- ALL STAGES --</option>
+                        @foreach($stages as $stage)
+                            <option value="{{ $stage->id }}" {{ request('to_stage_id') == $stage->id ? 'selected' : '' }}>
+                                {{ $stage->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-industry mr-1"></i> Unit</label>
+                    <select name="stage_master_unit_id" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">-- ALL UNITS --</option>
+                        @foreach($units as $unit)
+                            <option value="{{ $unit->id }}" {{ request('stage_master_unit_id') == $unit->id ? 'selected' : '' }}>
+                                {{ $unit->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-info-circle mr-1"></i> Status</label>
+                    <select name="status" class="form-control erp-input">
+                        <option value="all" {{ request('status') === 'all' || !request()->has('status') ? 'selected' : '' }}>-- ALL STATUSES --</option>
+                        <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Pending</option>
+                        <option value="1" {{ request('status') == 1 ? 'selected' : '' }}>Digitized</option>
+                        <option value="2" {{ request('status') == 2 ? 'selected' : '' }}>Skipped</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> Date</label>
+                    <input type="date" name="date" class="form-control erp-input" value="{{ request('date') }}">
+                </div>
+                <div class="col-auto mb-1 ml-auto">
+                    <div class="erp-filter-actions">
+                        <button type="submit" class="btn-erp btn-erp-primary" title="Apply Filter">
+                            <i class="fas fa-filter"></i> Filter
                         </button>
                         <a href="{{ !empty($is_packing) ? route('admin.uploaded-slips.packing') : route('admin.uploaded-slips.index') }}" class="btn-erp btn-erp-outline" title="Reset Filters">
-                            <i class="fas fa-undo"></i>
+                            <i class="fas fa-undo"></i> Reset
                         </a>
                     </div>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
     <!-- 3. ERP TABLE CARD -->

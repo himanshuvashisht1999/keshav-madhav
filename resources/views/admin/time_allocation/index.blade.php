@@ -1,40 +1,35 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper">
-    <div class="erp-page p-2">
-
-        <!-- HEADER BAR -->
-        <div class="erp-header-bar mb-2">
-            <div class="erp-header-title">
-                <i class="fas fa-clock mr-1 text-success"></i> Time Allocation
-                <span class="badge badge-light border ml-2 text-xs font-weight-normal text-muted">Stage Lead Times & Schedules</span>
-            </div>
-            <div class="erp-header-actions">
-                <a href="{{ route('admin.time_allocation.backfill') }}" class="btn-erp btn-erp-outline" title="Sync Missing Production Lots">
-                    <i class="fas fa-sync-alt mr-1"></i> Sync Missing Lots
-                </a>
-            </div>
+<div class="content-wrapper erp-page p-2">
+    <!-- HEADER BAR -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-clock text-primary"></i> Time Allocation
         </div>
-
-        <!-- MAIN TABLE CARD -->
-        <div class="erp-card bg-white p-3">
-            <div class="table-responsive">
-                <table id="dataTable" class="table erp-table table-hover w-100 mb-0">
-                    <thead>
-                        <tr>
-                            <th style="width: 70px;" class="text-center">S.No</th>
-                            <th>Lot No</th>
-                            <th>Start Date & Time</th>
-                            <th style="width: 100px;" class="text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-            </div>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.time_allocation.backfill') }}" class="btn-erp btn-erp-outline" title="Sync Missing Production Lots">
+                <i class="fas fa-sync-alt"></i> Sync Missing Lots
+            </a>
         </div>
+    </div>
 
+    <!-- MAIN TABLE CARD -->
+    <div class="erp-card">
+        <div class="erp-card-body p-2 table-responsive">
+            <table id="dataTable" class="table erp-table table-bordered table-hover w-100 mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;" class="text-center">S.No</th>
+                        <th>Lot No</th>
+                        <th>Start Date & Time</th>
+                        <th style="width: 100px;" class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 

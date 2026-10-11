@@ -1,93 +1,100 @@
 @extends('admin.layouts.app')
 @section('content')
 
-<div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Purchase Order Report</h1>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-file-invoice text-primary mr-2"></i> Purchase Order Report
+        </div>
+        <div class="erp-header-actions">
+            <button type="button" class="btn-erp btn-erp-outline" id="btnExportExcelTop" title="Export Excel">
+                <i class="fas fa-file-excel text-success"></i> Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- Compact ERP Filter Bar -->
+    <div class="erp-filter-bar mb-2">
+        <div class="row align-items-end">
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-hashtag mr-1"></i> PO No. (SKU)</label>
+                <input type="text" class="form-control erp-input" name="sku" id="sku" autocomplete="off" placeholder="Search PO #">
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> PO Date</label>
+                <input type="date" class="form-control erp-input" name="date" id="date" autocomplete="off">
+            </div>
+            <div class="col-lg-3 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-truck mr-1"></i> Vendor</label>
+                <select class="form-control select2 erp-input" name="vendor_id" id="vendor_id" autocomplete="off" style="width: 100%;">
+                    <option value="">-- ALL VENDORS --</option>
+                    @foreach($vendors as $single_data)
+                        <option value="{{$single_data->id}}">{{$single_data->name}}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-calendar-check mr-1"></i> Exp. Delivery Date</label>
+                <input type="date" class="form-control erp-input" name="delivery_date" id="delivery_date" autocomplete="off">
+            </div>
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-calendar-day mr-1"></i> Date Filter Type & Range</label>
+                <div class="d-flex">
+                    <select id="selected_field" name="selected_field" class="form-control erp-input mr-1" style="width: 48%;">
+                        <option value="date">PO Date</option>
+                        <option value="delivery_date">Delivery Date</option>
+                    </select>
+                    <input type="text" id="report-range" name="date_range" class="form-control erp-input" placeholder="Select Range" autocomplete="off" style="width: 52%;">
+                    <input type="hidden" name="start_date" id="start_date">
+                    <input type="hidden" name="end_date" id="end_date">
                 </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Purchase Order Report</li>
-                    </ol>
+            </div>
+
+            <div class="col-auto mb-1 ml-auto">
+                <div class="erp-filter-actions">
+                    <button type="button" class="btn-erp btn-erp-primary" id="btnApplyFilter" title="Apply Filter">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <button type="button" class="btn-erp btn-erp-outline" id="btnResetFilter" title="Reset Filters">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Main content -->
-    <section class="content">
-        <div class="container-fluid">
-            <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default ">
-                
-                <div class="card-body table-responsive">
-                <table id="customers" class="table table-bordered table-hover">
-                  <thead>
-                    <tr role="row" class="filter">
-                        <td>
-                            <!-- <input type="text" class="form-control" name="id" id="id" autocomplete="off"> -->
-                        </td>
-                        <td>
-                            <input type="text" class="form-control" name="sku" id="sku" autocomplete="off">
-                        </td>
-                        <td>
-                            <input type="date" class="form-control" name="date" id="date" autocomplete="off">
-                        </td>
-                        <td>
-                            <select class="form-control" name="vendor_id" id="vendor_id" autocomplete="off">
-                                <option value="">ALL</option>
-                                @foreach($vendors as $single_data)
-                                    <option value="{{$single_data->id}}" >{{$single_data->name}}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td>
-                            <input type="date" class="form-control" name="delivery_date" id="delivery_date" autocomplete="off">
-                        </td>
-                        <td> </td>
-                    </tr>
+    <!-- Table Card -->
+    <div class="erp-card">
+        <div class="erp-card-body p-2 table-responsive">
+            <table id="customers" class="erp-table table table-bordered table-hover mb-0 w-100">
+                <thead>
                     <tr>
-                        <th>ID</th>
+                        <th style="width: 50px;">#</th>
                         <th>PO No.</th>
                         <th>Purchase Order Date</th>
                         <th>Vendor</th>
                         <th>Expected Delivery Date</th>
-                        <th>Action</th>
+                        <th style="width: 90px;" class="text-center">Action</th>
                     </tr>
-                  </thead>
-                  <tbody>
-                  <!-- <tr>
-                    <td>1</td>
-                    <td>wefds</td>
-                    <td>Win 95+</td>
-                    <td> 4</td>
-                    <td>X</td>
-                  </tr> -->
-                  
-                  </tbody>
-                  
-                </table>
-              </div>
-            </div>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
         </div>
-    </section>
+    </div>
 </div>
+
 <script>
     $(function () {
-        var i = 1;
         var oTable = $('#customers').DataTable({
             processing: true,
             serverSide: true,
             stateSave: true,
             searching: true,
-            ordering:false,
+            ordering: false,
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
-            "pageLength":25,
+            pageLength: 25,
             ajax: {
                 url: '{!! route('admin.reports.purchaseOrderList') !!}',
                 data: function (d) {
@@ -103,166 +110,113 @@
                 orderable: false
             },
             columns: [
-                {data: 'DT_RowIndex', name: 'id'},
+                {data: 'DT_RowIndex', name: 'id', orderable: false, searchable: false},
                 {data: 'sku', name: 'sku'},
                 {data: 'date', name: 'date'},
                 {data: 'vendor_id', name: 'vendor_id'},
                 {data: 'delivery_date', name: 'delivery_date'},
-                {data: 'action', name: 'action', searchable: false}
+                {data: 'action', name: 'action', searchable: false, className: 'text-center'}
             ],
-            dom: 'lBfrtip',
-            buttons: [
-               {
-                    text: `<i class="nav-icon fas fa-download"></i> Excel Reports`,
-                    attr: {
-                        id: 'generateExcel',
-                        name: 'generateExcel'
-                    },
-                    className: 'btn-datatable',
-                    action: function (e, dt, node, config) {
-                        e.preventDefault();
-                    }
-                }
-            ],
-
+            dom: "<'row mb-2'<'col-sm-6'l><'col-sm-6'f>>rt<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>"
         });
 
-        $('#email-queue-search-form').on('submit', function (e) {
-            oTable.draw();
+        $('#btnApplyFilter').on('click', function (e) {
             e.preventDefault();
+            oTable.draw();
         });
 
-        $('#id').on('keyup', function (e) {
-            oTable.draw();
+        $('#btnResetFilter').on('click', function (e) {
             e.preventDefault();
+            $('#sku').val('');
+            $('#date').val('');
+            $('#vendor_id').val('').trigger('change');
+            $('#delivery_date').val('');
+            $('#selected_field').val('date');
+            $('#report-range').val('');
+            $('#start_date').val('');
+            $('#end_date').val('');
+            oTable.draw();
         });
 
-        $('#date').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#vendor_id').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-        $('#delivery_date').on('change', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
         $('#sku').on('keyup', function (e) {
+            if (e.keyCode === 13) oTable.draw();
+        });
+
+        $('#date, #vendor_id, #delivery_date, #selected_field').on('change', function () {
             oTable.draw();
-            e.preventDefault();
-        });
-        // $('#date_range').on('change', function (e) {
-        //     oTable.draw();
-        //     e.preventDefault();
-        // });
-
-        // $('#selected_field').on('change', function (e) {
-        //     alert('fffd');
-        //     oTable.draw();
-        //     e.preventDefault();
-            
-        // });
-        //
-        $("#customers_length").append(`
-            <select id="selected_field" name="selected_field" class="form-control">
-                <option value="date">Purchase Order Date</option>
-                <option value="delivery_date">Expected Delivery Date</option>
-            </select>
-            
-            <input type="text" id="report-range" name="date_range"  style="width: 200px; max-width: 100%; margin-bottom: 5px;" placeholder="Select Date Range" autocomplete="off"> 
-            
-            <input type="hidden" name="start_date" id="start_date">
-            <input type="hidden" name="end_date" id="end_date" >`);
-
-        $('#report-range').daterangepicker({
-            autoUpdateInput: false, // Don't fill input initially
-            opens: 'right',
-            locale: {
-                format: 'YYYY-MM-DD',
-                cancelLabel: 'Clear'
-            },
-            ranges: {
-                'Today': [moment(), moment()],
-                'Yesterday': [moment().subtract(1, 'day'), moment().subtract(1, 'day')],
-                'This Week': [moment().startOf('week'), moment().endOf('week')],
-                'Last Week': [
-                    moment().subtract(1, 'week').startOf('week'),
-                    moment().subtract(1, 'week').endOf('week')
-                ],
-                'This Month': [moment().startOf('month'), moment().endOf('month')],
-                'This Year': [moment().startOf('year'), moment().endOf('year')],
-            },
-
-            startDate: moment().subtract(1, 'month'),
-            endDate: moment(),
-
-        }, function(start, end) {
-            $('#start_date').val(start.format('YYYY-MM-DD'));
-            $('#end_date').val(end.format('YYYY-MM-DD'));
         });
 
-        // Set value when user selects a range
-        $('#report-range').on('apply.daterangepicker', function(ev, picker) {
-            $(this).val(picker.startDate.format('YYYY-MM-DD') + " to " + picker.endDate.format('YYYY-MM-DD'));
-            $('#start_date').val(picker.startDate.format('YYYY-MM-DD'));
-            $('#end_date').val(picker.endDate.format('YYYY-MM-DD'));
-            oTable.draw(); 
-        });
-
-        // Clear input when user clicks cancel
-        $('#report-range').on('cancel.daterangepicker', function(ev, picker) {
-            $(this).val('');
-            oTable.draw(); 
-        });
-
-        $('#selected_field').on('change', function (e) { 
-            oTable.draw(); 
-            e.preventDefault(); 
-        });
-
-        $(document).ready(function () {
-            $('#generateExcel').on('click', function (e) {
-                e.preventDefault(); // prevent default behavior
-
-                // Collect filter values
-                var data = {
-                    id: $('#id').val(),
-                    sku: $('#sku').val(),
-                    vendor_id: $('#vendor_id').val(),
-                    time: $('#date').val(),
-                    delivery_date: $('#delivery_date').val(),
-                    selected_field: $('#selected_field').val(),
-                    start_date: $('#start_date').val(),
-                    end_date: $('#end_date').val(),
-                    _token: '{{ csrf_token() }}'
-                };
-
-                // Create a hidden form for POST submission (so file download works)
-                var form = $('<form>', {
-                    action: '{{ route("admin.reports.purchaseOrderExcel") }}',
-                    method: 'POST',
-                    target: '_blank'
-                }).append($.map(data, function(v, k) {
-                    return $('<input>', { type: 'hidden', name: k, value: v });
-                }));
-
-                $('body').append(form);
-                form.submit();
-                form.remove();
+        if ($.fn.daterangepicker) {
+            $('#report-range').daterangepicker({
+                autoUpdateInput: false,
+                opens: 'left',
+                locale: {
+                    format: 'YYYY-MM-DD',
+                    cancelLabel: 'Clear'
+                },
+                ranges: {
+                    'Today': [moment(), moment()],
+                    'Yesterday': [moment().subtract(1, 'day'), moment().subtract(1, 'day')],
+                    'This Week': [moment().startOf('week'), moment().endOf('week')],
+                    'Last Week': [
+                        moment().subtract(1, 'week').startOf('week'),
+                        moment().subtract(1, 'week').endOf('week')
+                    ],
+                    'This Month': [moment().startOf('month'), moment().endOf('month')],
+                    'This Year': [moment().startOf('year'), moment().endOf('year')],
+                },
+                startDate: moment().subtract(1, 'month'),
+                endDate: moment(),
+            }, function(start, end) {
+                $('#start_date').val(start.format('YYYY-MM-DD'));
+                $('#end_date').val(end.format('YYYY-MM-DD'));
             });
+
+            $('#report-range').on('apply.daterangepicker', function(ev, picker) {
+                $(this).val(picker.startDate.format('YYYY-MM-DD') + " to " + picker.endDate.format('YYYY-MM-DD'));
+                $('#start_date').val(picker.startDate.format('YYYY-MM-DD'));
+                $('#end_date').val(picker.endDate.format('YYYY-MM-DD'));
+                oTable.draw(); 
+            });
+
+            $('#report-range').on('cancel.daterangepicker', function(ev, picker) {
+                $(this).val('');
+                $('#start_date').val('');
+                $('#end_date').val('');
+                oTable.draw(); 
+            });
+        }
+
+        function exportExcel() {
+            var data = {
+                id: $('#id').val(),
+                sku: $('#sku').val(),
+                vendor_id: $('#vendor_id').val(),
+                time: $('#date').val(),
+                delivery_date: $('#delivery_date').val(),
+                selected_field: $('#selected_field').val(),
+                start_date: $('#start_date').val(),
+                end_date: $('#end_date').val(),
+                _token: '{{ csrf_token() }}'
+            };
+
+            var form = $('<form>', {
+                action: '{{ route("admin.reports.purchaseOrderExcel") }}',
+                method: 'POST',
+                target: '_blank'
+            }).append($.map(data, function(v, k) {
+                return $('<input>', { type: 'hidden', name: k, value: v });
+            }));
+
+            $('body').append(form);
+            form.submit();
+            form.remove();
+        }
+
+        $('#btnExportExcelTop, #generateExcel').on('click', function (e) {
+            e.preventDefault();
+            exportExcel();
         });
     });
-
-// date picker 
-
-
-$(function() {
-
-   
-
-});
 </script>
-
 @endsection

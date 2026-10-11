@@ -1,26 +1,17 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
-
-    <!-- Page Title / Breadcrumb -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
-                <div>
-                    <h1 class="mb-0">Packaging</h1>
-                    <small class="text-muted">Order #{{ $order_data->id }} &mdash; {{ $order_data->sku }}</small>
-                </div>
-                <ol class="breadcrumb float-sm-right mb-0">
-                    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                    <li class="breadcrumb-item active">Create Packaging</li>
-                </ol>
-            </div>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-boxes text-primary"></i> Packaging &mdash; Order #{{ $order_data->id }} ({{ $order_data->sku }})
         </div>
-    </section>
-
-    <!-- Main content -->
-    <section class="content">
-        <div class="container-fluid">
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.warehouse.listing') }}" class="btn-erp btn-erp-outline">
+                <i class="fas fa-arrow-left"></i> Back to Orders
+            </a>
+        </div>
+    </div>
 
             {{-- ========= COMPACT ORDER SUMMARY STRIP ========= --}}
             <div class="card card-outline card-secondary mb-3">

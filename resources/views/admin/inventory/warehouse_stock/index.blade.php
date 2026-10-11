@@ -4,21 +4,20 @@
         <div class="container-fluid p-0">
             <!-- PAGE HEADER -->
             <div class="erp-header-bar mb-2">
-                <div>
-                    <h1 class="erp-page-title">Warehouse Stock After Order</h1>
-                    <p class="erp-page-subtitle">Manage inventory physical locations and transfers (Stock after active order deductions)</p>
+                <div class="erp-header-title">
+                    <i class="fas fa-warehouse text-primary"></i> Warehouse Stock After Order
                 </div>
-                <div class="erp-header-actions d-flex align-items-center" style="gap: 8px;">
-                    <div class="d-flex align-items-center bg-white px-2 py-1 rounded border shadow-sm">
-                        <span class="text-muted mr-2 font-weight-bold" style="font-size: 11px;">Total boxes:</span>
-                        <span class="font-weight-bold text-success" id="header_total_boxes" style="font-size: 13px;">0</span>
+                <div class="erp-header-actions">
+                    <div class="hud-stat-box">
+                        <span class="hud-stat-label">Total boxes</span>
+                        <span class="hud-stat-value text-success" id="header_total_boxes">0</span>
                     </div>
-                    <div class="d-flex align-items-center bg-white px-2 py-1 rounded border shadow-sm">
-                        <span class="text-muted mr-2 font-weight-bold" style="font-size: 11px;">Total pcs:</span>
-                        <span class="font-weight-bold text-primary" id="header_total_pcs" style="font-size: 13px;">0</span>
+                    <div class="hud-stat-box">
+                        <span class="hud-stat-label">Total pcs</span>
+                        <span class="hud-stat-value text-primary" id="header_total_pcs">0</span>
                     </div>
                     <div class="dropdown d-inline-block">
-                        <button class="btn-erp btn-erp-success dropdown-toggle" type="button" id="exportDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <button class="btn-erp btn-erp-outline dropdown-toggle" type="button" id="exportDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fas fa-download mr-1"></i> Export
                         </button>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="exportDropdown">
@@ -33,10 +32,9 @@
                 </div>
             </div>
 
-            <!-- FILTERS CARD -->
-            <div class="erp-card mb-2">
-                <div class="erp-card-body p-2">
-                    <div class="row align-items-end">
+            <!-- FILTERS BAR -->
+            <div class="erp-filter-bar mb-2">
+                <div class="row align-items-end">
                         <div class="col-md-2 mb-2">
                             <label class="erp-label">Warehouse</label>
                             <select id="storeroom_filter" class="form-control select2">
@@ -166,14 +164,15 @@
                             </div>
                         </div>
                         
-                        <div class="col-md-1 mb-2">
-                            <button id="reset_filters" class="btn-erp btn-erp-secondary w-100" title="Reset Filters" style="height: 33px;">
-                                <i class="fas fa-undo"></i>
-                            </button>
+                        <div class="col-auto mb-2 ml-auto">
+                            <div class="erp-filter-actions">
+                                <button id="reset_filters" class="btn-erp btn-erp-outline" title="Reset Filters">
+                                    <i class="fas fa-undo"></i> Reset
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
             <!-- TABLE CARD -->
             <div class="erp-card">

@@ -2,15 +2,13 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <!-- Slim Header Bar -->
-    <div class="erp-header-bar mb-2 d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-2">
-            <h5 class="erp-header-title mb-0">
-                <i class="fas fa-truck text-warning mr-1"></i> Corporate Order Dispatches
-            </h5>
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-truck text-primary"></i> Corporate Order Dispatches
         </div>
         <div class="erp-header-actions">
             <a href="{{ route('admin.order-dispatch.create') }}" class="btn-erp btn-erp-primary">
-                <i class="fas fa-plus mr-1"></i> Create Dispatch
+                <i class="fas fa-plus"></i> Create Dispatch
             </a>
         </div>
     </div>
@@ -18,30 +16,40 @@
     <!-- Filter Bar -->
     <div class="erp-filter-bar mb-2">
         <div class="row align-items-end">
-            <div class="col-md-3 mb-2">
-                <label class="erp-filter-label" style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Dispatch No</label>
-                <input type="text" id="order_dispatch_no" class="form-control form-control-sm erp-input" placeholder="Search Dispatch No...">
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-truck mr-1"></i> Dispatch No</label>
+                <input type="text" id="order_dispatch_no" class="form-control erp-input" placeholder="Search Dispatch No...">
             </div>
-            <div class="col-md-3 mb-2">
-                <label class="erp-filter-label" style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Order No</label>
-                <input type="text" id="main_order_id" class="form-control form-control-sm erp-input" placeholder="Search Order SKU...">
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-hashtag mr-1"></i> Order No</label>
+                <input type="text" id="main_order_id" class="form-control erp-input" placeholder="Search Order SKU...">
             </div>
-            <div class="col-md-3 mb-2">
-                <label class="erp-filter-label" style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Customer</label>
-                <select id="customer_id" class="form-control form-control-sm erp-input select2">
-                    <option value="">All Customers</option>
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-user-tie mr-1"></i> Customer</label>
+                <select id="customer_id" class="form-control erp-input select2" style="width: 100%;">
+                    <option value="">-- ALL CUSTOMERS --</option>
                     @foreach($customers as $customer)
                         <option value="{{$customer->id}}">{{$customer->name}}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-3 mb-2">
-                <label class="erp-filter-label" style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Status</label>
-                <select id="status" class="form-control form-control-sm erp-input">
-                    <option value="">All Status</option>
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-info-circle mr-1"></i> Status</label>
+                <select id="status" class="form-control erp-input">
+                    <option value="">-- ALL STATUSES --</option>
                     <option value="1">Dispatched</option>
                     <option value="2">Complete</option>
                 </select>
+            </div>
+            <div class="col-auto mb-1 ml-auto">
+                <div class="erp-filter-actions">
+                    <button type="button" class="btn-erp btn-erp-primary" id="btnApplyFilter" title="Apply Filter">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <button type="button" class="btn-erp btn-erp-outline" id="btnResetFilter" title="Reset Filters">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -110,6 +118,16 @@
 
         // Event Listeners for Filters
         $('#order_dispatch_no, #main_order_id, #customer_id, #status').on('keyup change', function() {
+            table.draw();
+        });
+
+        $('#btnApplyFilter').on('click', function() {
+            table.draw();
+        });
+
+        $('#btnResetFilter').on('click', function() {
+            $('#order_dispatch_no, #main_order_id, #status').val('');
+            $('#customer_id').val('').trigger('change');
             table.draw();
         });
 

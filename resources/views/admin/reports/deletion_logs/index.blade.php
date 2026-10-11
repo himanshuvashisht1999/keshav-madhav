@@ -1,103 +1,84 @@
 @extends('admin.layouts.app')
 @section('content')
 
-<div class="content-wrapper">
-    <!-- Content Header -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0 text-dark"><i class="fas fa-trash-restore-alt text-danger mr-2"></i> Deletion Audit Logs</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                        <li class="breadcrumb-item">Reports</li>
-                        <li class="breadcrumb-item active">Deletion Logs</li>
-                    </ol>
-                </div>
+<div class="content-wrapper erp-page p-2">
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-trash-restore-alt text-primary mr-2"></i> Deletion Audit Logs
+        </div>
+        <div class="erp-header-actions">
+            <div class="hud-stat-box">
+                <span class="hud-stat-label">Total Logs</span>
+                <span class="hud-stat-value text-danger font-weight-bold">{{ $logs->total() }}</span>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Main content -->
-    <section class="content">
-        <div class="container-fluid">
-            <!-- Filter Card -->
-            <div class="card card-outline card-primary shadow-sm mb-4">
-                <div class="card-header">
-                    <h3 class="card-title font-weight-bold"><i class="fas fa-filter mr-1"></i> Filter Deletion Records</h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+    <!-- Compact ERP Filter Bar -->
+    <div class="erp-filter-bar mb-2">
+        <form method="GET" action="{{ route('admin.reports.deletionLogs') }}">
+            <div class="row align-items-end">
+                <div class="col-lg-3 col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-cubes mr-1"></i> Module</label>
+                    <select name="module" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">-- All Modules --</option>
+                        @foreach($modules as $mod)
+                            <option value="{{ $mod }}" {{ request('module') == $mod ? 'selected' : '' }}>{{ $mod }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-2 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-hashtag mr-1"></i> Record ID</label>
+                    <input type="number" name="record_id" class="form-control erp-input" placeholder="e.g. 127" value="{{ request('record_id') }}">
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-user-times mr-1"></i> Deleted By</label>
+                    <select name="deleted_by" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">-- All Users --</option>
+                        @foreach($users as $u)
+                            <option value="{{ $u->id }}" {{ request('deleted_by') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-2 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> From Date</label>
+                    <input type="date" name="date_from" class="form-control erp-input" value="{{ request('date_from') }}">
+                </div>
+                <div class="col-lg-2 col-md-2 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-check mr-1"></i> To Date</label>
+                    <input type="date" name="date_to" class="form-control erp-input" value="{{ request('date_to') }}">
+                </div>
+                <div class="col-auto mb-1 ml-auto">
+                    <div class="erp-filter-actions">
+                        <button type="submit" class="btn-erp btn-erp-primary">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                        <a href="{{ route('admin.reports.deletionLogs') }}" class="btn-erp btn-erp-outline">
+                            <i class="fas fa-undo"></i> Reset
+                        </a>
                     </div>
                 </div>
-                <div class="card-body">
-                    <form method="GET" action="{{ route('admin.reports.deletionLogs') }}" class="row g-3 align-items-end">
-                        <div class="col-md-3 col-sm-6 form-group">
-                            <label class="font-weight-semibold">Module:</label>
-                            <select name="module" class="form-control select2">
-                                <option value="">-- All Modules --</option>
-                                @foreach($modules as $mod)
-                                    <option value="{{ $mod }}" {{ request('module') == $mod ? 'selected' : '' }}>{{ $mod }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-2 col-sm-6 form-group">
-                            <label class="font-weight-semibold">Record ID:</label>
-                            <input type="number" name="record_id" class="form-control" placeholder="e.g. 127" value="{{ request('record_id') }}">
-                        </div>
-                        <div class="col-md-2 col-sm-6 form-group">
-                            <label class="font-weight-semibold">Deleted By:</label>
-                            <select name="deleted_by" class="form-control select2">
-                                <option value="">-- All Users --</option>
-                                @foreach($users as $u)
-                                    <option value="{{ $u->id }}" {{ request('deleted_by') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-2 col-sm-6 form-group">
-                            <label class="font-weight-semibold">From Date:</label>
-                            <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
-                        </div>
-                        <div class="col-md-2 col-sm-6 form-group">
-                            <label class="font-weight-semibold">To Date:</label>
-                            <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
-                        </div>
-                        <div class="col-md-1 col-sm-6 form-group">
-                            <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-search"></i></button>
-                        </div>
-                    </form>
-                </div>
             </div>
+        </form>
+    </div>
 
-            <!-- Table Card -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h3 class="card-title font-weight-bold">
-                        <i class="fas fa-history text-secondary mr-1"></i> Deleted History 
-                        <span class="badge badge-info ml-2">{{ $logs->total() }} Records</span>
-                    </h3>
-                    @if(request()->hasAny(['module', 'record_id', 'deleted_by', 'date_from', 'date_to', 'search']))
-                        <a href="{{ route('admin.reports.deletionLogs') }}" class="btn btn-sm btn-outline-secondary">
-                            <i class="fas fa-times mr-1"></i> Clear Filters
-                        </a>
-                    @endif
-                </div>
-
-                <div class="card-body p-0 table-responsive">
-                    <table class="table table-hover table-striped mb-0 text-nowrap">
-                        <thead class="thead-light">
-                            <tr>
-                                <th style="width: 80px;">Log ID</th>
-                                <th>Module</th>
-                                <th>Original Record ID</th>
-                                <th>Party Name</th>
-                                <th>Deleted By</th>
-                                <th>Deleted At</th>
-                                <th style="width: 200px;" class="text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+    <!-- Table Card -->
+    <div class="erp-card">
+        <div class="erp-card-body p-2 table-responsive">
+            <table class="table erp-table table-bordered table-hover mb-0 w-100 text-nowrap">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">Log ID</th>
+                        <th>Module</th>
+                        <th>Original Record ID</th>
+                        <th>Party Name</th>
+                        <th>Deleted By</th>
+                        <th>Deleted At</th>
+                        <th style="width: 180px;" class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
                             @forelse($logs as $log)
                                 @php
                                     $badgeClass = 'badge-secondary';
@@ -180,7 +161,7 @@
                 </div>
 
                 @if($logs->hasPages())
-                    <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                    <div class="p-2 border-top bg-white d-flex justify-content-between align-items-center">
                         <span class="text-muted small">
                             Showing {{ $logs->firstItem() }} to {{ $logs->lastItem() }} of {{ $logs->total() }} entries
                         </span>
@@ -189,9 +170,8 @@
                         </div>
                     </div>
                 @endif
-            </div>
         </div>
-    </section>
+    </div>
 </div>
 
 <!-- Modal for Viewing Deleted Payload Snapshot -->

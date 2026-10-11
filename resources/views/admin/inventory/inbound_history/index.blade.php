@@ -3,52 +3,53 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- PAGE HEADER -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title m-0">Inbound Stock Session History</h1>
-                <p class="erp-page-subtitle m-0">Track and view all manual stock entry sessions</p>
+            <div class="erp-header-title">
+                <i class="fas fa-history text-primary"></i> Inbound Stock Session History
             </div>
-            <div class="d-flex align-items-center" style="gap: 8px;">
+            <div class="erp-header-actions">
                 <a href="{{ route('admin.inventory.create') }}" class="btn-erp btn-erp-primary">
-                    <i class="fas fa-plus mr-1"></i> New stock generate
+                    <i class="fas fa-plus"></i> New Stock Generate
                 </a>
-                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-secondary">
-                    <i class="fas fa-arrow-left mr-1"></i> Back to inventory
+                <a href="{{ route('admin.inventory.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-arrow-left"></i> Back to Inventory
                 </a>
             </div>
         </div>
 
-        <!-- FILTER CARD -->
-        <div class="erp-card mb-2 p-2">
+        <!-- Compact ERP Filter Bar -->
+        <div class="erp-filter-bar mb-2">
             <div class="row align-items-end">
                 <div class="col-md-3 mb-1">
-                    <label class="erp-label mb-1">Start date</label>
-                    <input type="date" id="start_date" class="form-control form-control-sm erp-input">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> Start Date</label>
+                    <input type="date" id="start_date" class="form-control erp-input">
                 </div>
                 <div class="col-md-3 mb-1">
-                    <label class="erp-label mb-1">End date</label>
-                    <input type="date" id="end_date" class="form-control form-control-sm erp-input">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-check mr-1"></i> End Date</label>
+                    <input type="date" id="end_date" class="form-control erp-input">
                 </div>
-                <div class="col-md-2 mb-1">
-                    <button id="reset_filters" class="btn-erp btn-erp-secondary w-100" style="height: 29px;">
-                        <i class="fas fa-undo mr-1"></i> Reset filters
-                    </button>
+                <div class="col-auto mb-1 ml-auto">
+                    <div class="erp-filter-actions">
+                        <button id="reset_filters" class="btn-erp btn-erp-outline">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- TABLE CARD -->
-        <div class="erp-card p-0">
-            <div class="table-responsive">
-                <table id="entryHistoryTable" class="erp-table table-bordered table-hover mb-0 w-100">
+        <!-- Table Card -->
+        <div class="erp-card">
+            <div class="erp-card-body p-2 table-responsive">
+                <table id="entryHistoryTable" class="erp-table table table-bordered table-hover mb-0 w-100">
                     <thead>
                         <tr>
-                            <th style="width: 40px; text-align: center;">#</th>
+                            <th style="width: 45px;" class="text-center">#</th>
                             <th>Date</th>
                             <th>Session ID</th>
-                            <th style="text-align: center;">Total boxes</th>
-                            <th style="width: 100px; text-align: right;">Action</th>
+                            <th class="text-center" style="width: 140px;">Total boxes</th>
+                            <th style="width: 100px;" class="text-center">Action</th>
                         </tr>
                     </thead>
                 </table>

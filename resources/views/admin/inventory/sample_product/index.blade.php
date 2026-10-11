@@ -4,60 +4,56 @@
 
 <div class="content-wrapper erp-page p-2">
 
-    {{-- ================= HEADER ================= --}}
-    <div class="erp-header-bar mb-3">
-        <div class="d-flex align-items-center">
-            <h1 class="erp-page-title mb-0">Sample catalogs</h1>
-            <div class="erp-report-meta ml-3">
-                <span class="meta-item"><i class="fas fa-layer-group mr-1 text-muted"></i> Grouped sample catalogs for customers</span>
-            </div>
+    <!-- Slim ERP Header Bar -->
+    <div class="erp-header-bar mb-2">
+        <div class="erp-header-title">
+            <i class="fas fa-layer-group text-primary"></i> Sample Catalogs
         </div>
-        <div class="d-flex align-items-center">
+        <div class="erp-header-actions">
             <a href="{{ route('admin.inventory.sample-product.create') }}" class="btn-erp btn-erp-primary">
-                <i class="fas fa-plus mr-1"></i> Create new catalog
+                <i class="fas fa-plus"></i> Create New Catalog
             </a>
         </div>
     </div>
 
-    {{-- ================= FILTERS ================= --}}
-    <div class="card erp-card mb-3">
-        <div class="card-body p-2">
-            <form action="{{ route('admin.inventory.sample-product.index') }}" method="GET">
-                <div class="row g-2 align-items-end">
-                    <div class="col-md-3">
-                        <label class="erp-label mb-1">Batch no</label>
-                        <input type="text" name="batch_no" class="form-control form-control-sm" placeholder="Search batch no..." value="{{ request('batch_no') }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="erp-label mb-1">Date from</label>
-                        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ request('date_from') }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="erp-label mb-1">Date to</label>
-                        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request('date_to') }}">
-                    </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn-erp btn-erp-primary mr-2"><i class="fas fa-search mr-1"></i> Filter</button>
-                        <a href="{{ route('admin.inventory.sample-product.index') }}" class="btn-erp btn-erp-outline">Reset</a>
+    <!-- Compact ERP Filter Bar -->
+    <div class="erp-filter-bar mb-2">
+        <form action="{{ route('admin.inventory.sample-product.index') }}" method="GET">
+            <div class="row align-items-end">
+                <div class="col-md-3 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-barcode mr-1"></i> Batch No</label>
+                    <input type="text" name="batch_no" class="form-control erp-input" placeholder="Search batch no..." value="{{ request('batch_no') }}" autocomplete="off">
+                </div>
+                <div class="col-md-3 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> Date From</label>
+                    <input type="date" name="date_from" class="form-control erp-input" value="{{ request('date_from') }}">
+                </div>
+                <div class="col-md-3 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-check mr-1"></i> Date To</label>
+                    <input type="date" name="date_to" class="form-control erp-input" value="{{ request('date_to') }}">
+                </div>
+                <div class="col-auto mb-1 ml-auto">
+                    <div class="erp-filter-actions">
+                        <button type="submit" class="btn-erp btn-erp-primary"><i class="fas fa-filter"></i> Filter</button>
+                        <a href="{{ route('admin.inventory.sample-product.index') }}" class="btn-erp btn-erp-outline"><i class="fas fa-undo"></i> Reset</a>
                     </div>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
-    {{-- ================= TABLE ================= --}}
-    <div class="card erp-card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table erp-table mb-0">
-                    <thead>
-                        <tr>
-                            <th style="width: 130px;">Date</th>
-                            <th>Batch no</th>
-                            <th class="text-center" style="width: 140px;">Total items</th>
-                            <th class="text-right" style="width: 220px;">Actions</th>
-                        </tr>
-                    </thead>
+    <!-- Table Card -->
+    <div class="erp-card">
+        <div class="erp-card-body p-2 table-responsive">
+            <table class="erp-table table table-bordered table-hover mb-0 w-100">
+                <thead>
+                    <tr>
+                        <th style="width: 130px;">Date</th>
+                        <th>Batch no</th>
+                        <th class="text-center" style="width: 140px;">Total items</th>
+                        <th class="text-right" style="width: 220px;">Actions</th>
+                    </tr>
+                </thead>
                     <tbody>
                         @forelse($batches as $batch)
                         <tr>

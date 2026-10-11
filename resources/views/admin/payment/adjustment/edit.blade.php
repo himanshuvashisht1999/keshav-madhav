@@ -4,18 +4,17 @@
 @section('content')
 <div class="content-wrapper erp-page p-2">
     <div class="container-fluid p-0">
-        <!-- Header Bar -->
+        <!-- Slim ERP Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Edit Payment Adjustment Batch</h1>
-                <p class="erp-page-subtitle">Batch reference: <code class="font-weight-bold text-primary">{{ $batchId }}</code></p>
+            <div class="erp-header-title">
+                <i class="fas fa-balance-scale text-primary"></i> Edit Payment Adjustment Batch <span class="badge-erp-status badge-erp-info ml-2">{{ $batchId }}</span>
             </div>
-            <div class="d-flex align-items-center" style="gap: 6px;">
-                <a href="{{ route('admin.payment.adjustment.show', $batchId) }}" class="btn-erp btn-erp-outline btn-sm">
-                    <i class="fas fa-eye mr-1"></i> View Batch
+            <div class="erp-header-actions">
+                <a href="{{ route('admin.payment.adjustment.show', $batchId) }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-eye"></i> View Batch
                 </a>
-                <a href="{{ route('admin.payment.adjustment.index') }}" class="btn-erp btn-erp-secondary btn-sm">
-                    <i class="fas fa-arrow-left mr-1"></i> Back to List
+                <a href="{{ route('admin.payment.adjustment.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-arrow-left"></i> Back to List
                 </a>
             </div>
         </div>
