@@ -115,6 +115,11 @@ Route::get('/fc/{barcode}', [\App\Http\Controllers\Admin\Inventory\FairProductCo
 Route::get('/scan', [AdminFabricReceiptController::class, 'scan'])->name('scan');
 Route::get('/verify-stock-fix', [AdminReportController::class, 'verifyStockFix'])->name('verify-stock-fix');
 
+// Public Mobile Stock Check (No login required)
+Route::get('/stock-check', [\App\Http\Controllers\Admin\WarehouseStockActualController::class, 'mobileStockCheck'])->name('mobile.stock.check');
+Route::get('/stock-check/data', [\App\Http\Controllers\Admin\WarehouseStockActualController::class, 'mobileStockData'])->name('mobile.stock.data');
+Route::get('/stock-check/racks/{id}', [\App\Http\Controllers\Admin\WarehouseStockActualController::class, 'getRacksByStoreroom'])->name('mobile.stock.racks');
+
 // ================= UNIT AUTHENTICATION ROUTES (SEPARATE FROM ADMIN) =================
 Route::prefix('unit')->name('unit.')->middleware(['unit.remember'])->group(function () {
     Route::get('/login', [\App\Http\Controllers\Unit\UnitAuthController::class, 'showLogin'])->name('login');

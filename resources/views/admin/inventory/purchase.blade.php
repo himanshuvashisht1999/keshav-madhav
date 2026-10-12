@@ -22,46 +22,268 @@
                 <form action="{{ route('admin.inventory.store') }}" method="POST" id="addStockForm">
                     @csrf
 
+<style>
+/* =========================================================
+   PURCHASE & INWARD ENTRY - MODERN ERP DESIGN ENHANCEMENTS
+   ========================================================= */
+.purchase-hud-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px 14px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    gap: 12px;
+}
+
+.purchase-kpi-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.purchase-kpi-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 6px 14px;
+    flex: 1;
+    min-width: 160px;
+    max-width: 260px;
+    transition: all 0.15s ease;
+}
+
+.purchase-kpi-item:hover {
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.kpi-item-boxes {
+    border-left: 3.5px solid #0284c7;
+}
+
+.kpi-item-pieces {
+    border-left: 3.5px solid #16a34a;
+}
+
+.kpi-item-subtotal {
+    border-left: 3.5px solid #f59e0b;
+}
+
+.kpi-icon-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.bg-primary-soft { background: #e0f2fe; }
+.bg-success-soft { background: #dcfce7; }
+.bg-warning-soft { background: #fef3c7; }
+
+.kpi-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.kpi-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #64748b;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+
+.kpi-value {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    line-height: 1.2;
+}
+
+.kpi-number {
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.kpi-suffix {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.purchase-hud-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-hud-upload {
+    background: #05421c !important;
+    color: #ffffff !important;
+    border: 1px solid #043315 !important;
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    padding: 6px 16px !important;
+    border-radius: 5px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    box-shadow: 0 2px 4px rgba(5, 66, 28, 0.2) !important;
+    transition: all 0.15s ease !important;
+    cursor: pointer !important;
+    height: 34px !important;
+}
+
+.btn-hud-upload:hover {
+    background: #075a27 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(5, 66, 28, 0.25) !important;
+    color: #fcee21 !important;
+}
+
+/* 2. SECTION 2: ADD PRODUCT ITEM GRID */
+.product-entry-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 0.9fr 2.4fr 1fr 1.3fr 0.95fr 1.05fr 0.95fr;
+    gap: 8px;
+    align-items: end;
+}
+
+.product-entry-grid .erp-label {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #334155 !important;
+    margin-bottom: 3px !important;
+    white-space: nowrap !important;
+}
+
+.product-entry-grid .select2-container {
+    width: 100% !important;
+}
+
+.product-entry-grid .erp-input {
+    width: 100% !important;
+    height: 33px !important;
+}
+
+.btn-add-item {
+    height: 33px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    background: #05421c !important;
+    color: #ffffff !important;
+    border: 1px solid #043315 !important;
+    border-radius: 4px !important;
+    transition: all 0.15s ease !important;
+    white-space: nowrap !important;
+    box-shadow: 0 1px 3px rgba(5, 66, 28, 0.2) !important;
+    cursor: pointer !important;
+}
+
+.btn-add-item:hover {
+    background: #075a27 !important;
+    color: #fcee21 !important;
+    border-color: #05421c !important;
+}
+
+@media (max-width: 1024px) {
+    .product-entry-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+    .entry-col-warehouse { grid-column: span 2; }
+    .entry-col-rack { grid-column: span 1; }
+    .entry-col-design { grid-column: span 3; }
+    .entry-col-sizeset { grid-column: span 2; }
+    .entry-col-color { grid-column: span 2; }
+    .entry-col-boxes { grid-column: span 1; }
+    .entry-col-rate { grid-column: span 1; }
+    .entry-col-btn { grid-column: span 2; }
+}
+
+@media (max-width: 576px) {
+    .product-entry-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .entry-col-warehouse,
+    .entry-col-design,
+    .entry-col-btn { grid-column: span 2; }
+    .entry-col-rack,
+    .entry-col-sizeset,
+    .entry-col-color,
+    .entry-col-boxes,
+    .entry-col-rate { grid-column: span 1; }
+}
+</style>
+
                     <!-- ========================================================= -->
-                    <!-- 1. STICKY ERP TOP HUD BAR (MATCHES CONSUME PAGE) -->
+                    <!-- 1. MODERN ERP TOP HUD BANNER -->
                     <!-- ========================================================= -->
-                    <div class="sticky-erp-hud">
-                        <!-- Total Boxes Stat Box -->
-                        <div class="hud-stat-box hud-source-box">
-                            <div>
-                                <span class="hud-label text-primary"><i class="fas fa-boxes mr-1"></i> Total boxes</span>
-                                <div class="hud-numbers">
-                                    <span id="hudTotalBoxes" class="text-primary">0</span> <small class="text-muted" style="font-size:10px;">Boxes</small>
+                    <div class="purchase-hud-banner">
+                        <div class="purchase-kpi-container">
+                            <!-- Total Boxes Stat Box -->
+                            <div class="purchase-kpi-item kpi-item-boxes">
+                                <div class="kpi-icon-wrap bg-primary-soft">
+                                    <i class="fas fa-boxes text-primary"></i>
+                                </div>
+                                <div class="kpi-details">
+                                    <span class="kpi-title">Total Boxes</span>
+                                    <div class="kpi-value">
+                                        <span id="hudTotalBoxes" class="kpi-number text-primary">0</span>
+                                        <span class="kpi-suffix">Boxes</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Total Pieces Stat Box -->
-                        <div class="hud-stat-box hud-target-box">
-                            <div>
-                                <span class="hud-label text-success"><i class="fas fa-tshirt mr-1"></i> Total pieces</span>
-                                <div class="hud-numbers">
-                                    <span id="hudTotalPieces" class="text-success">0</span> <small class="text-muted" style="font-size:10px;">Pieces</small>
+                            <!-- Total Pieces Stat Box -->
+                            <div class="purchase-kpi-item kpi-item-pieces">
+                                <div class="kpi-icon-wrap bg-success-soft">
+                                    <i class="fas fa-tshirt text-success"></i>
+                                </div>
+                                <div class="kpi-details">
+                                    <span class="kpi-title">Total Pieces</span>
+                                    <div class="kpi-value">
+                                        <span id="hudTotalPieces" class="kpi-number text-success">0</span>
+                                        <span class="kpi-suffix">Pieces</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Sub Total Stat Box -->
-                        <div class="hud-stat-box hud-subtotal-box">
-                            <div>
-                                <span class="hud-label text-warning"><i class="fas fa-receipt mr-1"></i> Sub total</span>
-                                <div class="hud-numbers">
-                                    <span id="hudSubTotal" class="text-dark">₹0.00</span>
+                            <!-- Sub Total Stat Box -->
+                            <div class="purchase-kpi-item kpi-item-subtotal">
+                                <div class="kpi-icon-wrap bg-warning-soft">
+                                    <i class="fas fa-receipt text-warning"></i>
+                                </div>
+                                <div class="kpi-details">
+                                    <span class="kpi-title">Sub Total</span>
+                                    <div class="kpi-value">
+                                        <span id="hudSubTotal" class="kpi-number text-dark">₹0.00</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Actions in HUD -->
-                        <div class="d-flex align-items-center" style="gap: 8px;">
-                            <a href="{{ route('admin.inventory.purchase_history.index') }}" class="btn-erp btn-erp-outline" style="height: 31px;">
-                                <i class="fas fa-history mr-1"></i> Purchase history
-                            </a>
-                            <button type="button" class="btn-hud-confirm btn-open-summary" id="btnHudOpenSummary">
+                        <div class="purchase-hud-actions">
+                            <button type="button" class="btn-hud-upload btn-open-summary" id="btnHudOpenSummary">
                                 <i class="fas fa-file-invoice-dollar mr-1"></i> Review & upload
                             </button>
                         </div>
@@ -150,17 +372,20 @@
                     </div>
 
                     <!-- ========================================================= -->
-                    <!-- 3. SECTION 2: ADD PRODUCT ITEM (1 SINGLE COMPACT LINE) -->
+                    <!-- 3. SECTION 2: ADD PRODUCT ITEM (CLEAN GRID NO OVERLAP) -->
                     <!-- ========================================================= -->
                     <div class="erp-card">
                         <div class="erp-card-header">
                             <div class="erp-card-title text-success">
                                 <i class="fas fa-cart-plus"></i> 2. Add product item
                             </div>
+                            <span class="badge badge-light border text-muted font-weight-normal" style="font-size: 11px;">
+                                Fill item specifications & click <strong>+ Add</strong>
+                            </span>
                         </div>
                         <div class="p-2">
-                            <div class="form-row align-items-end">
-                                <div class="col-lg-2 col-md-3 col-6 mb-1">
+                            <div class="product-entry-grid">
+                                <div class="entry-col entry-col-warehouse">
                                     <label class="erp-label">Warehouse *</label>
                                     <select id="headerWarehouse" class="erp-input select2">
                                         <option value="">Warehouse</option>
@@ -169,13 +394,13 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-lg-1 col-md-2 col-6 mb-1">
+                                <div class="entry-col entry-col-rack">
                                     <label class="erp-label">Rack *</label>
                                     <select id="headerRack" class="erp-input select2">
                                         <option value="">Rack</option>
                                     </select>
                                 </div>
-                                <div class="col-lg-3 col-md-3 col-12 mb-1">
+                                <div class="entry-col entry-col-design">
                                     <label class="erp-label">Design *</label>
                                     <select id="headerDesign" class="erp-input select2">
                                         <option value="">Select design</option>
@@ -186,29 +411,30 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-lg-1 col-md-2 col-6 mb-1">
+                                <div class="entry-col entry-col-sizeset">
                                     <label class="erp-label">Size set *</label>
                                     <select id="headerSizeSet" class="erp-input select2">
                                         <option value="">Size</option>
                                     </select>
                                 </div>
-                                <div class="col-lg-2 col-md-2 col-6 mb-1">
+                                <div class="entry-col entry-col-color">
                                     <label class="erp-label">Color *</label>
                                     <select id="headerColor" class="erp-input select2">
                                         <option value="">Color</option>
                                     </select>
                                 </div>
-                                <div class="col-lg-1 col-md-2 col-4 mb-1">
+                                <div class="entry-col entry-col-boxes">
                                     <label class="erp-label">Boxes *</label>
                                     <input type="number" id="headerTotalBoxes" class="erp-input text-center font-weight-bold" min="1" placeholder="Qty">
                                 </div>
-                                <div class="col-lg-1 col-md-2 col-4 mb-1">
+                                <div class="entry-col entry-col-rate">
                                     <label class="erp-label">Rate (₹) *</label>
                                     <input type="number" id="headerPurchaseRate" class="erp-input text-right font-weight-bold" step="0.01" min="0" placeholder="0.00">
                                 </div>
-                                <div class="col-lg-1 col-md-2 col-4 mb-1">
-                                    <button type="button" id="btnAddToList" class="btn btn-primary btn-block btn-erp-add justify-content-center" style="height: 31px;">
-                                        <i class="fas fa-plus"></i> Add
+                                <div class="entry-col entry-col-btn">
+                                    <label class="erp-label d-none d-lg-block">&nbsp;</label>
+                                    <button type="button" id="btnAddToList" class="btn btn-block btn-add-item">
+                                        <i class="fas fa-plus mr-1"></i> Add
                                     </button>
                                 </div>
                             </div>

@@ -121,7 +121,7 @@
         <div class="filters-bar">
             <strong>Active Filters:</strong>
             @foreach($filters as $key => $val)
-                <span style="margin-left:8px;">{{ ucfirst(str_replace('_', ' ', $key)) }}: <strong>{{ $val }}</strong></span>
+                <span style="margin-left:8px;">{{ ucfirst(str_replace('_', ' ', $key)) }}: <strong>{{ $key === 'sort_order' ? strtoupper($val) : $val }}</strong></span>
             @endforeach
         </div>
     @endif

@@ -2864,6 +2864,8 @@ select:-webkit-autofill:focus {
     border-left: 3.5px solid var(--brand-dark-green, #05421c) !important;
     border-radius: 4px;
     background: #ffffff;
+}
+
 /* Fair Product / Sample Set Card Styles */
 .product-card-premium {
     border: 1px solid #e2e8f0;
@@ -2922,6 +2924,8 @@ select:-webkit-autofill:focus {
 .color-pill-premium.active .badge {
     background: #ffffff !important;
     color: var(--brand-dark-green, #05421c) !important;
+}
+
 /* ERP Inventory Upload HUD & Bar */
 .sticky-erp-hud {
     position: sticky;

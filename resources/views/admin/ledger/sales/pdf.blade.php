@@ -132,16 +132,30 @@
 
     <table class="filter-summary">
         <tr>
-            <td style="width: 25%;">
+            <td style="width: 20%;">
                 <span class="filter-label">Party:</span> {{ $selectedParty ?? 'All Parties' }}
             </td>
-            <td style="width: 25%;">
+            <td style="width: 20%;">
+                <span class="filter-label">Cust. Type:</span>
+                @if(!empty($filters['type']))
+                    @if($filters['type'] === 'agent')
+                        Domestic (Agent)
+                    @elseif($filters['type'] === 'direct')
+                        Domestic (Direct)
+                    @else
+                        {{ ucfirst($filters['type']) }}
+                    @endif
+                @else
+                    All
+                @endif
+            </td>
+            <td style="width: 20%;">
                 <span class="filter-label">Dispatch Type:</span> {{ !empty($filters['item_type']) ? $filters['item_type'] : 'All Types' }}
             </td>
-            <td style="width: 25%;">
+            <td style="width: 20%;">
                 <span class="filter-label">Bill No:</span> {{ !empty($filters['bill_no']) ? $filters['bill_no'] : 'All' }}
             </td>
-            <td style="width: 25%;">
+            <td style="width: 20%;">
                 <span class="filter-label">Date Range:</span>
                 @if(!empty($filters['from_date']) || !empty($filters['to_date']))
                     {{ !empty($filters['from_date']) ? date('d-m-Y', strtotime($filters['from_date'])) : 'Start' }} to {{ !empty($filters['to_date']) ? date('d-m-Y', strtotime($filters['to_date'])) : 'Today' }}
@@ -187,7 +201,7 @@
                             <span class="badge-type">(Corporate)</span>
                         @endif
                     </td>
-                    <td>{{ $dispatch->source_type === 'corporate' ? 'Corporate' : ($dispatch->agent_name ?? 'Direct') }}</td>
+                    <td>{{ $dispatch->source_type === 'corporate' ? 'Corporate' : ($dispatch->agent_name ? $dispatch->agent_name . ' (Agent)' : 'Domestic (Direct)') }}</td>
                     <td class="text-right font-weight-bold">₹{{ number_format($dispatch->grand_total, 2) }}</td>
                     <td>{{ $dispatch->dispatch_date ? date('d M Y', strtotime($dispatch->dispatch_date)) : 'N/A' }}</td>
                 </tr>

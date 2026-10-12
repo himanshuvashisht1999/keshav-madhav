@@ -89,6 +89,13 @@
                         <label class="erp-filter-label"><i class="fas fa-barcode mr-1"></i> Order ID</label>
                         <input type="text" name="order_id" class="form-control erp-input" value="{{ request('order_id') }}" placeholder="Order ID..." autocomplete="off">
                     </div>
+                    <div class="col-md-1 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-sort mr-1"></i> Sort ID</label>
+                        <select name="sort_order" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="desc" {{ request('sort_order', 'desc') === 'desc' ? 'selected' : '' }}>DESC</option>
+                            <option value="asc" {{ request('sort_order') === 'asc' ? 'selected' : '' }}>ASC</option>
+                        </select>
+                    </div>
                     <div class="col-auto mb-1 ml-auto">
                         <div class="erp-filter-actions">
                             <button type="submit" class="btn-erp btn-erp-primary">
@@ -129,7 +136,17 @@
                 <table class="table erp-table table-bordered table-hover mb-0">
                     <thead>
                         <tr>
-                            <th style="width: 105px;">Dispatch id</th>
+                            <th style="width: 120px;">
+                                @php
+                                    $currSort = request('sort_order', 'desc');
+                                    $toggleSort = $currSort === 'desc' ? 'asc' : 'desc';
+                                    $sortUrl = request()->fullUrlWithQuery(['sort_order' => $toggleSort]);
+                                @endphp
+                                <a href="{{ $sortUrl }}" class="text-dark d-flex align-items-center justify-content-between text-decoration-none" title="Sort {{ strtoupper($toggleSort) }} by ID">
+                                    <span>Dispatch ID</span>
+                                    <i class="fas fa-sort-{{ $currSort === 'desc' ? 'down text-primary' : 'up text-primary' }} ml-1"></i>
+                                </a>
+                            </th>
                             <th>Order id</th>
                             <th>Source</th>
                             <th>Party name</th>

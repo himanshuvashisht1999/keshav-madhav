@@ -100,7 +100,7 @@
     <div class="erp-filter-bar">
         <form action="{{ route('admin.ledger.sales.index') }}" method="GET" class="m-0">
             <div class="row align-items-end">
-                <div class="col-md-2 col-sm-6 mb-1">
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-store text-muted mr-1"></i> Customer</label>
                     <select name="party_id" class="form-control select2 erp-filter-select">
                         <option value="">All Parties</option>
@@ -112,7 +112,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-2 col-sm-6 mb-1">
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-industry text-muted mr-1"></i> Vendor</label>
                     <select name="vendor_id" class="form-control select2 erp-filter-select">
                         <option value="">All Vendors</option>
@@ -124,12 +124,18 @@
                     </select>
                 </div>
 
-                <div class="col-md-2 col-sm-6 mb-1">
-                    <label class="erp-filter-label"><i class="fas fa-hashtag text-muted mr-1"></i> Bill No</label>
-                    <input type="text" name="bill_no" class="form-control erp-filter-input" placeholder="Bill No..." value="{{ request('bill_no') }}">
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-user-tag text-muted mr-1"></i> Customer Type</label>
+                    <select name="type" class="form-control erp-filter-select">
+                        <option value="">ALL</option>
+                        <option value="corporate" {{ request('type') === 'corporate' ? 'selected' : '' }}>Corporate</option>
+                        <option value="domestic" {{ request('type') === 'domestic' ? 'selected' : '' }}>Domestic</option>
+                        <option value="direct" {{ request('type') === 'direct' ? 'selected' : '' }}>Domestic (Direct)</option>
+                        <option value="agent" {{ request('type') === 'agent' ? 'selected' : '' }}>Domestic (Agent)</option>
+                    </select>
                 </div>
 
-                <div class="col-md-2 col-sm-6 mb-1">
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-tag text-muted mr-1"></i> Dispatch Type</label>
                     <select name="item_type" class="form-control erp-filter-select">
                         <option value="">All Types</option>
@@ -139,17 +145,22 @@
                     </select>
                 </div>
 
-                <div class="col-md-1 col-sm-6 mb-1">
+                <div class="col-lg-1 col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-hashtag text-muted mr-1"></i> Bill No</label>
+                    <input type="text" name="bill_no" class="form-control erp-filter-input" placeholder="Bill No..." value="{{ request('bill_no') }}">
+                </div>
+
+                <div class="col-lg-1 col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-calendar text-muted mr-1"></i> From</label>
                     <input type="date" name="from_date" class="form-control erp-filter-input" value="{{ request('from_date') }}">
                 </div>
 
-                <div class="col-md-1 col-sm-6 mb-1">
+                <div class="col-lg-1 col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-calendar text-muted mr-1"></i> To</label>
                     <input type="date" name="to_date" class="form-control erp-filter-input" value="{{ request('to_date') }}">
                 </div>
 
-                <div class="col-md-2 col-sm-12 mb-1 d-flex">
+                <div class="col-auto mb-1 ml-auto d-flex">
                     <button type="submit" class="btn-erp btn-erp-primary mr-2" style="height: 31px;">
                         <i class="fas fa-filter mr-1"></i> Apply
                     </button>
@@ -210,11 +221,18 @@
                             <td class="text-center">
                                 @if($dispatch->source_type === 'corporate')
                                     <span class="badge badge-light border text-purple font-weight-bold" style="color: #6f42c1; font-size: 11px;">
-                                        {{ $dispatch->agent_name ?? 'Corporate' }}
+                                        Corporate
                                     </span>
+                                @elseif(!empty($dispatch->agent_name))
+                                    <div>
+                                        <span class="badge badge-light border text-secondary font-weight-bold" style="font-size: 11px;">
+                                            {{ $dispatch->agent_name }}
+                                        </span>
+                                    </div>
+                                    <small class="badge badge-light text-muted" style="font-size: 10px;">Domestic (Agent)</small>
                                 @else
                                     <span class="badge badge-light border text-secondary font-weight-bold" style="font-size: 11px;">
-                                        {{ $dispatch->agent_name ?? 'Direct' }}
+                                        Domestic (Direct)
                                     </span>
                                 @endif
                             </td>

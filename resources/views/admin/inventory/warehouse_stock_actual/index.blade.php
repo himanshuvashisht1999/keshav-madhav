@@ -29,6 +29,12 @@
                     <a href="{{ route('admin.inventory.warehouse_stock') }}" class="btn-erp btn-erp-outline" title="Go to Stock After Order">
                         <i class="fas fa-exchange-alt mr-1"></i> Stock After Order
                     </a>
+                    <a href="{{ route('mobile.stock.check') }}" target="_blank" class="btn-erp btn-erp-primary" title="Open Mobile Stock Check (No login required)">
+                        <i class="fas fa-mobile-alt mr-1"></i> Mobile Stock Check
+                    </a>
+                    <button type="button" class="btn-erp btn-erp-outline" data-toggle="modal" data-target="#modalMobileStockLink" title="Share Mobile Stock Link / QR Code">
+                        <i class="fas fa-qrcode mr-1"></i> QR / Share
+                    </button>
                 </div>
             </div>
 
@@ -213,11 +219,58 @@
         </div>
       </div>
     </div>
+
+    <!-- MOBILE STOCK CHECK LINK / QR MODAL -->
+    <div class="modal fade" id="modalMobileStockLink" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 440px;">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-light">
+            <h5 class="modal-title font-weight-bold" style="font-size: 15px; color: #05421c;">
+                <i class="fas fa-mobile-alt mr-1"></i> Mobile Stock Check
+            </h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body text-center p-3">
+            <p class="text-muted small mb-3">
+                Scan QR code on your phone or copy the link below. <strong>No login required</strong> to check live physical warehouse stock.
+            </p>
+            <div class="p-3 bg-light rounded d-inline-block border mb-3">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ urlencode(route('mobile.stock.check')) }}" alt="QR Code" style="width: 160px; height: 160px; display: block;" onerror="this.style.display='none'">
+            </div>
+            <div class="input-group mb-3">
+                <input type="text" id="publicMobileStockUrl" class="form-control form-control-sm font-weight-bold bg-white" value="{{ route('mobile.stock.check') }}" readonly>
+                <div class="input-group-append">
+                    <button class="btn btn-sm btn-primary" type="button" id="btnCopyMobileStockUrl">
+                        <i class="fas fa-copy mr-1"></i> Copy Link
+                    </button>
+                </div>
+            </div>
+            <div class="d-flex justify-content-center" style="gap: 8px;">
+                <a href="{{ route('mobile.stock.check') }}" target="_blank" class="btn btn-sm btn-success px-3">
+                    <i class="fas fa-external-link-alt mr-1"></i> Open in New Tab
+                </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 @endsection
 
 @section('scripts')
     <script>
         $(document).ready(function () {
+            // Copy Mobile Stock URL
+            $('#btnCopyMobileStockUrl').on('click', function() {
+                let copyText = document.getElementById("publicMobileStockUrl");
+                copyText.select();
+                copyText.setSelectionRange(0, 99999);
+                navigator.clipboard.writeText(copyText.value).then(function() {
+                    toastr.success('Mobile stock URL copied to clipboard!');
+                });
+            });
+
             // Initialize select2
             $('.select2').select2({
                 theme: 'bootstrap4',

@@ -102,7 +102,7 @@ class SalesLedgerController extends Controller
                 $partyLabel .= ' (Corporate)';
             }
             $sheet->setCellValue('D' . $rowNumber, $partyLabel);
-            $sheet->setCellValue('E' . $rowNumber, $dispatch->source_type === 'corporate' ? 'Corporate' : ($dispatch->agent_name ?? 'Direct'));
+            $sheet->setCellValue('E' . $rowNumber, $dispatch->source_type === 'corporate' ? 'Corporate' : ($dispatch->agent_name ? $dispatch->agent_name . ' (Agent)' : 'Domestic (Direct)'));
             $sheet->setCellValue('F' . $rowNumber, (float) $dispatch->grand_total);
             $sheet->getStyle('F' . $rowNumber)->getNumberFormat()->setFormatCode('#,##0.00');
             $sheet->setCellValue('G' . $rowNumber, $dispatch->dispatch_date ? date('d-m-Y', strtotime($dispatch->dispatch_date)) : 'N/A');
@@ -158,7 +158,9 @@ class SalesLedgerController extends Controller
                 'agent_order_dispatches.dispatch_date',
                 DB::raw("CAST(agent_order_dispatches.remark AS CHAR) COLLATE utf8mb4_unicode_ci as remark"),
                 'agent_order_dispatches.master_customer_id as customer_id',
-                'agent_order_dispatches.master_vendor_id as vendor_id'
+                'agent_order_dispatches.master_vendor_id as vendor_id',
+                DB::raw("CAST(master_customers.type AS CHAR) COLLATE utf8mb4_unicode_ci as customer_type"),
+                DB::raw("CAST(master_customers.subtype AS CHAR) COLLATE utf8mb4_unicode_ci as customer_subtype")
             );
 
         // 2. Corporate Order Dispatches Query
@@ -177,7 +179,9 @@ class SalesLedgerController extends Controller
                 'order_dispatch.dispatch_date',
                 DB::raw("CAST(order_dispatch.remark AS CHAR) COLLATE utf8mb4_unicode_ci as remark"),
                 'order_dispatch.customer_id as customer_id',
-                DB::raw("NULL as vendor_id")
+                DB::raw("NULL as vendor_id"),
+                DB::raw("CAST(COALESCE(master_customers.type, 'corporate') AS CHAR) COLLATE utf8mb4_unicode_ci as customer_type"),
+                DB::raw("CAST(master_customers.subtype AS CHAR) COLLATE utf8mb4_unicode_ci as customer_subtype")
             );
 
         // Filter by Customer / Party
@@ -190,6 +194,42 @@ class SalesLedgerController extends Controller
         if ($request->filled('vendor_id')) {
             $q1->where('agent_order_dispatches.master_vendor_id', $request->vendor_id);
             $q2->whereRaw('1 = 0'); // Corporate orders are for customers, not vendors
+        }
+
+        // Filter by Customer Type (Corporate, Domestic, Direct, Agent)
+        if ($request->filled('type')) {
+            $type = $request->type;
+            if ($type === 'corporate') {
+                $q1->where('master_customers.type', 'corporate');
+                $q2->where(function ($q) {
+                    $q->where('master_customers.type', 'corporate')
+                      ->orWhereNull('master_customers.type');
+                });
+            } elseif ($type === 'domestic') {
+                $q1->where('master_customers.type', 'domestic');
+                $q2->where('master_customers.type', 'domestic');
+            } elseif ($type === 'direct') {
+                $q1->where('master_customers.type', 'domestic')
+                   ->where(function ($q) {
+                       $q->where('master_customers.subtype', 'direct')
+                         ->orWhere(function ($sub) {
+                             $sub->whereNull('master_customers.subtype')
+                                 ->whereNull('master_customers.sales_agent_id')
+                                 ->whereNull('agent_order_dispatches.sales_agent_id');
+                         });
+                   });
+                $q2->where('master_customers.type', 'domestic')
+                   ->where('master_customers.subtype', 'direct');
+            } elseif ($type === 'agent') {
+                $q1->where('master_customers.type', 'domestic')
+                   ->where(function ($q) {
+                       $q->where('master_customers.subtype', 'agent')
+                         ->orWhereNotNull('master_customers.sales_agent_id')
+                         ->orWhereNotNull('agent_order_dispatches.sales_agent_id');
+                   });
+                $q2->where('master_customers.type', 'domestic')
+                   ->where('master_customers.subtype', 'agent');
+            }
         }
 
         // Filter by Bill No.

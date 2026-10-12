@@ -3562,10 +3562,12 @@ class AgentOrderController extends Controller
             $unionQuery = $q1->unionAll($q2);
         }
 
+        $sortOrder = strtolower($request->input('sort_order', 'desc')) === 'asc' ? 'asc' : 'desc';
+
         $finalQuery = DB::table(DB::raw("({$unionQuery->toSql()}) as combined"))
             ->mergeBindings($unionQuery)
-            ->orderBy('dispatch_date', 'desc')
-            ->orderBy('created_at', 'desc');
+            ->orderBy('id', $sortOrder)
+            ->orderBy('created_at', $sortOrder);
 
         return $finalQuery;
     }
@@ -3575,7 +3577,7 @@ class AgentOrderController extends Controller
         $dispatches = $this->buildDispatchesQuery($request)->get();
         $totalGrandTotal = $dispatches->sum('grand_total');
         
-        $filters = array_filter($request->only(['shop_id', 'vendor_id', 'from_date', 'to_date', 'bill_no', 'order_id', 'dispatch_type', 'agent_id']));
+        $filters = array_filter($request->only(['shop_id', 'vendor_id', 'from_date', 'to_date', 'bill_no', 'order_id', 'dispatch_type', 'agent_id', 'source_type', 'sort_order']));
 
         $pdf = Pdf::loadView('admin.agent_orders.dispatches.export_pdf', compact('dispatches', 'totalGrandTotal', 'filters'))
             ->setPaper('A4', 'landscape');
@@ -3665,7 +3667,7 @@ class AgentOrderController extends Controller
 
         $totalGrandTotal = $query->sum('grand_total');
 
-        $dispatches = $query->paginate(20);
+        $dispatches = $query->paginate(20)->withQueryString();
         $shops = DB::table('master_customers')
             ->where('status', '!=', 3)
             ->orderBy('name')
