@@ -605,10 +605,10 @@ CLS
             $tspl .= "TEXT 20,145,\"2\",0,2,2,\"{$left->fitting_name}\"\n";
             // WSP line at Y=200
             $tspl .= "TEXT 20,200,\"2\",0,2,3,\"{$left->wsp}\"\n";
-            // QR code shifted up to Y=275 with Model 2 (M2,S7) and ECC level M for optimal readability
+            // QR code shifted up to Y=270 with cell width 9 for a larger, easily scannable QR code
             if ($type === 'qrcode') {
-                $tspl .= "QRCODE 20,275,M,7,A,0,M2,S7,\"{$left->barcode}\"\n";
-                $tspl .= "TEXT 20,490,\"2\",0,1,1,\"{$left->barcode}\"\n";
+                $tspl .= "QRCODE 20,270,M,9,A,0,M2,S7,\"{$left->barcode}\"\n";
+                $tspl .= "TEXT 20,520,\"2\",0,1,1,\"{$left->barcode}\"\n";
             } else {
                 $tspl .= "BARCODE 20,275,\"128\",110,0,0,3,6,\"{$left->barcode}\"\n";
                 $tspl .= "TEXT 20,400,\"2\",0,1,1,\"{$left->barcode}\"\n";
@@ -624,10 +624,10 @@ CLS
             $tspl .= "TEXT 420,145,\"2\",0,2,2,\"{$right->fitting_name}\"\n";
             // WSP line at Y=200
             $tspl .= "TEXT 420,200,\"2\",0,2,3,\"{$right->wsp}\"\n";
-            // QR code shifted up to Y=275 with Model 2 (M2,S7) and ECC level M for optimal readability
+            // QR code shifted up to Y=270 with cell width 9 for a larger, easily scannable QR code
             if ($type === 'qrcode') {
-                $tspl .= "QRCODE 420,275,M,7,A,0,M2,S7,\"{$right->barcode}\"\n";
-                $tspl .= "TEXT 420,490,\"2\",0,1,1,\"{$right->barcode}\"\n";
+                $tspl .= "QRCODE 420,270,M,9,A,0,M2,S7,\"{$right->barcode}\"\n";
+                $tspl .= "TEXT 420,520,\"2\",0,1,1,\"{$right->barcode}\"\n";
             } else {
                 $tspl .= "BARCODE 420,275,\"128\",110,0,0,3,6,\"{$right->barcode}\"\n";
                 $tspl .= "TEXT 420,400,\"2\",0,1,1,\"{$right->barcode}\"\n";

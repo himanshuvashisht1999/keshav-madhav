@@ -133,6 +133,7 @@
 
     });
 
+    /*
     function deleteDispatch(id) {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -154,5 +155,6 @@
             }
         }
     }
+    */
 </script>
 @endsection

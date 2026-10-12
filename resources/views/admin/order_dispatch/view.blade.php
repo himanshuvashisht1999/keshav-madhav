@@ -30,6 +30,9 @@
                 <a href="{{ route('admin.order-dispatch.download-invoice', ['id' => $order_dispatch_data['id']]) }}" id="invoiceBtn" class="btn-erp btn-erp-primary">
                     <i class="fas fa-file-invoice mr-1 text-warning"></i> Download Invoice
                 </a>
+                <button type="button" onclick="deleteDispatch({{ $order_dispatch_data['id'] }})" class="btn-erp btn-erp-danger">
+                    <i class="fas fa-trash mr-1"></i> Delete Dispatch
+                </button>
             </div>
         </div>
 
@@ -624,5 +627,27 @@
             });
         });
     });
+
+    function deleteDispatch(id) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Delete Dispatch?',
+                text: 'This will refund customer balance and revert cartons to ready for dispatch.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete it'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = "{{ route('admin.order-dispatch.delete') }}?id=" + id;
+                }
+            });
+        } else {
+            if (confirm('Are you sure you want to delete this dispatch? This will refund customer balance and revert cartons to ready for dispatch.')) {
+                window.location.href = "{{ route('admin.order-dispatch.delete') }}?id=" + id;
+            }
+        }
+    }
 </script>
 @endpush

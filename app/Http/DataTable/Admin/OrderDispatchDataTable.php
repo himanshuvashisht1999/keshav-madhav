@@ -72,9 +72,9 @@ class OrderDispatchDataTable  {
 				$parameter = $queue->id;
                 
                 $view = '<a href="' . route('admin.order-dispatch.view',['id' => $parameter]) . '" class="erp-action-btn erp-btn-view" data-toggle="tooltip" title="View Details"><i class="fas fa-eye"></i></a>';
-                $delete = '<a href="javascript:void(0)" onclick="deleteDispatch(' . $parameter . ')" class="erp-action-btn erp-btn-delete ml-1" data-toggle="tooltip" title="Delete Dispatch"><i class="fas fa-trash"></i></a>';
+                // $delete = '<a href="javascript:void(0)" onclick="deleteDispatch(' . $parameter . ')" class="erp-action-btn erp-btn-delete ml-1" data-toggle="tooltip" title="Delete Dispatch"><i class="fas fa-trash"></i></a>';
                 
-                return $view . $delete;
+                return $view;
             })
             
             ->rawColumns(['action','main_order_id', 'customer_id', 'status'])
