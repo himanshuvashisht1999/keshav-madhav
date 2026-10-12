@@ -186,7 +186,7 @@
 
                 <!-- Agent/Shop Fields -->
                 @php
-                    $shop = $data->salesAgentShop;
+                    $shop = $data;
                 @endphp
                 <div class="col-md-6" id="agent_fields" style="display: {{ old('type', $data->type) == 'domestic' && old('subtype', $data->subtype) == 'agent' ? 'block' : 'none' }};">
                     <div class="form-group mb-3">
@@ -194,7 +194,7 @@
                         <select name="sales_agent_id" class="form-control select2 erp-filter-select" style="width: 100%;">
                             <option value="">Select agent</option>
                             @foreach($items['agents'] as $agent)
-                                <option value="{{ $agent->id }}" {{ old('sales_agent_id', $shop ? $shop->sales_agent_id : '') == $agent->id ? 'selected' : '' }}>{{ $agent->name }}</option>
+                                <option value="{{ $agent->id }}" {{ old('sales_agent_id', $data->sales_agent_id) == $agent->id ? 'selected' : '' }}>{{ $agent->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -341,6 +341,18 @@
                         if (sAddr) {
                             $('#standard_fields input[name="address"]').val(sAddr);
                         }
+                        var sBal = $('#shop_details_section input[name="balance"]').val();
+                        if (sBal !== undefined && sBal !== '') {
+                            $('#standard_fields input[name="balance"]').val(sBal);
+                        }
+                        var sBalType = $('#shop_details_section select[name="balance_type"]').val();
+                        if (sBalType) {
+                            $('#standard_fields select[name="balance_type"]').val(sBalType).trigger('change');
+                        }
+                        var sTerm = $('#shop_details_section input[name="payment_term_days"]').val();
+                        if (sTerm !== undefined && sTerm !== '') {
+                            $('#standard_fields input[name="payment_term_days"]').val(sTerm);
+                        }
                     }
 
                     $('#standard_fields').show().find('input, select, textarea').prop('disabled', false);
@@ -369,6 +381,18 @@
                         var stdAddr = $('#standard_fields input[name="address"]').val();
                         if (stdAddr) {
                             $('#shop_details_section textarea[name="shop_address"]').val(stdAddr);
+                        }
+                        var stdBal = $('#standard_fields input[name="balance"]').val();
+                        if (stdBal !== undefined && stdBal !== '') {
+                            $('#shop_details_section input[name="balance"]').val(stdBal);
+                        }
+                        var stdBalType = $('#standard_fields select[name="balance_type"]').val();
+                        if (stdBalType) {
+                            $('#shop_details_section select[name="balance_type"]').val(stdBalType).trigger('change');
+                        }
+                        var stdTerm = $('#standard_fields input[name="payment_term_days"]').val();
+                        if (stdTerm !== undefined && stdTerm !== '') {
+                            $('#shop_details_section input[name="payment_term_days"]').val(stdTerm);
                         }
                     }
 

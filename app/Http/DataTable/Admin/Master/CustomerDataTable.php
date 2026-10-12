@@ -40,6 +40,8 @@ class CustomerDataTable  {
             $type = $request->get('type');
             if ($type == 'direct') {
                 $queue->where('subtype', 'direct');
+            } elseif ($type == 'agent') {
+                $queue->where('subtype', 'agent');
             } else {
                 $queue->where('type', $type);
             }
@@ -121,6 +123,17 @@ class CustomerDataTable  {
             })
             ->addColumn('agent_name', function ($queue) {
                 return $queue->agent ? $queue->agent->name : '';
+            })
+            ->editColumn('type', function ($queue) {
+                if ($queue->type == 'domestic') {
+                    if ($queue->subtype == 'agent') {
+                        return 'Domestic (Agent)';
+                    } elseif ($queue->subtype == 'direct') {
+                        return 'Domestic (Direct)';
+                    }
+                    return 'Domestic';
+                }
+                return ucfirst($queue->type ?? '');
             })
             ->rawColumns(['action', 'status', 'balance', 'opening_balance'])
             ->make(true);

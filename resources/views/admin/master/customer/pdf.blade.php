@@ -114,7 +114,7 @@
                     <td>{{ $customer->name }}</td>
                     <td>{{ $customer->phone ?? '-' }}</td>
                     <td>{{ $customer->agent ? $customer->agent->name : '-' }}</td>
-                    <td>{{ ucfirst($customer->type) }}</td>
+                    <td>{{ $customer->type == 'domestic' && $customer->subtype ? 'Domestic (' . ucfirst($customer->subtype) . ')' : ucfirst($customer->type) }}</td>
                     <td class="text-right">
                         @if ($opBal !== null)
                             {{ number_format(abs($opBal), 2) }} ({{ $opBal >= 0 ? 'Cr' : 'Dr' }})

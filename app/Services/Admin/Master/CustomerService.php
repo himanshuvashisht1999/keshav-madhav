@@ -283,6 +283,8 @@ class CustomerService
             $type = $request->get('type');
             if ($type == 'direct') {
                 $query->where('subtype', 'direct');
+            } elseif ($type == 'agent') {
+                $query->where('subtype', 'agent');
             } else {
                 $query->where('type', $type);
             }
@@ -327,7 +329,13 @@ class CustomerService
             $query->whereIn('sales_agent_id', $agent_ids);
         }
         if (!empty($type)) {
-            $query->where('type', $type);
+            if ($type == 'direct') {
+                $query->where('subtype', 'direct');
+            } elseif ($type == 'agent') {
+                $query->where('subtype', 'agent');
+            } else {
+                $query->where('type', $type);
+            }
         }
         if ($status !== null && $status !== '') {
             $query->where('status', $status);
@@ -393,7 +401,7 @@ class CustomerService
                     $customer->name,
                     $customer->phone,
                     $customer->agent ? $customer->agent->name : 'N/A',
-                    ucfirst($customer->type) . ($customer->subtype ? ' - '.ucfirst($customer->subtype) : ''),
+                    $customer->type == 'domestic' && $customer->subtype ? 'Domestic (' . ucfirst($customer->subtype) . ')' : ucfirst($customer->type),
                     $openingBalance,
                     $balance,
                     $status
@@ -515,13 +523,27 @@ class CustomerService
         $type = $request->type ?? 'corporate';
         $subtype = $request->subtype;
 
-        // General update for Name, Phone, etc. (unless hidden by UI logic which we handle below)
-        if (!($type == 'domestic' && $subtype == 'agent' && !$update_data->parent_id)) {
+        if ($type == 'domestic' && $subtype == 'agent') {
+            $update_data->name = $request->shop_name ?: ($request->name ?: $update_data->name);
+            $update_data->phone = $request->shop_phone ?: ($request->phone ?: $update_data->phone);
+            $update_data->email = $request->shop_email ?: ($request->email ?: $update_data->email);
+            $update_data->gst_number = $request->shop_gst_number !== null ? $request->shop_gst_number : ($request->gst_number !== null ? $request->gst_number : $update_data->gst_number);
+            $update_data->address = $request->shop_address ?: ($request->address ?: $update_data->address);
+            if ($request->filled('sales_agent_id')) {
+                $update_data->parent_id = $request->sales_agent_id;
+                $update_data->sales_agent_id = $request->sales_agent_id;
+            }
+        } else {
             $update_data->name = $request->name ?: $update_data->name;
             $update_data->phone = $request->phone ?: $update_data->phone;
             $update_data->email = $request->email ?: $update_data->email;
             $update_data->gst_number = $request->gst_number !== null ? $request->gst_number : $update_data->gst_number;
             $update_data->address = $request->address ?: $update_data->address;
+            $update_data->parent_id = null;
+            $update_data->sales_agent_id = null;
+        }
+
+        if ($request->has('balance')) {
             $balance = $request->balance ?? $update_data->balance;
             if ($request->balance_type == 'Debit') {
                 $balance = -abs($balance);
@@ -529,41 +551,12 @@ class CustomerService
                 $balance = abs($balance);
             }
             $update_data->balance = $balance;
-        } else {
-            // If it's the Parent Agent being updated, we don't change its name/phone from the shop fields
         }
 
-        $update_data->status = $request->status;
+        $update_data->status = $request->status ?? $update_data->status;
         $update_data->type = $type;
+        $update_data->subtype = ($type == 'domestic') ? $subtype : null;
         $update_data->payment_term_days = $request->payment_term_days ?? $update_data->payment_term_days;
-
-        if ($type == 'domestic') {
-            $update_data->subtype = $subtype;
-            if ($subtype == 'direct') {
-                // $update_data->discount_percentage = $request->discount_percentage ?? 0;
-                $update_data->parent_id = null;
-                $update_data->sales_agent_id = null;
-            } elseif ($subtype == 'agent') {
-                // If this itself is becoming a shop/agent linked to another
-                if ($request->sales_agent_id) {
-                    $update_data->parent_id = $request->sales_agent_id;
-                    $update_data->sales_agent_id = $request->sales_agent_id;
-                }
-                if ($update_data->parent_id || $request->sales_agent_id) {
-                    // Update shop details for this record since it's now acting as a shop
-                    $update_data->name = $request->shop_name ?: $update_data->name;
-                    $update_data->phone = $request->shop_phone ?: $update_data->phone;
-                    $update_data->email = $request->shop_email ?: $update_data->email;
-                    $update_data->gst_number = $request->shop_gst_number !== null ? $request->shop_gst_number : $update_data->gst_number;
-                    $update_data->address = $request->shop_address ?: $update_data->address;
-                }
-            }
-        } else {
-            // Corporate
-            $update_data->subtype = null;
-            $update_data->parent_id = null;
-            $update_data->sales_agent_id = null;
-        }
 
         $update_data->save();
 
@@ -578,41 +571,6 @@ class CustomerService
                 'balance_type' => $request->balance_type ?? 'Credit',
             ]
         );
-
-        // If it was an existing Agent (no parent_id) and we are adding/updating a SUB-SHOP
-        if ($type == 'domestic' && $subtype == 'agent' && !empty($request->shop_name) && !$update_data->parent_id) {
-            $shop = $this->customer->where('parent_id', $update_data->id)->first() ?: new MasterCustomer;
-            $shop->name = $request->shop_name;
-            $shop->phone = $request->shop_phone;
-            $shop->email = $request->shop_email;
-            $shop->address = $request->shop_address;
-            $shop->type = 'domestic';
-            $shop->subtype = 'agent';
-            $shop->parent_id = $update_data->id;
-            $shop->sales_agent_id = $update_data->id;
-            $balance = $request->balance ?? $shop->balance;
-            if ($request->balance_type == 'Debit') {
-                $balance = -abs($balance);
-            } else {
-                $balance = abs($balance);
-            }
-            $shop->balance = $balance;
-            $shop->status = 1;
-            $shop->payment_term_days = $request->payment_term_days ?? 120;
-            $shop->save();
-
-            MasterOpeningBalance::updateOrCreate(
-                [
-                    'master_type' => 'customer',
-                    'master_id' => $shop->id,
-                    'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
-                ],
-                [
-                    'amount' => abs($request->balance ?? 0),
-                    'balance_type' => $request->balance_type ?? 'Credit',
-                ]
-            );
-        }
 
         if ($type == 'domestic' && $subtype == 'direct' && $request->has('brand_discounts')) {
             \App\Models\CustomerBrandDiscount::where('customer_id', $update_data->id)->delete();
