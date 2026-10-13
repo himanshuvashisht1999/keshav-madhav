@@ -564,7 +564,7 @@ class InventoryController extends Controller
         $vendors = \App\Models\Vendor::where('status', '1')->get();
         $customers = \App\Models\MasterCustomer::where('status', '1')->get();
 
-        $sourceStockTotals = \App\Models\DomesticInventory::where('order_main_id', 0)
+        $sourceStockTotals = \App\Models\DomesticInventory::query()
             ->where('total_boxes', '>', 0)
             ->select('product_id', \Illuminate\Support\Facades\DB::raw('SUM(total_boxes) as total_boxes'), \Illuminate\Support\Facades\DB::raw('SUM(total_boxes * quantity) as total_pieces'))
             ->groupBy('product_id')
@@ -1361,7 +1361,7 @@ class InventoryController extends Controller
 
         $product = ProductionGoods::with(['fitting', 'pattern'])->find($productId);
 
-        $stocks = DomesticInventory::where('order_main_id', 0)
+        $stocks = DomesticInventory::query()
             ->where('total_boxes', '>', 0)
             ->where('product_id', $productId)
             ->with(['rack.storeroom', 'sizeSet', 'color'])

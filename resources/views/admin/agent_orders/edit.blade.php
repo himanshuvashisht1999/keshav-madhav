@@ -7,29 +7,31 @@
     <div class="container-fluid p-0">
         <!-- Header Bar -->
         <div class="erp-header-bar mb-2">
-            <div>
-                <h1 class="erp-page-title">Edit Order #ORD-{{ $order->id }}</h1>
-                <p class="erp-page-subtitle">
-                    <i class="fas fa-store mr-1"></i> <span class="font-weight-bold text-dark">{{ $shop->name ?? 'N/A' }}</span>
-                    <span class="mx-2 text-muted">|</span>
-                    <i class="fas fa-user mr-1"></i> Agent: <span class="font-weight-bold text-dark">{{ $order->agent->name ?? 'N/A' }}</span>
-                </p>
+            <div style="min-width: 0;">
+                <div class="erp-header-title text-truncate">
+                    <i class="fas fa-edit text-primary"></i> Edit Order <span class="erp-party-name">#ORD-{{ $order->id }}</span>
+                </div>
+                <div class="erp-page-subtitle text-truncate">
+                    <i class="fas fa-store mr-1"></i> {{ $shop->name ?? 'N/A' }}
+                    &nbsp;|&nbsp; <i class="fas fa-user-tie mr-1"></i> Agent: {{ $order->agent->name ?? 'N/A' }}
+                </div>
             </div>
-            <div class="d-flex align-items-center" style="gap: 6px;">
+            <div class="erp-header-actions">
                 <a href="{{ route('admin.agent-orders.show', $order->id) }}" class="btn-erp btn-erp-outline">
                     <i class="fas fa-arrow-left mr-1"></i> Back to Order
                 </a>
-                <button type="button" class="btn-erp btn-erp-primary open-checkout-modal-btn" id="topCheckoutBtn" title="Review selected items and update order">
-                    <i class="fas fa-arrow-circle-right mr-1"></i> Review & Update <span class="badge badge-light text-dark ml-1 font-weight-bold" id="topBoxesBadge">0 Boxes</span>
+                <button type="button" class="btn-erp btn-erp-outline open-checkout-modal-btn" id="topCheckoutBtn" title="Review selected items and update order">
+                    <i class="fas fa-arrow-circle-right mr-1"></i> Review &amp; Update <span class="badge badge-primary ml-1" id="topBoxesBadge">0 Boxes</span>
                 </button>
             </div>
         </div>
 
         <!-- Order Basic Information -->
-        <div class="erp-card mb-2 p-2">
-            <h6 class="font-weight-bold mb-2 pb-1 border-bottom" style="color: #05421c; font-size: 13px;">
-                <i class="fas fa-info-circle mr-1"></i> Order Basic Information
-            </h6>
+        <div class="erp-card mb-2">
+            <div class="erp-card-header">
+                <h6 class="erp-card-title"><i class="fas fa-info-circle"></i> Order Basic Information</h6>
+            </div>
+            <div class="erp-card-body">
             <div class="form-row align-items-center">
                 <div class="col-md-3 mb-2">
                     <label class="erp-label mb-1">Party type</label>
@@ -67,16 +69,17 @@
                     </select>
                 </div>
             </div>
+            </div>
         </div>
 
         <!-- Filters Section -->
-        <div class="erp-card mb-2 p-2">
+        <div class="erp-filter-bar mb-2">
             <form method="GET" action="{{ route('admin.agent-orders.edit', $order->id) }}" id="filterForm">
-                <div class="form-row align-items-end">
-                    <div class="col-md-2 col-12 mb-2">
-                        <div class="custom-control custom-switch border p-1 rounded bg-white shadow-xs">
-                            <input type="checkbox" class="custom-control-input" id="sampleSetToggle" name="sample_set" value="1" {{ (request()->has('product_name') ? request('sample_set') == '1' : $order->is_sample_set == 1) ? 'checked' : '' }} onchange="this.form.submit()">
-                            <label class="custom-control-label font-weight-bold ml-2 pt-1 text-dark small" for="sampleSetToggle" style="cursor:pointer; user-select: none;">Sample Set Price</label>
+                <div class="row align-items-end">
+                    <div class="col-auto mb-2">
+                        <div class="custom-control custom-switch erp-switch-box">
+                            <input type="checkbox" class="custom-control-input" id="sampleSetToggle" name="sample_set" value="1" {{ (request()->has('product_name') ? request('sample_set') == '1' : $order->is_sample_set == 1) ? 'checked' : '' }}>
+                            <label class="custom-control-label font-weight-bold" for="sampleSetToggle" style="cursor:pointer; user-select: none;">Sample Set Price</label>
                         </div>
                     </div>
                     <div class="col-md-2 col-6 mb-2">
@@ -214,40 +217,38 @@
                             <input type="number" name="max_boxes" id="max_boxes" class="form-control form-control-sm erp-input" placeholder="Max Boxes" min="0" value="{{ request('max_boxes') }}">
                         </div>
                     </div>
-                    <div class="col-md-4 col-12 mb-2 text-right">
-                        <button type="submit" class="btn-erp btn-erp-primary mr-1">
-                            <i class="fas fa-filter mr-1"></i> Apply
-                        </button>
-                        <button type="button" id="btn-reset-filters" class="btn-erp btn-erp-secondary" title="Reset Filters">
-                            <i class="fas fa-undo mr-1"></i> Reset
-                        </button>
+                    <div class="col-auto mb-2 ml-auto">
+                        <div class="erp-filter-actions">
+                            <button type="submit" class="btn-erp btn-erp-primary">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                            <button type="button" id="btn-reset-filters" class="btn-erp btn-erp-outline" title="Reset Filters">
+                                <i class="fas fa-undo"></i> Reset
+                            </button>
+                        </div>
                     </div>
                 </div>
             </form>
         </div>
 
         <!-- Inventory Table -->
-        <div class="erp-card p-0 mb-4">
-            <div class="p-2 border-bottom bg-light d-flex justify-content-between align-items-center">
+        <div class="erp-card" style="margin-bottom: 75px !important;">
+            <div class="erp-card-header flex-wrap">
                 <div class="d-flex align-items-center">
-                    <h6 class="font-weight-bold mb-0 mr-3" style="color: #05421c;">
-                        <i class="fas fa-boxes mr-1"></i> Inventory Selection
-                    </h6>
-                    <span class="badge-erp-status badge-erp-info font-weight-bold" id="variationsCount">
-                        {{ $boxes->total() }} Items Available
-                    </span>
+                    <h6 class="erp-card-title mr-3"><i class="fas fa-boxes"></i> Inventory Selection</h6>
+                    <span class="erp-stat-pill" id="variationsCount">{{ $boxes->total() }} Items Available</span>
                 </div>
-                <div>
+                <div class="d-flex align-items-center">
                     <button type="button" class="btn-erp btn-erp-primary open-checkout-modal-btn" id="cardCheckoutBtn" style="display: none;">
-                        <i class="fas fa-shopping-cart mr-1"></i> Review & Update (<span id="cardBoxesCount">0</span> Boxes • ₹<span id="cardGrandTotal">0</span>)
+                        <i class="fas fa-shopping-cart mr-1"></i> Review &amp; Update (<span id="cardBoxesCount">0</span> Boxes • ₹<span id="cardGrandTotal">0</span>) <i class="fas fa-arrow-right ml-1"></i>
                     </button>
                 </div>
             </div>
             <div class="table-responsive">
-                <table class="table erp-table table-bordered table-hover mb-0">
+                <table class="erp-table table-bordered table-hover mb-0">
                     <thead>
                         <tr>
-                            <th style="width: 60px;">Image</th>
+                            <th class="text-center" style="width: 60px;">Image</th>
                             <th>Design & color</th>
                             <th>Size set</th>
                             <th class="text-center" style="width: 90px;">Pcs/box</th>
@@ -278,49 +279,46 @@
     </div>
 </div>
 
-<!-- Floating Bottom Bar -->
-<div class="fixed-bottom bg-white shadow-lg border-top py-2 px-3"
-    id="summaryBar" style="z-index: 1040; left: 250px; border-top: 2px solid #cce3d0;">
+<!-- Floating Bottom Summary Bar -->
+<div class="fixed-bottom bg-white border-top py-2 px-3" id="summaryBar" style="z-index: 1040; left: 250px;">
     <div class="container-fluid d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center flex-wrap">
             <div class="mr-3">
-                <span class="erp-label mb-0 mr-1">Selected:</span>
-                <span class="badge-erp-status badge-erp-primary font-weight-bold px-2 py-1">
-                    <span id="selectedCount">0</span> Boxes
-                </span>
+                <span class="erp-sum-label mr-1">Selected:</span>
+                <span class="badge badge-primary px-2 py-1" style="font-size: 13px;"><span id="selectedCount">0</span> Boxes</span>
             </div>
             <div class="mr-3 border-left pl-3 d-none d-sm-inline-block">
-                <span class="erp-label mb-0 mr-1">Subtotal:</span>
-                <span class="font-weight-bold text-dark">₹<span id="bottomSubTotal">0.00</span></span>
+                <span class="erp-sum-label mr-1">Subtotal:</span>
+                <span class="font-weight-bold">₹<span id="bottomSubTotal">0.00</span></span>
             </div>
             <div class="border-left pl-3">
-                <span class="erp-label mb-0 mr-1">Est. grand total:</span>
-                <span class="h5 font-weight-bold mb-0" style="color: #05421c;">₹<span id="bottomGrandTotal">0.00</span></span>
+                <span class="erp-sum-label mr-1">Est. Grand Total:</span>
+                <span class="erp-sum-total">₹<span id="bottomGrandTotal">0.00</span></span>
             </div>
         </div>
         <div>
-            <button type="button" class="btn-erp btn-erp-primary px-4 open-checkout-modal-btn">
-                Review & Update <i class="fas fa-arrow-right ml-1"></i>
+            <button type="button" class="btn-erp btn-erp-primary open-checkout-modal-btn">
+                Review &amp; Update <i class="fas fa-arrow-right ml-1"></i>
             </button>
         </div>
     </div>
 </div>
 
 <!-- Order Review & Update Modal -->
-<div class="modal fade" id="orderCheckoutModal" tabindex="-1" role="dialog" aria-labelledby="orderCheckoutModalLabel" aria-hidden="true">
+<div class="modal fade erp-modal" id="orderCheckoutModal" tabindex="-1" role="dialog" aria-labelledby="orderCheckoutModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document" style="max-width: 920px;">
-        <div class="modal-content shadow border-0" style="border-radius: 8px;">
-            <div class="modal-header py-2" style="background: #05421c; color: #fff; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+        <div class="modal-content border-0">
+            <div class="modal-header">
                 <div>
-                    <h6 class="modal-title font-weight-bold mb-0" id="orderCheckoutModalLabel">
-                        <i class="fas fa-clipboard-check mr-2"></i> Review & Update Order #ORD-{{ $order->id }}
-                    </h6>
-                    <small style="color: #edf5ee;">
+                    <h5 class="modal-title mb-0" id="orderCheckoutModalLabel">
+                        <i class="fas fa-clipboard-check mr-2"></i> Review &amp; Update Order #ORD-{{ $order->id }}
+                    </h5>
+                    <small class="erp-modal-sub">
                         Party: <strong>{{ $shop->name ?? 'N/A' }}</strong> ({{ ucfirst($order->party_type ?? 'customer') }}) &nbsp;•&nbsp;
                         Agent: {{ $order->agent->name ?? 'Direct' }}
                     </small>
                 </div>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -330,24 +328,24 @@
                     <!-- Left: Selected Variations Breakdown -->
                     <div class="col-md-5 mb-3 mb-md-0 border-right">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="erp-label text-uppercase mb-0"><i class="fas fa-boxes mr-1"></i> Selected Variations</span>
-                            <span class="badge-erp-status badge-erp-info font-weight-bold" id="modalItemsCount">0 Items</span>
+                            <span class="erp-section-title"><i class="fas fa-boxes mr-1"></i> Selected Variations</span>
+                            <span class="erp-stat-pill" id="modalItemsCount">0 Items</span>
                         </div>
-                        <div id="modalSelectedItemsList" class="border rounded bg-light p-2" style="max-height: 250px; overflow-y: auto;">
+                        <div id="modalSelectedItemsList" class="erp-soft-box p-2" style="max-height: 250px; overflow-y: auto;">
                             <!-- Dynamically populated -->
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-2 px-1">
-                            <span class="erp-label text-muted mb-0">Total Selected Boxes:</span>
-                            <span class="badge-erp-status badge-erp-primary font-weight-bold"><span id="modalTotalBoxes">0</span> Boxes</span>
+                            <span class="erp-sum-label">Total Selected Boxes:</span>
+                            <span class="badge badge-primary px-2 py-1" style="font-size: 13px;"><span id="modalTotalBoxes">0</span> Boxes</span>
                         </div>
                     </div>
 
                     <!-- Right: Pricing & Tax Breakdown -->
                     <div class="col-md-7">
-                        <span class="erp-label text-uppercase d-block mb-2"><i class="fas fa-calculator mr-1"></i> Financial Summary</span>
-                        <div class="bg-light p-3 rounded border">
+                        <span class="erp-section-title d-block mb-2"><i class="fas fa-calculator mr-1"></i> Financial Summary</span>
+                        <div class="erp-soft-box p-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="text-muted font-weight-bold">Subtotal:</span>
+                                <span class="erp-sum-label">Subtotal:</span>
                                 <span class="font-weight-bold h6 mb-0">₹<span id="subTotalAmount">0.00</span></span>
                             </div>
 
@@ -365,7 +363,7 @@
                             </div>
 
                             <div class="d-flex justify-content-between align-items-center mb-2 border-top pt-2">
-                                <span class="text-muted font-weight-bold">Taxable Amount:</span>
+                                <span class="erp-sum-label">Taxable Amount:</span>
                                 <span class="font-weight-bold h6 mb-0">₹<span id="taxableAmount">0.00</span></span>
                             </div>
 
@@ -384,7 +382,7 @@
 
                             <div class="form-row align-items-center mb-3">
                                 <div class="col-6">
-                                    <span class="erp-label text-muted mb-0">Other charges (₹):</span>
+                                    <span class="erp-sum-label">Other Charges (₹):</span>
                                 </div>
                                 <div class="col-6">
                                     <input type="number" id="other_charges" class="form-control form-control-sm erp-input text-right font-weight-bold" value="{{ $order->other_charges ?? 0 }}" min="0" step="1">
@@ -392,9 +390,9 @@
                             </div>
 
                             <!-- Grand Total Box -->
-                            <div class="p-2 rounded text-center border" style="background: #edf5ee; border-color: #cce3d0 !important;">
-                                <small class="text-uppercase font-weight-bold text-muted d-block erp-label">Final Grand Total</small>
-                                <h4 class="font-weight-bold mb-0" style="color: #05421c;">₹<span id="grandTotalAmount">0.00</span></h4>
+                            <div class="erp-grand-box text-center">
+                                <small class="text-uppercase font-weight-bold d-block">Final Grand Total</small>
+                                <span class="erp-grand-val">₹<span id="grandTotalAmount">0.00</span></span>
                             </div>
                         </div>
                     </div>
@@ -402,7 +400,7 @@
 
                 <!-- Logistics & Dispatch Details -->
                 <div class="border-top pt-2 mt-3">
-                    <span class="erp-label text-uppercase d-block mb-2"><i class="fas fa-truck mr-1"></i> Order & Logistics Details</span>
+                    <span class="erp-section-title d-block mb-2"><i class="fas fa-truck mr-1"></i> Order &amp; Logistics Details</span>
                     <div class="form-row">
                         <div class="col-md-3 col-6 mb-2">
                             <label class="erp-label">Expected dispatch</label>
@@ -442,8 +440,8 @@
                 </div>
             </div>
 
-            <div class="modal-footer p-2 bg-light d-flex justify-content-between">
-                <button type="button" class="btn-erp btn-erp-secondary" data-dismiss="modal">
+            <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn-erp btn-erp-outline" data-dismiss="modal">
                     <i class="fas fa-arrow-left mr-1"></i> Back to Inventory
                 </button>
                 <div class="d-flex align-items-center">
@@ -460,7 +458,152 @@
 </div>
 @endsection
 
+
 @push('scripts')
+<style>
+    /* ---- Agent Order Create: brand-themed (uses master brand variables from admin_assets/style.css) ---- */
+    .erp-page .erp-party-name { color: var(--erp-green-primary); }
+    .erp-page .erp-link { color: var(--erp-green-primary); font-weight: 600; font-size: 12px; }
+    .erp-page .erp-link:hover { color: var(--brand-wordmark-green, #36b54a); text-decoration: none; }
+    .erp-page .erp-switch-box {
+        border: 1px solid var(--erp-border); border-left: 4px solid var(--brand-yellow, #fcee21);
+        border-radius: 6px; padding: 10px 12px 10px 2.75rem; background: var(--erp-yellow-bg);
+    }
+    .erp-page .erp-switch-box label { color: var(--erp-green-primary); }
+    .erp-page .erp-section-title , #orderCheckoutModal .erp-section-title {
+        font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--erp-green-primary);
+    }
+    .erp-page .erp-sum-label , #orderCheckoutModal .erp-sum-label { font-size: 12px; font-weight: 700; color: var(--erp-text-subtle); }
+    .erp-page .erp-sum-total { font-size: 18px; font-weight: 800; color: var(--erp-green-primary); }
+    .erp-page .erp-soft-box , #orderCheckoutModal .erp-soft-box { background: var(--erp-green-light); border: 1px solid var(--erp-green-border); border-radius: 6px; }
+    .erp-page .erp-grand-box , #orderCheckoutModal .erp-grand-box {
+        background: var(--erp-green-primary); color: #fff; border-radius: 6px; padding: 8px;
+        border-bottom: 4px solid var(--brand-yellow, #fcee21);
+    }
+    .erp-page .erp-grand-box small , #orderCheckoutModal .erp-grand-box small , #orderCheckoutModal .erp-grand-box small , #orderCheckoutModal .erp-grand-box small { color: rgba(255,255,255,.75); letter-spacing: .5px; }
+    .erp-page .erp-grand-val , #orderCheckoutModal .erp-grand-val { font-size: 24px; font-weight: 800; color: var(--brand-yellow, #fcee21); }
+    .erp-page .input-group-text , #orderCheckoutModal .input-group-text {
+        background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid #ced4da; font-size: 12px; font-weight: 700;
+    }
+    .erp-page .input-group-sm .form-control , #orderCheckoutModal .input-group-sm .form-control { height: 33px !important; }
+
+    /* Modal header / footer */
+    #orderCheckoutModal .modal-content { border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(5,66,28,.25); }
+    #orderCheckoutModal .modal-header {
+        background: var(--erp-green-primary); color: #fff; padding: 10px 16px;
+        border-bottom: 4px solid var(--brand-yellow, #fcee21); align-items: center;
+    }
+    #orderCheckoutModal .modal-title { font-size: 15px; font-weight: 700; color: #fff; }
+    #orderCheckoutModal .erp-modal-sub, #orderCheckoutModal .erp-modal-sub strong { color: rgba(255,255,255,.85); }
+    #orderCheckoutModal .modal-header .close { color: #fff; opacity: .9; text-shadow: none; }
+    #orderCheckoutModal .modal-footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 8px 16px; }
+    #orderCheckoutModal .form-control { height: 33px; font-size: 13px; border-radius: 4px; border: 1px solid #ced4da; }
+    #orderCheckoutModal .form-control:focus { border-color: var(--erp-green-primary); box-shadow: 0 0 0 2px rgba(5,66,28,.15); }
+
+    /* Inventory rows */
+    .variation-row { transition: background .2s; }
+    .variation-row:hover { background-color: var(--erp-green-light); }
+    .variation-row.has-qty, .variation-row.has-qty:hover { background-color: #dff1c8 !important; background-color: color-mix(in srgb, var(--brand-light-green) 28%, #ffffff) !important; box-shadow: inset 5px 0 0 var(--brand-wordmark-green, #36b54a); }
+    .variation-row.has-qty td { border-color: color-mix(in srgb, var(--brand-light-green) 55%, #ffffff) !important; }
+    .erp-table td { vertical-align: middle !important; }
+    .quantity-control { max-width: 140px; margin: 0 auto; border-radius: 4px; overflow: hidden; }
+    .quantity-control input { border-left: 0; border-right: 0; font-weight: bold; text-align: center; }
+    .quantity-control .btn { border: 1px solid #ced4da; background: #fff; color: var(--erp-green-primary); font-weight: 700; }
+    .quantity-control .btn:hover { background: var(--erp-green-light); border-color: var(--erp-green-primary); color: var(--erp-green-primary); }
+    .quantity-control .btn-plus { background: var(--erp-green-primary); color: #fff; border-color: var(--erp-green-primary); }
+    .quantity-control .btn-plus:hover { background: var(--erp-green-hover); color: #fff; }
+
+    /* Summary bar */
+    .fixed-bottom { transition: left .3s; }
+    #summaryBar { border-top: 3px solid var(--brand-yellow, #fcee21) !important; box-shadow: 0 -4px 15px rgba(5,66,28,.12) !important; }
+    #modalSelectedItemsList::-webkit-scrollbar { width: 5px; }
+    #modalSelectedItemsList::-webkit-scrollbar-thumb { background: var(--erp-green-border); border-radius: 4px; }
+    #topCheckoutBtn.btn-erp-primary { background-color: var(--erp-green-primary) !important; color: #fff !important; }
+    @media (max-width: 991px) { .fixed-bottom { left: 0 !important; } }
+
+    /* ---- Step 1 form (scoped; overrides global body.km-admin form styles) ---- */
+    .erp-page .ao-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 4px 18px rgba(5,66,28,.07); overflow:hidden; }
+    .erp-page .ao-card-head { padding:18px 24px 14px; background:linear-gradient(135deg,var(--erp-green-light),#fff); border-bottom:1px solid #e2e8f0; border-top:4px solid var(--brand-yellow,#fcee21); }
+    .erp-page .ao-card-head h6 { margin:6px 0 2px; font-size:17px; font-weight:800; color:var(--erp-green-primary); }
+    .erp-page .ao-card-head h6 i { margin-right:8px; color:var(--brand-wordmark-green,#36b54a); }
+    .erp-page .ao-card-head p { margin:0; font-size:13px; color:#64748b !important; }
+    .erp-page .ao-step { display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; background:var(--brand-yellow,#fcee21); color:var(--erp-green-primary); padding:2px 9px; border-radius:20px; }
+
+    .erp-page .ao-section { padding:18px 24px; border-bottom:1px solid #eef2f6; }
+    .erp-page .ao-section-title { font-size:11.5px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; color:var(--erp-green-primary); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .erp-page .ao-section-title i { width:24px; height:24px; border-radius:6px; background:var(--erp-green-light); color:var(--erp-green-primary); display:inline-flex; align-items:center; justify-content:center; font-size:12px; }
+    .erp-page .ao-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px 16px; }
+    @media (max-width:575px){ .erp-page .ao-grid{ grid-template-columns:1fr; } }
+    .erp-page .ao-field { margin-bottom:14px; }
+    .erp-page .ao-grid .ao-field { margin-bottom:0; }
+    .erp-page .ao-label { display:flex; justify-content:space-between; align-items:center; width:100%; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:5px; }
+    .erp-page .ao-label .req { color:#dc2626; margin-left:2px; }
+    .erp-page .ao-links { display:inline-flex; gap:10px; align-items:center; }
+    .erp-page .ao-links a { font-size:12px; font-weight:700; color:var(--erp-green-primary); }
+    .erp-page .ao-links a:hover { color:var(--brand-wordmark-green,#36b54a); text-decoration:none; }
+
+    /* Controls: one consistent look for native inputs/selects and select2 */
+    .erp-page .ao-form .form-control,
+    .erp-page .ao-form .select2-container--default .select2-selection--single,
+    .erp-page .ao-form .select2-container--bootstrap4 .select2-selection--single {
+        height:40px !important; min-height:40px !important; border:1px solid #cbd5e1 !important; border-radius:6px !important;
+        font-size:14px !important; color:#1e293b !important; background-color:#fff; padding:0 12px !important; box-shadow:none;
+    }
+    .erp-page .ao-form select.form-control { padding-right:30px !important; }
+    .erp-page .ao-form .select2-container { width:100% !important; }
+    .erp-page .ao-form .select2-selection--single .select2-selection__rendered { line-height:38px !important; padding:0 !important; color:#1e293b !important; font-weight:500; }
+    .erp-page .ao-form .select2-selection--single .select2-selection__arrow { height:38px !important; top:0 !important; right:8px !important; }
+    .erp-page .ao-form .form-control:focus,
+    .erp-page .ao-form .select2-container--open .select2-selection--single,
+    .erp-page .ao-form .select2-container--focus .select2-selection--single {
+        border-color:var(--erp-green-primary) !important; box-shadow:0 0 0 3px rgba(5,66,28,.12) !important; outline:none;
+    }
+
+    /* Segmented Customer / Vendor toggle */
+    .erp-page .ao-seg { display:inline-flex; border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; background:#f8fafc; }
+    .erp-page .ao-seg input { position:absolute; opacity:0; pointer-events:none; }
+    .erp-page .ao-seg label { margin:0; padding:9px 22px; font-size:13.5px; font-weight:700; color:#475569; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all .15s; user-select:none; }
+    .erp-page .ao-seg label + input + label { border-left:1px solid #cbd5e1; }
+    .erp-page .ao-seg input:checked + label { background:var(--erp-green-primary); color:#fff; }
+    .erp-page .ao-seg input:checked + label i { color:var(--brand-yellow,#fcee21); }
+    .erp-page .ao-seg input:focus-visible + label { outline:2px solid var(--brand-yellow,#fcee21); outline-offset:-2px; }
+
+    /* Sample switch aligned with other fields */
+    .erp-page .ao-switch { height:40px; display:flex; align-items:center; padding-left:3rem; border:1px dashed #cbd5e1; border-radius:6px; background:var(--erp-yellow-bg); }
+    .erp-page .ao-switch label { font-size:13px; font-weight:700; color:var(--erp-green-primary); cursor:pointer; margin:0; user-select:none; line-height:1.9rem; }
+
+    .erp-page .ao-actions { display:flex; justify-content:space-between; align-items:center; padding:14px 24px; background:#f8fafc; }
+    .erp-page .ao-actions .btn-erp { height:38px; padding:0 18px !important; font-size:13.5px !important; }
+
+    /* ---- simplified full-width layout: two fields per row ---- */
+    .erp-page .ao-card-head { display:none; }
+    .erp-page .ao-card { border-top:4px solid var(--brand-yellow,#fcee21); }
+    .erp-page .ao-body { padding:20px 24px 8px; }
+    .erp-page .ao-body .ao-grid { gap:16px 24px; align-items:start; }
+    .erp-page .ao-body .ao-field { margin-bottom:0; }
+    .erp-page .ao-body .ao-field > .ao-seg { display:flex; width:100%; height:40px; }
+    .erp-page .ao-body .ao-seg input + label { flex:1; justify-content:center; padding:0 12px; }
+    .erp-page .ao-actions { border-top:1px solid #eef2f6; margin-top:12px; }
+    .erp-page .ao-switch { background:var(--erp-yellow-bg); padding-right:14px; }
+
+    /* ---- compact inventory rows (more products per screen) ---- */
+    #variation-container td { padding: 3px 8px !important; line-height: 1.25; }
+    #variation-container td img, #variation-container td > div.bg-light { width: 34px !important; height: 34px !important; }
+    #variation-container td:nth-child(2) > div { display: inline-flex !important; align-items: center; vertical-align: middle; margin-right: 8px; font-size: 13px; }
+    #variation-container td:nth-child(2) > div.small { font-size: 12px; }
+    #variation-container td:nth-child(6) > div { display: inline; font-size: 13.5px; }
+    #variation-container td:nth-child(6) small { display: inline; margin-left: 6px; font-size: 11px; }
+    #variation-container .quantity-control { max-width: 120px; }
+    #variation-container .quantity-control .btn,
+    #variation-container .quantity-control input { height: 28px !important; padding-top: 0; padding-bottom: 0; line-height: 26px; font-size: 13px !important; }
+    #variation-container .badge-erp-status { padding: 1px 8px; font-size: 11px; }
+    .erp-table thead th { padding: 6px 10px !important; }
+
+    .erp-page .erp-stat-pill { font-weight: 700; }
+    #orderCheckoutModal .erp-stat-pill { display: inline-block; }
+    #orderCheckoutModal .erp-label { color: var(--erp-text-heading) !important; }
+</style>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function () {
@@ -655,11 +798,11 @@
                 $('#cardBoxesCount').text(totalBoxes);
 
                 if (totalBoxes > 0) {
-                    $('#topCheckoutBtn').removeClass('btn-secondary').addClass('btn-primary');
+                    $('#topCheckoutBtn').removeClass('btn-erp-outline').addClass('btn-erp-primary');
                     $('#cardCheckoutBtn').fadeIn(200);
                     $('#summaryBar').fadeIn(200);
                 } else {
-                    $('#topCheckoutBtn').removeClass('btn-primary').addClass('btn-secondary');
+                    $('#topCheckoutBtn').removeClass('btn-erp-primary').addClass('btn-erp-outline');
                     $('#cardCheckoutBtn').fadeOut(200);
                     $('#summaryBar').fadeOut(200);
                 }

@@ -1,315 +1,336 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="content-wrapper">
-        <div class="content-header">
-            <div class="container-fluid">
-                <div class="row align-items-center">
-                    <div class="col-sm-6">
-                        <h1 class="m-0 font-weight-bold text-dark"><i class="fas fa-scroll mr-2 text-primary"></i>Fabric
-                            Order: {{ $shop->name }}</h1>
-                        <p class="text-muted small mb-0"><i class="fas fa-user-tie mr-1"></i>
-                            {{ ($agent && $agent->id === 'direct') ? 'Direct Sale (No Agent)' : 'Agent: ' . ($agent->name ?? 'N/A') }}
-                        </p>
+    <div class="content-wrapper erp-page p-2">
+        <div class="container-fluid p-0">
+            <!-- HEADER BAR -->
+            <div class="erp-header-bar mb-2">
+                <div style="min-width: 0;">
+                    <div class="erp-header-title text-truncate">
+                        <i class="fas fa-scroll text-primary"></i> Fabric Order: <span class="erp-party-name">{{ $shop->name }}</span>
                     </div>
-                    <div class="col-sm-6 text-right">
-                        <a href="{{ route('admin.agent-orders.create') }}"
-                            class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-                            <i class="fas fa-exchange-alt mr-1"></i> Change Agent/Shop
-                        </a>
+                    <div class="erp-page-subtitle text-truncate">
+                        <i class="fas fa-user-tie mr-1"></i>
+                        {{ ($agent && $agent->id === 'direct') ? 'Direct Sale (No Agent)' : 'Agent: ' . ($agent->name ?? 'N/A') }}
+                    </div>
+                </div>
+                <div class="erp-header-actions">
+                    <a href="{{ route('admin.agent-orders.create') }}" class="btn-erp btn-erp-outline">
+                        <i class="fas fa-exchange-alt mr-1"></i> Change Agent/Shop
+                    </a>
+                    <button type="button" class="btn-erp btn-erp-outline open-review-modal-btn" id="topReviewBtn" title="Review the selected rolls and place the order">
+                        <i class="fas fa-arrow-circle-right mr-1"></i> Next <span class="badge badge-primary ml-1" id="topRollsBadge">0 Rolls</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SELECTION BAR -->
+            <div class="erp-filter-bar mb-2">
+                <div class="row align-items-end">
+                    <div class="col-md-4 mb-1 fo-col-fabric">
+                        <label class="erp-filter-label"><i class="fas fa-layer-group mr-1"></i> 1. Select Fabric</label>
+                        <select id="fabricSelector" class="form-control select2">
+                            <option value="">-- Choose Fabric --</option>
+                            @foreach($fabrics as $fabric)
+                                <option value="{{ $fabric->id }}" data-name="{{ $fabric->name }}">
+                                    {{ $fabric->name }} ({{ number_format($fabric->total_meters, 2) }} m)
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-ruler mr-1"></i> 2. Target Meter</label>
+                        <input type="number" id="targetTotalMeter" class="form-control font-weight-bold" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="col-md-2 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-rupee-sign mr-1"></i> 3. Selling Price/m</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend"><span class="input-group-text">₹</span></div>
+                            <input type="number" id="defaultPricePerMeter" class="form-control font-weight-bold" placeholder="0.00" step="0.01">
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-1 fo-col-rolls">
+                        <label class="erp-filter-label"><i class="fas fa-scroll mr-1"></i> 4. Select Rolls</label>
+                        <select id="rollSelector" class="form-control select2" multiple="multiple"
+                            data-placeholder="Choose Fabric first..." disabled>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row fo-main">
+                <!-- ORDER ITEMS -->
+                <div class="col-12" style="margin-bottom: 75px;">
+                    <div class="erp-card fo-items-card">
+                        <div class="erp-card-header">
+                            <h6 class="erp-card-title"><i class="fas fa-shopping-basket"></i> Order Items List</h6>
+                            <span class="erp-stat-pill" id="totalRollsHeader">0 Rolls Added</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="erp-table table-bordered table-hover mb-0" id="masterTable">
+                                <thead>
+                                    <tr>
+                                        <th>Fabric</th>
+                                        <th width="140">Roll No</th>
+                                        <th class="text-center" width="110">Avail. m</th>
+                                        <th width="170">Order Meter</th>
+                                        <th width="150" class="text-right">Price/m</th>
+                                        <th width="150" class="text-right">Total</th>
+                                        <th width="50" class="text-center">#</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="masterTableBody">
+                                    <tr id="emptyRow">
+                                        <td colspan="7" class="text-center py-5">
+                                            <div class="fo-empty">
+                                                <i class="fas fa-layer-group fa-3x mb-3 d-block"></i>
+                                                Select fabric and rolls above to start building your order.
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <section class="content">
-            <div class="container-fluid">
-                <!-- MAIN SELECTION CARD -->
-                <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px;">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group mb-md-0">
-                                    <label class="small font-weight-bold text-muted uppercase">1. Select Fabric</label>
-                                    <select id="fabricSelector" class="form-control select2">
-                                        <option value="">-- Choose Fabric --</option>
-                                        @foreach($fabrics as $fabric)
-                                            <option value="{{ $fabric->id }}" data-name="{{ $fabric->name }}">
-                                                {{ $fabric->name }} ({{ number_format($fabric->total_meters, 2) }} m)
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group mb-md-0">
-                                    <label class="small font-weight-bold text-muted uppercase">2. Target Meter</label>
-                                    <div class="input-group">
-                                        <input type="number" id="targetTotalMeter"
-                                            class="form-control font-weight-bold border-primary" placeholder="0.00"
-                                            step="0.01">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group mb-md-0">
-                                    <label class="small font-weight-bold text-muted uppercase">3. Selling Price/m</label>
-                                    <div class="input-group">
-                                        <div class="input-group-prepend"><span class="input-group-text">₹</span></div>
-                                        <input type="number" id="defaultPricePerMeter"
-                                            class="form-control font-weight-bold border-success" placeholder="0.00"
-                                            step="0.01">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group mb-md-0">
-                                    <label class="small font-weight-bold text-muted uppercase">4. Select Rolls</label>
-                                    <select id="rollSelector" class="form-control select2" multiple="multiple"
-                                        data-placeholder="Choose Fabric first..." disabled>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
+        <!-- Floating bottom summary bar -->
+        <div class="fixed-bottom bg-white border-top py-2 px-3" id="fabricSummaryBar" style="z-index: 1040; left: 250px;">
+            <div class="container-fluid d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center flex-wrap">
+                    <div class="mr-3">
+                        <span class="erp-sum-label mr-1">Rolls:</span>
+                        <span class="badge badge-primary px-2 py-1" style="font-size: 13px;"><span id="bottomRolls">0</span></span>
+                    </div>
+                    <div class="mr-3 border-left pl-3">
+                        <span class="erp-sum-label mr-1">Meters:</span>
+                        <span class="font-weight-bold"><span id="bottomMeters">0.00</span> m</span>
+                    </div>
+                    <div class="mr-3 border-left pl-3 d-none d-sm-inline-block">
+                        <span class="erp-sum-label mr-1">Subtotal:</span>
+                        <span class="font-weight-bold">₹<span id="bottomSubTotal">0.00</span></span>
+                    </div>
+                    <div class="mr-3 border-left pl-3">
+                        <span class="erp-sum-label mr-1">Est. Grand Total:</span>
+                        <span class="erp-sum-total">₹<span id="bottomGrandTotal">0.00</span></span>
+                    </div>
+                    <div class="border-left pl-3">
+                        <span class="erp-sum-label mr-1">Targets:</span>
+                        <span class="badge-erp-status badge-erp-secondary" id="bottomTargets">Not set</span>
                     </div>
                 </div>
+                <div>
+                    <button type="button" class="btn-erp btn-erp-primary open-review-modal-btn">
+                        Next: Review &amp; Place Order <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
 
-                <div class="row">
-                    <!-- Data Table -->
-                    <div class="col-md-9">
-                        <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px; min-height: 500px;">
-                            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0 font-weight-bold text-dark"><i
-                                        class="fas fa-shopping-basket mr-2 text-primary"></i>Order Items List</h6>
-                                <span class="badge badge-info py-2 px-3 rounded-pill" id="totalRollsHeader">0 Rolls
-                                    Added</span>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0" id="masterTable">
-                                        <thead class="bg-light">
-                                            <tr>
-                                                <th>Fabric</th>
-                                                <th width="120">Roll No</th>
-                                                <th class="text-center">Avail. m</th>
-                                                <th width="130">Order Meter</th>
-                                                <th width="130" class="text-right">Price/m</th>
-                                                <th width="130" class="text-right">Total</th>
-                                                <th width="50" class="text-center">#</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="masterTableBody">
-                                            <tr id="emptyRow">
-                                                <td colspan="7" class="text-center py-5">
-                                                    <div class="text-muted">
-                                                        <i class="fas fa-layer-group fa-3x mb-3 d-block opacity-25"></i>
-                                                        Select fabric and rolls above to start building your order.
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+        <!-- Review & Place Order Modal -->
+        <div class="modal fade erp-modal" id="fabricCheckoutModal" tabindex="-1" role="dialog" aria-labelledby="fabricCheckoutModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered" role="document" style="max-width: 920px;">
+                <div class="modal-content border-0">
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title mb-0" id="fabricCheckoutModalLabel">
+                                <i class="fas fa-clipboard-check mr-2"></i> Review &amp; Finalize Fabric Order
+                            </h5>
+                            <small class="erp-modal-sub">
+                                Party: <strong>{{ $shop->name }}</strong> &nbsp;•&nbsp;
+                                {{ ($agent && $agent->id === 'direct') ? 'Direct Sale (No Agent)' : 'Agent: ' . ($agent->name ?? 'N/A') }}
+                            </small>
                         </div>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
 
-                    <!-- Right Summary Column -->
-                    <div class="col-md-3">
-                        <div class="card shadow-sm border-0 sticky-top"
-                            style="top: 20px; border-radius: 15px; overflow: hidden;">
-                            <div class="card-header bg-dark text-white py-3">
-                                <h6 class="mb-0 font-weight-bold">Summary & Checkout</h6>
-                            </div>
-                            <div class="card-body">
-                                <!-- Dynamic Per-Fabric Targets Summary -->
-                                <div id="fabricTargetsSummary" class="mb-4">
-                                    <label
-                                        class="small font-weight-bold text-muted uppercase border-bottom pb-1 mb-2 d-block">Fabric
-                                        Target Coverage</label>
-                                    <div id="targetList" class="small">
+                    <div class="modal-body p-3">
+                        <div class="row">
+                            <!-- Left: targets -->
+                            <div class="col-md-5 mb-3 mb-md-0 border-right">
+                                <div id="fabricTargetsSummary">
+                                    <div class="erp-section-title mb-2"><i class="fas fa-bullseye mr-1"></i> Fabric Target Coverage</div>
+                                    <div id="targetList" class="small erp-soft-box p-2">
                                         <div class="text-muted text-center py-2 italicText">No targets set yet</div>
                                     </div>
                                 </div>
-
-                                <ul class="list-group list-group-flush mb-4">
-                                    <li class="list-group-item d-flex justify-content-between px-0 py-2 border-0">
-                                        <span class="text-muted">Subtotal:</span>
-                                        <span class="font-weight-bold">₹<span id="subTotalAmount">0.00</span></span>
-                                    </li>
-                                    <li class="list-group-item px-0 py-1 border-0">
-                                        <div class="input-group input-group-sm mb-1" title="Discount Percentage">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text py-0 px-1"
-                                                    style="font-size: 10px; width: 45px;">Disc %</span>
-                                            </div>
-                                            <input type="number" id="discountPercentage"
-                                                class="form-control text-right h-auto py-1 px-1" style="font-weight: bold;"
-                                                value="0" min="0" max="100" step="any">
-                                        </div>
-                                        <div class="input-group input-group-sm" title="Discount Amount">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text py-0 px-1"
-                                                    style="font-size: 10px; width: 45px;">Disc ₹</span>
-                                            </div>
-                                            <input type="number" id="discountAmountInput"
-                                                class="form-control text-right h-auto py-1 px-1" style="font-weight: bold;"
-                                                value="0" min="0">
-                                        </div>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between px-0 py-1 border-0">
-                                        <span class="text-muted small">Taxable:</span>
-                                        <span class="font-weight-bold small">₹<span id="taxableAmount">0.00</span></span>
-                                    </li>
-                                    <li class="list-group-item px-0 py-1 border-0">
-                                        <div class="input-group input-group-sm mb-1" title="GST Percentage">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text py-0 px-1"
-                                                    style="font-size: 10px; width: 45px;">GST %</span>
-                                            </div>
-                                            <input type="number" id="gstPercentage"
-                                                class="form-control text-right h-auto py-1 px-1" style="font-weight: bold;"
-                                                value="{{ $gst_percentage }}" min="0" max="100" step="any">
-                                        </div>
-                                        <div class="input-group input-group-sm" title="GST Amount">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text py-0 px-1"
-                                                    style="font-size: 10px; width: 45px;">GST ₹</span>
-                                            </div>
-                                            <input type="number" id="gstAmountInput"
-                                                class="form-control text-right h-auto py-1 px-1" style="font-weight: bold;"
-                                                value="0" min="0">
-                                        </div>
-                                    </li>
-                                    <li
-                                        class="list-group-item d-flex justify-content-between px-0 py-2 border-0 align-items-center">
-                                        <span class="text-muted">Other Charges:</span>
-                                        <input type="number" id="other_charges"
-                                            class="form-control form-control-sm text-right w-50 border-info" value="0"
-                                            min="0" step="1">
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between px-0 py-3 border-top mt-2">
-                                        <span class="h5 mb-0 font-weight-bold">Grand Total:</span>
-                                        <span class="h5 mb-0 font-weight-bold text-primary">₹<span
-                                                id="grandTotalAmount">0.00</span></span>
-                                    </li>
-                                </ul>
-
-                                <div class="form-group mb-3">
-                                    <label class="small font-weight-bold text-muted uppercase">Expected Dispatch</label>
-                                    <input type="date" id="expectedDispatchDate" class="form-control"
-                                        value="{{ date('Y-m-d', strtotime('+3 days')) }}">
+                                <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                                    <span class="erp-sum-label">Total Rolls:</span>
+                                    <span class="badge badge-primary px-2 py-1" style="font-size: 13px;"><span id="modalRolls">0</span> Rolls &bull; <span id="modalMeters">0.00</span> m</span>
                                 </div>
+                            </div>
 
+                            <!-- Right: money -->
+                            <div class="col-md-7">
+                                <span class="erp-section-title d-block mb-2"><i class="fas fa-calculator mr-1"></i> Financial Summary</span>
+                                <div class="erp-soft-box p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="erp-sum-label">Subtotal:</span>
+                                        <span class="font-weight-bold h6 mb-0">₹<span id="subTotalAmount">0.00</span></span>
+                                    </div>
+                                    <div class="row align-items-center mb-2">
+                                        <div class="col-6">
+                                            <div class="input-group input-group-sm" title="Discount Percentage">
+                                                <div class="input-group-prepend"><span class="input-group-text">Disc %</span></div>
+                                                <input type="number" id="discountPercentage" class="form-control text-right font-weight-bold" value="0" min="0" max="100" step="any">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="input-group input-group-sm" title="Discount Amount">
+                                                <div class="input-group-prepend"><span class="input-group-text">Disc ₹</span></div>
+                                                <input type="number" id="discountAmountInput" class="form-control text-right font-weight-bold" value="0" min="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2 border-top pt-2">
+                                        <span class="erp-sum-label">Taxable Amount:</span>
+                                        <span class="font-weight-bold h6 mb-0">₹<span id="taxableAmount">0.00</span></span>
+                                    </div>
+                                    <div class="row align-items-center mb-2">
+                                        <div class="col-6">
+                                            <div class="input-group input-group-sm" title="GST Percentage">
+                                                <div class="input-group-prepend"><span class="input-group-text">GST %</span></div>
+                                                <input type="number" id="gstPercentage" class="form-control text-right font-weight-bold" value="{{ $gst_percentage }}" min="0" max="100" step="any">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="input-group input-group-sm" title="GST Amount">
+                                                <div class="input-group-prepend"><span class="input-group-text">GST ₹</span></div>
+                                                <input type="number" id="gstAmountInput" class="form-control text-right font-weight-bold" value="0" min="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row align-items-center mb-3">
+                                        <div class="col-6"><span class="erp-sum-label">Other Charges:</span></div>
+                                        <div class="col-6">
+                                            <div class="input-group input-group-sm">
+                                                <div class="input-group-prepend"><span class="input-group-text">₹</span></div>
+                                                <input type="number" id="other_charges" class="form-control text-right font-weight-bold" value="0" min="0" step="1">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="erp-grand-box text-center">
+                                        <small class="text-uppercase font-weight-bold d-block">Grand Total</small>
+                                        <span class="erp-grand-val">₹<span id="grandTotalAmount">0.00</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                                <div class="form-group mb-3">
-                                    <label class="small font-weight-bold text-muted uppercase">Status</label>
-                                    <select id="orderStatus" class="form-control">
+                        <!-- Logistics -->
+                        <div class="border-top pt-3 mt-3">
+                            <span class="erp-section-title d-block mb-2"><i class="fas fa-truck mr-1"></i> Order &amp; Logistics Details</span>
+                            <div class="row">
+                                <div class="col-md-3 col-6 mb-2">
+                                    <label class="erp-label">Expected Dispatch</label>
+                                    <input type="date" id="expectedDispatchDate" class="form-control form-control-sm" value="{{ date('Y-m-d', strtotime('+3 days')) }}">
+                                </div>
+                                <div class="col-md-3 col-6 mb-2">
+                                    <label class="erp-label">Status</label>
+                                    <select id="orderStatus" class="form-control form-control-sm">
                                         <option value="pending" selected>PENDING</option>
                                         <option value="delayed">DELAYED</option>
                                         <option value="dispatched">DISPATCHED</option>
                                     </select>
                                 </div>
-
-                                <div class="row">
-                                    <div class="col-6 pr-1">
-                                        <div class="form-group mb-3">
-                                            <label class="small font-weight-bold text-muted uppercase">Station</label>
-                                            <input type="text" id="booking_station" class="form-control"
-                                                placeholder="Booking">
-                                        </div>
-                                    </div>
-                                    <div class="col-6 pl-1">
-                                        <div class="form-group mb-3">
-                                            <label class="small font-weight-bold text-muted uppercase">Transport</label>
-                                            <input type="text" id="transport" class="form-control" placeholder="Carrier">
-                                        </div>
-                                    </div>
+                                <div class="col-md-3 col-6 mb-2">
+                                    <label class="erp-label">Booking Station</label>
+                                    <input type="text" id="booking_station" class="form-control form-control-sm" placeholder="e.g. Surat">
                                 </div>
-
-                                <label class="small font-weight-bold text-muted uppercase">Notes / Remark</label>
-                                @php
-                                    $previousRemarks = \DB::table('agent_orders')->whereNotNull('remark')->where('remark', '!=', '')->distinct()->pluck('remark');
-                                @endphp
-                                <input type="text" id="orderRemark" class="form-control mb-4" list="previous_remarks_list" placeholder="Instructions..." autocomplete="off">
-                                <datalist id="previous_remarks_list">
-                                    @foreach($previousRemarks as $rem)
-                                        <option value="{{ $rem }}">
-                                    @endforeach
-                                </datalist>
-
-                                <button type="button"
-                                    class="btn btn-success btn-lg btn-block shadow-lg rounded-pill place-fabric-order-btn"
-                                    id="placeOrderBtn" disabled title="Fulfill targets to enable">
-                                    <i class="fas fa-check-double mr-2"></i> PLACE ORDER
-                                </button>
+                                <div class="col-md-3 col-6 mb-2">
+                                    <label class="erp-label">Transport</label>
+                                    <input type="text" id="transport" class="form-control form-control-sm" placeholder="Transport Name">
+                                </div>
+                                <div class="col-12 mb-1">
+                                    <label class="erp-label">Order Remark / Notes</label>
+                                    @php
+                                        $previousRemarks = \DB::table('agent_orders')->whereNotNull('remark')->where('remark', '!=', '')->distinct()->pluck('remark');
+                                    @endphp
+                                    <input type="text" id="orderRemark" class="form-control form-control-sm" list="previous_remarks_list" placeholder="Instructions..." autocomplete="off">
+                                    <datalist id="previous_remarks_list">
+                                        @foreach($previousRemarks as $rem)
+                                            <option value="{{ $rem }}">
+                                        @endforeach
+                                    </datalist>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <div class="modal-footer d-flex justify-content-between">
+                        <button type="button" class="btn-erp btn-erp-outline" data-dismiss="modal">
+                            <i class="fas fa-arrow-left mr-1"></i> Back to Selection
+                        </button>
+                        <button type="button" class="btn-erp btn-erp-primary px-4 place-fabric-order-btn" id="placeOrderBtn" disabled title="Fulfill targets to enable">
+                            PLACE ORDER <i class="fas fa-check-circle ml-2"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
-        </section>
+        </div>
     </div>
 
     <style>
-        .select2-container--bootstrap4 .select2-selection {
-            border-radius: 10px;
-            min-height: 45px;
-            display: flex;
-            align-items: center;
-            padding-left: 10px;
-            border: 1px solid #ced4da;
+        /* ---- Fabric order create: brand look ---- */
+        .erp-page .erp-party-name { color: var(--erp-green-primary); }
+        .erp-page .erp-filter-bar .select2-container--bootstrap4 .select2-selection--multiple { min-height: 34px; padding: 0 6px; }
+        .erp-page .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice {
+            background-color: var(--erp-green-primary); border-color: var(--erp-green-hover); border-radius: 4px; color: #fff; padding: 1px 8px; margin-top: 4px; font-size: 12px;
         }
-
-        .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice {
-            background-color: #007bff;
-            border-color: #0069d9;
-            border-radius: 5px;
-            color: white;
-            padding: 2px 8px;
-            margin-top: 6px;
-        }
-
-        .form-control:focus {
-            box-shadow: none;
-            border-color: #007bff;
-        }
-
-        .card {
-            border-radius: 15px !important;
-        }
-
-        .uppercase {
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .table td,
-        .table th {
-            vertical-align: middle !important;
-        }
-
-        .roll-item {
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(5px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .badge-fabric {
-            background-color: #e9ecef;
-            color: #495057;
-            font-weight: 700;
-        }
+        .erp-page .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice__remove { color: var(--brand-yellow, #fcee21); }
+        .erp-page .erp-filter-bar .input-group-text { background: var(--erp-green-light); color: var(--erp-green-primary); font-weight: 700; }
+        .erp-page .erp-section-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--erp-green-primary); border-bottom: 1px solid var(--erp-green-border); padding-bottom: 3px; }
+        .erp-page .erp-sum-label { font-size: 12px; font-weight: 700; color: var(--erp-text-subtle); }
+        .erp-page .erp-soft-box { background: var(--erp-green-light); border: 1px solid var(--erp-green-border); border-radius: 6px; }
+        .erp-page .erp-grand-box { background: var(--erp-green-primary); color: #fff; border-radius: 6px; padding: 8px; border-bottom: 4px solid var(--brand-yellow, #fcee21); }
+        .erp-page .erp-grand-box small { color: rgba(255,255,255,.75); letter-spacing: .5px; }
+        .erp-page .erp-grand-val { font-size: 24px; font-weight: 800; color: var(--brand-yellow, #fcee21); }
+        .erp-page .fo-summary .input-group-text { font-size: 11px; font-weight: 700; padding: 0 6px; background: #fff; color: var(--erp-green-primary); }
+        .erp-page .fo-summary .form-control { height: 33px; }
+        .erp-page .fo-summary .input-group-sm .form-control { height: 30px; padding: 2px 6px; }
+        .erp-page .fo-items-card { min-height: 420px; }
+        .erp-page .fo-empty { color: var(--erp-text-subtle); font-size: 14px; }
+        .erp-page .fo-empty i { color: var(--erp-green-border); opacity: .7; }
+        .erp-page #masterTable td, .erp-page #masterTable th { vertical-align: middle !important; padding: 5px 8px !important; }
+        .erp-page #masterTable .order-meter, .erp-page #masterTable .roll-price { height: 30px; font-weight: 700; }
+        .erp-page #masterTable .input-group-text { background: var(--erp-green-light); color: var(--erp-green-primary); font-weight: 700; padding: 0 8px; }
+        .erp-page .badge-fabric { background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-weight: 700; border-radius: 10px; }
+        .erp-page #masterTable .remove-item { width: 26px; height: 26px; padding: 0; line-height: 1; color: #b91c1c; border-color: #fca5a5; }
+        .erp-page #masterTable .remove-item:hover { background: #b91c1c; color: #fff; }
+        .erp-page .badge-success { background: #36b54a; }
+        .erp-page .badge-warning { background: var(--brand-yellow, #fcee21); color: var(--erp-green-primary); }
+        .erp-page .fo-place { height: 42px; font-size: 14px !important; letter-spacing: .5px; justify-content: center; }
+        .erp-page .fo-place:disabled { opacity: .55; cursor: not-allowed; }
+        /* ---- fabric order: summary bar + modal (same look as the item order page) ---- */
+        .erp-page .erp-sum-total { font-size: 18px; font-weight: 800; color: var(--erp-green-primary); }
+        #fabricSummaryBar { border-top: 3px solid var(--brand-yellow, #fcee21) !important; box-shadow: 0 -4px 15px rgba(5,66,28,.12) !important; transition: left .3s; }
+        @media (max-width: 991px) { #fabricSummaryBar { left: 0 !important; } }
+        #fabricCheckoutModal .modal-content { border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(5,66,28,.25); }
+        #fabricCheckoutModal .modal-header { background: var(--erp-green-primary); color: #fff; padding: 10px 16px; border-bottom: 4px solid var(--brand-yellow, #fcee21); align-items: center; }
+        #fabricCheckoutModal .modal-title { font-size: 15px; font-weight: 700; color: #fff; }
+        #fabricCheckoutModal .erp-modal-sub, #fabricCheckoutModal .erp-modal-sub strong { color: rgba(255,255,255,.85); }
+        #fabricCheckoutModal .modal-header .close { color: #fff; opacity: .9; text-shadow: none; }
+        #fabricCheckoutModal .modal-footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 8px 16px; }
+        #fabricCheckoutModal .form-control { height: 33px; font-size: 13px; border-radius: 4px; border: 1px solid #cbd5e1; }
+        #fabricCheckoutModal .form-control:focus { border-color: var(--erp-green-primary); box-shadow: 0 0 0 2px rgba(5,66,28,.15); }
+        #fabricCheckoutModal .input-group-text { background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid #cbd5e1; font-size: 12px; font-weight: 700; }
+        #fabricCheckoutModal .erp-label { display: block; font-size: 12px; font-weight: 700; color: var(--erp-green-primary); margin-bottom: 3px; }
+        #fabricCheckoutModal .erp-section-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--erp-green-primary); }
+        #fabricCheckoutModal .erp-sum-label { font-size: 12px; font-weight: 700; color: var(--erp-text-subtle); }
+        #fabricCheckoutModal .erp-soft-box { background: var(--erp-green-light); border: 1px solid var(--erp-green-border); border-radius: 6px; }
+        #fabricCheckoutModal .erp-grand-box { background: var(--erp-green-primary); color: #fff; border-radius: 6px; padding: 8px; border-bottom: 4px solid var(--brand-yellow, #fcee21); }
+        #fabricCheckoutModal .erp-grand-box small { color: rgba(255,255,255,.75); letter-spacing: .5px; }
+        #fabricCheckoutModal .erp-grand-val { font-size: 24px; font-weight: 800; color: var(--brand-yellow, #fcee21); }
+        #fabricCheckoutModal .badge-primary { background: var(--erp-yellow-bg, #fffde0); color: var(--erp-green-primary); border: 1px solid var(--erp-yellow-badge-border); }
+        #fabricCheckoutModal .badge-success { background: #36b54a; }
+        #fabricCheckoutModal .badge-warning { background: var(--brand-yellow, #fcee21); color: var(--erp-green-primary); }
+        #fabricCheckoutModal .place-fabric-order-btn:disabled { opacity: .55; cursor: not-allowed; }
+        .roll-item { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 @endsection
 
@@ -602,6 +623,20 @@
                 $('#gstAmount').text(gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
                 $('#grandTotalAmount').text(grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
 
+                // bottom bar / header / modal mirrors
+                let totalMeters = 0;
+                $('.roll-item').each(function () { totalMeters += parseFloat($(this).find('.order-meter').val()) || 0; });
+                $('#bottomRolls, #modalRolls').text(rollCount);
+                $('#topRollsBadge').text(rollCount + (rollCount === 1 ? ' Roll' : ' Rolls'));
+                $('#bottomMeters, #modalMeters').text(totalMeters.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                $('#bottomSubTotal').text(subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+                $('#bottomGrandTotal').text(grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+                const tgtBadge = $('#bottomTargets');
+                let tgtCount = 0; fabricTargets.forEach(d => { if (d.target > 0) tgtCount++; });
+                if (tgtCount === 0) { tgtBadge.attr('class', 'badge-erp-status badge-erp-secondary').text('Not set'); }
+                else if (allTargetsMet) { tgtBadge.attr('class', 'badge-erp-status badge-erp-success').text('Met'); }
+                else { tgtBadge.attr('class', 'badge-erp-status badge-erp-warning').text('Not met'); }
+
                 const canPlaceOrder = rollCount > 0 && allTargetsMet;
                 $('#placeOrderBtn').prop('disabled', !canPlaceOrder);
 
@@ -642,6 +677,17 @@
             $(document).on('input', '#gstAmountInput', function () {
                 gst_mode = 'amount';
                 calculateTotals();
+            });
+
+
+            // Open the review / amounts modal (like the item order page)
+            $(document).on('click', '.open-review-modal-btn', function () {
+                if ($('.roll-item').length === 0) {
+                    Swal.fire('No rolls selected', 'Please select a fabric and add at least one roll first.', 'warning');
+                    return;
+                }
+                calculateTotals();
+                $('#fabricCheckoutModal').modal('show');
             });
 
             $('.place-fabric-order-btn').click(function () {

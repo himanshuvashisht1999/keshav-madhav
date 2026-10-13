@@ -98,59 +98,64 @@
             </form>
         </div>
 
-        <!-- Totals Summary HUD Cards -->
+        <!-- Totals Summary Cards -->
         <div class="row mb-2">
             <div class="col-md-4 mb-1">
-                <div class="erp-card p-2 d-flex align-items-center">
-                    <div class="hud-stat-box mr-3" style="width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #edf5ee; color: #05421c;">
-                        <i class="fas fa-list-ol fa-lg"></i>
+                <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
+                            <i class="fas fa-list-ol"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Total Orders</div>
+                            <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-green-primary); line-height: 1.2;">{{ number_format($totals->total_orders) }}</div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="text-muted small text-uppercase font-weight-bold">Total Orders</div>
-                        <div class="h5 mb-0 font-weight-bold" style="color: #05421c;">{{ number_format($totals->total_orders) }}</div>
-                    </div>
+                    <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">Orders</span>
                 </div>
             </div>
             <div class="col-md-4 mb-1">
-                <div class="erp-card p-2 d-flex align-items-center">
-                    <div class="hud-stat-box mr-3" style="width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #ecfdf5; color: #10b981;">
-                        <i class="fas fa-box-open fa-lg"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small text-uppercase font-weight-bold">
-                            @if(in_array(request('status'), ['all_dispatch', 'fully_dispatch', 'part_dispatch']))
-                                Total Dispatched Pieces
-                            @elseif(in_array(request('status'), ['all_pending', 'fully_pending', 'part_pending', 'delayed']))
-                                Total Pending Pieces
-                            @else
-                                Total Pieces
-                            @endif
+                <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
+                            <i class="fas fa-box-open"></i>
                         </div>
-                        <div class="h5 mb-0 font-weight-bold" style="color: #047857;">
-                            {{ number_format($totals->total_pieces, request('sale_type') == 'fabric' ? 2 : 0) }}
+                        <div>
+                            <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+                                @if(in_array(request('status'), ['all_dispatch', 'fully_dispatch', 'part_dispatch']))
+                                    Dispatched Pieces
+                                @elseif(in_array(request('status'), ['all_pending', 'fully_pending', 'part_pending', 'delayed']))
+                                    Pending Pieces
+                                @else
+                                    Total Pieces
+                                @endif
+                            </div>
+                            <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-green-primary); line-height: 1.2;">{{ number_format($totals->total_pieces, request('sale_type') == 'fabric' ? 2 : 0) }}</div>
                         </div>
                     </div>
+                    <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">{{ request('sale_type') == 'fabric' ? 'Meters' : 'Pcs' }}</span>
                 </div>
             </div>
             <div class="col-md-4 mb-1">
-                <div class="erp-card p-2 d-flex align-items-center">
-                    <div class="hud-stat-box mr-3" style="width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fefce8; color: #b45309;">
-                        <i class="fas fa-rupee-sign fa-lg"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small text-uppercase font-weight-bold">
-                            @if(in_array(request('status'), ['all_dispatch', 'fully_dispatch', 'part_dispatch']))
-                                Total Dispatched Grand Total
-                            @elseif(in_array(request('status'), ['all_pending', 'fully_pending', 'part_pending', 'delayed']))
-                                Total Pending Grand Total
-                            @else
-                                Total Grand Total
-                            @endif
+                <div class="erp-card erp-metric-card-left-yellow py-2 px-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-yellow-bg); color: var(--erp-yellow-dark); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg); border: 1px solid var(--erp-yellow-badge-border);">
+                            <i class="fas fa-rupee-sign"></i>
                         </div>
-                        <div class="h5 mb-0 font-weight-bold" style="color: #b45309;">
-                            ₹ {{ number_format($totals->total_grand_total, 2) }}
+                        <div>
+                            <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+                                @if(in_array(request('status'), ['all_dispatch', 'fully_dispatch', 'part_dispatch']))
+                                    Dispatched Grand Total
+                                @elseif(in_array(request('status'), ['all_pending', 'fully_pending', 'part_pending', 'delayed']))
+                                    Pending Grand Total
+                                @else
+                                    Grand Total
+                                @endif
+                            </div>
+                            <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-green-primary); line-height: 1.2;">₹ {{ number_format($totals->total_grand_total, 2) }}</div>
                         </div>
                     </div>
+                    <span class="badge erp-badge-yellow" style="padding: 4px 9px;">INR</span>
                 </div>
             </div>
         </div>
@@ -183,7 +188,7 @@
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table erp-table table-bordered table-hover mb-0">
+                    <table class="table erp-table ao-table table-bordered table-hover mb-0">
                         <thead>
                             <tr>
                                 <th style="width: 35px;" class="text-center">
@@ -192,7 +197,6 @@
                                         <label class="custom-control-label" for="checkAll"></label>
                                     </div>
                                 </th>
-                                <th class="text-center" style="width: 45px;">Sr. no</th>
                                 <th>Order id</th>
                                 <th>Agent</th>
                                 <th>Shop name</th>
@@ -201,9 +205,8 @@
                                 <th class="text-center">Scanned</th>
                                 <th class="text-right">Grand total</th>
                                 <th class="text-center">Status</th>
-                                <th>Date</th>
-                                <th>Delivery date</th>
-                                <th class="text-right" style="width: 140px;">Actions</th>
+                                <th>Dates</th>
+                                <th class="text-right" style="width: 120px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -220,27 +223,24 @@
                                         </div>
                                         @endif
                                     </td>
-                                    <td class="text-center text-muted font-weight-bold">
-                                        {{ ($orders->currentPage() - 1) * $orders->perPage() + $loop->iteration }}
-                                    </td>
                                     <td class="text-nowrap font-weight-bold">
                                         <a href="{{ route('admin.agent-orders.show', $order->id) }}" class="text-dark">
                                             #ORD-{{ str_pad($order->id, 5, '0', STR_PAD_LEFT) }}
                                         </a>
                                     </td>
                                     <td>
-                                        <span class="badge-erp-status badge-erp-info font-weight-bold">{{ $order->agent_name }}</span>
+                                        <span class="badge-erp-status badge-erp-info font-weight-bold ao-agent" title="{{ $order->agent_name }}">{{ $order->agent_name }}</span>
                                     </td>
                                     <td>
-                                        <strong class="text-dark">{{ $order->shop_name }}</strong>
+                                        <strong class="text-dark ao-shop" title="{{ $order->shop_name }}">{{ $order->shop_name }}</strong>
                                     </td>
-                                    <td class="text-nowrap">
-                                        <div>
-                                            <span class="badge-erp-status badge-erp-secondary font-weight-normal">{{ strtoupper($order->order_type ?? 'normal') }}</span>
-                                            <a href="{{ route('admin.agent-orders.edit', $order->id) }}" class="text-decoration-none ml-1">
-                                                <small class="text-muted font-weight-bold">({{ ucfirst($order->sale_type ?? 'item') }})</small>
-                                            </a>
-                                        </div>
+                                    <td class="text-nowrap ao-type">
+                                        @if(strtolower($order->order_type ?? 'normal') !== 'normal')
+                                            <span class="badge-erp-status badge-erp-warning font-weight-bold">{{ strtoupper($order->order_type) }}</span>
+                                        @endif
+                                        <a href="{{ route('admin.agent-orders.edit', $order->id) }}" class="text-decoration-none">
+                                            <span class="badge-erp-status badge-erp-secondary font-weight-bold">{{ strtoupper($order->sale_type ?? 'item') }}</span>
+                                        </a>
                                     </td>
                                     <td class="text-nowrap">
                                         @php
@@ -303,15 +303,14 @@
                                             $isDelayed = ($order->status == 'delayed') || ($order->status == 'pending' && $order->expected_dispatch_date && $order->expected_dispatch_date < date('Y-m-d'));
                                         @endphp
                                         <span class="badge-erp-status {{ $isDelayed ? 'badge-erp-danger' : ($order->status == 'pending' ? 'badge-erp-warning' : 'badge-erp-primary') }} font-weight-bold">
-                                            {{ $isDelayed ? 'DELAYED' : strtoupper(str_replace('_', ' ', $order->status)) }}
+                                            {{ $isDelayed ? 'DELAYED' : str_replace('PARTIALLY DISPATCHED', 'PART DISPATCHED', strtoupper(str_replace('_', ' ', $order->status))) }}
                                         </span>
                                     </td>
-                                    <td class="text-nowrap font-weight-bold text-dark">
-                                        {{ date('d/m/y', strtotime($order->order_date)) }}
-                                    </td>
-                                    <td class="text-nowrap">
+                                    <td class="text-nowrap ao-dates">
+                                        <span class="font-weight-bold">{{ date('d/m/y', strtotime($order->order_date)) }}</span>
+                                        <br>
                                         @if($order->expected_dispatch_date)
-                                            <div class="text-success font-weight-bold">{{ date('d/m/y', strtotime($order->expected_dispatch_date)) }}</div>
+                                            <span class="text-success font-weight-bold" title="Delivery date">{{ date('d/m/y', strtotime($order->expected_dispatch_date)) }}</span>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
@@ -372,7 +371,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="13" class="text-center py-5 text-muted">
+                                    <td colspan="11" class="text-center py-5 text-muted">
                                         <i class="fas fa-shopping-cart fa-2x mb-2 text-secondary"></i>
                                         <div>No agent orders found matching current criteria.</div>
                                     </td>
@@ -447,6 +446,41 @@
         </div>
     </div>
 </div>
+<style>
+    /* ---- Agent orders list: compact table that fits the page ---- */
+    .erp-page .ao-table th, .erp-page .ao-table td { padding: 4px 6px !important; font-size: 12.5px; white-space: nowrap; vertical-align: middle !important; }
+    .erp-page .ao-table thead th { font-size: 11.5px; }
+    .erp-page .ao-table .ao-agent { display: inline-block; max-width: 100px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+    .erp-page .ao-table .ao-shop { display: inline-block; max-width: 160px; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+    .erp-page .ao-table a.text-dark { color: var(--erp-green-primary) !important; }
+    .erp-page .ao-table .badge-erp-status { white-space: nowrap; }
+    .erp-page .ao-table small.d-block { font-size: 10.5px; line-height: 1.2; }
+    .erp-page .ao-table .custom-control { min-height: 0; }
+    .erp-page .ao-table .ao-agent, .erp-page .ao-table .ao-shop { white-space: normal; line-height: 1.2; max-width: 130px; }
+    .erp-page .ao-table .ao-type .badge-erp-status { display: block; width: fit-content; margin: 1px 0; }
+    .erp-page .ao-table .ao-dates { line-height: 1.25; }
+    /* fixed layout: the 11 columns always fit the card, long text wraps instead of scrolling sideways */
+    .erp-page .ao-table { table-layout: fixed; width: 100%; }
+    .erp-page .ao-table th, .erp-page .ao-table td { white-space: normal !important; overflow-wrap: anywhere; }
+    .erp-page .ao-table th:nth-child(1) { width: 3%; }
+    .erp-page .ao-table th:nth-child(2) { width: 10%; }
+    .erp-page .ao-table th:nth-child(3) { width: 9%; }
+    .erp-page .ao-table th:nth-child(4) { width: 12%; }
+    .erp-page .ao-table th:nth-child(5) { width: 5%; }
+    .erp-page .ao-table th:nth-child(6) { width: 9%; }
+    .erp-page .ao-table th:nth-child(7) { width: 8%; }
+    .erp-page .ao-table th:nth-child(8) { width: 10%; }
+    .erp-page .ao-table th:nth-child(9) { width: 10%; }
+    .erp-page .ao-table th:nth-child(10) { width: 8%; }
+    .erp-page .ao-table th:nth-child(11) { width: 16%; }
+    .erp-page .ao-table td:nth-child(2), .erp-page .ao-table th:nth-child(7) { white-space: nowrap !important; }
+    .erp-page .ao-table td:last-child .erp-action-btn { margin: 0 1px; }
+    .erp-page .ao-table .ao-agent, .erp-page .ao-table .ao-shop { max-width: 100%; display: inline; }
+    .erp-page .ao-table td:last-child .d-flex { flex-wrap: nowrap !important; justify-content: flex-end; }
+    .erp-page .ao-table td:last-child .btn-group, .erp-page .ao-table td:last-child .d-flex { flex-wrap: nowrap; }
+
+</style>
+
 @endsection
 
 @push('scripts')

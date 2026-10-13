@@ -663,6 +663,11 @@
     #variation-container .quantity-control input { height: 28px !important; padding-top: 0; padding-bottom: 0; line-height: 26px; font-size: 13px !important; }
     #variation-container .badge-erp-status { padding: 1px 8px; font-size: 11px; }
     .erp-table thead th { padding: 6px 10px !important; }
+
+    /* Customer / Vendor toggle: label colours must beat the generic form-label rule */
+    body.km-admin .erp-page .ao-seg label { color: #475569 !important; font-size: 13.5px; margin: 0; }
+    body.km-admin .erp-page .ao-seg input:checked + label { color: #ffffff !important; background: var(--erp-green-primary); }
+    body.km-admin .erp-page .ao-seg input:checked + label i { color: var(--brand-yellow, #fcee21) !important; }
 </style>
 @endsection
 

@@ -172,7 +172,7 @@
                                                     <span class="ds-hist-count">{{ $box->scanned_box_qty }}/{{ $box->box_qty }}</span>
                                                 </div>
                                                 <button type="button" class="btn btn-sm btn-outline-danger undo-btn"
-                                                    data-id="{{ $box->box_no }}" data-barcode="{{ $box->barcode }}" title="Undo one scan">
+                                                    data-id="{{ $boxKey }}" data-barcode="{{ $box->barcode }}" title="Undo one scan">
                                                     <i class="fas fa-undo"></i>
                                                 </button>
                                             </div>
@@ -194,9 +194,9 @@
 
     <!-- Dispatch Configuration Modal -->
     <div class="modal fade" id="dispatchModal" tabindex="-1" role="dialog" aria-labelledby="dispatchModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
-                <div class="modal-header bg-success text-white" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
+        <div class="modal-dialog modal-dialog-centered modal-lg ds-modal" role="document">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-success text-white">
                     <h5 class="modal-title font-weight-bold" id="dispatchModalLabel"><i class="fas fa-shipping-fast mr-2"></i> Configure Dispatch</h5>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
@@ -205,109 +205,92 @@
                 <form id="dispatchForm" action="{{ route('admin.agent-orders.dispatch-selected') }}" method="POST">
                     @csrf
                     <input type="hidden" name="order_ids[]" value="{{ $order->id }}">
-                    <div class="modal-body p-4">
-                        <div class="form-group mb-3">
-                            <label class="font-weight-bold text-muted small text-uppercase">Dispatch Date</label>
-                            <div class="input-group shadow-sm">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-calendar-alt text-success"></i></span>
-                                </div>
-                                <input type="datetime-local" class="form-control border-left-0" id="dispatch_date" name="dispatch_date" value="{{ date('Y-m-d\TH:i') }}" required>
-                            </div>
-                        </div>
-                        <div class="form-group mb-3">
-                            <label class="font-weight-bold text-muted small text-uppercase">Company</label>
-                            <div class="input-group shadow-sm">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-building text-info"></i></span>
-                                </div>
-                                <select class="form-control border-left-0" id="company_id" name="company_id">
-                                    <option value="">Select Company</option>
-                                    @foreach($companies as $company)
-                                        <option value="{{ $company->id }}">{{ $company->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group mb-3">
-                            <label class="font-weight-bold text-muted small text-uppercase">Subtotal Amount</label>
-                            <div class="input-group shadow-sm">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-rupee-sign text-primary"></i></span>
-                                </div>
-                                <input type="number" step="0.01" class="form-control border-left-0" id="modal_total_amount" name="total_amount" value="{{ $scannedTotal }}" required>
-                            </div>
-                        </div>
+                    <div class="modal-body ds-mb">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="font-weight-bold text-muted small text-uppercase">Extra Discount %</label>
-                                    <div class="input-group shadow-sm">
+                            <div class="col-md-6 mb-3">
+                                <label class="ds-lbl">Dispatch Date</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-calendar-alt"></i></span></div>
+                                    <input type="datetime-local" class="form-control" id="dispatch_date" name="dispatch_date" value="{{ date('Y-m-d\TH:i') }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="ds-lbl">Company</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-building"></i></span></div>
+                                    <select class="form-control" id="company_id" name="company_id">
+                                        <option value="">Select Company</option>
+                                        @foreach($companies as $company)
+                                            <option value="{{ $company->id }}">{{ $company->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ds-amounts">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="ds-lbl">Subtotal Amount</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-rupee-sign"></i></span></div>
+                                        <input type="number" step="0.01" class="form-control" id="modal_total_amount" name="total_amount" value="{{ $scannedTotal }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="ds-lbl">Other Charges</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-plus-circle"></i></span></div>
+                                        <input type="number" step="0.01" class="form-control" id="modal_other_charges" name="other_charges" value="0">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-3 col-6 mb-2">
+                                    <label class="ds-lbl">Extra Disc %</label>
+                                    <div class="input-group">
                                         <input type="number" step="any" class="form-control" id="modal_discount_percentage" name="discount_percentage" value="0">
-                                        <div class="input-group-append">
-                                            <span class="input-group-text bg-white"><i class="fas fa-percentage text-secondary"></i></span>
-                                        </div>
+                                        <div class="input-group-append"><span class="input-group-text"><i class="fas fa-percentage"></i></span></div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="font-weight-bold text-muted small text-uppercase">Extra Discount Amt</label>
-                                    <div class="input-group shadow-sm">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text bg-white border-right-0"><i class="fas fa-minus-circle text-danger"></i></span>
-                                        </div>
-                                        <input type="number" step="0.01" class="form-control border-left-0" id="modal_discount_amount" name="discount_amount" value="0">
+                                <div class="col-md-3 col-6 mb-2">
+                                    <label class="ds-lbl">Extra Disc Amt</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-minus-circle"></i></span></div>
+                                        <input type="number" step="0.01" class="form-control" id="modal_discount_amount" name="discount_amount" value="0">
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="form-group mb-3">
-                            <label class="font-weight-bold text-muted small text-uppercase">Other Charges</label>
-                            <div class="input-group shadow-sm">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text bg-white border-right-0"><i class="fas fa-plus-circle text-info"></i></span>
-                                </div>
-                                <input type="number" step="0.01" class="form-control border-left-0" id="modal_other_charges" name="other_charges" value="0">
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="font-weight-bold text-muted small text-uppercase">GST %</label>
-                                    <div class="input-group shadow-sm">
+                                <div class="col-md-3 col-6 mb-2">
+                                    <label class="ds-lbl">GST %</label>
+                                    <div class="input-group">
                                         <input type="number" step="any" class="form-control" id="modal_gst_percentage" name="gst_percentage" value="{{ $order->gst_percentage ?? 5 }}">
-                                        <div class="input-group-append">
-                                            <span class="input-group-text bg-white"><i class="fas fa-percentage text-secondary"></i></span>
-                                        </div>
+                                        <div class="input-group-append"><span class="input-group-text"><i class="fas fa-percentage"></i></span></div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="font-weight-bold text-muted small text-uppercase">GST Amount</label>
-                                    <div class="input-group shadow-sm">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text bg-white border-right-0"><i class="fas fa-rupee-sign text-muted"></i></span>
-                                        </div>
-                                        <input type="number" step="any" class="form-control border-left-0" id="modal_gst_amount_input" value="0">
+                                <div class="col-md-3 col-6 mb-2">
+                                    <label class="ds-lbl">GST Amount</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-rupee-sign"></i></span></div>
+                                        <input type="number" step="any" class="form-control" id="modal_gst_amount_input" value="0">
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group mb-3">
-                            <label class="font-weight-bold text-muted small text-uppercase">Remark</label>
+
+                        <div class="mt-3">
+                            <label class="ds-lbl">Remark</label>
                             <textarea name="remark" class="form-control" rows="2" placeholder="Enter dispatch remark (optional)"></textarea>
                         </div>
-                        <hr class="my-4">
-                        <div class="bg-light p-3 rounded-lg text-center shadow-sm border">
-                            <h6 class="text-muted text-uppercase mb-1 small font-weight-bold">Final Grand Total</h6>
-                            <h3 class="mb-0 text-success font-weight-bold" id="modal_grand_total_display">₹0.00</h3>
-                        </div>
                     </div>
-                    <div class="modal-footer bg-light p-3" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
-                        <button type="button" class="btn-erp btn-erp-outline mr-2" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn-erp btn-erp-primary px-4">CONFIRM DISPATCH</button>
+                    <div class="modal-footer ds-mf">
+                        <div class="ds-grand">
+                            <span class="ds-grand-label">Final Grand Total</span>
+                            <span class="ds-grand-value" id="modal_grand_total_display">₹0.00</span>
+                        </div>
+                        <div class="ds-mf-actions">
+                            <button type="button" class="btn-erp btn-erp-outline" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn-erp btn-erp-primary px-4">CONFIRM DISPATCH</button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -423,6 +406,19 @@
         .erp-page table thead.bg-light th { background: var(--erp-green-primary) !important; color: #fff !important; }
         .erp-page .fa-check-circle.text-success { color: #36b54a !important; }
         .erp-page .fa-clock.text-warning { color: #d4b800 !important; }
+
+        
+        /* ---- dispatch modal layout ---- */
+        #dispatchModal .ds-modal { max-width: 760px; }
+        #dispatchModal .ds-mb { padding: 16px 20px 8px; background: #fff; }
+        #dispatchModal .ds-lbl { display: block; margin: 0 0 4px; font-size: 11.5px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--erp-green-primary); }
+        #dispatchModal .ds-amounts { background: var(--erp-green-light); border: 1px solid var(--erp-green-border); border-left: 4px solid var(--erp-green-primary); border-radius: 6px; padding: 12px 12px 4px; }
+        #dispatchModal .ds-mf { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 10px 20px; }
+        #dispatchModal .ds-grand { display: flex; flex-direction: column; line-height: 1.15; }
+        #dispatchModal .ds-grand-label { font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--erp-text-subtle); }
+        #dispatchModal .ds-grand-value { font-size: 24px; font-weight: 800; color: var(--erp-green-primary); }
+        #dispatchModal .ds-mf-actions { display: flex; gap: 8px; }
+        #dispatchModal .ds-mf-actions .btn-erp { height: 36px; padding: 0 18px !important; }
 
         /* dispatch modal (outside .erp-page) */
         #dispatchModal .modal-content { border-radius: 8px !important; overflow: hidden; }
@@ -619,7 +615,7 @@
             function updateHeaderTotalScanned() {
                 let totalScanned = 0;
                 $('.variation-row').each(function() {
-                    const countSpan = $(this).find('td:eq(3) span[id^="count_"]');
+                    const countSpan = $(this).find('span[id^="count_"]');
                     if (countSpan.length) {
                         totalScanned += parseInt(countSpan.text()) || 0;
                     }
@@ -736,21 +732,20 @@
                     checkbox.prop('checked', false);
                 }
 
-                // If scanned becomes 0, we can remove the history item
+                // If scanned becomes 0, remove the history line, otherwise refresh its count and re-enable undo
+                const historyEl = $('#history_' + CSS.escape(String(key)));
                 if (current === 0) {
-                    $(`#history_${CSS.escape(boxNo)}`).addClass('animate__animated animate__fadeOutRight').fadeOut(function () {
+                    historyEl.addClass('animate__animated animate__fadeOutRight').fadeOut(function () {
                         $(this).remove();
                         if ($('#scan_history .list-group-item').length === 0) {
                             $('#no_scans_msg').show();
                         }
                     });
-                } else {
-                    const existingHistory = $(`#history_${boxNo}`);
-                    if (existingHistory.length) {
-                        existingHistory.find('.text-muted:last').text(`${response.color_name || ''} | Count: ${response.scanned} / ${response.required}`);
-                        existingHistory.addClass('animate__animated animate__shakeY');
-                        setTimeout(() => existingHistory.removeClass('animate__animated animate__shakeY'), 1000);
-                    }
+                } else if (historyEl.length) {
+                    historyEl.find('.ds-hist-count').text(response.scanned + '/' + response.required);
+                    historyEl.find('.undo-btn').prop('disabled', false).html('<i class="fas fa-undo"></i>');
+                    historyEl.addClass('animate__animated animate__shakeY');
+                    setTimeout(() => historyEl.removeClass('animate__animated animate__shakeY'), 1000);
                 }
 
                 // Update totals and button state
