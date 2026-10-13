@@ -3856,3 +3856,118 @@ body.km-admin .erp-page .card-header.bg-primary i { color: var(--brand-yellow, #
 body.km-admin .erp-page label.text-muted,
 body.km-admin .erp-page .form-group > label,
 body.km-admin .erp-page .text-uppercase.font-weight-bold.text-muted { color: var(--erp-text-heading) !important; }
+
+/* =========================================================================
+   SIDEBAR - brand yellow border on every menu item (top level + sub menu)
+   ========================================================================= */
+.km-sidebar .border_class {
+    border: 1.5px solid var(--brand-yellow, #fcee21) !important;
+    border-left: 1.5px solid var(--brand-yellow, #fcee21) !important;
+}
+.km-sidebar .border_class:hover {
+    border: 1.5px solid var(--brand-yellow, #fcee21) !important;
+    border-left: 4px solid var(--brand-yellow, #fcee21) !important;
+    background: rgba(252, 238, 33, 0.28) !important;
+}
+.km-sidebar .border_class.active,
+.km-sidebar .nav-sidebar > .nav-item.menu-open > .border_class {
+    border: 2px solid var(--brand-yellow, #fcee21) !important;
+    border-left: 5px solid var(--brand-yellow, #fcee21) !important;
+    background: rgba(5, 66, 28, 0.14) !important;
+}
+.km-sidebar .nav-treeview {
+    border-left: 2px solid var(--brand-yellow, #fcee21) !important;
+}
+.km-sidebar .nav-treeview > .nav-item > .nav-link {
+    border: 1px solid var(--brand-yellow, #fcee21) !important;
+}
+.km-sidebar .nav-treeview > .nav-item > .nav-link:hover {
+    background: rgba(252, 238, 33, 0.28) !important;
+    border-left: 4px solid var(--brand-yellow, #fcee21) !important;
+}
+.km-sidebar .nav-treeview > .nav-item > .nav-link.active {
+    border: 2px solid var(--brand-yellow, #fcee21) !important;
+    border-left: 5px solid var(--brand-yellow, #fcee21) !important;
+}
+
+/* =========================================================================
+   SIDEBAR refinement - clean yellow-outlined menu, never clipped
+   ========================================================================= */
+.km-sidebar .sidebar { overflow-x: hidden !important; }
+.km-sidebar .nav-sidebar { padding-right: 2px; }
+.km-sidebar .border_class,
+.km-sidebar .nav-treeview > .nav-item > .nav-link {
+    box-sizing: border-box !important;
+    width: auto !important;
+    max-width: calc(100% - 16px);
+}
+.km-sidebar .nav-treeview > .nav-item > .nav-link { max-width: calc(100% - 16px); }
+
+/* normal item: light surface + slim yellow outline */
+.km-sidebar .border_class {
+    background: rgba(255, 255, 255, 0.22) !important;
+    border: 1px solid var(--brand-yellow, #fcee21) !important;
+    border-radius: 8px;
+    margin: 4px 8px !important;
+    padding: 8px 12px !important;
+    box-shadow: none !important;
+}
+.km-sidebar .border_class:hover {
+    background: rgba(255, 255, 255, 0.42) !important;
+    border: 1px solid var(--brand-yellow, #fcee21) !important;
+    border-left: 4px solid var(--brand-yellow, #fcee21) !important;
+    transform: none;
+}
+/* active / open item: brand dark green with yellow outline + light text */
+.km-sidebar .border_class.active,
+.km-sidebar .nav-sidebar > .nav-item.menu-open > .border_class {
+    background: var(--brand-dark-green, #05421c) !important;
+    border: 1px solid var(--brand-yellow, #fcee21) !important;
+    border-left: 5px solid var(--brand-yellow, #fcee21) !important;
+    box-shadow: 0 2px 8px rgba(5, 66, 28, 0.25) !important;
+}
+.km-sidebar .border_class.active p,
+.km-sidebar .border_class.active i,
+.km-sidebar .nav-sidebar > .nav-item.menu-open > .border_class p,
+.km-sidebar .nav-sidebar > .nav-item.menu-open > .border_class i,
+.km-sidebar .border_class.active .right,
+.km-sidebar .nav-sidebar > .nav-item.menu-open > .border_class .right {
+    color: #ffffff !important;
+}
+.km-sidebar .border_class.active i,
+.km-sidebar .nav-sidebar > .nav-item.menu-open > .border_class i { color: var(--brand-yellow, #fcee21) !important; }
+
+/* sub menu */
+.km-sidebar .nav-treeview { border-left: 2px solid var(--brand-yellow, #fcee21) !important; margin-left: 20px; }
+.km-sidebar .nav-treeview > .nav-item > .nav-link {
+    background: rgba(255, 255, 255, 0.18) !important;
+    border: 1px solid var(--brand-yellow, #fcee21) !important;
+    border-radius: 6px;
+    margin: 3px 8px 3px 8px;
+}
+.km-sidebar .nav-treeview > .nav-item > .nav-link:hover {
+    background: rgba(255, 255, 255, 0.40) !important;
+    border-left: 4px solid var(--brand-yellow, #fcee21) !important;
+}
+.km-sidebar .nav-treeview > .nav-item > .nav-link.active {
+    background: var(--brand-dark-green, #05421c) !important;
+    border: 1px solid var(--brand-yellow, #fcee21) !important;
+    border-left: 5px solid var(--brand-yellow, #fcee21) !important;
+    color: #ffffff !important;
+}
+.km-sidebar .nav-treeview > .nav-item > .nav-link.active p,
+.km-sidebar .nav-treeview > .nav-item > .nav-link.active i { color: #ffffff !important; }
+.km-sidebar .nav-treeview > .nav-item > .nav-link.active i { color: var(--brand-yellow, #fcee21) !important; }
+
+/* filter bars: keep the Filter / Reset buttons on the same row as the fields */
+.erp-filter-bar > .row > [class*="col-"],
+.erp-filter-bar > form > .row > [class*="col-"] { flex: 1 1 120px; }
+
+/* sidebar menu keeps full width whether sub menus are open or closed */
+.km-sidebar .sidebar > nav,
+.km-sidebar .sidebar nav.mt-2 { display: block !important; width: 100% !important; }
+.km-sidebar .nav-sidebar { width: 100% !important; flex-wrap: nowrap !important; box-sizing: border-box; }
+.km-sidebar .nav-sidebar > .nav-item { width: 100%; }
+.km-sidebar .border_class > p { flex: 1 1 auto; min-width: 0; }
+.km-sidebar .border_class .right,
+.km-sidebar .border_class .fa-angle-left { margin-left: auto; flex: 0 0 auto; }

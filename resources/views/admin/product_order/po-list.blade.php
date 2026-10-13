@@ -105,7 +105,8 @@
     <!-- Table Card -->
     <div class="erp-card">
         <div class="erp-card-body p-2 table-responsive">
-            <table class="erp-table table table-bordered table-hover mb-0">
+            <style>.po-list-table td:nth-child(2), .po-list-table td:nth-child(3), .po-list-table td:nth-child(7) { white-space: nowrap; }</style>
+            <table class="erp-table po-list-table table table-bordered table-hover mb-0">
                 <thead>
                     <tr>
                         <th style="width: 45px;" class="text-center">#</th>
