@@ -67,7 +67,7 @@
     <table class="header-table">
         <tr>
             <td>
-                <div class="company-name">SNAPKID</div>
+                <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID'])</div>
                 <div style="font-size: 9px; color: #666; margin-top: 5px;">Management System Sales Agents</div>
             </td>
             <td class="report-title">
@@ -116,7 +116,7 @@
                             0.00
                         @endif
                     </td>
-                    <td class="text-right text-bold" style="color: {{ $agent->total_balance >= 0 ? '#28a745' : '#dc3545' }}">
+                    <td class="text-right text-bold" style="color: {{ $agent->total_balance >= 0 ? '#36b54a' : '#dc3545' }}">
                         {{ number_format(abs($agent->total_balance ?? 0), 2) }} ({{ ($agent->total_balance ?? 0) >= 0 ? 'Cr' : 'Dr' }})
                     </td>
                     <td class="text-right">
@@ -136,7 +136,7 @@
     </table>
 
     <div class="footer">
-        <p>This is a computer generated document. | SNAPKID</p>
+        <p>This is a computer generated document. | @include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID', 'height' => 10])</p>
     </div>
 </body>
 </html>

@@ -15,7 +15,7 @@
         .card { border: 1px solid #ddd; padding: 10px; border-radius: 5px; }
         .card-header { font-weight: bold; border-bottom: 1px solid #eee; margin-bottom: 8px; padding-bottom: 5px; text-transform: uppercase; font-size: 9pt; }
         .old-card { border-left: 4px solid #dc3545; background-color: #fff9f9; }
-        .new-card { border-left: 4px solid #28a745; background-color: #f9fff9; }
+        .new-card { border-left: 4px solid #36b54a; background-color: #f9fff9; }
         .detail-row { margin-bottom: 5px; }
         .detail-label { font-size: 8pt; color: #777; display: block; }
         .detail-value { font-weight: bold; font-size: 10pt; }
@@ -75,7 +75,7 @@
             </td>
             <td>
                 <div class="card new-card">
-                    <div class="card-header" style="color: #28a745;">TO (Destination)</div>
+                    <div class="card-header" style="color: #36b54a;">TO (Destination)</div>
                     <div class="detail-row">
                         <span class="detail-label">Warehouse / Rack</span>
                         <span class="detail-value">{{ $history->newRack->storeroom->name ?? 'N/A' }} / {{ $history->newRack->name ?? 'N/A' }}</span>

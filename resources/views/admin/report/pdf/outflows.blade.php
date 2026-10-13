@@ -20,33 +20,33 @@
             text-align: center;
         }
         th {
-            background-color: #1e293b;
+            background-color: #052a12;
             color: #ffffff;
             font-weight: bold;
             font-size: 10px;
             text-transform: uppercase;
         }
         tr:nth-child(even) {
-            background-color: #f8fafc;
+            background-color: #f6faf1;
         }
         .text-left {
             text-align: left;
         }
         .header-container {
             width: 100%;
-            border-bottom: 2px solid #0f172a;
+            border-bottom: 2px solid #052a12;
             padding-bottom: 10px;
             margin-bottom: 15px;
         }
         .header-title {
             font-size: 18px;
             font-weight: bold;
-            color: #0f172a;
+            color: #052a12;
         }
         .header-meta {
             text-align: right;
             font-size: 10px;
-            color: #64748b;
+            color: #0d5f2c;
         }
     </style>
 </head>
@@ -55,7 +55,7 @@
         <tr style="border: none; background: none;">
             <td style="text-align: left; border: none; padding: 0; width: 60%;">
                 <div class="header-title">Outflows & Adjustments Report</div>
-                <div style="font-size: 10px; color: #64748b; margin-top: 3px;">Track debits, sampling allocations, and dead/damage logs</div>
+                <div style="font-size: 10px; color: #0d5f2c; margin-top: 3px;">Track debits, sampling allocations, and dead/damage logs</div>
             </td>
             <td style="text-align: right; border: none; padding: 0; width: 40%; vertical-align: bottom;">
                 <div class="header-meta">
@@ -65,7 +65,7 @@
             </td>
         </tr>
     </table>
-    <div style="height: 1px; background: #0f172a; margin-top: 8px; margin-bottom: 15px;"></div>
+    <div style="height: 1px; background: #052a12; margin-top: 8px; margin-bottom: 15px;"></div>
 
     <table>
         <thead>
@@ -91,7 +91,7 @@
                     <td>LOT-{{ str_pad($out->lot_no, 4, '0', STR_PAD_LEFT) }}</td>
                     <td>
                         <strong>{{ $out->product->design_number ?? 'N/A' }}</strong>
-                        <span style="display: block; font-size: 8px; color: #64748b;">{{ $out->product->name ?? 'Garment' }}</span>
+                        <span style="display: block; font-size: 8px; color: #0d5f2c;">{{ $out->product->name ?? 'Garment' }}</span>
                     </td>
                     <td style="text-transform: uppercase; font-weight: bold;">{{ $out->type }}</td>
                     <td>
@@ -104,11 +104,11 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="10" style="text-align: center; padding: 20px; color: #64748b;">No Outflow Adjustments Found</td>
+                    <td colspan="10" style="text-align: center; padding: 20px; color: #0d5f2c;">No Outflow Adjustments Found</td>
                 </tr>
             @endforelse
             @if($outflows->count() > 0)
-                <tr style="font-weight: bold; background-color: #f1f5f9;">
+                <tr style="font-weight: bold; background-color: #f0f8e7;">
                     <td colspan="7" style="text-align: right; border-right: none;">Grand Total:</td>
                     <td style="border-left: none; border-right: none;">{{ number_format($totalQuantity) }} pcs</td>
                     <td colspan="2" style="border-left: none;"></td>

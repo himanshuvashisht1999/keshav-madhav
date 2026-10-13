@@ -57,7 +57,7 @@
         .balance-summary .value {
             font-size: 18px;
             font-weight: bold;
-            color: #1e3c72;
+            color: #05421c;
         }
         .ledger-table {
             width: 100%;
@@ -90,7 +90,7 @@
     <table class="header-table">
         <tr>
             <td>
-                <div class="company-name">SNAPKID</div>
+                <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID'])</div>
                 <div style="font-size: 10px; color: #666; margin-top: 5px;">Management System Ledger</div>
             </td>
             <td class="ledger-title">
@@ -118,7 +118,7 @@
 
     @if(isset($viewMode) && $viewMode === 'party_wise' && isset($groupedLedgers))
         @forelse($groupedLedgers as $ledger)
-            <div style="margin-top: 30px; margin-bottom: 10px; font-size: 14px; font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; color: #1e3c72;">
+            <div style="margin-top: 30px; margin-bottom: 10px; font-size: 14px; font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; color: #05421c;">
                 Customer: {{ $ledger->shop->name }}
             </div>
             <table class="balance-summary">
@@ -179,7 +179,7 @@
                         <td colspan="4" class="text-right text-bold" style="padding: 10px;">TOTALS:</td>
                         <td class="text-right text-bold" style="padding: 10px;">₹ {{ number_format($ledger->transactions->sum('debit'), 2) }}</td>
                         <td class="text-right text-bold" style="padding: 10px;">₹ {{ number_format($ledger->transactions->sum('credit'), 2) }}</td>
-                        <td class="text-right text-bold" style="padding: 10px; color: #1e3c72;">
+                        <td class="text-right text-bold" style="padding: 10px; color: #05421c;">
                             ₹ {{ number_format(abs($currentBalance), 2) }} {{ $currentBalance >= 0 ? 'DR' : 'CR' }}
                         </td>
                     </tr>
@@ -252,7 +252,7 @@
                 <td colspan="4" class="text-right text-bold" style="padding: 10px;">TOTALS:</td>
                 <td class="text-right text-bold" style="padding: 10px;">₹ {{ number_format($transactions->sum('debit'), 2) }}</td>
                 <td class="text-right text-bold" style="padding: 10px;">₹ {{ number_format($transactions->sum('credit'), 2) }}</td>
-                <td class="text-right text-bold" style="padding: 10px; color: #1e3c72;">
+                <td class="text-right text-bold" style="padding: 10px; color: #05421c;">
                     ₹ {{ number_format(abs($currentBalance), 2) }} {{ $currentBalance >= 0 ? 'DR' : 'CR' }}
                 </td>
             </tr>
@@ -262,7 +262,7 @@
     @endif
 
     <div class="footer">
-        <p>This is a computer generated document. | SNAPKID</p>
+        <p>This is a computer generated document. | @include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID', 'height' => 10])</p>
     </div>
 </body>
 </html>

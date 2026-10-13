@@ -14,22 +14,22 @@
         .header {
             text-align: center;
             margin-bottom: 20px;
-            border-bottom: 2px solid #7c3aed;
+            border-bottom: 2px solid #05421c;
             padding-bottom: 10px;
         }
         .header h1 {
             margin: 0;
-            color: #7c3aed;
+            color: #05421c;
             font-size: 20px;
         }
         .section {
             margin-bottom: 20px;
         }
         .section-title {
-            background: #f8fafc;
+            background: #f6faf1;
             padding: 8px 12px;
             font-weight: bold;
-            border-bottom: 1px solid #edf2f7;
+            border-bottom: 1px solid #f0f8e7;
             font-size: 13px;
             margin-bottom: 10px;
         }
@@ -40,7 +40,7 @@
         .info-grid td {
             width: 25%;
             padding: 10px;
-            border: 1px solid #edf2f7;
+            border: 1px solid #f0f8e7;
             vertical-align: top;
         }
         .info-grid label {
@@ -61,12 +61,12 @@
             margin-bottom: 10px;
         }
         table th, table td {
-            border: 1px solid #edf2f7;
+            border: 1px solid #f0f8e7;
             padding: 8px;
             text-align: left;
         }
         table th {
-            background: #f1f5f9;
+            background: #f0f8e7;
             color: var(--text-muted);
             font-size: 10px;
             font-weight: bold;
@@ -76,7 +76,7 @@
             text-align: right;
         }
         .stage-card {
-            border: 1px solid #edf2f7;
+            border: 1px solid #f0f8e7;
             border-left: 5px solid var(--text-muted);
             padding: 10px;
             margin-bottom: 12px;
@@ -84,9 +84,9 @@
             page-break-inside: avoid;
         }
         .st-progress { border-left-color: var(--text-main); background: #eff6ff; }
-        .st-completed { border-left-color: #16a34a; background: #f0fdf4; }
+        .st-completed { border-left-color: #15803d; background: #f0fdf4; }
         .st-delayed { border-left-color: #dc2626; background: #fef2f2; }
-        .st-waiting { border-left-color: var(--text-muted); background: #f8fafc; }
+        .st-waiting { border-left-color: var(--text-muted); background: #f6faf1; }
 
         .status-pill {
             float: right;
@@ -98,7 +98,7 @@
             font-weight: bold;
         }
         .sp-progress { background: var(--text-main); }
-        .sp-completed { background: #16a34a; }
+        .sp-completed { background: #15803d; }
         .sp-delayed { background: #dc2626; }
         .sp-waiting { background: var(--text-muted); }
 
@@ -222,7 +222,7 @@
                                 @endforeach
                             @endforeach
                         </tbody>
-                        <tr style="background: #f8fafc; font-weight: bold;">
+                        <tr style="background: #f6faf1; font-weight: bold;">
                             <td>TOTAL</td><td class="text-right">{{ $total_qty }}</td>
                         </tr>
                     </table>
@@ -242,7 +242,7 @@
                                 </tr>
                             @endforeach
                         </tbody>
-                        <tr style="background: #f8fafc; font-weight: bold;">
+                        <tr style="background: #f6faf1; font-weight: bold;">
                             <td>TOTAL</td><td class="text-right">{{ number_format($data['rolls_data']->sum('meter'), 2) }} m</td>
                         </tr>
                     </table>
@@ -285,7 +285,7 @@
                         <td style="width: 2%;"></td>
                         <td style="width: 18%;">
                             <span class="metric-label">Remaining</span>
-                            <span class="metric-value" style="color: {{ $remaining > 0 ? '#dc2626' : '#16a34a' }}">{{ number_format($remaining) }}</span>
+                            <span class="metric-value" style="color: {{ $remaining > 0 ? '#dc2626' : '#15803d' }}">{{ number_format($remaining) }}</span>
                         </td>
                         <td style="width: 2%;"></td>
                         <td style="width: 18%;">

@@ -51,7 +51,7 @@
         <div class="header-section text-center">
             @if($snapkidLogo) <img src="{{ $snapkidLogo }}" class="logo-img" style="left: 15px;"> @endif
             <div class="estimate-title">SALES RETURN</div>
-            <div class="company-name">{{ $brandTitle }}</div>
+            <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => $brandTitle])</div>
             <div style="font-size: 10px;">{{ $settings->address ?? 'TRONIKA CITY GHAZIABAD-201102' }}</div>
         </div>
 
@@ -166,7 +166,7 @@
                 <td width="40%" class="text-right">
                     <strong>Authorised Signatory</strong><br><br><br><br>
                     <div style="margin-top: 20px;">
-                        For <strong>{{ $brandTitle }}</strong>
+                        For <strong>@include('admin.pdf.partials.brand_name', ['name' => $brandTitle, 'height' => 14])</strong>
                     </div>
                 </td>
             </tr>

@@ -13,14 +13,14 @@
         }
         .header-table {
             width: 100%;
-            border-bottom: 2px solid #1e3c72;
+            border-bottom: 2px solid #05421c;
             margin-bottom: 15px;
             padding-bottom: 10px;
         }
         .company-name {
             font-size: 18px;
             font-weight: bold;
-            color: #1e3c72;
+            color: #05421c;
         }
         .report-title {
             font-size: 14px;
@@ -38,8 +38,8 @@
         .filter-summary {
             width: 100%;
             margin-bottom: 15px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background: #f6faf1;
+            border: 1px solid #dfe9da;
             border-radius: 4px;
             padding: 8px 12px;
             font-size: 9.5px;
@@ -49,27 +49,27 @@
         }
         .filter-label {
             font-weight: bold;
-            color: #475569;
+            color: #0d5f2c;
         }
         .total-box {
             width: 100%;
             margin-bottom: 15px;
             background: #eef2ff;
-            border: 1px solid #c7d2fe;
+            border: 1px solid #edf7e4;
             padding: 8px 12px;
             text-align: right;
             border-radius: 4px;
         }
         .total-box .title {
             font-size: 10px;
-            color: #4338ca;
+            color: #05421c;
             font-weight: bold;
             text-transform: uppercase;
             margin-right: 15px;
         }
         .total-box .amount {
             font-size: 15px;
-            color: #1e3c72;
+            color: #05421c;
             font-weight: bold;
         }
         table.data-table {
@@ -78,21 +78,21 @@
             margin-bottom: 20px;
         }
         table.data-table th {
-            background-color: #1e3c72;
+            background-color: #05421c;
             color: #ffffff;
             font-weight: bold;
             text-align: left;
             padding: 6px 8px;
             font-size: 9.5px;
-            border: 1px solid #1e3c72;
+            border: 1px solid #05421c;
         }
         table.data-table td {
             padding: 5px 8px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #c8d8c4;
             font-size: 9px;
         }
         table.data-table tr:nth-child(even) {
-            background-color: #f8fafc;
+            background-color: #f6faf1;
         }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
@@ -103,9 +103,9 @@
             left: 0;
             right: 0;
             font-size: 8.5px;
-            color: #94a3b8;
+            color: #8aa890;
             text-align: center;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid #dfe9da;
             padding-top: 4px;
         }
     </style>
@@ -114,8 +114,8 @@
     <table class="header-table">
         <tr>
             <td style="vertical-align: middle;">
-                <div class="company-name">SNAPKID</div>
-                <div style="color: #64748b; font-size: 9.5px;">Purchase Ledger Statement</div>
+                <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID'])</div>
+                <div style="color: #0d5f2c; font-size: 9.5px;">Purchase Ledger Statement</div>
             </td>
             <td style="vertical-align: middle; text-align: right;">
                 <div class="report-title">Purchase Ledger</div>
@@ -180,20 +180,20 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center" style="padding: 15px; color: #94a3b8;">No purchase records found matching the criteria.</td>
+                    <td colspan="7" class="text-center" style="padding: 15px; color: #8aa890;">No purchase records found matching the criteria.</td>
                 </tr>
             @endforelse
         </tbody>
         <tfoot>
-            <tr style="background-color: #e2e8f0; font-weight: bold;">
+            <tr style="background-color: #dfe9da; font-weight: bold;">
                 <td colspan="6" class="text-right">TOTAL:</td>
-                <td class="text-right" style="font-size: 11px; color: #1e3c72;">₹{{ number_format($totalGrandTotal, 2) }}</td>
+                <td class="text-right" style="font-size: 11px; color: #05421c;">₹{{ number_format($totalGrandTotal, 2) }}</td>
             </tr>
         </tfoot>
     </table>
 
     <div class="footer">
-        SNAPKID ERP &bull; Purchase Ledger Report &bull; Page printed automatically
+        @include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID', 'height' => 10]) ERP &bull; Purchase Ledger Report &bull; Page printed automatically
     </div>
 </body>
 </html>

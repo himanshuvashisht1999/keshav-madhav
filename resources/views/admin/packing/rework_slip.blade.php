@@ -10,13 +10,13 @@
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 12px;
-            color: #111827;
+            color: #052a12;
             margin: 0;
             padding: 0;
             line-height: 1.35;
         }
         .slip-box {
-            border: 2px solid #111827;
+            border: 2px solid #052a12;
             padding: 12px 14px;
             background: #ffffff;
         }
@@ -24,7 +24,7 @@
         .top-header {
             width: 100%;
             border-collapse: collapse;
-            border-bottom: 2px solid #111827;
+            border-bottom: 2px solid #052a12;
             margin-bottom: 12px;
         }
         .top-header td {
@@ -33,7 +33,7 @@
         .company-title {
             font-size: 22px;
             font-weight: 900;
-            color: #111827;
+            color: #052a12;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin: 0;
@@ -41,7 +41,7 @@
         }
         .company-sub {
             font-size: 9.5px;
-            color: #4b5563;
+            color: #0d5f2c;
             margin-top: 3px;
         }
         .title-badge {
@@ -58,7 +58,7 @@
         .slip-ref-text {
             font-size: 12px;
             font-weight: bold;
-            color: #111827;
+            color: #052a12;
             margin-top: 6px;
         }
 
@@ -77,7 +77,7 @@
         .label-sm {
             font-size: 10px;
             font-weight: bold;
-            color: #4b5563;
+            color: #0d5f2c;
             text-transform: uppercase;
             display: block;
             margin-bottom: 3px;
@@ -92,7 +92,7 @@
         .value-md {
             font-size: 13px;
             font-weight: bold;
-            color: #111827;
+            color: #052a12;
         }
 
         /* Goods Details Table */
@@ -103,19 +103,19 @@
             table-layout: fixed;
         }
         .goods-table th {
-            background: #111827;
+            background: #052a12;
             color: #ffffff;
             font-size: 10px;
             font-weight: 900;
             text-transform: uppercase;
             padding: 7px 5px;
-            border: 1px solid #111827;
+            border: 1px solid #052a12;
             text-align: center;
             letter-spacing: 0.5px;
         }
         .goods-table td {
             padding: 7px 5px;
-            border: 1px solid #9ca3af;
+            border: 1px solid #9db89f;
             font-size: 11.5px;
             vertical-align: middle;
             text-align: center;
@@ -127,12 +127,12 @@
         .cell-lot {
             font-size: 14px;
             font-weight: 900;
-            color: #111827;
+            color: #052a12;
         }
         .cell-design {
             font-size: 12px;
             font-weight: bold;
-            color: #111827;
+            color: #052a12;
             text-align: left;
             padding-left: 8px !important;
         }
@@ -148,7 +148,7 @@
         .total-banner-table {
             width: 100%;
             border-collapse: collapse;
-            background: #111827;
+            background: #052a12;
             margin-bottom: 12px;
         }
         .total-banner-text {
@@ -193,7 +193,7 @@
         .defect-text {
             font-size: 13px;
             font-weight: bold;
-            color: #111827;
+            color: #052a12;
         }
 
         /* Notice Table */
@@ -207,7 +207,7 @@
         .notice-table td {
             padding: 7px 12px;
             font-size: 10px;
-            color: #374151;
+            color: #052a12;
             line-height: 1.4;
         }
 
@@ -224,7 +224,7 @@
             padding: 0 25px;
         }
         .signature-line {
-            border-top: 1.5px solid #111827;
+            border-top: 1.5px solid #052a12;
             margin-top: 40px;
             margin-bottom: 4px;
         }
@@ -232,11 +232,11 @@
             font-size: 11px;
             font-weight: 900;
             text-transform: uppercase;
-            color: #111827;
+            color: #052a12;
         }
         .signature-sub {
             font-size: 9px;
-            color: #6b7280;
+            color: #0d5f2c;
         }
     </style>
 </head>
@@ -263,11 +263,11 @@
                     @if($logoBase64)
                         <img src="{{ $logoBase64 }}" alt="SnapKid" style="max-height: 52px; max-width: 130px; object-fit: contain;">
                     @else
-                        <div class="company-title">SNAPKID</div>
+                        <div class="company-title">@include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID'])</div>
                     @endif
                 </td>
                 <td style="width: 48%; vertical-align: middle; padding-left: 10px;">
-                    <div class="company-title">{{ $general_setting->website_name ?? 'SNAPKID' }}</div>
+                    <div class="company-title">@include('admin.pdf.partials.brand_name', ['name' => $general_setting->website_name ?? 'SNAPKID'])</div>
                     <div class="company-sub">
                         {{ $general_setting->address ?? 'Garment Manufacturing & Quality Unit' }}
                         @if(!empty($general_setting->phone))
@@ -342,7 +342,7 @@
                         <td class="cell-design">
                             <strong>{{ $designNo }}</strong>
                             @if($seriesName)
-                                <div style="font-size: 9.5px; color: #4b5563; font-weight: normal;">{{ $seriesName }}</div>
+                                <div style="font-size: 9.5px; color: #0d5f2c; font-weight: normal;">{{ $seriesName }}</div>
                             @endif
                         </td>
                         <td style="font-weight: bold;">{{ $colorName }}</td>

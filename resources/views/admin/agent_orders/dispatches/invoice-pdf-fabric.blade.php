@@ -53,7 +53,7 @@
         <div class="header-section text-center">
             @if($logoData) <img src="{{ $logoData }}" class="logo-img" style="left: 15px;"> @endif
             <div class="estimate-title">FABRIC INVOICE</div>
-            <div class="company-name">{{ $settings->website_name ?? 'SURGICAL JEANS' }}</div>
+            <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => $settings->website_name ?? 'SURGICAL JEANS'])</div>
             <div style="font-size: 10px;">{{ $settings->address ?? '' }}</div>
         </div>
 
@@ -181,7 +181,7 @@
                 <td width="40%" class="text-right">
                     <strong>Receiver's Signature :</strong><br><br><br><br>
                     <div style="margin-top: 20px;">
-                        For <strong>{{ $settings->website_name ?? 'SURGICAL JEANS' }}</strong><br>
+                        For <strong>@include('admin.pdf.partials.brand_name', ['name' => $settings->website_name ?? 'SURGICAL JEANS', 'height' => 14])</strong><br>
                         <strong>Authorised Signatory</strong>
                     </div>
                 </td>

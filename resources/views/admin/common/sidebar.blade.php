@@ -13,7 +13,7 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
     @endphp
     <a href="{{ route('admin.user.profileEdit') }}" class="brand-link">
         <img src="{{ $sidebarLogo }}" alt="Snapkid" class="brand-image" style="opacity: 1;">
-        <span class="brand-text font-weight-bold ml-1">SNAPKID</span>
+        <img src="{{ asset('admin_assets/img/snapkid-wordmark.svg') }}" alt="snapkid" class="brand-text brand-wordmark">
     </a>
 
     <!-- Sidebar -->

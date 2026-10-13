@@ -7,29 +7,29 @@
         body {
             font-family: DejaVu Sans, sans-serif;
             font-size: 11px;
-            color: #1e293b;
+            color: #052a12;
             margin: 0;
             padding: 0;
         }
         .header {
             text-align: center;
             margin-bottom: 20px;
-            border-bottom: 2px solid #007bff;
+            border-bottom: 2px solid #05421c;
             padding-bottom: 10px;
         }
         .header h1 {
             margin: 0;
-            color: #007bff;
+            color: #05421c;
             font-size: 20px;
         }
         .section {
             margin-bottom: 20px;
         }
         .section-title {
-            background: #f8fafc;
+            background: #f6faf1;
             padding: 8px 12px;
             font-weight: bold;
-            border-bottom: 1px solid #edf2f7;
+            border-bottom: 1px solid #f0f8e7;
             font-size: 13px;
             margin-bottom: 10px;
             text-transform: uppercase;
@@ -42,14 +42,14 @@
         .info-grid td {
             width: 33.33%;
             padding: 10px;
-            border: 1px solid #edf2f7;
+            border: 1px solid #f0f8e7;
             vertical-align: top;
         }
         .info-grid label {
             display: block;
             font-size: 9px;
             text-transform: uppercase;
-            color: #64748b;
+            color: #0d5f2c;
             font-weight: bold;
             margin-bottom: 4px;
         }
@@ -63,13 +63,13 @@
             margin-bottom: 10px;
         }
         table.items-table th, table.items-table td {
-            border: 1px solid #edf2f7;
+            border: 1px solid #f0f8e7;
             padding: 8px;
             text-align: left;
         }
         table.items-table th {
-            background: #f1f5f9;
-            color: #64748b;
+            background: #f0f8e7;
+            color: #0d5f2c;
             font-size: 10px;
             font-weight: bold;
             text-transform: uppercase;
@@ -84,10 +84,10 @@
             font-weight: bold;
         }
         .text-primary {
-            color: #007bff;
+            color: #05421c;
         }
         .text-success {
-            color: #28a745;
+            color: #36b54a;
         }
         .text-danger {
             color: #dc3545;
@@ -102,9 +102,9 @@
             white-space: nowrap;
             vertical-align: baseline;
             border-radius: .25rem;
-            background-color: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
+            background-color: #f0f8e7;
+            color: #0d5f2c;
+            border: 1px solid #dfe9da;
         }
         .summary-row td {
             border: none !important;
@@ -112,7 +112,7 @@
         }
         .grand-total {
             font-size: 14px;
-            background: #f8fafc;
+            background: #f6faf1;
         }
     </style>
 </head>
@@ -133,7 +133,7 @@
             <td>
                 <label>Customer Details</label>
                 <div style="font-size: 13px;">{{ $order_dispatch_data['customer'] }}</div>
-                <div style="font-weight: normal; color: #475569; margin-top: 5px;">
+                <div style="font-weight: normal; color: #0d5f2c; margin-top: 5px;">
                     {{ $order_dispatch_data['address'] ?? 'N/A' }}
                 </div>
             </td>
@@ -157,8 +157,8 @@
                         <td style="padding: 2px 0;" class="text-right text-primary">+ ₹{{ number_format($gst_val, 2) }}</td>
                     </tr>
                     <tr class="summary-row grand-total">
-                        <td style="padding: 8px 0; border-top: 1px solid #007bff !important;"><strong>Grand Total:</strong></td>
-                        <td style="padding: 8px 0; border-top: 1px solid #007bff !important;" class="text-right text-success"><strong>₹{{ number_format($order_dispatch_data['total_amount'], 2) }}</strong></td>
+                        <td style="padding: 8px 0; border-top: 1px solid #05421c !important;"><strong>Grand Total:</strong></td>
+                        <td style="padding: 8px 0; border-top: 1px solid #05421c !important;" class="text-right text-success"><strong>₹{{ number_format($order_dispatch_data['total_amount'], 2) }}</strong></td>
                     </tr>
                 </table>
             </td>
@@ -182,7 +182,7 @@
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>
                             <div class="font-weight-bold">Carton - {{ $carton['carton_no'] }}</div>
-                            <div style="font-size: 9px; color: #64748b;">
+                            <div style="font-size: 9px; color: #0d5f2c;">
                                 Store Room: {{ $carton['storeroom'] ?? '' }}<br>
                                 Rack: {{ $carton['rack'] ?? '' }}
                             </div>
@@ -192,30 +192,30 @@
                             @if(count($sets))
                                 <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
                                     <thead>
-                                        <tr style="background: #f8fafc;">
-                                            <th style="border: 1px solid #e2e8f0; padding: 4px;">Design | Color</th>
-                                            <th style="border: 1px solid #e2e8f0; padding: 4px;">Sizes (Qty)</th>
-                                            <th style="border: 1px solid #e2e8f0; padding: 4px;" class="text-center">Total</th>
-                                            <th style="border: 1px solid #e2e8f0; padding: 4px;" class="text-right">Value (₹)</th>
+                                        <tr style="background: #f6faf1;">
+                                            <th style="border: 1px solid #dfe9da; padding: 4px;">Design | Color</th>
+                                            <th style="border: 1px solid #dfe9da; padding: 4px;">Sizes (Qty)</th>
+                                            <th style="border: 1px solid #dfe9da; padding: 4px;" class="text-center">Total</th>
+                                            <th style="border: 1px solid #dfe9da; padding: 4px;" class="text-right">Value (₹)</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach ($sets as $set)
                                             <tr>
-                                                <td style="border: 1px solid #e2e8f0; padding: 4px;">
+                                                <td style="border: 1px solid #dfe9da; padding: 4px;">
                                                     <strong>{{ $set['design'] }}</strong> | {{ $set['color'] }}
                                                 </td>
-                                                <td style="border: 1px solid #e2e8f0; padding: 4px;">
+                                                <td style="border: 1px solid #dfe9da; padding: 4px;">
                                                     <span class="badge">{{ $set['size_set'] }}</span>
                                                 </td>
-                                                <td style="border: 1px solid #e2e8f0; padding: 4px;" class="text-center">{{ $set['total_qty'] }}</td>
-                                                <td style="border: 1px solid #e2e8f0; padding: 4px;" class="text-right">₹{{ number_format($set['total_qty'] * $set['price'], 2) }}</td>
+                                                <td style="border: 1px solid #dfe9da; padding: 4px;" class="text-center">{{ $set['total_qty'] }}</td>
+                                                <td style="border: 1px solid #dfe9da; padding: 4px;" class="text-right">₹{{ number_format($set['total_qty'] * $set['price'], 2) }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
                             @else
-                                <span style="color: #94a3b8;">—</span>
+                                <span style="color: #8aa890;">—</span>
                             @endif
                         </td>
                         <td class="text-center">
@@ -224,7 +224,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="text-center" style="padding: 30px; color: #94a3b8;">
+                        <td colspan="4" class="text-center" style="padding: 30px; color: #8aa890;">
                             No cartons found in this dispatch.
                         </td>
                     </tr>
@@ -233,7 +233,7 @@
         </table>
     </div>
 
-    <div style="margin-top: 50px; text-align: center; color: #94a3b8; font-size: 9px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+    <div style="margin-top: 50px; text-align: center; color: #8aa890; font-size: 9px; border-top: 1px solid #f0f8e7; padding-top: 10px;">
         This is a computer generated document.
     </div>
 </body>

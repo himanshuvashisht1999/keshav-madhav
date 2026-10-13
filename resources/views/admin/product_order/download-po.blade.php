@@ -20,7 +20,7 @@
         }
 
         .voucher-sheet {
-            border: 1px solid #cbd5e1;
+            border: 1px solid #c8d8c4;
             border-top: 4px solid #fcee21;
             border-radius: 4px;
             padding: 12px 14px;
@@ -51,7 +51,7 @@
         }
 
         .info-card {
-            border: 1px solid #cbd5e1;
+            border: 1px solid #c8d8c4;
             border-radius: 4px;
             background: #ffffff;
         }
@@ -85,7 +85,7 @@
         .info-label {
             width: 32%;
             font-weight: 700;
-            color: #074e22;
+            color: #05421c;
             text-transform: uppercase;
             font-size: 8.5px;
         }
@@ -131,8 +131,8 @@
             padding: 5px 6px;
             border-top: 1px solid #05421c;
             border-bottom: 2px solid #05421c;
-            border-right: 1px solid #cbd5e1;
-            border-left: 1px solid #cbd5e1;
+            border-right: 1px solid #c8d8c4;
+            border-left: 1px solid #c8d8c4;
             text-align: center;
         }
 
@@ -140,7 +140,7 @@
             padding: 5px 6px;
             font-size: 9.5px;
             color: #05421c;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #dfe9da;
             vertical-align: middle;
             font-weight: 600;
         }
@@ -176,7 +176,7 @@
         .print-date {
             text-align: center;
             font-size: 8px;
-            color: #457855;
+            color: #05421c;
             margin-top: 15px;
         }
 
@@ -191,7 +191,7 @@
         <table class="company-header" cellpadding="0" cellspacing="0">
             <tr>
                 <td width="70%" valign="top">
-                    <div class="company-name">SNAPKID</div>
+                    <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID'])</div>
                     <div class="company-meta">
                         <div>Production Purchase Order</div>
                     </div>
@@ -283,7 +283,7 @@
         </table>
 
         @if(!empty($po->remarks))
-            <div style="margin-top: 10px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; background: #ffffff;">
+            <div style="margin-top: 10px; padding: 6px 8px; border: 1px solid #c8d8c4; border-radius: 4px; background: #ffffff;">
                 <b style="font-size: 8.5px; text-transform: uppercase; color: #05421c;">Remarks:</b>
                 <span style="font-size: 9px; color: #05421c;">{{ $po->remarks }}</span>
             </div>

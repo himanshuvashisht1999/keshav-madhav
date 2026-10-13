@@ -15,14 +15,14 @@
 
         .header {
             text-align: center;
-            border-bottom: 2px solid #007bff;
+            border-bottom: 2px solid #05421c;
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
 
         .header h2 {
             margin: 0;
-            color: #007bff;
+            color: #05421c;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -59,13 +59,13 @@
         .carton-section {
             margin-bottom: 30px;
             page-break-inside: avoid;
-            border: 1px solid #007bff;
+            border: 1px solid #05421c;
             border-radius: 5px;
             overflow: hidden;
         }
 
         .carton-header {
-            background: #007bff;
+            background: #05421c;
             color: white;
             padding: 10px 15px;
             font-weight: bold;
@@ -100,7 +100,7 @@
         }
 
         .pcs-badge {
-            background: #28a745;
+            background: #36b54a;
             color: white;
             padding: 2px 6px;
             border-radius: 3px;

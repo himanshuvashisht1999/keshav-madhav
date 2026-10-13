@@ -27,9 +27,9 @@
         .text-uppercase { text-transform: uppercase; }
         
         /* Snapkid Brand Colors */
-        .color-primary { color: #165b33; }
+        .color-primary { color: #05421c; }
         .color-gold { color: #d97706; }
-        .color-muted { color: #64748b; }
+        .color-muted { color: #0d5f2c; }
         .color-debit { color: #b91c1c; font-weight: bold; }
         .color-credit { color: #15803d; font-weight: bold; }
 
@@ -66,28 +66,28 @@
         .company-name {
             font-size: 18px;
             font-weight: bold;
-            color: #165b33;
+            color: #05421c;
             letter-spacing: 0.5px;
             margin: 0 0 3px 0;
         }
 
         .company-subtitle {
             font-size: 9px;
-            color: #475569;
+            color: #0d5f2c;
             line-height: 1.3;
         }
 
         .statement-title-box {
             width: 30%;
             text-align: right;
-            border-left: 3px solid #165b33;
+            border-left: 3px solid #05421c;
             padding-left: 10px;
         }
 
         .doc-title {
             font-size: 14px;
             font-weight: bold;
-            color: #165b33;
+            color: #05421c;
             text-transform: uppercase;
             letter-spacing: 0.8px;
             margin: 0;
@@ -104,7 +104,7 @@
 
         .doc-meta {
             font-size: 8.5px;
-            color: #64748b;
+            color: #0d5f2c;
             margin-top: 4px;
             line-height: 1.3;
         }
@@ -112,7 +112,7 @@
         /* Brand Accent Divider */
         .brand-divider {
             height: 4px;
-            background: #165b33;
+            background: #05421c;
             margin-bottom: 12px;
             border-bottom: 2px solid #f59e0b;
         }
@@ -140,7 +140,7 @@
             font-size: 8.5px;
             font-weight: bold;
             text-transform: uppercase;
-            color: #165b33;
+            color: #05421c;
             border-bottom: 1px solid #d1e7dd;
             padding-bottom: 4px;
             margin-bottom: 6px;
@@ -150,14 +150,14 @@
         .party-name {
             font-size: 13px;
             font-weight: bold;
-            color: #0f172a;
+            color: #052a12;
             margin-bottom: 3px;
         }
 
         .badge-type {
             display: inline-block;
             background-color: #e8f5e9;
-            color: #165b33;
+            color: #05421c;
             border: 1px solid #a3cfbb;
             border-radius: 3px;
             font-size: 8px;
@@ -169,7 +169,7 @@
 
         .meta-row {
             font-size: 9px;
-            color: #334155;
+            color: #05421c;
             margin-bottom: 2px;
         }
 
@@ -188,9 +188,9 @@
         }
 
         .metric-cell-primary {
-            background: #165b33;
+            background: #05421c;
             color: #ffffff;
-            border: 1px solid #0e3d22;
+            border: 1px solid #05421c;
         }
 
         .metric-label {
@@ -198,7 +198,7 @@
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #64748b;
+            color: #0d5f2c;
             margin-bottom: 3px;
             display: block;
         }
@@ -210,7 +210,7 @@
         .metric-value {
             font-size: 12px;
             font-weight: bold;
-            color: #0f172a;
+            color: #052a12;
         }
 
         .metric-cell-primary .metric-value {
@@ -227,7 +227,7 @@
             margin-left: 2px;
         }
 
-        .tag-cr { background: #dcfce7; color: #166534; }
+        .tag-cr { background: #dcfce7; color: #05421c; }
         .tag-dr { background: #fee2e2; color: #991b1b; }
         .metric-cell-primary .tag-cr { background: #fef08a; color: #854d0e; }
         .metric-cell-primary .tag-dr { background: #fca5a5; color: #7f1d1d; }
@@ -240,18 +240,18 @@
         }
 
         .ledger-table th {
-            background-color: #165b33;
+            background-color: #05421c;
             color: #ffffff;
             font-size: 8.5px;
             font-weight: bold;
             text-transform: uppercase;
             padding: 6px 5px;
-            border: 1px solid #165b33;
+            border: 1px solid #05421c;
             letter-spacing: 0.4px;
         }
 
         .ledger-table th.border-right-light {
-            border-right: 1px solid #237a47;
+            border-right: 1px solid #05421c;
         }
 
         .ledger-table td {
@@ -271,7 +271,7 @@
             background-color: #f4f9f4;
             font-style: italic;
             font-weight: bold;
-            color: #334155;
+            color: #05421c;
             border-bottom: 1.5px solid #d1e7dd;
         }
 
@@ -280,9 +280,9 @@
             font-size: 9px;
             font-weight: bold;
             padding: 7px 6px;
-            border-top: 2px solid #165b33 !important;
-            border-bottom: 2px solid #165b33 !important;
-            color: #0f172a;
+            border-top: 2px solid #05421c !important;
+            border-bottom: 2px solid #05421c !important;
+            color: #052a12;
         }
 
         .type-pill {
@@ -291,7 +291,7 @@
             padding: 1px 4px;
             border-radius: 2px;
             background: #eef2f6;
-            color: #334155;
+            color: #05421c;
             display: inline-block;
             text-transform: uppercase;
         }
@@ -309,7 +309,7 @@
         }
 
         .sign-line {
-            border-top: 1px dashed #64748b;
+            border-top: 1px dashed #0d5f2c;
             width: 170px;
             margin-bottom: 4px;
         }
@@ -317,14 +317,14 @@
         .footer-note {
             margin-top: 25px;
             padding-top: 8px;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid #dfe9da;
             font-size: 7.5px;
-            color: #64748b;
+            color: #0d5f2c;
             text-align: center;
         }
 
         .footer-note span {
-            color: #165b33;
+            color: #05421c;
             font-weight: bold;
         }
     </style>
@@ -373,11 +373,11 @@
                 @if($logoBase64)
                     <img src="{{ $logoBase64 }}" class="logo-img" alt="Snapkid">
                 @else
-                    <div style="font-size: 22px; font-weight: bold; color: #165b33; letter-spacing: 1px;">SNAPKID</div>
+                    <div style="font-size: 22px; font-weight: bold; letter-spacing: 1px;">@include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID', 'height' => 28])</div>
                 @endif
             </td>
             <td class="company-info">
-                <div class="company-name">{{ strtoupper($companyName) }}</div>
+                <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => $companyName, 'height' => 26])</div>
                 <div class="company-subtitle">
                     {{ $companyAddress }}<br>
                     <strong>Phone:</strong> {{ $companyPhone }} &nbsp;|&nbsp; <strong>Email:</strong> {{ $companyEmail }}
@@ -436,7 +436,7 @@
                         if(request('credit_value')) $filterItems[] = 'Cr: ₹' . request('credit_value');
                     @endphp
                     @if(count($filterItems) > 0)
-                        <div class="meta-row" style="color: #165b33; font-weight: bold; margin-top: 3px;">
+                        <div class="meta-row" style="color: #05421c; font-weight: bold; margin-top: 3px;">
                             <strong>Active Filters:</strong> {{ implode(' | ', $filterItems) }}
                         </div>
                     @endif
@@ -455,7 +455,7 @@
                 $grpTotalCredit = (float) $ledger->transactions->sum('credit');
             @endphp
 
-            <div style="margin-top: 15px; margin-bottom: 6px; padding: 6px 10px; background: #f0f7f2; border-left: 4px solid #165b33; font-weight: bold; font-size: 11px; color: #165b33;">
+            <div style="margin-top: 15px; margin-bottom: 6px; padding: 6px 10px; background: #f0f7f2; border-left: 4px solid #05421c; font-weight: bold; font-size: 11px; color: #05421c;">
                 Customer: {{ $ledger->shop->name }}
             </div>
 
@@ -527,7 +527,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center" style="padding: 15px; color: #64748b;">No transactions recorded in this period.</td>
+                            <td colspan="7" class="text-center" style="padding: 15px; color: #0d5f2c;">No transactions recorded in this period.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -536,14 +536,14 @@
                         <td colspan="4" class="text-right text-uppercase font-bold">Total Activity:</td>
                         <td class="text-right color-debit">₹ {{ number_format($grpTotalDebit, 2) }}</td>
                         <td class="text-right color-credit">₹ {{ number_format($grpTotalCredit, 2) }}</td>
-                        <td class="text-right font-bold" style="color: #165b33;">
+                        <td class="text-right font-bold" style="color: #05421c;">
                             ₹ {{ number_format(abs($grpCloseBal), 2) }} {{ $grpCloseBal >= 0 ? 'CR' : 'DR' }}
                         </td>
                     </tr>
                 </tfoot>
             </table>
         @empty
-            <div class="text-center" style="padding: 25px; color: #64748b;">No customer ledgers found.</div>
+            <div class="text-center" style="padding: 25px; color: #0d5f2c;">No customer ledgers found.</div>
         @endforelse
 
     @else
@@ -621,7 +621,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-center" style="padding: 18px; color: #64748b;">No transaction entries found for the selected period.</td>
+                        <td colspan="7" class="text-center" style="padding: 18px; color: #0d5f2c;">No transaction entries found for the selected period.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -630,7 +630,7 @@
                     <td colspan="4" class="text-right text-uppercase font-bold">Grand Totals:</td>
                     <td class="text-right color-debit">₹ {{ number_format($totalDebit, 2) }}</td>
                     <td class="text-right color-credit">₹ {{ number_format($totalCredit, 2) }}</td>
-                    <td class="text-right font-bold" style="color: #165b33;">
+                    <td class="text-right font-bold" style="color: #05421c;">
                         ₹ {{ number_format(abs($netBalance), 2) }} {{ $closingTag }}
                     </td>
                 </tr>
@@ -642,7 +642,7 @@
     <table class="sign-table">
         <tr>
             <td style="width: 60%; vertical-align: top;">
-                <div style="font-size: 8px; color: #64748b; line-height: 1.4;">
+                <div style="font-size: 8px; color: #0d5f2c; line-height: 1.4;">
                     <strong>Important Accounting Notes:</strong><br>
                     1. Please inspect all statement entries promptly upon receipt.<br>
                     2. Any discrepancies should be notified within 7 days.<br>
@@ -651,15 +651,15 @@
             </td>
             <td style="width: 40%; text-align: right; vertical-align: bottom;">
                 <div class="sign-line" style="margin-left: auto;"></div>
-                <div style="font-weight: bold; color: #165b33;">Authorized Signatory</div>
-                <div style="font-size: 8px; color: #64748b;">SNAPKID MANAGEMENT</div>
+                <div style="font-weight: bold; color: #05421c;">Authorized Signatory</div>
+                <div style="font-size: 8px; color: #0d5f2c;">@include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID', 'height' => 9]) MANAGEMENT</div>
             </td>
         </tr>
     </table>
 
     {{-- FOOTER NOTE --}}
     <div class="footer-note">
-        This is a computer-generated account statement issued by <span>SNAPKID ERP</span>. No physical signature is required. | Generated on {{ date('d-M-Y H:i:s') }}
+        This is a computer-generated account statement issued by <span>@include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID', 'height' => 10]) ERP</span>. No physical signature is required. | Generated on {{ date('d-M-Y H:i:s') }}
     </div>
 
 </div>

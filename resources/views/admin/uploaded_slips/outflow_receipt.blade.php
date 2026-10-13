@@ -15,7 +15,7 @@
         .value { font-size: 13px; font-weight: bold; color: #000; }
         .type-badge { display: inline-block; padding: 3px 10px; background: #000; color: #fff; border-radius: 3px; font-size: 11px; font-weight: 900; }
         .qty-circle { width: 50px; height: 50px; border: 3px solid #000; border-radius: 50%; line-height: 50px; text-align: center; font-size: 24px; font-weight: 900; margin: 0 auto; }
-        .summary-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; margin-bottom: 20px; text-align: center; }
+        .summary-box { background: #f6faf1; border: 1px solid #dfe9da; padding: 15px; border-radius: 6px; margin-bottom: 20px; text-align: center; }
         .footer { margin-top: 30px; }
         .sig-row { width: 100%; margin-top: 40px; }
         .sig-box { border-top: 1px solid #000; width: 40%; text-align: center; padding-top: 5px; font-size: 10px; }
@@ -24,7 +24,7 @@
 <body>
     <div class="receipt-card">
         <div class="header">
-            <div class="company-name">{{ $general_setting->website_name ?? 'SNAPKID' }}</div>
+            <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => $general_setting->website_name ?? 'SNAPKID', 'height' => 26])</div>
             <div style="font-size: 10px; color: #666;">{{ $general_setting->address ?? '' }}</div>
             <div class="receipt-title">Transaction Acknowledgement</div>
         </div>

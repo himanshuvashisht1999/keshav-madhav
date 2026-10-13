@@ -5,24 +5,24 @@
     <title>Slip Report #{{ $slip->id }}</title>
     <style>
         @page { margin: 1cm 1.2cm; }
-        body { font-family: 'DejaVu Sans', sans-serif; font-size: 10px; color: #1e293b; line-height: 1.4; }
-        .header { border-bottom: 2px solid #4f46e5; padding-bottom: 8px; margin-bottom: 15px; }
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 10px; color: #052a12; line-height: 1.4; }
+        .header { border-bottom: 2px solid #05421c; padding-bottom: 8px; margin-bottom: 15px; }
         .header table { width: 100%; border-collapse: collapse; }
-        .company-name { font-size: 16px; font-weight: bold; color: #4f46e5; text-transform: uppercase; }
-        .doc-title { text-align: right; font-size: 14px; font-weight: bold; color: #0f172a; text-transform: uppercase; }
-        .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; border: 1px solid #cbd5e1; }
-        .meta-table td { padding: 5px 8px; border: 1px solid #e2e8f0; font-size: 10px; }
-        .lbl { font-size: 8px; font-weight: bold; color: #64748b; text-transform: uppercase; display: block; }
-        .val { font-size: 10px; font-weight: bold; color: #0f172a; }
-        .section-title { font-size: 12px; font-weight: bold; color: #1e293b; margin-top: 12px; margin-bottom: 6px; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px; }
+        .company-name { font-size: 16px; font-weight: bold; color: #05421c; text-transform: uppercase; }
+        .doc-title { text-align: right; font-size: 14px; font-weight: bold; color: #052a12; text-transform: uppercase; }
+        .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; border: 1px solid #c8d8c4; }
+        .meta-table td { padding: 5px 8px; border: 1px solid #dfe9da; font-size: 10px; }
+        .lbl { font-size: 8px; font-weight: bold; color: #0d5f2c; text-transform: uppercase; display: block; }
+        .val { font-size: 10px; font-weight: bold; color: #052a12; }
+        .section-title { font-size: 12px; font-weight: bold; color: #052a12; margin-top: 12px; margin-bottom: 6px; border-bottom: 1px solid #c8d8c4; padding-bottom: 3px; }
         .data-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 9px; }
-        .data-table th { background: #f1f5f9; color: #334155; padding: 5px 6px; text-align: left; border: 1px solid #cbd5e1; font-weight: bold; }
-        .data-table td { padding: 4px 6px; border: 1px solid #e2e8f0; }
+        .data-table th { background: #f0f8e7; color: #05421c; padding: 5px 6px; text-align: left; border: 1px solid #c8d8c4; font-weight: bold; }
+        .data-table td { padding: 4px 6px; border: 1px solid #dfe9da; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
-        .badge { display: inline-block; padding: 2px 5px; font-size: 8px; font-weight: bold; border-radius: 3px; background: #e2e8f0; }
-        .badge-lot { background: #e0e7ff; color: #3730a3; }
-        .summary-box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px 10px; margin-bottom: 12px; border-radius: 4px; font-size: 10px; }
+        .badge { display: inline-block; padding: 2px 5px; font-size: 8px; font-weight: bold; border-radius: 3px; background: #dfe9da; }
+        .badge-lot { background: #edf7e4; color: #05421c; }
+        .summary-box { background: #f6faf1; border: 1px solid #c8d8c4; padding: 6px 10px; margin-bottom: 12px; border-radius: 4px; font-size: 10px; }
     </style>
 </head>
 <body>
@@ -33,11 +33,11 @@
             <tr>
                 <td>
                     <div class="company-name">{{ $general_setting->site_title ?? 'KESHAV MADHAV' }}</div>
-                    <div style="font-size: 9px; color: #64748b;">Comprehensive Production Slip Analysis</div>
+                    <div style="font-size: 9px; color: #0d5f2c;">Comprehensive Production Slip Analysis</div>
                 </td>
                 <td style="text-align: right;">
                     <div class="doc-title">SLIP REPORT #{{ $slip->id }}</div>
-                    <div style="font-size: 9px; color: #64748b;">Date: {{ $slip->created_at->format('d M, Y h:i A') }}</div>
+                    <div style="font-size: 9px; color: #0d5f2c;">Date: {{ $slip->created_at->format('d M, Y h:i A') }}</div>
                 </td>
             </tr>
         </table>
@@ -60,7 +60,7 @@
             </td>
             <td style="width: 25%;">
                 <span class="lbl">Total Processed</span>
-                <span class="val" style="color: #059669;">{{ number_format($summary['total_pieces']) }} pcs</span>
+                <span class="val" style="color: #15803d;">{{ number_format($summary['total_pieces']) }} pcs</span>
             </td>
         </tr>
     </table>

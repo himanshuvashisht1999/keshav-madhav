@@ -21,7 +21,7 @@
 
         /* Outer Frame / Voucher Sheet */
         .voucher-sheet {
-            border: 1px solid #cbd5e1;
+            border: 1px solid #c8d8c4;
             border-top: 4px solid #fcee21;
             border-radius: 4px;
             padding: 12px 14px;
@@ -59,7 +59,7 @@
 
         /* 2-Column Info Boxes */
         .info-card {
-            border: 1px solid #cbd5e1;
+            border: 1px solid #c8d8c4;
             border-radius: 4px;
             background: #ffffff;
         }
@@ -93,7 +93,7 @@
         .info-label {
             width: 34%;
             font-weight: 700;
-            color: #074e22;
+            color: #05421c;
             text-transform: uppercase;
             font-size: 8px;
         }
@@ -153,8 +153,8 @@
             padding: 4px 5px;
             border-top: 1px solid #05421c;
             border-bottom: 2px solid #05421c;
-            border-right: 1px solid #cbd5e1;
-            border-left: 1px solid #cbd5e1;
+            border-right: 1px solid #c8d8c4;
+            border-left: 1px solid #c8d8c4;
             text-align: center;
         }
 
@@ -162,7 +162,7 @@
             padding: 4px 5px;
             font-size: 8.5px;
             color: #05421c;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #dfe9da;
             vertical-align: middle;
             font-weight: 600;
         }
@@ -203,7 +203,7 @@
         .print-date {
             text-align: center;
             font-size: 7.5px;
-            color: #457855;
+            color: #05421c;
             margin-top: 10px;
         }
 
@@ -225,7 +225,7 @@
         <table class="company-header" cellpadding="0" cellspacing="0">
             <tr>
                 <td width="72%" valign="top">
-                    <div class="company-name">{{ $general_setting->website_name ?? 'SNAPKID' }}</div>
+                    <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => $general_setting->website_name ?? 'SNAPKID'])</div>
                     <div class="company-meta">
                         <div>{{ $general_setting->address ?? '' }}</div>
                         <div>
@@ -438,7 +438,7 @@
         <table class="signoff-table">
             <tr>
                 <td width="50%" align="left" valign="bottom">
-                    <span style="font-size: 8px; color: #457855;">Generated on: {{ date('d-m-Y h:i A') }}</span>
+                    <span style="font-size: 8px; color: #05421c;">Generated on: {{ date('d-m-Y h:i A') }}</span>
                 </td>
                 <td width="50%" align="right" valign="bottom">
                     <div class="signoff-box">Authorized Signature</div>

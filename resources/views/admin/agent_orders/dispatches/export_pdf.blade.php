@@ -9,33 +9,33 @@
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 9px;
-            color: #1e293b;
+            color: #052a12;
             margin: 0;
         }
 
         /* ── Header ── */
         .doc-header {
-            border-bottom: 2px solid #1e293b;
+            border-bottom: 2px solid #052a12;
             padding-bottom: 8px;
             margin-bottom: 12px;
         }
         .doc-header table { width: 100%; border-collapse: collapse; }
         .doc-title  { font-size: 16px; font-weight: bold; text-transform: uppercase; }
-        .doc-sub    { font-size: 8px; color: #64748b; margin-top: 2px; }
+        .doc-sub    { font-size: 8px; color: #0d5f2c; margin-top: 2px; }
         .doc-right  { text-align: right; }
-        .doc-date   { font-size: 8px; color: #64748b; }
+        .doc-date   { font-size: 8px; color: #0d5f2c; }
 
         /* ── Active filters ── */
         .filters-bar {
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
+            background: #f0f8e7;
+            border: 1px solid #dfe9da;
             padding: 4px 8px;
             margin-bottom: 10px;
             font-size: 8px;
-            color: #475569;
+            color: #0d5f2c;
             border-radius: 3px;
         }
-        .filters-bar strong { color: #0f172a; }
+        .filters-bar strong { color: #052a12; }
 
         /* ── Summary strip ── */
         .summary-strip {
@@ -46,11 +46,11 @@
         .summary-strip td {
             width: 50%;
             padding: 8px 12px;
-            border: 1px solid #e2e8f0;
-            background: #f8fafc;
+            border: 1px solid #dfe9da;
+            background: #f6faf1;
         }
-        .summary-strip .s-label { font-size: 7px; text-transform: uppercase; color: #94a3b8; font-weight: bold; }
-        .summary-strip .s-value { font-size: 14px; font-weight: bold; color: #0f172a; margin-top: 2px; }
+        .summary-strip .s-label { font-size: 7px; text-transform: uppercase; color: #8aa890; font-weight: bold; }
+        .summary-strip .s-value { font-size: 14px; font-weight: bold; color: #052a12; margin-top: 2px; }
 
         /* ── Data table ── */
         table.data-tbl {
@@ -58,7 +58,7 @@
             border-collapse: collapse;
         }
         table.data-tbl thead tr {
-            background: #1e293b;
+            background: #052a12;
             color: #fff;
         }
         table.data-tbl th {
@@ -66,15 +66,15 @@
             font-size: 8px;
             text-align: left;
             text-transform: uppercase;
-            border: 1px solid #334155;
+            border: 1px solid #05421c;
         }
         table.data-tbl td {
             padding: 4px 5px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #dfe9da;
             font-size: 8.5px;
             vertical-align: middle;
         }
-        table.data-tbl tr:nth-child(even) td { background: #f8fafc; }
+        table.data-tbl tr:nth-child(even) td { background: #f6faf1; }
 
         /* ── Totals row ── */
         .totals-row td {
@@ -90,8 +90,8 @@
             left: 0; right: 0;
             text-align: center;
             font-size: 7px;
-            color: #94a3b8;
-            border-top: 1px solid #e2e8f0;
+            color: #8aa890;
+            border-top: 1px solid #dfe9da;
             padding-top: 3px;
         }
     </style>
@@ -109,7 +109,7 @@
                 <td class="doc-right">
                     <div class="doc-date">Generated: {{ now()->format('d M Y, h:i A') }}</div>
                     @if(!empty($filters))
-                        <div class="doc-date" style="margin-top:3px; color:#6366f1;">Filtered Report</div>
+                        <div class="doc-date" style="margin-top:3px; color:#05421c;">Filtered Report</div>
                     @endif
                 </td>
             </tr>
@@ -189,7 +189,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" style="text-align:center; padding:20px; color:#94a3b8;">No records found.</td>
+                    <td colspan="9" style="text-align:center; padding:20px; color:#8aa890;">No records found.</td>
                 </tr>
             @endforelse
         </tbody>

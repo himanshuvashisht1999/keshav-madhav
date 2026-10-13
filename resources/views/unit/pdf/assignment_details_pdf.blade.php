@@ -18,30 +18,30 @@
         .header-title {
             font-size: 20px;
             font-weight: bold;
-            color: #4f46e5;
+            color: #05421c;
             text-align: center;
             margin-bottom: 25px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #e2e8f0;
+            border-bottom: 2px solid #dfe9da;
             text-transform: uppercase;
         }
 
         .card {
-            border: 1px solid #e2e8f0;
+            border: 1px solid #dfe9da;
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 20px;
-            background: #f8fafc;
+            background: #f6faf1;
         }
 
         .section-title {
             font-size: 14px;
             font-weight: bold;
-            color: #334155;
+            color: #05421c;
             margin-bottom: 12px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            border-bottom: 1px solid #cbd5e1;
+            border-bottom: 1px solid #c8d8c4;
             padding-bottom: 5px;
         }
 
@@ -57,7 +57,7 @@
 
         .label {
             font-size: 11px;
-            color: #64748b;
+            color: #0d5f2c;
             font-weight: bold;
             text-transform: uppercase;
         }
@@ -65,7 +65,7 @@
         .value {
             font-size: 14px;
             font-weight: bold;
-            color: #0f172a;
+            color: #052a12;
         }
 
         .status-badge {
@@ -76,7 +76,7 @@
             display: inline-block;
         }
 
-        .status-completed { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .status-completed { background: #dcfce7; color: #05421c; border: 1px solid #86efac; }
         .status-delayed { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
         .status-pending { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
         
@@ -96,8 +96,8 @@
             width: 100%;
             text-align: center;
             font-size: 10px;
-            color: #94a3b8;
-            border-top: 1px solid #e2e8f0;
+            color: #8aa890;
+            border-top: 1px solid #dfe9da;
             padding-top: 10px;
         }
     </style>
@@ -135,7 +135,7 @@
                 </td>
                 <td width="50%">
                     <div class="label">Total Pieces</div>
-                    <div class="value" style="color: #4f46e5; font-size: 16px;">{{ $header['total_pcs'] ?? 0 }}</div>
+                    <div class="value" style="color: #05421c; font-size: 16px;">{{ $header['total_pcs'] ?? 0 }}</div>
                 </td>
             </tr>
             <tr>
@@ -155,7 +155,7 @@
                 </td>
                 <td>
                     <div class="label">Lot No</div>
-                    <div class="value" style="color: #2563eb;">{{ $header['lot_no'] }}</div>
+                    <div class="value" style="color: #05421c;">{{ $header['lot_no'] }}</div>
                 </td>
             </tr>
             <tr>
@@ -227,7 +227,7 @@
             <tr>
                 <td colspan="2">
                     <div class="label">Completed At</div>
-                    <div class="value" style="color: #16a34a;">{{ date('d M Y, h:i A', strtotime($header['complete_date'])) }}</div>
+                    <div class="value" style="color: #15803d;">{{ date('d M Y, h:i A', strtotime($header['complete_date'])) }}</div>
                 </td>
             </tr>
             @endif

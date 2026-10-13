@@ -17,7 +17,7 @@
 
         .company-header {
             text-align: center;
-            border-bottom: 2px solid #1b4332;
+            border-bottom: 2px solid #05421c;
             padding-bottom: 5px;
             margin-bottom: 10px;
         }
@@ -31,13 +31,13 @@
             font-size: 24px;
             font-weight: bold;
             text-transform: uppercase;
-            color: #1b4332;
+            color: #05421c;
             margin: 0;
         }
 
         .company-info {
             font-size: 11px;
-            color: #1b4332;
+            color: #05421c;
             font-weight: bold;
             margin-top: 2px;
         }
@@ -47,7 +47,7 @@
             font-size: 18px;
             font-weight: 800;
             margin: 5px 0 15px 0;
-            color: #1b4332;
+            color: #05421c;
             text-transform: uppercase;
             letter-spacing: 1px;
             border-bottom: 2px solid #fdf001;
@@ -59,7 +59,7 @@
 
         /* Main Item Card */
         .sample-item {
-            border: 2px solid #1b4332;
+            border: 2px solid #05421c;
             border-radius: 12px;
             padding: 15px;
             margin-bottom: 15px;
@@ -98,7 +98,7 @@
         }
 
         .product-header {
-            border-bottom: 2px solid #f1f5f9;
+            border-bottom: 2px solid #f0f8e7;
             padding-bottom: 10px;
             margin-bottom: 15px;
         }
@@ -107,7 +107,7 @@
             font-size: 28px;
             font-weight: 800;
             margin: 0;
-            color: #1b4332;
+            color: #05421c;
             letter-spacing: -0.5px;
         }
 
@@ -124,7 +124,7 @@
 
         .spec-label {
             font-size: 11px;
-            color: #64748b;
+            color: #0d5f2c;
             font-weight: bold;
             text-transform: uppercase;
             width: 80px;
@@ -133,7 +133,7 @@
 
         .spec-value {
             font-size: 14px;
-            color: #1b4332;
+            color: #05421c;
             font-weight: bold;
             margin-left: 80px;
             display: block;
@@ -159,7 +159,7 @@
         .qr-box {
             background: #fdf001;
             padding: 12px;
-            border: 2px solid #1b4332;
+            border: 2px solid #05421c;
             border-radius: 12px;
             display: inline-block;
         }
@@ -167,7 +167,7 @@
         .qr-scan-text {
             font-size: 11px;
             font-weight: 800;
-            color: #1b4332;
+            color: #05421c;
             margin-top: 6px;
             text-transform: uppercase;
         }
@@ -178,8 +178,8 @@
             width: 100%;
             text-align: center;
             font-size: 10px;
-            color: #94a3b8;
-            border-top: 1px solid #f1f5f9;
+            color: #8aa890;
+            border-top: 1px solid #f0f8e7;
             padding-top: 8px;
         }
     </style>
@@ -212,9 +212,9 @@
                             <img src="{{ $fullImagePath }}" class="product-image">
                         @else
                             <div
-                                style="width: 100%; height: 380px; background: #f8fafc; border-radius: 12px; display: table; border: 2px dashed #e2e8f0;">
+                                style="width: 100%; height: 380px; background: #f6faf1; border-radius: 12px; display: table; border: 2px dashed #dfe9da;">
                                 <div
-                                    style="display: table-cell; vertical-align: middle; text-align: center; color: #94a3b8; font-size: 14px;">
+                                    style="display: table-cell; vertical-align: middle; text-align: center; color: #8aa890; font-size: 14px;">
                                     No Image Available</div>
                             </div>
                         @endif

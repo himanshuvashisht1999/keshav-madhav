@@ -200,14 +200,11 @@
                     <td width="40%" class="text-center" style="vertical-align: middle;">
                         <div class="estimate-title">INVOICE</div>
                         <div class="company-name">
-                             @if(isset($type) && $type == 'actual')
-                                <!-- SURGICAL & SNAPKID -->
-                                SNAPKID
-                            @elseif(isset($selectedBrand) && $selectedBrand)
-                                {{ $selectedBrand->name }}
-                            @else
-                                {{ $settings->website_name ?? 'SURGICAL JEANS' }}
-                            @endif
+                            @php
+                                $__hdrName = (isset($type) && $type == 'actual') ? 'SNAPKID'
+                                    : ((isset($selectedBrand) && $selectedBrand) ? $selectedBrand->name : ($settings->website_name ?? 'SURGICAL JEANS'));
+                            @endphp
+                            @include('admin.pdf.partials.brand_name', ['name' => $__hdrName])
                         </div>
                         <div style="font-size: 10px;">{{ $settings->address ?? '' }}</div>
                     </td>
@@ -368,7 +365,7 @@
                 <td width="40%" class="text-right">
                     <strong>Receiver's Signature :</strong><br><br><br><br>
                     <div style="margin-top: 20px;">
-                        For <strong>{{ $settings->website_name ?? 'SURGICAL JEANS' }}</strong><br>
+                        For <strong>@include('admin.pdf.partials.brand_name', ['name' => $settings->website_name ?? 'SURGICAL JEANS', 'height' => 14])</strong><br>
                         <strong>Authorised Signatory</strong>
                     </div>
                 </td>

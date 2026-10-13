@@ -13,14 +13,14 @@
         }
         .header-table {
             width: 100%;
-            border-bottom: 2px solid #1e3c72;
+            border-bottom: 2px solid #05421c;
             margin-bottom: 15px;
             padding-bottom: 8px;
         }
         .company-name {
             font-size: 18px;
             font-weight: bold;
-            color: #1e3c72;
+            color: #05421c;
         }
         .report-title {
             font-size: 14px;
@@ -41,21 +41,21 @@
             margin-bottom: 20px;
         }
         table.data-table th {
-            background-color: #1e3c72;
+            background-color: #05421c;
             color: #ffffff;
             font-weight: bold;
             text-align: left;
             padding: 6px 8px;
             font-size: 9.5px;
-            border: 1px solid #1e3c72;
+            border: 1px solid #05421c;
         }
         table.data-table td {
             padding: 5px 8px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #c8d8c4;
             font-size: 9px;
         }
         table.data-table tr:nth-child(even) {
-            background-color: #f8fafc;
+            background-color: #f6faf1;
         }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
@@ -66,9 +66,9 @@
             left: 0;
             right: 0;
             font-size: 8.5px;
-            color: #94a3b8;
+            color: #8aa890;
             text-align: center;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid #dfe9da;
             padding-top: 4px;
         }
     </style>
@@ -77,8 +77,8 @@
     <table class="header-table">
         <tr>
             <td style="vertical-align: middle;">
-                <div class="company-name">SNAPKID</div>
-                <div style="color: #64748b; font-size: 9.5px;">Production Goods Stock Ledger Summary</div>
+                <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID'])</div>
+                <div style="color: #0d5f2c; font-size: 9.5px;">Production Goods Stock Ledger Summary</div>
             </td>
             <td style="vertical-align: middle; text-align: right;">
                 <div class="report-title">Goods Ledger List</div>
@@ -122,7 +122,7 @@
                         <td>{{ $variant->sizeSet?->name ?? '-' }}</td>
                         <td class="text-right">{{ number_format($in) }}</td>
                         <td class="text-right">{{ number_format($out) }}</td>
-                        <td class="text-right font-weight-bold" style="color: #1e3c72;">{{ number_format($bal) }}</td>
+                        <td class="text-right font-weight-bold" style="color: #05421c;">{{ number_format($bal) }}</td>
                     </tr>
                 @endforeach
             @empty
@@ -132,17 +132,17 @@
             @endforelse
         </tbody>
         <tfoot>
-            <tr style="background-color: #f1f5f9; font-weight: bold;">
+            <tr style="background-color: #f0f8e7; font-weight: bold;">
                 <td colspan="4" class="text-right font-weight-bold">Total:</td>
                 <td class="text-right font-weight-bold">{{ number_format($totIn) }}</td>
                 <td class="text-right font-weight-bold">{{ number_format($totOut) }}</td>
-                <td class="text-right font-weight-bold" style="color: #1e3c72;">{{ number_format($totBal) }}</td>
+                <td class="text-right font-weight-bold" style="color: #05421c;">{{ number_format($totBal) }}</td>
             </tr>
         </tfoot>
     </table>
 
     <div class="footer">
-        Generated on {{ date('d M Y, h:i A') }} | SNAPKID ERP
+        Generated on {{ date('d M Y, h:i A') }} | @include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID', 'height' => 10]) ERP
     </div>
 </body>
 </html>

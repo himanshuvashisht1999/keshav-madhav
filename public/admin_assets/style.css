@@ -3971,3 +3971,13 @@ body.km-admin .erp-page .text-uppercase.font-weight-bold.text-muted { color: var
 .km-sidebar .border_class > p { flex: 1 1 auto; min-width: 0; }
 .km-sidebar .border_class .right,
 .km-sidebar .border_class .fa-angle-left { margin-left: auto; flex: 0 0 auto; }
+
+/* Sidebar header: SNAPKID wordmark (extracted from the brand logo file) instead of plain text */
+.km-sidebar .brand-link .brand-wordmark {
+    height: 26px;
+    width: auto;
+    max-width: 130px;
+    display: block;
+    margin: 0 0 0 2px !important;
+    object-fit: contain;
+}

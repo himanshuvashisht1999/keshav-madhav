@@ -43,7 +43,7 @@
         <div class="header-section text-center">
             @if($leftLogo) <img src="{{ $leftLogo }}" class="logo-img" style="left: 15px;"> @endif
             <div class="estimate-title">PACKING SLIP</div>
-            <div class="company-name">{{ $brandTitle }}</div>
+            <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => $brandTitle])</div>
             <div style="font-size: 10px;">{{ $settings->address ?? 'TRONIKA CITY GHAZIABAD-201102' }}</div>
         </div>
 
@@ -131,7 +131,7 @@
                 <td width="40%" style="padding: 10px 15px; vertical-align: top; text-align: right;">
                     <strong>Authorised Signatory :</strong><br><br><br><br>
                     <div style="margin-top: 10px;">
-                        For <strong>{{ $brandTitle }}</strong>
+                        For <strong>@include('admin.pdf.partials.brand_name', ['name' => $brandTitle, 'height' => 14])</strong>
                     </div>
                 </td>
             </tr>

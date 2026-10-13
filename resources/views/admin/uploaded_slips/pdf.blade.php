@@ -16,21 +16,21 @@
 
         /* ── Header ── */
         .page-header {
-            border-bottom: 2px solid #3da856;
+            border-bottom: 2px solid #36b54a;
             padding-bottom: 8px;
             margin-bottom: 16px;
         }
         .page-header table { width: 100%; border-collapse: collapse; }
-        .company-name { font-size: 17px; font-weight: bold; text-transform: uppercase; color: #3da856; }
+        .company-name { font-size: 17px; font-weight: bold; text-transform: uppercase; color: #36b54a; }
         .company-sub  { font-size: 9px; color: #555; margin-top: 2px; }
-        .doc-title    { text-align: right; font-size: 14px; font-weight: bold; text-transform: uppercase; color: #3da856; }
+        .doc-title    { text-align: right; font-size: 14px; font-weight: bold; text-transform: uppercase; color: #36b54a; }
         .doc-sub      { text-align: right; font-size: 9px; color: #555; margin-top: 3px; }
 
         /* ── Top meta strip ── */
         .meta-strip {
             width: 100%;
             border-collapse: collapse;
-            border: 1.5px solid #3da856;
+            border: 1.5px solid #36b54a;
             margin-bottom: 18px;
         }
         .meta-strip td {
@@ -38,17 +38,17 @@
             border-right: 1px solid #e8f5e9;
         }
         .meta-strip td:last-child { border-right: none; }
-        .lbl  { font-size: 8px; text-transform: uppercase; color: #3da856; display: block; margin-bottom: 2px; font-weight: bold; }
-        .val  { font-size: 12px; font-weight: bold; color: #2e7d32; }
+        .lbl  { font-size: 8px; text-transform: uppercase; color: #36b54a; display: block; margin-bottom: 2px; font-weight: bold; }
+        .val  { font-size: 12px; font-weight: bold; color: #15803d; }
 
         /* ── Session block ── */
         .session {
-            border: 1.5px solid #3da856;
+            border: 1.5px solid #36b54a;
             margin-bottom: 14px;
             page-break-inside: avoid;
         }
         .session-hdr {
-            background: #3da856;
+            background: #36b54a;
             color: #fff;
             padding: 5px 10px;
             font-size: 11px;
@@ -61,12 +61,12 @@
             border-collapse: collapse;
         }
         .size-tbl th {
-            background: #4caf50;
+            background: #36b54a;
             color: #fff;
             padding: 5px 4px;
             text-align: center;
             font-size: 10px;
-            border: 1px solid #3da856;
+            border: 1px solid #36b54a;
         }
         .size-tbl td {
             padding: 6px 4px;
@@ -87,10 +87,10 @@
         .sig-tbl td {
             width: 33%;
             text-align: center;
-            border-top: 1.5px solid #3da856;
+            border-top: 1.5px solid #36b54a;
             padding-top: 6px;
             font-size: 10px;
-            color: #2e7d32;
+            color: #15803d;
             font-weight: bold;
         }
 
@@ -110,9 +110,9 @@
             font-weight: bold;
             letter-spacing: 2px;
             text-transform: uppercase;
-            color: #2e7d32;
+            color: #15803d;
             background: #e8f5e9;
-            border: 1.5px dashed #3da856;
+            border: 1.5px dashed #36b54a;
             padding: 4px 0;
             margin-bottom: 10px;
         }
@@ -136,7 +136,7 @@
                         @endphp
                         @if($lb64)<img src="{{ $lb64 }}" style="max-height:36px;vertical-align:middle;margin-right:8px;">@endif
                     @endif
-                    <span class="company-name">{{ $general_setting->website_name ?? 'SNAPKID' }}</span>
+                    <span class="company-name">@include('admin.pdf.partials.brand_name', ['name' => $general_setting->website_name ?? 'SNAPKID'])</span>
                     <div class="company-sub">{{ $general_setting->address ?? '' }}</div>
                 </td>
                 <td style="vertical-align:bottom;">
@@ -198,7 +198,7 @@
                 $fabricName = $ops && $ops->fabric ? $ops->fabric->name : '-';
             @endphp
             <div class="session">
-                <table style="width: 100%; border-collapse: collapse; background: #3da856; color: #fff;">
+                <table style="width: 100%; border-collapse: collapse; background: #36b54a; color: #fff;">
                     <tr>
                         <td style="padding: 5px 10px; font-size: 11px; font-weight: bold; text-align: left;">
                             LOT NO: {{ $lot->lot_no }}
@@ -215,7 +215,7 @@
                     <table class="size-tbl">
                         <thead><tr>
                             @foreach($sizeQtys as $sz => $q)<th>SIZE {{ $sz }}</th>@endforeach
-                            <th style="background: #eab308; color: #000; border: 1px solid #3da856;">TOTAL QTY</th>
+                            <th style="background: #eab308; color: #000; border: 1px solid #36b54a;">TOTAL QTY</th>
                         </tr></thead>
                         <tbody><tr>
                             @foreach($sizeQtys as $sz => $q)<td>{{ $q }}</td>@endforeach
@@ -256,7 +256,7 @@
                 $fabricName = $ops && $ops->fabric ? $ops->fabric->name : '-';
             @endphp
             <div class="session">
-                <table style="width: 100%; border-collapse: collapse; background: #3da856; color: #fff;">
+                <table style="width: 100%; border-collapse: collapse; background: #36b54a; color: #fff;">
                     <tr>
                         <td style="padding: 5px 10px; font-size: 11px; font-weight: bold; text-align: left;">
                             LOT NO: {{ $printing->lot_no }}
@@ -273,7 +273,7 @@
                     <table class="size-tbl">
                         <thead><tr>
                             @foreach($sizeQtys as $sz => $q)<th>SIZE {{ $sz }}</th>@endforeach
-                            <th style="background: #eab308; color: #000; border: 1px solid #3da856;">TOTAL QTY</th>
+                            <th style="background: #eab308; color: #000; border: 1px solid #36b54a;">TOTAL QTY</th>
                         </tr></thead>
                         <tbody><tr>
                             @foreach($sizeQtys as $sz => $q)<td>{{ $q }}</td>@endforeach
@@ -314,7 +314,7 @@
                 $fabricName = $ops && $ops->fabric ? $ops->fabric->name : '-';
             @endphp
             <div class="session">
-                <table style="width: 100%; border-collapse: collapse; background: #3da856; color: #fff;">
+                <table style="width: 100%; border-collapse: collapse; background: #36b54a; color: #fff;">
                     <tr>
                         <td style="padding: 5px 10px; font-size: 11px; font-weight: bold; text-align: left;">
                             LOT NO: {{ $transaction->lot_no }}
@@ -331,7 +331,7 @@
                     <table class="size-tbl">
                         <thead><tr>
                             @foreach($sizeQtys as $sz => $q)<th>SIZE {{ $sz }}</th>@endforeach
-                            <th style="background: #eab308; color: #000; border: 1px solid #3da856;">TOTAL QTY</th>
+                            <th style="background: #eab308; color: #000; border: 1px solid #36b54a;">TOTAL QTY</th>
                         </tr></thead>
                         <tbody><tr>
                             @foreach($sizeQtys as $sz => $q)<td>{{ $q }}</td>@endforeach

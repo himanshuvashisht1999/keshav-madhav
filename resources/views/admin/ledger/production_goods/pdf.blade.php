@@ -57,7 +57,7 @@
         .balance-summary .value {
             font-size: 18px;
             font-weight: bold;
-            color: #1e3c72;
+            color: #05421c;
         }
         .ledger-table {
             width: 100%;
@@ -78,9 +78,9 @@
         }
         .text-right { text-align: right; }
         .text-bold { font-weight: bold; }
-        .text-success { color: #28a745; }
+        .text-success { color: #36b54a; }
         .text-danger { color: #dc3545; }
-        .text-primary { color: #007bff; }
+        .text-primary { color: #05421c; }
         .footer {
             margin-top: 30px;
             text-align: center;
@@ -93,7 +93,7 @@
     <table class="header-table">
         <tr>
             <td>
-                <div class="company-name">SNAPKID</div>
+                <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID'])</div>
                 <div style="font-size: 10px; color: #666; margin-top: 5px;">Production Goods Ledger</div>
             </td>
             <td class="ledger-title">
@@ -198,7 +198,7 @@
     </table>
 
     <div class="footer">
-        <p>This is a computer generated document. | SNAPKID</p>
+        <p>This is a computer generated document. | @include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID', 'height' => 10])</p>
     </div>
 </body>
 </html>

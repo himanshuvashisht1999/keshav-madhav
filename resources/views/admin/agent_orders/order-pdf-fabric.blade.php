@@ -50,7 +50,7 @@
                     </td>
                     <td width="60%" class="text-center">
                         <div class="title">ORDER FORM (FABRIC)</div>
-                        <div class="company-name">{{ $settings->website_name ?? 'SURGICAL JEANS' }}</div>
+                        <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => $settings->website_name ?? 'SURGICAL JEANS'])</div>
                         <div style="font-size: 10px;">{{ $settings->address ?? '' }}</div>
                     </td>
                     <td width="20%"></td>
@@ -201,7 +201,7 @@
                     <strong>Customer Signature</strong>
                 </td>
                 <td width="50%" class="text-right">
-                    For <strong>{{ $settings->website_name ?? 'SURGICAL JEANS' }}</strong><br><br><br>
+                    For <strong>@include('admin.pdf.partials.brand_name', ['name' => $settings->website_name ?? 'SURGICAL JEANS', 'height' => 14])</strong><br><br><br>
                     _______________________<br>
                     <strong>Authorised Signatory</strong>
                 </td>

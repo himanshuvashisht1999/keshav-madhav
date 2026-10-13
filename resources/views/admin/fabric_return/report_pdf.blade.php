@@ -22,7 +22,7 @@
 
         /* Outer Frame / Voucher Sheet */
         .voucher-sheet {
-            border: 1px solid #cbd5e1;
+            border: 1px solid #c8d8c4;
             border-top: 4px solid #fcee21;
             border-radius: 4px;
             padding: 14px 16px;
@@ -59,7 +59,7 @@
 
         /* 2-Column Info Boxes */
         .info-card {
-            border: 1px solid #cbd5e1;
+            border: 1px solid #c8d8c4;
             border-radius: 4px;
             background: #ffffff;
         }
@@ -93,7 +93,7 @@
         .info-label {
             width: 32%;
             font-weight: 700;
-            color: #074e22;
+            color: #05421c;
             text-transform: uppercase;
             font-size: 8.5px;
         }
@@ -122,7 +122,7 @@
         }
 
         .summary-cell {
-            border: 1px solid #cbd5e1;
+            border: 1px solid #c8d8c4;
             background: #fbfdfc;
             padding: 6px 8px;
             text-align: center;
@@ -131,7 +131,7 @@
         .summary-label {
             font-size: 8.5px;
             font-weight: 700;
-            color: #074e22;
+            color: #05421c;
             text-transform: uppercase;
             margin-bottom: 2px;
         }
@@ -173,8 +173,8 @@
             padding: 5px 6px;
             border-top: 1px solid #05421c;
             border-bottom: 2px solid #05421c;
-            border-right: 1px solid #cbd5e1;
-            border-left: 1px solid #cbd5e1;
+            border-right: 1px solid #c8d8c4;
+            border-left: 1px solid #c8d8c4;
             text-align: center;
         }
 
@@ -182,7 +182,7 @@
             padding: 5px 6px;
             font-size: 9.5px;
             color: #05421c;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #dfe9da;
             vertical-align: middle;
             font-weight: 600;
         }
@@ -200,7 +200,7 @@
 
         .signature-line {
             width: 180px;
-            border-bottom: 1px solid #245834;
+            border-bottom: 1px solid #05421c;
             height: 30px;
             margin-bottom: 4px;
         }
@@ -208,7 +208,7 @@
         .signoff-caption {
             font-size: 8.5px;
             font-weight: 700;
-            color: #245834;
+            color: #05421c;
             text-transform: uppercase;
         }
 
@@ -222,7 +222,7 @@
         .print-date {
             text-align: center;
             font-size: 8px;
-            color: #457855;
+            color: #05421c;
             margin-top: 15px;
         }
 
@@ -241,7 +241,7 @@
                     @php
                         $general_setting = \App\Models\GeneralSettings::where('status', 1)->first() ?? \App\Models\GeneralSettings::first();
                     @endphp
-                    <div class="company-name">{{ $general_setting->website_name ?? 'SNAPKID' }}</div>
+                    <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => $general_setting->website_name ?? 'SNAPKID'])</div>
                     <div class="company-meta">
                         <div>{{ $general_setting->address ?? 'K-43 SECTOR D-1(P), TRONIKA CITY GHAZIABAD-201102' }}</div>
                         <div>
@@ -395,7 +395,7 @@
                         <td class="text-left">
                             <b>{{ $detail->fabric->name ?? 'N/A' }}</b>
                             @if(!empty($detail->fabric->sku))
-                                <span style="font-size: 8.5px; color: #457855;">({{ $detail->fabric->sku }})</span>
+                                <span style="font-size: 8.5px; color: #05421c;">({{ $detail->fabric->sku }})</span>
                             @endif
                         </td>
                         <td class="text-center">{{ $wh }}</td>

@@ -106,7 +106,7 @@
         }
 
         .text-success {
-            color: #28a745;
+            color: #36b54a;
         }
 
         .text-danger {
@@ -114,7 +114,7 @@
         }
 
         .text-info {
-            color: #17a2b8;
+            color: #05421c;
         }
     </style>
 </head>
