@@ -443,8 +443,6 @@ class PartyLedgerController extends Controller
             $dispatches = AgentOrderDispatch::whereIn('master_customer_id', $customerIds)
                 ->where('party_type', 'customer')
                 ->where('status', 'dispatched')
-                ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
                 ->get();
 
             foreach ($dispatches as $d) {
@@ -463,8 +461,6 @@ class PartyLedgerController extends Controller
 
             // 2. Standard Order Dispatches - DEBIT
             $orderDispatches = \App\Models\OrderDispatch::whereIn('customer_id', $customerIds)
-                ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
                 ->get();
 
             foreach ($orderDispatches as $od) {
@@ -485,8 +481,6 @@ class PartyLedgerController extends Controller
             $salesReturns = AgentOrderReturn::whereHas('dispatch', function ($q) use ($customerIds) {
                 $q->whereIn('master_customer_id', $customerIds)->where('party_type', 'customer');
             })
-                ->when($startDate, fn($q) => $q->whereDate('return_date', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('return_date', '<=', $endDate))
                 ->get();
 
             foreach ($salesReturns as $r) {
@@ -550,8 +544,6 @@ class PartyLedgerController extends Controller
 
             // 5. Finished Goods Purchases (Inventory Purchase) - CREDIT
             $inventoryPurchases = \App\Models\DomesticInventoryPurchase::whereIn('customer_id', $customerIds)
-                ->when($startDate, fn($q) => $q->whereDate(\DB::raw('COALESCE(purchase_date, created_at)'), '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate(\DB::raw('COALESCE(purchase_date, created_at)'), '<=', $endDate))
                 ->get();
 
             foreach ($inventoryPurchases as $ip) {
@@ -666,12 +658,11 @@ class PartyLedgerController extends Controller
                         }
                     }
                 } else {
+                    // transactions after the end date must not affect balances
+                    if ($endDate && $dateTx > $endDate) continue;
                     $balance += ($tx->credit - $tx->debit);
                     $tx->running_balance = $balance;
-                    
-                    if (!$endDate || $dateTx <= $endDate) {
-                        $finalTransactions->push($tx);
-                    }
+                    $finalTransactions->push($tx);
                 }
             }
             
@@ -733,8 +724,6 @@ class PartyLedgerController extends Controller
             $dispatches = AgentOrderDispatch::where($partyIdField, $id)
                 ->where('party_type', $type)
                 ->where('status', 'dispatched')
-                ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
                 ->get();
 
             foreach ($dispatches as $d) {
@@ -753,8 +742,6 @@ class PartyLedgerController extends Controller
             // 2. Standard Order Dispatches - DEBIT
             if ($type === 'customer') {
                 $orderDispatches = \App\Models\OrderDispatch::where($directIdField, $id)
-                    ->when($startDate, fn($q) => $q->whereDate('dispatch_date', '>=', $startDate))
-                    ->when($endDate, fn($q) => $q->whereDate('dispatch_date', '<=', $endDate))
                     ->get();
 
                 foreach ($orderDispatches as $od) {
@@ -775,8 +762,6 @@ class PartyLedgerController extends Controller
             $salesReturns = AgentOrderReturn::whereHas('dispatch', function ($q) use ($id, $partyIdField, $type) {
                 $q->where($partyIdField, $id)->where('party_type', $type);
             })
-                ->when($startDate, fn($q) => $q->whereDate('return_date', '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate('return_date', '<=', $endDate))
                 ->get();
 
             foreach ($salesReturns as $r) {
@@ -844,8 +829,6 @@ class PartyLedgerController extends Controller
 
         // 5. Finished Goods Purchases (Inventory Purchase) - CREDIT
             $inventoryPurchases = \App\Models\DomesticInventoryPurchase::where($directIdField, $id)
-                ->when($startDate, fn($q) => $q->whereDate(\DB::raw('COALESCE(purchase_date, created_at)'), '>=', $startDate))
-                ->when($endDate, fn($q) => $q->whereDate(\DB::raw('COALESCE(purchase_date, created_at)'), '<=', $endDate))
                 ->get();
 
             foreach ($inventoryPurchases as $ip) {
@@ -865,8 +848,6 @@ class PartyLedgerController extends Controller
             // 6. Vendor Specific: Fabric Purchases (Inwards) - CREDIT
             if ($type === 'vendor') {
                 $receipts = FabricReceipt::where('vendor_id', $id)
-                    ->when($startDate, fn($q) => $q->whereDate(\DB::raw('COALESCE(time, created_at)'), '>=', $startDate))
-                    ->when($endDate, fn($q) => $q->whereDate(\DB::raw('COALESCE(time, created_at)'), '<=', $endDate))
                     ->get();
 
                 foreach ($receipts as $r) {
@@ -977,8 +958,6 @@ class PartyLedgerController extends Controller
             // Voucher Specific Logic
             if (strtolower($master->name) === 'contractor') {
                 $contractorVouchers = \App\Models\ContractorVoucher::where('contractor_id', $id)
-                    ->when($startDate, fn($q) => $q->whereDate('voucher_date', '>=', $startDate))
-                    ->when($endDate, fn($q) => $q->whereDate('voucher_date', '<=', $endDate))
                     ->get();
 
                 foreach ($contractorVouchers as $cv) {
@@ -996,8 +975,6 @@ class PartyLedgerController extends Controller
                 }
             } elseif (strtolower($master->name) === 'washing master') {
                 $washingVouchers = \App\Models\WashingVoucher::where('washing_master_id', $id)
-                    ->when($startDate, fn($q) => $q->whereDate('voucher_date', '>=', $startDate))
-                    ->when($endDate, fn($q) => $q->whereDate('voucher_date', '<=', $endDate))
                     ->get();
 
                 foreach ($washingVouchers as $wv) {
@@ -1015,8 +992,6 @@ class PartyLedgerController extends Controller
                 }
             } elseif (strtolower($master->name) === 'consumable good') {
                 $consumableVouchers = \App\Models\ConsumableVoucher::where('consumable_good_id', $id)
-                    ->when($startDate, fn($q) => $q->whereDate('voucher_date', '>=', $startDate))
-                    ->when($endDate, fn($q) => $q->whereDate('voucher_date', '<=', $endDate))
                     ->get();
 
                 foreach ($consumableVouchers as $cv) {
@@ -1106,11 +1081,10 @@ class PartyLedgerController extends Controller
                 $openingBalAmount += ($tx->credit - $tx->debit);
                 $balance = $openingBalAmount; // running balance catches up
             } else {
+                if ($endDate && $dateTx > $endDate) continue;
                 $balance += ($tx->credit - $tx->debit);
                 $tx->running_balance = $balance;
-                if (!$endDate || $dateTx <= $endDate) {
-                    $finalTransactions->push($tx);
-                }
+                $finalTransactions->push($tx);
             }
         }
 

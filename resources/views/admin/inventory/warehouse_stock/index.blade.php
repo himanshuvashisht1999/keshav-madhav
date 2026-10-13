@@ -166,6 +166,9 @@
                         
                         <div class="col-auto mb-2 ml-auto">
                             <div class="erp-filter-actions">
+                                <button id="apply_filters" class="btn-erp btn-erp-primary" title="Apply Filters">
+                                    <i class="fas fa-filter"></i> Filter
+                                </button>
                                 <button id="reset_filters" class="btn-erp btn-erp-outline" title="Reset Filters">
                                     <i class="fas fa-undo"></i> Reset
                                 </button>
@@ -350,17 +353,12 @@
             });
 
             // Filter events
-            $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter').on('change', function () {
+            // Filters apply only when the Filter button is clicked (or Enter is pressed in a number box)
+            $('#apply_filters').on('click', function () {
                 loadMore(true);
             });
-
-            // Delay on typing numbers so it doesn't trigger on every keystroke too quickly
-            let filterTimer;
-            $('#min_boxes_filter, #max_boxes_filter, #mrp_from_filter, #mrp_to_filter').on('input', function () {
-                clearTimeout(filterTimer);
-                filterTimer = setTimeout(function() {
-                    loadMore(true);
-                }, 600);
+            $('#min_boxes_filter, #max_boxes_filter, #mrp_from_filter, #mrp_to_filter').on('keydown', function (e) {
+                if (e.which === 13) { e.preventDefault(); loadMore(true); }
             });
 
             // Reset filter
