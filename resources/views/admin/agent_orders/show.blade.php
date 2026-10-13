@@ -1,17 +1,26 @@
 @extends('admin.layouts.app')
 
 @section('content')
-    <div class="content-wrapper">
-        <div class="content-header">
-            <div class="container-fluid">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h1 class="m-0 font-weight-bold text-dark">Order Details #ORD-{{ $order->id }}</h1>
+    <div class="content-wrapper erp-page p-2">
+        <div class="erp-header-bar">
+            <div class="erp-header-title">
+                <i class="fas fa-file-invoice text-primary"></i> Order Details
+                <span class="badge badge-primary ml-2" style="font-size: 12px;">#ORD-{{ $order->id }}</span>
+                @php
+                    $__st = strtolower($order->status);
+                    $__stClass = in_array($__st, ['dispatched', 'completed']) ? 'badge-erp-success' : (in_array($__st, ['delayed', 'cancelled']) ? 'badge-erp-danger' : 'badge-erp-warning');
+                @endphp
+                <span class="badge-erp-status {{ $__stClass }} ml-1">{{ strtoupper(str_replace('_', ' ', $order->status)) }}</span>
+            </div>
+            <div class="erp-header-actions flex-wrap justify-content-end">
+                @if(in_array($order->status, ['pending', 'delayed', 'partially_dispatched']))
+                    <a href="{{ route('admin.agent-orders.dispatch-scan', $order->id) }}" class="btn-erp btn-erp-yellow" title="Scan boxes and dispatch this order">
+                        <i class="fas fa-truck-loading"></i> {{ $order->status == 'partially_dispatched' ? 'Continue Dispatch' : 'Dispatch' }}
+                    </a>
+                @endif
 
-                    <div class="d-flex align-items-center">
-                        <!-- Brand Filter Dropdown -->
-                        <!-- Download PDF with/without price -->
-                        <div class="dropdown mr-2">
-                            <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-4 font-weight-bold shadow-sm" 
+                <div class="dropdown d-inline-block">
+                            <button class="btn-erp btn-erp-primary dropdown-toggle" 
                                 type="button" id="downloadOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-file-pdf mr-1"></i> Order Sheet
                             </button>
@@ -42,10 +51,9 @@
                             </div>
                         </div>
 
-                        <!-- WhatsApp PDF -->
-                        <div class="dropdown mr-2">
-                            <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-4 font-weight-bold shadow-sm" 
-                                type="button" id="whatsappOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="background-color: #25D366; border-color: #25D366;">
+                <div class="dropdown d-inline-block">
+                            <button class="btn-erp btn-erp-success dropdown-toggle" 
+                                type="button" id="whatsappOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" >
                                 <i class="fab fa-whatsapp mr-1"></i> WhatsApp PDF
                             </button>
                             <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="whatsappOrderDropdown">
@@ -72,47 +80,37 @@
                             </div>
                         </div>
 
-                        <!-- Brand Specific downloads moved to internal dispatch system as requested -->
+                <!-- Brand Specific downloads moved to internal dispatch system as requested -->
                         <div class="btn-group d-none">
                             <a id="btnPacking" href="{{ route('admin.agent-orders.download-packing-slip', $order->id) }}" class="btn btn-sm btn-outline-danger">Slip</a>
                             <a id="btnInvoice" href="{{ route('admin.agent-orders.download-invoice', $order->id) }}" class="btn btn-sm btn-danger">Invoice</a>
                         </div>
 
-                        <div class="btn-group">
-                            <a href="{{ route('admin.agent-orders.generate-prn', $order->id) }}"
-                                class="btn btn-sm btn-primary rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
-                                <i class="fas fa-barcode mr-1"></i> PRN
-                            </a>
-                            @php $dispatchRecord = $order->dispatches->last(); @endphp
 
-                            @if($dispatchRecord)
-                                <a href="{{ route('admin.agent-orders.dispatches.show', $dispatchRecord->id) }}"
-                                    class="btn btn-sm btn-info rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
-                                    <i class="fas fa-shipping-fast mr-1"></i> LOG
-                                </a>
-                            @endif
-
-                            @if(in_array($order->status, ['pending', 'delayed', 'partially_dispatched']))
-                                <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
-                                    class="btn btn-sm btn-warning rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
-                                    <i class="fas fa-edit mr-1"></i> Edit
-                                </a>
-
-                                @if($order->dispatches->count() == 0)
-                                    <a href="{{ route('admin.agent-orders.destroy', $order->id) }}"
-                                        onclick="return confirm('Are you sure you want to delete this order? This will restore any deducted inventory.')"
-                                        class="btn btn-sm btn-danger rounded-pill px-3 mr-2 font-weight-bold shadow-sm">
-                                        <i class="fas fa-trash mr-1"></i> Delete
-                                    </a>
-                                @endif
-                            @endif
-                            <a href="{{ route('admin.agent-orders.index') }}"
-                                class="btn btn-sm btn-outline-secondary rounded-pill px-3 font-weight-bold shadow-sm">
-                                <i class="fas fa-arrow-left mr-1"></i> Back
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                <a href="{{ route('admin.agent-orders.generate-prn', $order->id) }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-barcode"></i> PRN
+                </a>
+                @php $dispatchRecord = $order->dispatches->last(); @endphp
+                @if($dispatchRecord)
+                    <a href="{{ route('admin.agent-orders.dispatches.show', $dispatchRecord->id) }}" class="btn-erp btn-erp-outline">
+                        <i class="fas fa-shipping-fast"></i> Log
+                    </a>
+                @endif
+                @if(in_array($order->status, ['pending', 'delayed', 'partially_dispatched']))
+                    <a href="{{ route('admin.agent-orders.edit', $order->id) }}" class="btn-erp btn-erp-warning">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    @if($order->dispatches->count() == 0)
+                        <a href="{{ route('admin.agent-orders.destroy', $order->id) }}"
+                            onclick="return confirm('Are you sure you want to delete this order? This will restore any deducted inventory.')"
+                            class="btn-erp btn-erp-danger">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    @endif
+                @endif
+                <a href="{{ route('admin.agent-orders.index') }}" class="btn-erp btn-erp-outline">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
             </div>
         </div>
 
@@ -125,6 +123,7 @@
                 const basePackingUrl = "{{ route('admin.agent-orders.download-packing-slip', $order->id) }}";
                 const baseInvoiceUrl = "{{ route('admin.agent-orders.download-invoice', $order->id) }}";
 
+                if (!brandFilter) return;
                 brandFilter.addEventListener('change', function () {
                     let val = this.value;
                     let query = val ? `?brand_id=${val}` : '';
@@ -139,7 +138,7 @@
         </script>
 
         <section class="content">
-            <div class="container-fluid">
+            <div class="container-fluid p-0">
                 <div class="row">
                     <!-- ORDER INFO -->
                     <div class="col-md-4">
@@ -261,7 +260,7 @@
                                         @endif
                                     </div>
                                     <a href="{{ route('admin.agent-orders.dispatch-scan', $order->id) }}"
-                                        class="btn btn-primary btn-block btn-lg shadow-sm mb-2">
+                                        class="btn btn-primary btn-block shadow-sm mb-2" style="height: 40px; line-height: 28px;">
                                         <i class="fas fa-barcode mr-2"></i> CONTINUE DISPATCH SCAN
                                     </a>
                                 @else
@@ -279,7 +278,7 @@
                             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                                 <h3 class="card-title mb-0"><i class="fas fa-list mr-2"></i>Ordered Items</h3>
                                 @if(in_array($order->status, ['pending', 'delayed', 'partially_dispatched']))
-                                    <button type="button" class="btn btn-sm btn-info text-white font-weight-bold rounded-pill px-3 shadow-sm" id="syncStockBtn" title="Auto-Assign stock from dispatchable warehouses">
+                                    <button type="button" class="btn-erp btn-erp-yellow" id="syncStockBtn" title="Auto-Assign stock from dispatchable warehouses">
                                         <i class="fas fa-magic mr-1"></i> Auto-Sync Stock
                                     </button>
                                 @endif

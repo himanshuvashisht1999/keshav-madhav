@@ -1407,10 +1407,8 @@ class AgentOrderController extends Controller
             )
             ->groupBy('product_id', 'color_id', 'size_set_id');
 
+        // Same as the create screen: stock tagged to a production order (order_main_id) is still listed here.
         $query = DomesticInventory::where('domestic_inventories.status', 1)
-            ->where(function ($q) {
-                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            })
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
