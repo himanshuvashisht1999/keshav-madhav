@@ -1807,7 +1807,7 @@ class OrderController extends Controller
         }
     }
 
-    protected function determineRackId($product_id, $color_id, $size_set_id, $barcode, $exclude_order_id = null)
+    public function determineRackId($product_id, $color_id, $size_set_id, $barcode, $exclude_order_id = null)
     {
         $allocated_query = DB::table('agent_order_items')
             ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')

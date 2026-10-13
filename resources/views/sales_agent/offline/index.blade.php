@@ -149,6 +149,24 @@ $(document).ready(function () {
             return;
         }
 
+        const waiting = await SnapKidOfflineDB.getUnsyncedOrders();
+        if (waiting.length > 0) {
+            const r = await Swal.fire({
+                icon: 'warning',
+                title: 'Offline orders waiting',
+                text: 'You have ' + waiting.length + ' offline order(s) not uploaded. Upload them (or discard them) first, then sync the catalog.',
+                showCancelButton: true,
+                confirmButtonText: 'Upload orders now',
+                cancelButtonText: 'View orders'
+            });
+            if (r.isConfirmed) {
+                syncOrdersList(waiting);
+            } else {
+                $('html, body').animate({ scrollTop: $('#ordersListContainer').offset().top - 80 }, 300);
+            }
+            return;
+        }
+
         const btn = $(this);
         const icon = $('#downloadIcon');
         btn.prop('disabled', true);
@@ -267,6 +285,7 @@ $(document).ready(function () {
                             <span class="small font-weight-bold text-muted">${ord.variations.length} Items (${totalBoxes} Boxes)</span>
                             ${seePrice ? `<span class="font-weight-bold text-primary">₹${ord.grand_total ? ord.grand_total.toLocaleString() : '0'}</span>` : ''}
                         </div>
+                        ${isPending && ord.last_error ? `<div class="small text-danger mb-2"><i class="fas fa-exclamation-circle mr-1"></i>${ord.last_error}</div>` : ''}
                         <div class="d-flex justify-content-end align-items-center">
                             ${isPending ? `
                                 <button type="button" class="btn btn-sm btn-outline-danger mr-2 btn-delete-order" data-id="${ord.local_id}">
@@ -341,13 +360,22 @@ $(document).ready(function () {
             if (res.success && res.synced && res.synced.length > 0) {
                 for (const syn of res.synced) {
                     await SnapKidOfflineDB.markOrderSynced(syn.local_id, syn);
+                    await SnapKidOfflineDB.markOrderError(syn.local_id, null);
                 }
+                for (const e of (res.errors || [])) {
+                    await SnapKidOfflineDB.markOrderError(e.local_id, e.error);
+                }
+                const failed = res.errors || [];
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Orders Synced!',
-                    text: res.synced.length + ' offline order(s) successfully created on server.'
+                    icon: failed.length ? 'warning' : 'success',
+                    title: failed.length ? 'Partially Synced' : 'Orders Synced!',
+                    text: res.synced.length + ' offline order(s) created on server.' +
+                        (failed.length ? ' ' + failed.length + ' failed: ' + failed.map(e => e.error).join('; ') : '')
                 });
             } else if (res.errors && res.errors.length > 0) {
+                for (const e of res.errors) {
+                    await SnapKidOfflineDB.markOrderError(e.local_id, e.error);
+                }
                 Swal.fire('Sync Error', res.errors[0].error, 'error');
             } else {
                 Swal.fire('Notice', 'No orders were uploaded.', 'info');
@@ -355,7 +383,10 @@ $(document).ready(function () {
 
             checkPendingOrders();
         } catch (err) {
-            Swal.fire('Error', 'Failed to upload orders: ' + (err.responseJSON ? err.responseJSON.message : err.statusText), 'error');
+            const msg = err.status === 419 ? 'Session expired. Please reload this page (or log in again) and retry.'
+                : err.status === 401 ? 'You are logged out. Please log in again, then retry.'
+                : (err.responseJSON ? err.responseJSON.message : err.statusText);
+            Swal.fire('Error', 'Failed to upload orders: ' + msg, 'error');
         }
     }
 

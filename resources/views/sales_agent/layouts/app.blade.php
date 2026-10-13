@@ -371,7 +371,7 @@
         });
     </script>
     
-    <script src="{{ asset('assets/js/offline-db.js') }}"></script>
+    <script src="{{ asset('assets/js/offline-db.js') }}?v={{ @filemtime(public_path('assets/js/offline-db.js')) }}"></script>
     <script>
         // Register Service Worker for offline capability
         if ('serviceWorker' in navigator) {

@@ -240,51 +240,100 @@ class OfflineOrderController extends Controller
                 }
             }
 
-            // 3b. Fair Products barcodes (e.g. F48, F49, FAIR-...)
-            if (Schema::hasTable('fair_products') && Schema::hasTable('fair_batches')) {
-                $fairProducts = DB::table('fair_products')
-                    ->join('fair_batches', 'fair_products.fair_batch_id', '=', 'fair_batches.id')
-                    ->where('fair_batches.status', 1)
-                    ->whereNotNull('fair_products.barcode')
-                    ->where('fair_products.barcode', '!=', '')
-                    ->select('fair_products.barcode', 'fair_products.product_id', 'fair_products.size_set_id', 'fair_batches.sales_agent_ids')
-                    ->get();
+            // 3b. Fair / sample-set products assigned to this agent (admin: inventory/fair-product).
+            // Full online-style scan payloads are built here so scanning works fully offline.
+            $scanPayloads = [];
+            $scanImageFiles = [];
 
-                foreach ($fairProducts as $fp) {
-                    $bc = trim($fp->barcode);
-                    if ($bc !== '') {
-                        if (!$agent->is_master_agent) {
-                            $assigned = is_array($fp->sales_agent_ids) ? $fp->sales_agent_ids : json_decode($fp->sales_agent_ids, true) ?? [];
-                            if (!empty($assigned) && !in_array((string)$agent_id, $assigned, true) && !in_array((int)$agent_id, $assigned, true)) {
-                                continue;
+            if (Schema::hasTable('fair_products') && Schema::hasTable('fair_batches')) {
+                $batches = DB::table('fair_batches')->where('status', 1)->get();
+                foreach ($batches as $batch) {
+                    $assigned = is_array($batch->sales_agent_ids) ? $batch->sales_agent_ids : (json_decode($batch->sales_agent_ids, true) ?: []);
+                    if (!$agent->is_master_agent && !empty($assigned)
+                        && !in_array((string) $agent_id, array_map('strval', $assigned), true)) {
+                        continue;
+                    }
+
+                    $byProduct = DB::table('fair_products')->where('fair_batch_id', $batch->id)->get()->groupBy('product_id');
+                    foreach ($byProduct as $pid => $group) {
+                        $discounts = [];
+                        $colorFilter = [];
+                        foreach ($group as $fp) {
+                            $discounts[(int) $fp->size_set_id] = (float) $fp->discount_percent;
+                            $cids = is_array($fp->color_ids) ? $fp->color_ids : (json_decode($fp->color_ids, true) ?: []);
+                            $colorFilter[(int) $fp->size_set_id] = array_map('intval', $cids);
+                        }
+
+                        $payload = $this->buildScanPayload(
+                            (int) $pid,
+                            array_keys($discounts),
+                            function ($ssId) use ($discounts) { return $discounts[$ssId] ?? 0; },
+                            $colorFilter,
+                            'F' . $batch->id . '_',
+                            $scanImageFiles
+                        );
+                        if (!$payload) continue;
+
+                        $payloadKey = 'F' . $batch->id . '_' . $pid;
+                        $scanPayloads[$payloadKey] = $payload;
+
+                        foreach ($group as $fp) {
+                            foreach ([$fp->barcode ?? null, $fp->qrcode ?? null] as $code) {
+                                $seg = self::lastSegment($code);
+                                if ($seg !== '') {
+                                    $barcodeMap[$seg] = [
+                                        'product_id' => (int) $fp->product_id,
+                                        'size_set_id' => (int) $fp->size_set_id,
+                                        'payload_key' => $payloadKey,
+                                    ];
+                                }
                             }
                         }
-                        $barcodeMap[$bc] = [
-                            'product_id' => (int) $fp->product_id,
-                            'size_set_id' => (int) $fp->size_set_id,
-                        ];
                     }
                 }
             }
 
-            // 3c. Sample Products barcodes
+            // 3c. Sample Products barcodes (normal agent pricing)
             if (Schema::hasTable('sample_products')) {
-                $sampleProducts = DB::table('sample_products')
-                    ->whereNotNull('barcode')
-                    ->where('barcode', '!=', '')
+                $sampleRows = DB::table('sample_products')
+                    ->whereNotNull('barcode')->where('barcode', '!=', '')
                     ->select('barcode', 'product_id', 'size_set_id')
                     ->get();
 
-                foreach ($sampleProducts as $sp) {
-                    $bc = trim($sp->barcode);
-                    if ($bc !== '') {
-                        $barcodeMap[$bc] = [
-                            'product_id' => (int) $sp->product_id,
-                            'size_set_id' => (int) $sp->size_set_id,
-                        ];
+                foreach ($sampleRows->groupBy('product_id') as $pid => $group) {
+                    $brandId = DB::table('production_goods')->where('id', $pid)->value('brand_id');
+                    $disc = (float) ($brand_discounts[$brandId] ?? 0);
+                    $sizeIds = $group->pluck('size_set_id')->map(function ($v) { return (int) $v; })->all();
+                    $sizeIds = array_values(array_unique(array_merge(
+                        $sizeIds,
+                        DB::table('domestic_inventories')->where('product_id', $pid)->where('status', 1)->pluck('size_set_id')->map(function ($v) { return (int) $v; })->all()
+                    )));
+
+                    $payload = $this->buildScanPayload((int) $pid, $sizeIds, function () use ($disc) { return $disc; }, [], '', $scanImageFiles);
+                    if (!$payload) continue;
+
+                    $payloadKey = 'D' . $pid;
+                    $scanPayloads[$payloadKey] = $payload;
+                    foreach ($group as $sp) {
+                        $seg = self::lastSegment($sp->barcode);
+                        if ($seg !== '') {
+                            $barcodeMap[$seg] = [
+                                'product_id' => (int) $sp->product_id,
+                                'size_set_id' => (int) $sp->size_set_id,
+                                'payload_key' => $payloadKey,
+                            ];
+                        }
                     }
                 }
             }
+
+            // Scan-context images first, so they are always cached
+            foreach ($scanImageFiles as $f) {
+                $u = asset('assets/products/' . $f);
+                if (!in_array($u, $imageUrls, true)) array_unshift($imageUrls, $u);
+                if (!in_array($f, $imageFiles, true)) array_unshift($imageFiles, $f);
+            }
+
 
             // 3d. Design number mappings (so scanning or typing design numbers like 26069, #26069, D26069 resolves instantly offline)
             foreach ($products as $p) {
@@ -295,11 +344,9 @@ class OfflineOrderController extends Controller
                         'product_id' => (int) $p['product_id'],
                         'size_set_id' => (int) $p['size_set_id'],
                     ];
-                    $barcodeMap[$dn] = $val;
-                    $barcodeMap['#' . $dn] = $val;
-                    $barcodeMap['D' . $dn] = $val;
-                    if ($cleanDn && $cleanDn !== $dn) {
-                        $barcodeMap[$cleanDn] = $val;
+                    // never overwrite real barcodes (fair/sample) with design-number shortcuts
+                    foreach (array_filter([$dn, '#' . $dn, 'D' . $dn, ($cleanDn && $cleanDn !== $dn) ? $cleanDn : null]) as $k) {
+                        if (!isset($barcodeMap[$k])) $barcodeMap[$k] = $val;
                     }
                 }
             }
@@ -313,8 +360,9 @@ class OfflineOrderController extends Controller
                 'shops' => $shops,
                 'products' => $products,
                 'barcodes' => $barcodeMap,
-                'image_urls' => array_slice($imageUrls, 0, 1200), // Pre-cache up to 1200 unique photos
-                'image_files' => array_slice($imageFiles, 0, 1200),
+                'scan_payloads' => $scanPayloads,
+                'image_urls' => array_slice($imageUrls, 0, 4000),
+                'image_files' => array_slice($imageFiles, 0, 4000),
                 'settings' => [
                     'gst_order' => $settings->gst_order ?? 5.00,
                     'agent_app_show_stock' => $settings->agent_app_show_stock ?? 1,
@@ -333,9 +381,172 @@ class OfflineOrderController extends Controller
         }
     }
 
+    /**
+     * Build the same payload the online "get-variation-by-barcode" endpoint returns,
+     * so the offline scanner shows identical size-set / colour matrices.
+     *
+     * @param array    $colorFilter [sizeSetId => [colorIds]] (empty = no filter)
+     * @param callable $discountFor fn(int $sizeSetId): float
+     * @param string   $keyPrefix   keeps cart keys unique per pricing context
+     */
+    private function buildScanPayload($productId, array $sizeSetIds, callable $discountFor, array $colorFilter, $keyPrefix, array &$imageFiles)
+    {
+        $product = ProductionGoods::with('series', 'brand', 'variants')->find($productId);
+        if (!$product) return null;
+
+        $isAdvanceSample = DB::table('domestic_inventories')
+            ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+            ->join('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+            ->where('domestic_inventories.product_id', $productId)
+            ->where('storerooms.name', 'ADVANCE SAMPLE')
+            ->exists();
+
+        $trackImage = function ($file) use (&$imageFiles) {
+            if ($file && !in_array($file, $imageFiles, true)) $imageFiles[] = $file;
+            return $file ? asset('assets/products/' . $file) : null;
+        };
+
+        $mainImageBase = optional($product->variants->first(function ($v) { return !empty($v->image); }))->image;
+        if (!$mainImageBase) {
+            $mainImageBase = DB::table('production_goods_variant_colors')
+                ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
+                ->where('production_goods_variants.production_goods_id', $productId)
+                ->whereNotNull('production_goods_variant_colors.image')
+                ->where('production_goods_variant_colors.image', '!=', '')
+                ->value('production_goods_variant_colors.image');
+        }
+
+        $sizeSets = [];
+        foreach (array_unique($sizeSetIds) as $sizeSetId) {
+            $q = DomesticInventory::where('product_id', $productId)
+                ->where('size_set_id', $sizeSetId)
+                ->where('domestic_inventories.status', 1);
+            if (!empty($colorFilter[$sizeSetId])) {
+                $q->whereIn('color_id', $colorFilter[$sizeSetId]);
+            }
+            $colorsRows = $q->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
+                ->select('master_colors.id', 'master_colors.name',
+                    DB::raw('SUM(domestic_inventories.total_boxes) as available_boxes'),
+                    DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'))
+                ->groupBy('master_colors.id', 'master_colors.name')
+                ->get();
+
+            $allocations = DB::table('agent_order_items')
+                ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+                ->where('agent_orders.status', 'pending')
+                ->where('agent_order_items.product_id', $productId)
+                ->where('agent_order_items.size_set_id', $sizeSetId)
+                ->select('color_id', DB::raw('SUM(box_qty) as total_allocated'))
+                ->groupBy('color_id')
+                ->pluck('total_allocated', 'color_id');
+
+            $variant = $product->variants->where('master_size_measurement_id', $sizeSetId)->first() ?: $product->variants->first();
+            $mrp = $variant->mrp ?? 0;
+            $unitPrice = ceil($mrp - ($mrp * $discountFor((int) $sizeSetId) / 100));
+            $sizeMeta = DB::table('master_size_measurements')->where('id', $sizeSetId)->first();
+            $sizeName = $sizeMeta->name ?? ('Size ' . $sizeSetId);
+            $mainImage = ($variant && !empty($variant->image)) ? $variant->image : $mainImageBase;
+
+            $colors = [];
+            foreach ($colorsRows as $c) {
+                $available = $isAdvanceSample ? 99999 : max(0, (int) $c->available_boxes - (int) ($allocations[$c->id] ?? 0));
+
+                $cImg = null;
+                if ($variant) {
+                    $cImg = DB::table('production_goods_variant_colors')
+                        ->where('variant_id', $variant->id)->where('master_color_id', $c->id)
+                        ->whereNotNull('image')->where('image', '!=', '')->value('image');
+                }
+                if (!$cImg) {
+                    $cImg = DB::table('production_goods_variant_colors')
+                        ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
+                        ->where('production_goods_variants.production_goods_id', $productId)
+                        ->where('production_goods_variant_colors.master_color_id', $c->id)
+                        ->whereNotNull('production_goods_variant_colors.image')
+                        ->where('production_goods_variant_colors.image', '!=', '')
+                        ->value('production_goods_variant_colors.image');
+                }
+                $imgUrl = $trackImage($cImg ?: $mainImage);
+
+                $pcs = (float) $c->pcs_per_box;
+                if ($pcs <= 0) $pcs = (float) ($sizeMeta->no_of_pcs ?? 1);
+
+                $key = $keyPrefix . $productId . '_' . $c->id . '_' . $sizeSetId;
+                $colors[] = [
+                    'id' => (int) $c->id,
+                    'name' => $c->name,
+                    'key' => $key,
+                    'available_boxes' => $available,
+                    'pcs_per_box' => $pcs,
+                    'image' => $imgUrl,
+                    // everything the cart / order save needs, so no catalog lookup is required
+                    'item' => [
+                        'key' => $key,
+                        'product_id' => (int) $productId,
+                        'color_id' => (int) $c->id,
+                        'size_set_id' => (int) $sizeSetId,
+                        'design_number' => $product->design_number,
+                        'name_of_garment' => $product->name_of_garment,
+                        'series_name' => $product->series->name ?? '',
+                        'brand_name' => $product->brand->name ?? '',
+                        'color_name' => $c->name,
+                        'size_set_name' => $sizeName,
+                        'available_boxes' => $available,
+                        'pcs_per_box' => $pcs,
+                        'mrp' => $mrp,
+                        'unit_price' => $unitPrice,
+                        'image_url' => $imgUrl,
+                    ],
+                ];
+            }
+
+            $sizeSets[] = [
+                'size_set_id' => (int) $sizeSetId,
+                'size_set_name' => $sizeName,
+                'mrp' => $mrp,
+                'unit_price' => $unitPrice,
+                'image' => $trackImage($mainImage),
+                'colors' => $colors,
+            ];
+        }
+
+        return [
+            'success' => true,
+            'is_advance_sample' => $isAdvanceSample,
+            'product' => [
+                'id' => $product->id,
+                'name' => trim(($product->series->name ?? '') . ' ' . $product->name_of_garment),
+                'design_number' => $product->design_number,
+                'series_name' => $product->series->name ?? '',
+                'brand_name' => $product->brand->name ?? '',
+                'image' => $trackImage($mainImageBase),
+            ],
+            'size_sets' => $sizeSets,
+        ];
+    }
+
+    private static function lastSegment($code)
+    {
+        $code = trim((string) $code);
+        foreach (['/fc/', '/sc/'] as $m) {
+            if (strpos($code, $m) !== false) {
+                $code = explode('/', explode($m, $code)[1])[0];
+                break;
+            }
+        }
+        if (stripos($code, 'http://') === 0 || stripos($code, 'https://') === 0) {
+            $parts = explode('/', explode('#', explode('?', $code)[0])[0]);
+            $code = end($parts);
+        }
+        return trim(explode('#', explode('?', $code)[0])[0]);
+    }
+
     public function sync(Request $request)
     {
         $orders = $request->input('orders', []);
+        if (is_string($orders)) {
+            $orders = json_decode($orders, true) ?: [];
+        }
         if (empty($orders)) {
             return response()->json(['success' => false, 'message' => 'No orders provided for sync.']);
         }
@@ -348,10 +559,29 @@ class OfflineOrderController extends Controller
         foreach ($orders as $orderData) {
             DB::beginTransaction();
             try {
-                $shop_id = $orderData['shop_id'];
+                $shop_id = $orderData['shop_id'] ?? null;
                 $customer = MasterCustomer::find($shop_id);
                 if (!$customer) {
                     throw new \Exception("Shop ID #{$shop_id} not found.");
+                }
+                if (!$agent->is_master_agent && (int) $customer->sales_agent_id !== (int) $agent_id) {
+                    throw new \Exception("Shop '{$customer->name}' is not assigned to you.");
+                }
+
+                // Idempotency: a retry after a lost response must not create a duplicate order
+                $localMarker = !empty($orderData['local_id']) ? ' [OFF:' . $orderData['local_id'] . ']' : null;
+                if ($localMarker) {
+                    $existing = AgentOrder::where('remark', 'like', '%' . $localMarker . '%')->first();
+                    if ($existing) {
+                        DB::rollBack();
+                        $synced[] = [
+                            'local_id' => $orderData['local_id'],
+                            'server_id' => $existing->id,
+                            'order_no' => 'ORD-' . $existing->id,
+                            'shop_name' => $customer->name
+                        ];
+                        continue;
+                    }
                 }
 
                 $master_agent_id = null;
@@ -366,7 +596,9 @@ class OfflineOrderController extends Controller
                 $total_amount = 0;
                 $items_to_create = [];
 
-                foreach ($orderData['variations'] as $var) {
+                $onlineOrderController = app(OrderController::class);
+
+                foreach (($orderData['variations'] ?? []) as $var) {
                     $product = ProductionGoods::with('series', 'brand')->find($var['product_id']);
                     $color = MasterColor::find($var['color_id']);
                     $sizeSet = MasterSizeMeasurement::find($var['size_set_id']);
@@ -379,7 +611,15 @@ class OfflineOrderController extends Controller
                         ->first();
 
                     $mrp = $variant->mrp ?? 0;
-                    $selling_price = isset($var['unit_price']) ? (float) $var['unit_price'] : $mrp;
+                    if (isset($var['unit_price']) && $var['unit_price'] !== '' && $var['unit_price'] !== null) {
+                        $selling_price = (float) $var['unit_price'];
+                    } else {
+                        $brand_discount = DB::table('sales_agent_brand_discounts')
+                            ->where('sales_agent_id', $agent_id)
+                            ->where('brand_id', $product->brand_id)
+                            ->value('discount_percentage') ?? 0;
+                        $selling_price = $mrp - ($mrp * $brand_discount / 100);
+                    }
                     $selling_price = ceil($selling_price);
 
                     $seriesName = ($product->series) ? $product->series->name : '';
@@ -388,12 +628,24 @@ class OfflineOrderController extends Controller
                     $fitting = $product->master_product_fitting_id ? MasterProductFitting::find($product->master_product_fitting_id) : null;
                     $pattern = $product->master_pattern_id ? MasterDesignPattern::find($product->master_pattern_id) : null;
 
-                    $pcs_per_box = isset($var['pcs_per_box']) && $var['pcs_per_box'] > 0 ? (float) $var['pcs_per_box'] : ($sizeSet->no_of_pcs ?? 1);
-                    $total_pcs = $var['qty'] * $pcs_per_box;
+                    $pcs_per_box = isset($var['pcs_per_box']) ? (float) $var['pcs_per_box'] : 0;
+                    if ($pcs_per_box <= 0) {
+                        $pcs_per_box = (float) (DomesticInventory::where('product_id', $var['product_id'])
+                            ->where('color_id', $var['color_id'])
+                            ->where('size_set_id', $var['size_set_id'])
+                            ->avg('quantity') ?? 0);
+                    }
+                    if ($pcs_per_box <= 0) {
+                        $pcs_per_box = (float) ($sizeSet->total_pieces ?? $sizeSet->no_of_pcs ?? 1);
+                    }
+                    $qty = (int) ($var['qty'] ?? 0);
+                    if ($qty <= 0) continue;
+                    $total_pcs = $qty * $pcs_per_box;
                     $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'];
+                    $rack_id = $onlineOrderController->determineRackId($var['product_id'], $var['color_id'], $var['size_set_id'], $barcode);
 
                     $items_to_create[] = [
-                        'rack_id' => null,
+                        'rack_id' => $rack_id,
                         'product_id' => $var['product_id'],
                         'color_id' => $var['color_id'],
                         'size_set_id' => $var['size_set_id'],
@@ -404,7 +656,7 @@ class OfflineOrderController extends Controller
                         'fitting_name' => $fitting->name ?? null,
                         'pattern_name' => $pattern->name ?? null,
                         'quantity' => $total_pcs,
-                        'box_qty' => $var['qty'],
+                        'box_qty' => $qty,
                         'mrp' => $mrp,
                         'selling_price' => $selling_price,
                         'barcode' => $barcode,
@@ -419,13 +671,22 @@ class OfflineOrderController extends Controller
                     $total_amount += ($total_pcs * $selling_price);
                 }
 
+                if (empty($items_to_create)) {
+                    throw new \Exception('Order has no valid items.');
+                }
+
                 $total_amount = ceil($total_amount);
                 $other_charges = ceil((float) ($orderData['other_charges'] ?? 0));
                 $discount_amount = ceil((float) ($orderData['discount_amount'] ?? 0));
                 $discount_percentage = ($total_amount > 0) ? ($discount_amount / $total_amount * 100) : 0;
                 $taxable_amount = $total_amount - $discount_amount;
-                $gst_percentage = (float) ($orderData['gst_percentage'] ?? 5.00);
-                $gst_amount = ceil((float) ($orderData['gst_amount'] ?? ($taxable_amount * $gst_percentage / 100)));
+                if (isset($orderData['gst_amount']) && $orderData['gst_amount'] !== '') {
+                    $gst_amount = ceil((float) $orderData['gst_amount']);
+                    $gst_percentage = ($taxable_amount > 0) ? ($gst_amount / $taxable_amount * 100) : 0;
+                } else {
+                    $gst_percentage = (float) ($orderData['gst_percentage'] ?? 5.00);
+                    $gst_amount = ceil($taxable_amount * $gst_percentage / 100);
+                }
                 $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
 
                 $orderDate = !empty($orderData['order_date']) ? $orderData['order_date'] : now();
@@ -433,7 +694,7 @@ class OfflineOrderController extends Controller
                 $order = AgentOrder::create([
                     'sales_agent_id' => $actual_agent_id,
                     'master_agent_id' => $master_agent_id,
-                    'sales_man_id' => $orderData['sales_man_id'] ?? null,
+                    'sales_man_id' => !empty($orderData['sales_man_id']) ? $orderData['sales_man_id'] : null,
                     'party_type' => 'customer',
                     'master_customer_id' => $shop_id,
                     'master_vendor_id' => null,
@@ -445,14 +706,14 @@ class OfflineOrderController extends Controller
                     'gst_amount' => $gst_amount,
                     'other_charges' => $other_charges,
                     'grand_total' => $grand_total,
-                    'expected_dispatch_date' => $orderData['expected_dispatch_date'] ?? null,
+                    'expected_dispatch_date' => !empty($orderData['expected_dispatch_date']) ? $orderData['expected_dispatch_date'] : null,
                     'status' => 'pending',
                     'order_type' => 'normal',
                     'sale_type' => 'item',
                     'is_sample_set' => 0,
                     'order_date' => $orderDate,
                     'created_by' => $agent_id,
-                    'remark' => ($orderData['remark'] ?? '') . ' [Booked Offline]',
+                    'remark' => trim(($orderData['remark'] ?? '') . ' [Booked Offline]' . ($localMarker ?? '')),
                     'booking_station' => $orderData['booking_station'] ?? null,
                     'transport' => $orderData['transport'] ?? null,
                 ]);

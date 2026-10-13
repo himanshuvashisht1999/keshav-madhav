@@ -1,4 +1,4 @@
-const CACHE_NAME = 'snapkid-agent-v2';
+const CACHE_NAME = 'snapkid-agent-v5';
 const IMAGE_CACHE_NAME = 'snapkid-product-images';
 
 const STATIC_ASSETS = [
@@ -10,6 +10,9 @@ const STATIC_ASSETS = [
     'https://code.jquery.com/jquery-3.6.0.min.js',
     'https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js',
     'https://cdn.jsdelivr.net/npm/sweetalert2@11',
+    'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css',
+    'https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css',
+    'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js',
     '/assets/js/html5-qrcode.min.js',
     '/assets/js/offline-db.js'
 ];
@@ -17,9 +20,8 @@ const STATIC_ASSETS = [
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
-            return cache.addAll(STATIC_ASSETS).catch(err => {
-                console.warn('Pre-cache item warning:', err);
-            });
+            // add individually so one failing URL does not abort the whole precache
+            return Promise.all(STATIC_ASSETS.map(u => cache.add(u).catch(err => console.warn('Pre-cache skipped:', u, err))));
         }).then(() => self.skipWaiting())
     );
 });
@@ -74,7 +76,7 @@ self.addEventListener('fetch', event => {
                 })
                 .catch(async () => {
                     const cache = await caches.open(CACHE_NAME);
-                    const match = await cache.match(event.request);
+                    const match = await cache.match(event.request) || await cache.match(event.request, { ignoreSearch: true });
                     if (match) return match;
                     // Fallback to offline create or offline hub
                     if (url.pathname.includes('/agent/offline/create')) {
@@ -86,11 +88,28 @@ self.addEventListener('fetch', event => {
         return;
     }
 
+    // Own JS/CSS: network first (so deployed fixes load immediately), cache fallback offline
+    if (url.origin === self.location.origin && /.(js|css)$/.test(url.pathname) && event.request.method === 'GET') {
+        event.respondWith(
+            fetch(event.request).then(resp => {
+                if (resp && resp.status === 200) {
+                    const copy = resp.clone();
+                    caches.open(CACHE_NAME).then(c => c.put(event.request, copy));
+                }
+                return resp;
+            }).catch(async () => {
+                const c = await caches.open(CACHE_NAME);
+                return (await c.match(event.request)) || (await c.match(event.request, { ignoreSearch: true })) || Response.error();
+            })
+        );
+        return;
+    }
+
     // General static assets: Stale while revalidate
     event.respondWith(
         caches.match(event.request).then(cached => {
             const fetchPromise = fetch(event.request).then(networkResponse => {
-                if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
+                if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque') && event.request.method === 'GET') {
                     const copy = networkResponse.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
                 }

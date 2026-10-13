@@ -345,6 +345,12 @@
                         <input type="number" id="offlineOtherCharges" class="form-control form-control-sm" placeholder="Other Charges ₹" min="0">
                     </div>
                 </div>
+                <select id="offlineSalesMan" class="form-control form-control-sm mb-2">
+                    <option value="">Select Sales Man (Optional)</option>
+                </select>
+                <input type="date" id="offlineDispatchDate" class="form-control form-control-sm mb-2" title="Expected Dispatch Date" value="{{ date('Y-m-d', strtotime('+3 days')) }}">
+                <input type="text" id="offlineBookingStation" class="form-control form-control-sm mb-2" placeholder="Booking Station">
+                <input type="text" id="offlineTransport" class="form-control form-control-sm mb-2" placeholder="Transport Name">
                 <input type="text" id="offlineRemark" class="form-control form-control-sm mb-2" placeholder="Order Remark (Optional)">
                 <button type="button" class="btn btn-success btn-block rounded-pill font-weight-bold" id="btnModalSaveOrder">
                     <i class="fas fa-save mr-1"></i> Confirm & Save Offline
@@ -438,6 +444,7 @@ $(document).ready(function () {
     let scanner = null;
     let metaInfo = null;
     let activeModalKey = null;
+    const scanItems = new Map(); // cart items that come from fair/sample scan payloads
 
     // Check sales agent rate viewing permission
     const agentSeePrice = {{ (isset($agent) && $agent->see_price) ? 'true' : 'false' }};
@@ -453,10 +460,27 @@ $(document).ready(function () {
         $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
     }
 
+    function gstRate() {
+        const g = metaInfo && metaInfo.settings ? parseFloat(metaInfo.settings.gst_order) : NaN;
+        return isNaN(g) ? 5 : g;
+    }
+
+    function allowOverStock() {
+        return !!(metaInfo && metaInfo.settings && parseInt(metaInfo.settings.agent_app_allow_over_stock) === 1);
+    }
+
+    function populateSalesMen() {
+        const sel = $('#offlineSalesMan');
+        ((metaInfo && metaInfo.sales_men) || []).forEach(sm => {
+            sel.append($('<option>').val(sm.id).text(sm.name));
+        });
+    }
+
     // 1. Initialize Offline Catalog & Shops
     async function initOfflineCatalog() {
         try {
             metaInfo = await SnapKidOfflineDB.getMeta();
+            populateSalesMen();
             const shops = await SnapKidOfflineDB.getShops();
             const shopSelect = $('#offlineShopSelect');
 
@@ -748,8 +772,12 @@ $(document).ready(function () {
     // 3. Cart & Quantity Handlers
     function updateCartItem(key, qty) {
         qty = Math.max(0, parseInt(qty) || 0);
-        const prod = allProducts.find(p => p.key === key);
+        const prod = allProducts.find(p => p.key === key) || scanItems.get(key);
         if (!prod) return;
+
+        if (!allowOverStock() && qty > (prod.available_boxes || 0)) {
+            qty = prod.available_boxes || 0;
+        }
 
         if (qty > 0) {
             cart.set(key, { item: prod, qty: qty });
@@ -924,8 +952,8 @@ $(document).ready(function () {
         const discount = parseFloat($('#offlineDiscount').val()) || 0;
         const otherCharges = parseFloat($('#offlineOtherCharges').val()) || 0;
         const taxable = Math.max(0, subtotal - discount);
-        const gst = Math.round(taxable * 0.05);
-        const grandTotal = Math.round(taxable + gst + otherCharges);
+        const gst = Math.ceil(taxable * gstRate() / 100);
+        const grandTotal = Math.ceil(taxable + gst + otherCharges);
 
         $('#totalBoxesCount').text(totalBoxes + (totalBoxes === 1 ? ' Box' : ' Boxes'));
         $('#cartItemsCount').text(itemsCount);
@@ -1066,6 +1094,20 @@ $(document).ready(function () {
             return;
         }
 
+        const waiting = await SnapKidOfflineDB.getUnsyncedOrders();
+        if (waiting.length > 0) {
+            const r = await Swal.fire({
+                icon: 'warning',
+                title: 'Offline orders waiting',
+                text: 'You have ' + waiting.length + ' offline order(s) not uploaded. Upload or discard them in the Offline Hub first, then sync.',
+                showCancelButton: true,
+                confirmButtonText: 'Go to Offline Hub',
+                cancelButtonText: 'Close'
+            });
+            if (r.isConfirmed) window.location.href = "{{ route('agent.offline.index') }}";
+            return;
+        }
+
         const btn = $(this);
         const icon = $('#inlineSyncIcon');
         btn.prop('disabled', true);
@@ -1141,6 +1183,13 @@ $(document).ready(function () {
         const res = await SnapKidOfflineDB.findVariationByBarcode(code);
         if (res && res.success && res.size_sets && res.size_sets.length > 0) {
             showOfflineColorSelection(res);
+        } else if (!window.SnapKidOfflineDB.getScanPayloads || Object.keys(await SnapKidOfflineDB.getScanPayloads()).length === 0) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Sync Required',
+                text: 'Your offline data is outdated and has no sample-set/fair products. Connect to internet and tap Sync once, then scan again.',
+                confirmButtonText: 'OK'
+            });
         } else {
             Swal.fire({
                 icon: 'warning',
@@ -1154,6 +1203,10 @@ $(document).ready(function () {
     function showOfflineColorSelection(data) {
         const list = $('#offlineColorSelectionList');
         list.empty();
+
+        (data.size_sets || []).forEach(ss => (ss.colors || []).forEach(c => {
+            if (c.item) scanItems.set(c.key, c.item);
+        }));
 
         if (!data.size_sets || data.size_sets.length === 0) {
             list.append('<div class="alert alert-warning">No variations found for this product.</div>');
@@ -1599,10 +1652,14 @@ $(document).ready(function () {
         const discount = parseFloat($('#offlineDiscount').val()) || 0;
         const otherCharges = parseFloat($('#offlineOtherCharges').val()) || 0;
         const taxable = Math.max(0, subtotal - discount);
-        const gst = Math.round(taxable * 0.05);
-        const grandTotal = Math.round(taxable + gst + otherCharges);
+        const gst = Math.ceil(taxable * gstRate() / 100);
+        const grandTotal = Math.ceil(taxable + gst + otherCharges);
 
         const orderData = {
+            sales_man_id: $('#offlineSalesMan').val() || null,
+            expected_dispatch_date: $('#offlineDispatchDate').val() || null,
+            booking_station: $('#offlineBookingStation').val() || '',
+            transport: $('#offlineTransport').val() || '',
             shop_id: shopId,
             shop_name: shopObj ? shopObj.name : 'Shop #' + shopId,
             variations: variations,
@@ -1611,7 +1668,7 @@ $(document).ready(function () {
             discount_amount: discount,
             other_charges: otherCharges,
             gst_amount: gst,
-            gst_percentage: 5.00,
+            gst_percentage: gstRate(),
             grand_total: grandTotal,
             remark: $('#offlineRemark').val() || '',
             order_date: new Date().toISOString().split('T')[0]

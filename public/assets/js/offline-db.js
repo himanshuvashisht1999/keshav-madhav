@@ -106,11 +106,65 @@ const SnapKidOfflineDB = (function () {
     }
 
     // Save full catalog
+    async function getUnsyncedOrders() {
+        const all = await getPendingOrders();
+        return all.filter(o => o.status === 'pending_sync');
+    }
+
+    async function markOrderError(local_id, message) {
+        const db = await openDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction('offline_orders', 'readwrite');
+            const store = tx.objectStore('offline_orders');
+            const g = store.get(local_id);
+            g.onsuccess = () => {
+                if (g.result) { g.result.last_error = message || null; store.put(g.result); }
+                resolve(true);
+            };
+            g.onerror = () => resolve(false);
+        });
+    }
+
+    async function clearSyncedOrders() {
+        const db = await openDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction('offline_orders', 'readwrite');
+            const store = tx.objectStore('offline_orders');
+            const req = store.getAll();
+            req.onsuccess = () => {
+                (req.result || []).forEach(o => { if (o.status === 'synced') store.delete(o.local_id); });
+            };
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+        });
+    }
+
     async function saveCatalogData(data, onProgress) {
+        // Hard rule (no force): never wipe while orders are still waiting to be uploaded
+        const waiting = await getUnsyncedOrders();
+        if (waiting.length > 0) {
+            const err = new Error('You have ' + waiting.length + ' offline order(s) not uploaded yet. Upload or discard them first.');
+            err.code = 'PENDING_ORDERS';
+            throw err;
+        }
+        await clearSyncedOrders();
         const db = await openDB();
 
+        // Fresh start: wipe all previously synced data (NOT pending offline orders), then re-save everything.
+        // Runs only after the new data has been downloaded, so a failed download never leaves the phone empty.
+        await new Promise((resolve, reject) => {
+            const stores = ['catalog', 'shops', 'meta', 'images_cache'];
+            const tx = db.transaction(stores, 'readwrite');
+            stores.forEach(n => tx.objectStore(n).clear());
+            tx.oncomplete = () => resolve();
+            tx.onerror = (e) => reject(e.target.error);
+        });
+        if ('caches' in window) {
+            try { await caches.delete('snapkid-product-images'); } catch (_) {}
+        }
+
         // 1. Save Shops
-        if (data.shops && data.shops.length > 0) {
+        if (data.shops) {
             await new Promise((resolve, reject) => {
                 const tx = db.transaction('shops', 'readwrite');
                 const store = tx.objectStore('shops');
@@ -124,7 +178,7 @@ const SnapKidOfflineDB = (function () {
         }
 
         // 2. Save Catalog Products (Bulk via Transaction)
-        if (data.products && data.products.length > 0) {
+        if (data.products) {
             await new Promise((resolve, reject) => {
                 const tx = db.transaction('catalog', 'readwrite');
                 const store = tx.objectStore('catalog');
@@ -141,6 +195,10 @@ const SnapKidOfflineDB = (function () {
         await new Promise((resolve, reject) => {
             const metaTx = db.transaction('meta', 'readwrite');
             const metaStore = metaTx.objectStore('meta');
+            metaStore.put({
+                key: 'scan_payloads',
+                map: data.scan_payloads || {}
+            });
             metaStore.put({
                 key: 'barcodes',
                 map: data.barcodes || {}
@@ -240,6 +298,16 @@ const SnapKidOfflineDB = (function () {
         });
     }
 
+    async function getScanPayloads() {
+        const db = await openDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction('meta', 'readonly');
+            const req = tx.objectStore('meta').get('scan_payloads');
+            req.onsuccess = () => resolve((req.result && req.result.map) ? req.result.map : {});
+            req.onerror = () => resolve({});
+        });
+    }
+
     async function getShops() {
         const db = await openDB();
         return new Promise((resolve) => {
@@ -280,9 +348,23 @@ const SnapKidOfflineDB = (function () {
             code = parts[parts.length - 1].trim();
         }
 
+        const barcodesMeta = await getBarcodeMap();
+
+        // 1b. Fair / sample-set barcodes: use the pre-built payload (same as online scan)
+        const fairMapped = barcodesMeta[code] || barcodesMeta[code.toUpperCase()] || barcodesMeta[code.toLowerCase()];
+        if (fairMapped && fairMapped.payload_key) {
+            const payloads = await getScanPayloads();
+            const payload = payloads[fairMapped.payload_key];
+            if (payload && payload.size_sets && payload.size_sets.length) {
+                return Object.assign({}, payload, {
+                    scanned_size_set_id: fairMapped.size_set_id || null,
+                    scanned_color_id: fairMapped.color_id || null
+                });
+            }
+        }
+
         const catalog = await getCatalog();
         if (!catalog || catalog.length === 0) return null;
-        const barcodesMeta = await getBarcodeMap();
 
         let targetProductId = null;
         let targetSizeSetId = null;
@@ -486,12 +568,16 @@ const SnapKidOfflineDB = (function () {
         saveCatalogData,
         getMeta,
         getBarcodeMap,
+        getScanPayloads,
         getShops,
         getCatalog,
         findVariationByBarcode,
         getImageBlobUrl,
         saveOfflineOrder,
         getPendingOrders,
+        getUnsyncedOrders,
+        markOrderError,
+        clearSyncedOrders,
         removeOfflineOrder,
         markOrderSynced
     };
