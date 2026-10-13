@@ -95,6 +95,9 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2 mt-3">
+                                        <button type="button" id="apply_filters" class="btn-erp btn-erp-primary" title="Apply Filters">
+                                            <i class="fas fa-filter"></i> Filter
+                                        </button>
                                         <button id="reset_filters" class="btn-erp btn-erp-secondary btn-block">
                                             <i class="fas fa-undo mr-1"></i> Reset
                                         </button>
@@ -332,10 +335,10 @@
 
         function loadMore(reset = false) {
             if (loading) return;
-            if (!nextPage && !reset) { $('#no-more-data').show(); return; }
+            
             loading = true;
             $('#loading-spinner').show();
-            $('#no-more-data').hide();
+            
             if (reset) { nextPage = 1; container.css('opacity', '0.5'); }
             $.ajax({
                 url: "{{ route('admin.inventory.stock_transfer.search') }}",
@@ -350,15 +353,15 @@
                     color_id: $('#color_filter').val()
                 },
                 success: function(res) {
-                    if (reset) { container.empty().css('opacity', '1'); }
-                    container.append(res.html);
-                    nextPage = res.next_page;
+                    container.empty().css('opacity', '1').append(res.html);
+                    nextPage = (res.meta && res.meta.current) || 1;
+                    if (window.ErpPager) ErpPager.render($('#inventoryTable'), res.meta, function (pg) { nextPage = pg; loadMore(false); });
                     loading = false;
                     $('#loading-spinner').hide();
-                    if (!nextPage) { $('#no-more-data').show(); }
+                    
                     if (container.is(':empty')) {
                         container.append('<tr><td colspan="6" class="text-center py-5 text-muted">No inventory found for selected filters.</td></tr>');
-                        $('#no-more-data').hide();
+                        
                     }
                 },
                 error: function() { loading = false; $('#loading-spinner').hide(); container.css('opacity', '1'); toastr.error('Failed to load inventory.'); }
@@ -366,13 +369,11 @@
         }
         loadMore();
 
-        $('.content-wrapper').on('scroll', function() {
-            if (loading || !nextPage) return;
-            if ($(this).scrollTop() + $(this).innerHeight() >= $(this)[0].scrollHeight - 300) { loadMore(); }
-        });
 
-        $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #color_filter').on('change', function() { loadMore(true); });
-        $('#reset_filters').on('click', function() { $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #color_filter').val('').trigger('change'); });
+
+        $('#apply_filters').on('click', function() { loadMore(true); });
+        $('#design_filter').on('keydown', function(e) { if (e.which === 13) { e.preventDefault(); loadMore(true); } });
+        $('#reset_filters').on('click', function() { $('#storeroom_filter, #rack_filter, #size_set_filter, #design_filter, #product_filter, #color_filter').val('').trigger('change'); loadMore(true); });
 
         $('#storeroom_filter').on('change', function() {
             let wh = $(this).val(), rack_filter = $('#rack_filter');

@@ -1,19 +1,18 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
 
     {{-- HEADER --}}
-    <section class="content-header">
-        <div class="container-fluid text-center">
-            <h1 class="mb-3">Packing in Carton</h1>
-            <hr>
+    <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> Packing in Carton</div>
         </div>
-    </section>
+    </div>
 
     {{-- CONTENT --}}
     <section class="content">
-        <div class="container-fluid">
+        <div class="container-fluid p-0">
             <div class="card p-3 shadow-sm">
 
                 <form method="POST" action="{{ route('admin.packing-carton.store') }}">

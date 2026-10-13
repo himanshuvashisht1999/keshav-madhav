@@ -80,7 +80,7 @@
             <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
-                        <i class="fas fa-vault"></i>
+                        <i class="fas fa-landmark"></i>
                     </div>
                     <div>
                         <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Net Available Liquidity</div>

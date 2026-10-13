@@ -6,11 +6,7 @@
             margin-right: 6px;
         }
 
-        .action-btn-group .btn.active {
-            background-color: green;
-            color: #fff;
-            padding: 10px;
-        }
+        .action-btn-group .btn.active { background-color: var(--erp-green-primary); color: #fff; }
 
         .form-section {
             display: none;
@@ -37,8 +33,8 @@
         }
 
         .lot-input-wrapper {
-            background: #f8f9fa;
-            border: 2px solid #28a745;
+            background: var(--erp-green-light);
+            border: 2px solid var(--erp-green-primary);
             border-radius: 10px;
             padding: 10px
         }
@@ -53,7 +49,7 @@
             padding: 12px;
             font-size: 20px;
             font-weight: 700;
-            border: 2px dashed #28a745;
+            border: 2px dashed var(--erp-green-border);
             border-radius: 6px;
             text-align: center
         }
@@ -113,7 +109,7 @@
         .action-btn-group {
             display: inline-flex;
             background: #fff;
-            border: 1px solid #c3e6cb;
+            border: 1px solid var(--erp-green-border);
             border-radius: 6px;
             padding: 3px;
             gap: 4px;
@@ -139,13 +135,127 @@
         }
     </style>
 
-    <div class="content-wrapper">
+    <style>
+        /* ---- Cutting master: brand look ---- */
+        .erp-page .ct-tabs .action-btn-group { box-shadow: 0 1px 3px rgba(5,66,28,.08); }
+        .erp-page .ct-tabs .action-btn { padding: 8px 18px; font-size: 13px; }
+        .erp-page .erp-header-title { gap: 4px; }
+        .erp-page .erp-header-actions .btn-erp { white-space: nowrap; }
 
-        <div class="erp-page p-2">
+        /* the repeated boxed fields: lighter, aligned, brand coloured */
+        .erp-page .form-section .card.border,
+        .erp-page .form-section .card.p-2 {
+            border: 1px solid #e2e8f0 !important;
+            border-left: 3px solid var(--erp-green-border) !important;
+            border-radius: 6px;
+            box-shadow: none;
+            background: #fff;
+            margin-top: 10px !important;
+            padding: 10px 12px !important;
+        }
+        .erp-page .form-section .card.bg-light { background: var(--erp-green-light) !important; border-left-color: var(--erp-green-primary) !important; font-size: 13px; }
+        .erp-page .form-section .card.bg-light strong { color: var(--erp-green-primary); }
+        .erp-page .form-section .card label { font-size: 12.5px; font-weight: 700; color: var(--erp-green-primary); margin-bottom: 4px; }
+        .erp-page .form-section .card .form-control[readonly] { background: #f8fafc; color: var(--erp-text-main); }
+
+        .erp-page .lot-input-wrapper { border-radius: 6px; padding: 10px 14px; margin: 12px 0 !important; }
+        .erp-page .lot-input-label { font-size: 14px; font-weight: 800; color: var(--erp-green-primary); white-space: nowrap; }
+        .erp-page .lot-input { padding: 8px 12px; font-size: 18px; border-radius: 4px; color: var(--erp-green-primary); background: #fff; }
+        .erp-page .lot-input:focus { outline: none; border-color: var(--erp-green-primary); box-shadow: 0 0 0 3px rgba(5,66,28,.12); }
+
+        .erp-page #st_table thead th { background: var(--erp-green-primary); color: #fff; }
+        .erp-page .text-success { color: var(--erp-green-primary) !important; }
+        .erp-page .badge-success { background: var(--erp-green-primary); }
+        .erp-page .sticky-wrapper .card { border-top: 3px solid var(--brand-yellow, #fcee21); }
+        .erp-page .rotate-btn, .erp-page .skip-btn { border-radius: 4px; }
+    </style>
+
+    @php
+    // The page script only needs a handful of fields per order/set. Serialising the full Eloquent models
+    // (every fabric roll with barcode/qrcode, accessors firing queries per row) made this page ~30 MB / 12 s.
+    $fnCache = [];      // fabric id list  => "A, B"
+    $rollCache = [];    // fabric ids|warehouse => [fabric => [rolls]]
+    $fabricNames = function ($idList) use (&$fnCache) {
+        if (!$idList) return '-';
+        if (!isset($fnCache[$idList])) {
+            $fnCache[$idList] = \App\Models\Fabric::whereIn('id', explode(',', $idList))->pluck('name')->implode(', ');
+        }
+        return $fnCache[$idList];
+    };
+    $assignedFabrics = function ($set) use (&$rollCache) {
+        $ids = [];
+        if ($set->fabric_id) $ids = array_filter(array_map('trim', explode(',', $set->fabric_id)));
+        if (empty($ids) && $set->orderCuttingStages->isNotEmpty()) {
+            foreach ($set->orderCuttingStages as $osc) {
+                if ($osc->fabric_id) $ids = array_merge($ids, array_filter(array_map('trim', explode(',', $osc->fabric_id))));
+            }
+            $ids = array_unique($ids);
+        }
+        if (empty($ids)) return [];
+        sort($ids);
+        $wh = $set->cutting_warehouse_id ?? null;
+        $key = implode(',', $ids) . '|' . $wh;
+        if (!isset($rollCache[$key])) {
+            $rolls = \App\Models\FabricReceiptDetail::whereIn('fabric_id', $ids)
+                ->when($wh, fn($q) => $q->where('master_fabric_warehouse_id', $wh))
+                ->where('remaining_quantity', '>', 0)          // the page skips empty rolls anyway
+                ->get(['id', 'fabric_id', 'roll_number', 'remaining_quantity'])
+                ->groupBy('fabric_id');
+            $out = [];
+            foreach (\App\Models\Fabric::whereIn('id', $ids)->get(['id', 'name']) as $f) {
+                $out[] = [
+                    'id' => $f->id, 'name' => $f->name,
+                    'receipt_details' => ($rolls[$f->id] ?? collect())->map(fn($r) => [
+                        'id' => $r->id, 'roll_number' => $r->roll_number, 'remaining_quantity' => $r->remaining_quantity,
+                    ])->values()->all(),
+                ];
+            }
+            $rollCache[$key] = $out;
+        }
+        return $rollCache[$key];
+    };
+    $ordersSlim = [];
+    foreach ($orders as $ord) {
+        $sets = [];
+        foreach ($ord->OrderProductSets as $set) {
+            $stages = [];
+            foreach ($set->orderCuttingStages as $osc) {
+                $stages[] = [
+                    'quantity' => $osc->quantity,
+                    'fabric_names' => $fabricNames($osc->fabric_id),
+                    'pattern' => $osc->pattern ? ['name' => $osc->pattern->name] : null,
+                    'master_fitting' => $osc->master_fitting ? ['name' => $osc->master_fitting->name] : null,
+                    'cutting_master' => $osc->cutting_master ? ['name' => $osc->cutting_master->name] : null,
+                ];
+            }
+            $sets[] = [
+                'id' => $set->id,
+                'design_number' => $set->design_number,
+                'total_quantity' => $set->total_quantity,
+                'size_set_name' => $set->size_measurement ? $set->size_measurement->name : 'N/A',
+                'fabric_names' => $fabricNames($set->fabric_id),
+                'colors' => $set->colors ? ['name' => $set->colors->name] : null,
+                'master_design_pattern' => $set->master_design_pattern ? ['name' => $set->master_design_pattern->name] : null,
+                'master_product_fitting' => $set->master_product_fitting ? ['name' => $set->master_product_fitting->name] : null,
+                'size_measurement' => $set->size_measurement ? ['size_group' => $set->size_measurement->size_group] : null,
+                'stage_master_unit' => $set->stage_master_unit ? ['name' => $set->stage_master_unit->name] : null,
+                'product_set_details' => $set->product_set_details->map(fn($d) => [
+                    'id' => $d->id, 'size' => $d->size, 'remaining_lot_allocated' => $d->remaining_lot_allocated,
+                ])->values()->all(),
+                'order_cutting_stages' => $stages,
+                'assigned_fabrics' => $assignedFabrics($set),
+            ];
+        }
+        $ordersSlim[] = ['id' => $ord->id, 'order_product_sets' => $sets];
+    }
+@endphp
+<div class="content-wrapper erp-page p-2">
+
+        <div>
             <!-- HEADER BAR -->
             <div class="erp-header-bar mb-2">
                 <div class="erp-header-title d-flex align-items-center flex-wrap">
-                    <i class="fas fa-cut mr-2 text-success"></i>
+                    <i class="fas fa-cut mr-2 text-primary"></i>
                     <span>Cutting Master Digitalization</span>
                     @if($cutting_slip)
                         <span class="badge ml-2 px-2 py-1 font-weight-bold" style="background:#edf7e4; color:#05421c; border:1px solid #c3e6cb; font-size:12px;">
@@ -155,19 +265,6 @@
                             <span class="badge badge-warning ml-2 px-2 py-1" style="font-size: 11px;">Partially Digitized</span>
                         @endif
                     @endif
-                </div>
-
-                <!-- TABS (Rolls Allot / Send to Stitching / Send to Printing) -->
-                <div class="action-btn-group my-1 my-md-0">
-                    <button type="button" class="action-btn btn-rolls active" data-target="rolls">
-                        <i class="fas fa-scroll mr-1"></i> Rolls Allot
-                    </button>
-                    <button type="button" class="action-btn btn-stitching" data-target="stitching">
-                        <i class="fas fa-tshirt mr-1"></i> Send to Stitching
-                    </button>
-                    <button type="button" class="action-btn btn-printing" data-target="printing">
-                        <i class="fas fa-print mr-1"></i> Send to Printing
-                    </button>
                 </div>
 
                 <div class="erp-header-actions">
@@ -181,6 +278,16 @@
                     @endif
                 </div>
             </div>
+
+            <!-- STEP TABS -->
+            <div class="ct-tabs mb-2">
+                <div class="action-btn-group">
+                    <button type="button" class="action-btn btn-rolls active" data-target="rolls"><i class="fas fa-scroll mr-1"></i> Rolls Allot</button>
+                    <button type="button" class="action-btn btn-stitching" data-target="stitching"><i class="fas fa-tshirt mr-1"></i> Send to Stitching</button>
+                    <button type="button" class="action-btn btn-printing" data-target="printing"><i class="fas fa-print mr-1"></i> Send to Printing</button>
+                </div>
+            </div>
+
             
 
         {{-- MAIN CONTENT --}}
@@ -826,7 +933,7 @@
         let selectedRollMeters = {}; // track used meters per roll
 
         $(document).ready(function () {
-            const ordersData = @json($orders);
+            const ordersData = @json($ordersSlim);
             let lastDesignId = null;
             let prefillApplied = false;
             // console.log(ordersData);

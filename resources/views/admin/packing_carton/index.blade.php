@@ -1,22 +1,18 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
     <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-12">
-                    <h1 class="text-center">List Of Carton Packing</h1>
-                </div>
-            </div>
+    <div class="erp-header-bar">
+        <div class="erp-header-title">
+            <i class="fas fa-list text-primary"></i> List Of Carton Packing
         </div>
-    </section>
+    </div>
 
     <!-- Main content -->
     <section class="content">
-        <div class="container-fluid">
+        <div class="container-fluid p-0">
             <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default ">
+            <div class="erp-card">
                 <div class="row" >
                     <div class="col-9 card-header">
                         <!-- <h3 class="card-title">Manage Production Order</h3> -->
@@ -26,8 +22,8 @@
                     </div>
                 </div>
                 
-                <div class="card-body table-responsive">
-                <table id="customers" class="table table-bordered table-hover">
+                <div class="erp-card-body p-2 table-responsive">
+                <table id="customers" class="erp-table table table-bordered table-hover">
                   <thead>
                     <tr role="row" class="filter">
                         <td>

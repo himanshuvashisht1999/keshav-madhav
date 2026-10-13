@@ -265,3 +265,4 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 </script>
+<script src="{{ asset('admin_assets/erp-filters.js') }}?v={{ @filemtime(public_path('admin_assets/erp-filters.js')) }}"></script>

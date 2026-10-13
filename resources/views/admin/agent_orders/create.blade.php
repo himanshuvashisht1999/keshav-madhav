@@ -1,608 +1,668 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper">
-    <div class="content-header pt-2 pb-1">
-        <div class="container-fluid">
-            @if(!isset($boxes))
-                <div class="row align-items-center">
-                    <div class="col-sm-6">
-                        <h4 class="m-0 font-weight-bold text-dark"><i class="fas fa-plus-circle mr-2"></i>Create New {{ request('order_type') == 'direct' ? 'Direct' : 'Sales' }} Order</h4>
-                        <p class="text-muted">Initiate a new order by selecting {{ request('order_type') == 'direct' ? 'a customer' : 'an agent and a customer' }}.</p>
-                    </div>
+<div class="content-wrapper erp-page p-2">
+    <div class="container-fluid p-0">
+        @if(!isset($boxes))
+            <!-- PAGE HEADER (Step 1) -->
+            <div class="erp-header-bar mb-2">
+                <div>
+                    <div class="erp-header-title"><i class="fas fa-plus-circle text-primary"></i> Create New {{ request('order_type') == 'direct' ? 'Direct' : 'Sales' }} Order</div>
+                    <div class="erp-page-subtitle">Initiate a new order by selecting {{ request('order_type') == 'direct' ? 'a customer' : 'an agent and a customer' }}.</div>
                 </div>
-            @else
-                <div class="row align-items-center">
-                    <div class="col-md-7 col-sm-6">
-                        <h4 class="m-0 font-weight-bold text-dark text-truncate" title="New {{ request('order_type') == 'direct' ? 'Direct' : 'Agent' }} Order: {{ $shop->name }}"><i class="fas fa-shopping-basket mr-2"></i>New {{ request('order_type') == 'direct' ? 'Direct' : 'Agent' }} Order: <span class="text-primary">{{ $shop->name }}</span></h4>
-                        <p class="text-muted small mb-0 text-truncate"><i class="fas fa-user-tie mr-1"></i> {{ $agent->id === 'direct' ? 'Direct Sale (No Agent)' : 'Agent: ' . $agent->name }}</p>
+                <div class="erp-header-actions">
+                    <a href="{{ route('admin.agent-orders.index') }}" class="btn-erp btn-erp-outline"><i class="fas fa-list mr-1"></i> All Orders</a>
+                </div>
+            </div>
+
+            <!-- STEP 1: Selection Form -->
+            <div class="ao-card">
+                <form action="{{ route('admin.agent-orders.store') }}" method="POST" class="ao-form">
+                    @csrf
+                    <input type="hidden" name="order_type" value="{{ request('order_type', 'normal') }}">
+
+                    <div class="ao-body">
+                        <div class="ao-grid">
+                            <!-- Row 1 -->
+                            <div class="ao-field">
+                                <label class="ao-label">Party Type <span class="req">*</span></label>
+                                <div class="ao-seg">
+                                    <input type="radio" id="typeCustomer" name="party_type" value="customer" {{ old('party_type', request('party_type', 'customer')) == 'customer' ? 'checked' : '' }}>
+                                    <label for="typeCustomer"><i class="fas fa-store"></i> Customer</label>
+                                    <input type="radio" id="typeVendor" name="party_type" value="vendor" {{ old('party_type', request('party_type')) == 'vendor' ? 'checked' : '' }}>
+                                    <label for="typeVendor"><i class="fas fa-truck-loading"></i> Vendor</label>
+                                </div>
+                            </div>
+
+                            <div class="ao-field" id="customerWrapper" style="{{ old('party_type', request('party_type', 'customer')) == 'customer' ? '' : 'display:none;' }}">
+                                <label class="ao-label">
+                                    <span>Select Customer <span class="req">*</span></span>
+                                    <span class="ao-links">
+                                        <a href="{{ route('admin.master.customer.create') }}" target="_blank" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                        <a href="javascript:void(0)" id="refreshCustomerBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
+                                <select name="master_customer_id" id="customerSelect" class="form-control select2 @error('master_customer_id') is-invalid @enderror">
+                                    <option value="">-- Choose Customer --</option>
+                                    @foreach($shops as $shop_item)
+                                        <option value="{{ $shop_item->id }}" {{ old('master_customer_id', request('master_customer_id')) == $shop_item->id ? 'selected' : '' }}>
+                                            {{ $shop_item->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="ao-field" id="vendorWrapper" style="{{ old('party_type', request('party_type')) == 'vendor' ? '' : 'display:none;' }}">
+                                <label class="ao-label">
+                                    <span>Select Vendor <span class="req">*</span></span>
+                                    <span class="ao-links">
+                                        <a href="{{ route('admin.master.vendor.create') }}" target="_blank" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                        <a href="javascript:void(0)" id="refreshVendorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
+                                <select name="master_vendor_id" id="vendorSelect" class="form-control select2 @error('master_vendor_id') is-invalid @enderror">
+                                    <option value="">-- Choose Vendor --</option>
+                                    @foreach($vendors as $vendor_item)
+                                        <option value="{{ $vendor_item->id }}" {{ old('master_vendor_id', request('master_vendor_id')) == $vendor_item->id ? 'selected' : '' }}>
+                                            {{ $vendor_item->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Row 2 -->
+                            <div class="ao-field">
+                                <label class="ao-label">
+                                    <span>Sales Man <small class="text-muted font-weight-normal">(optional)</small></span>
+                                    <span class="ao-links">
+                                        <a href="{{ route('admin.master.sales-man.create') }}" target="_blank" title="Create New"><i class="fas fa-plus"></i> New</a>
+                                        <a href="javascript:void(0)" id="refreshSalesManBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
+                                    </span>
+                                </label>
+                                <select name="sales_man_id" id="salesManSelect" class="form-control select2">
+                                    <option value="">-- Choose Sales Man --</option>
+                                    @foreach($salesMen as $man)
+                                        <option value="{{ $man->id }}" {{ old('sales_man_id', request('sales_man_id')) == $man->id ? 'selected' : '' }}>
+                                            {{ $man->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="ao-field">
+                                <label class="ao-label">Order Date <span class="req">*</span></label>
+                                <input type="date" name="order_date" class="form-control" value="{{ old('order_date', date('Y-m-d')) }}" required>
+                            </div>
+
+                            <!-- Row 3 -->
+                            <div class="ao-field">
+                                <label class="ao-label">Order Type <span class="req">*</span></label>
+                                <select name="order_type" id="orderTypeSelect" class="form-control @error('order_type') is-invalid @enderror" required>
+                                    <option value="normal" {{ request('order_type') == 'normal' ? 'selected' : '' }}>Normal</option>
+                                    <option value="direct" {{ request('order_type') == 'direct' ? 'selected' : '' }}>Direct (Instant Bill/Dispatch)</option>
+                                </select>
+                            </div>
+
+                            <div class="ao-field">
+                                <label class="ao-label">Sale Type <span class="req">*</span></label>
+                                <select name="sale_type" id="saleTypeSelect" class="form-control @error('sale_type') is-invalid @enderror" required>
+                                    <option value="item" {{ old('sale_type', 'item') == 'item' ? 'selected' : '' }}>Item (Ready Goods)</option>
+                                    <option value="fabric" {{ old('sale_type') == 'fabric' ? 'selected' : '' }}>Fabric</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-none" id="agentSelectionWrapper" style="display:none;">
+                            <select name="sales_agent_id" id="agentSelect" class="form-control">
+                                 <option value="direct">Direct</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="col-md-5 col-sm-6 text-right d-flex justify-content-end align-items-center flex-wrap">
-                        <a href="{{ route('admin.agent-orders.create') }}" class="btn btn-outline-secondary btn-sm shadow-sm mr-2" style="border-radius: 6px;">
-                            <i class="fas fa-exchange-alt mr-1"></i> Change Agent/Shop
-                        </a>
-                        <button type="button" class="btn btn-secondary btn-sm shadow-sm font-weight-bold px-3 open-checkout-modal-btn" id="topCheckoutBtn" style="border-radius: 6px;" title="Review selected items and place order">
-                            <i class="fas fa-arrow-circle-right mr-1"></i> Next <span class="badge badge-light text-dark ml-1 font-weight-bold" id="topBoxesBadge">0 Boxes</span>
+
+                    <!-- Footer row: pricing switch + actions -->
+                    <div class="ao-actions">
+                        <div class="custom-control custom-switch ao-switch">
+                            <input type="checkbox" class="custom-control-input" id="sampleSetToggleStep1" name="is_sample_set" value="1">
+                            <label class="custom-control-label" for="sampleSetToggleStep1">Use Sample Set Pricing for this Order</label>
+                        </div>
+                        <div class="d-flex" style="gap:8px;">
+                            <a href="{{ route('admin.agent-orders.index') }}" class="btn-erp btn-erp-outline">
+                                <i class="fas fa-times mr-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn-erp btn-erp-primary px-4">
+                                Proceed <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        @else
+            <!-- PAGE HEADER (Step 2) -->
+            <div class="erp-header-bar mb-2">
+                <div style="min-width: 0;">
+                    <div class="erp-header-title text-truncate" title="New {{ request('order_type') == 'direct' ? 'Direct' : 'Agent' }} Order: {{ $shop->name }}">
+                        <i class="fas fa-shopping-basket text-primary"></i> New {{ request('order_type') == 'direct' ? 'Direct' : 'Agent' }} Order: <span class="erp-party-name">{{ $shop->name }}</span>
+                    </div>
+                    <div class="erp-page-subtitle text-truncate"><i class="fas fa-user-tie mr-1"></i> {{ $agent->id === 'direct' ? 'Direct Sale (No Agent)' : 'Agent: ' . $agent->name }}</div>
+                </div>
+                <div class="erp-header-actions">
+                    <a href="{{ route('admin.agent-orders.create') }}" class="btn-erp btn-erp-outline">
+                        <i class="fas fa-exchange-alt mr-1"></i> Change Agent/Shop
+                    </a>
+                    <button type="button" class="btn-erp btn-erp-outline open-checkout-modal-btn" id="topCheckoutBtn" title="Review selected items and place order">
+                        <i class="fas fa-arrow-circle-right mr-1"></i> Next <span class="badge badge-primary ml-1" id="topBoxesBadge">0 Boxes</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- FILTERS BAR -->
+            <div class="erp-filter-bar mb-2">
+                <form method="GET" action="{{ route('admin.agent-orders.create') }}" id="filterForm">
+                    <input type="hidden" name="sales_agent_id" value="{{ $agent->id }}">
+                    <input type="hidden" name="sales_man_id" value="{{ request('sales_man_id') }}">
+                    <input type="hidden" name="party_type" value="{{ request('party_type', 'customer') }}">
+                    <input type="hidden" name="master_customer_id" value="{{ request('master_customer_id') }}">
+                    <input type="hidden" name="master_vendor_id" value="{{ request('master_vendor_id') }}">
+                    <input type="hidden" name="order_date" value="{{ request('order_date') }}">
+                    <input type="hidden" name="order_type" value="{{ request('order_type') }}">
+                    <div class="row align-items-end">
+                        <div class="col-md-3 col-6 mb-2">
+                            <label class="erp-label">Design No</label>
+                            <select name="design_number" class="form-control select2">
+                                <option value="">All Designs</option>
+                                @foreach($designs as $design)
+                                    <option value="{{ $design }}" {{ request('design_number') == $design ? 'selected' : '' }}>{{ $design }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
+                            <label class="erp-label">Product Name</label>
+                            <select name="product_name" class="form-control select2">
+                                <option value="">All Products</option>
+                                @foreach($product_names as $name)
+                                    <option value="{{ $name }}" {{ request('product_name') == $name ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
+                            <label class="erp-label">Color</label>
+                            <select name="color_name" class="form-control select2">
+                                <option value="">All Colors</option>
+                                @foreach($colors as $color)
+                                    <option value="{{ $color }}" {{ request('color_name') == $color ? 'selected' : '' }}>{{ $color }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
+                            <label class="erp-label">Size Set</label>
+                            <select name="size_set_name" class="form-control select2">
+                                <option value="">All Sets</option>
+                                @foreach($size_sets as $set)
+                                    <option value="{{ $set }}" {{ request('size_set_name') == $set ? 'selected' : '' }}>{{ $set }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <label class="erp-label">Pattern</label>
+                            <select name="pattern_id" class="form-control select2">
+                                <option value="">All Patterns</option>
+                                @foreach($patterns as $id => $name)
+                                    <option value="{{ $id }}" {{ request('pattern_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <label class="erp-label">Fitting</label>
+                            <select name="fitting_id" class="form-control select2">
+                                <option value="">All Fittings</option>
+                                @foreach($fittings as $id => $name)
+                                    <option value="{{ $id }}" {{ request('fitting_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <label class="erp-label">Product Nature</label>
+                            <select name="product_nature_id" class="form-control select2">
+                                <option value="">All Natures</option>
+                                @foreach($product_natures as $id => $name)
+                                    <option value="{{ $id }}" {{ request('product_nature_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <label class="erp-label">Fabric Type</label>
+                            <select name="fabric_type_id" class="form-control select2">
+                                <option value="">All Fabrics</option>
+                                @foreach($fabric_types as $id => $name)
+                                    <option value="{{ $id }}" {{ request('fabric_type_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <label class="erp-label">Brand</label>
+                            <select name="brand_id" id="brand_id" class="form-control select2">
+                                <option value="">All Brands</option>
+                                @foreach($brands as $id => $name)
+                                    <option value="{{ $id }}" {{ request('brand_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <label class="erp-label">MRP From</label>
+                            <div class="input-group input-group-sm">
+                                <div class="input-group-prepend"><span class="input-group-text py-0">₹</span></div>
+                                <input type="number" name="mrp_from" id="mrp_from" class="form-control" placeholder="Min" min="0" step="any" value="{{ request('mrp_from') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <label class="erp-label">MRP To</label>
+                            <div class="input-group input-group-sm">
+                                <div class="input-group-prepend"><span class="input-group-text py-0">₹</span></div>
+                                <input type="number" name="mrp_to" id="mrp_to" class="form-control" placeholder="Max" min="0" step="any" value="{{ request('mrp_to') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <label class="erp-label">Min Boxes</label>
+                            <div class="input-group input-group-sm">
+                                <div class="input-group-prepend"><span class="input-group-text py-0"><i class="fas fa-box small"></i></span></div>
+                                <input type="number" name="min_boxes" id="min_boxes" class="form-control" placeholder="Min Boxes" min="0" value="{{ request('min_boxes') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2 col-6 mb-2">
+                            <label class="erp-label">Max Boxes</label>
+                            <div class="input-group input-group-sm">
+                                <div class="input-group-prepend"><span class="input-group-text py-0"><i class="fas fa-boxes small"></i></span></div>
+                                <input type="number" name="max_boxes" id="max_boxes" class="form-control" placeholder="Max Boxes" min="0" value="{{ request('max_boxes') }}">
+                            </div>
+                        </div>
+                        <div class="col-auto mb-2 ml-auto">
+                            <div class="erp-filter-actions">
+                                <button type="submit" class="btn-erp btn-erp-primary">
+                                    <i class="fas fa-filter"></i> Filter
+                                </button>
+                                <a href="{{ route('admin.agent-orders.create', ['order_type' => request('order_type'), 'sale_type' => request('sale_type'), 'party_type' => request('party_type', 'customer'), 'sales_agent_id' => $agent->id, 'sales_man_id' => request('sales_man_id'), 'master_customer_id' => request('master_customer_id'), 'master_vendor_id' => request('master_vendor_id'), 'order_date' => request('order_date')]) }}"
+                                   class="btn-erp btn-erp-outline" title="Reset Filters">
+                                    <i class="fas fa-undo"></i> Reset
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- INVENTORY TABLE CARD -->
+            <div class="erp-card" style="margin-bottom: 75px !important;">
+                <div class="erp-card-header flex-wrap">
+                    <div class="d-flex align-items-center">
+                        <h6 class="erp-card-title mr-3"><i class="fas fa-boxes"></i> Available Inventory</h6>
+                        <span class="erp-stat-pill" id="variationsCount">{{ $boxes->total() }} Variations Available</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <button type="button" class="btn-erp btn-erp-primary open-checkout-modal-btn" id="cardCheckoutBtn" style="display: none;">
+                            <i class="fas fa-shopping-cart mr-1"></i> Next: Review Order (<span id="cardBoxesCount">0</span> Boxes • ₹<span id="cardGrandTotal">0</span>) <i class="fas fa-arrow-right ml-1"></i>
                         </button>
                     </div>
                 </div>
-            @endif
-        </div>
-    </div>
-
-    <section class="content">
-        <div class="container-fluid">
-            @if(!isset($boxes))
-                <!-- STEP 1: Selection Form -->
-                <div class="row justify-content-center">
-                    <div class="col-md-8">
-                        <div class="card shadow-sm border-0">
-                            <div class="card-header bg-white border-bottom py-3">
-                                <h5 class="mb-0 text-dark font-weight-bold">Order Basic Information</h5>
-                            </div>
-                            <div class="card-body p-4">
-                                <form action="{{ route('admin.agent-orders.store') }}" method="POST">
-                                    @csrf
-                                    <input type="hidden" name="order_type" value="{{ request('order_type', 'normal') }}">
-                                    <div class="form-group mb-4">
-                                        <label class="text-muted small font-weight-bold text-uppercase">Party Type <span class="text-danger">*</span></label>
-                                        <div class="d-flex align-items-center">
-                                            <div class="custom-control custom-radio mr-4">
-                                                <input class="custom-control-input" type="radio" id="typeCustomer" name="party_type" value="customer" {{ old('party_type', request('party_type', 'customer')) == 'customer' ? 'checked' : '' }}>
-                                                <label for="typeCustomer" class="custom-control-label font-weight-normal">Customer</label>
-                                            </div>
-                                            <div class="custom-control custom-radio">
-                                                <input class="custom-control-input" type="radio" id="typeVendor" name="party_type" value="vendor" {{ old('party_type', request('party_type')) == 'vendor' ? 'checked' : '' }}>
-                                                <label for="typeVendor" class="custom-control-label font-weight-normal">Vendor</label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group mb-4" id="customerWrapper" style="{{ old('party_type', request('party_type', 'customer')) == 'customer' ? '' : 'display:none;' }}">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                            <span>Select Customer <span class="text-danger">*</span></span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.customer.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                <a href="javascript:void(0)" class="text-info" id="refreshCustomerBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                            </span>
-                                        </label>
-                                        <select name="master_customer_id" id="customerSelect" class="form-control select2 @error('master_customer_id') is-invalid @enderror">
-                                            <option value="">-- Choose Customer --</option>
-                                            @foreach($shops as $shop_item)
-                                                <option value="{{ $shop_item->id }}" {{ old('master_customer_id', request('master_customer_id')) == $shop_item->id ? 'selected' : '' }}>
-                                                    {{ $shop_item->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group mb-4" id="vendorWrapper" style="{{ old('party_type', request('party_type')) == 'vendor' ? '' : 'display:none;' }}">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                            <span>Select Vendor <span class="text-danger">*</span></span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.vendor.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                <a href="javascript:void(0)" class="text-info" id="refreshVendorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                            </span>
-                                        </label>
-                                        <select name="master_vendor_id" id="vendorSelect" class="form-control select2 @error('master_vendor_id') is-invalid @enderror">
-                                            <option value="">-- Choose Vendor --</option>
-                                            @foreach($vendors as $vendor_item)
-                                                <option value="{{ $vendor_item->id }}" {{ old('master_vendor_id', request('master_vendor_id')) == $vendor_item->id ? 'selected' : '' }}>
-                                                    {{ $vendor_item->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group mb-4">
-                                                <label class="text-muted small font-weight-bold text-uppercase">Order Type <span class="text-danger">*</span></label>
-                                                <select name="order_type" id="orderTypeSelect" class="form-control @error('order_type') is-invalid @enderror" required>
-                                                    <option value="normal" {{ request('order_type') == 'normal' ? 'selected' : '' }}>Normal</option>
-                                                    <option value="direct" {{ request('order_type') == 'direct' ? 'selected' : '' }}>Direct (Instant Bill/Dispatch)</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group mb-4">
-                                                <label class="text-muted small font-weight-bold text-uppercase">Sale Type <span class="text-danger">*</span></label>
-                                                <select name="sale_type" id="saleTypeSelect" class="form-control @error('sale_type') is-invalid @enderror" required>
-                                                    <option value="item" {{ old('sale_type', 'item') == 'item' ? 'selected' : '' }}>Item (Ready Goods)</option>
-                                                    <option value="fabric" {{ old('sale_type') == 'fabric' ? 'selected' : '' }}>Fabric</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group mb-4">
-                                        <label class="d-flex justify-content-between align-items-center mb-1 text-muted small font-weight-bold text-uppercase">
-                                            <span>Select Sales Man</span>
-                                            <span class="action-links text-capitalize" style="font-size: 0.85rem; font-weight: normal;">
-                                                <a href="{{ route('admin.master.sales-man.create') }}" target="_blank" class="text-primary mr-2" title="Create New"><i class="fas fa-plus"></i> New</a>
-                                                <a href="javascript:void(0)" class="text-info" id="refreshSalesManBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
-                                            </span>
-                                        </label>
-                                        <select name="sales_man_id" id="salesManSelect" class="form-control select2">
-                                            <option value="">-- Optional: Choose Sales Man --</option>
-                                            @foreach($salesMen as $man)
-                                                <option value="{{ $man->id }}" {{ old('sales_man_id', request('sales_man_id')) == $man->id ? 'selected' : '' }}>
-                                                    {{ $man->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group mb-4" id="agentSelectionWrapper" style="display:none;">
-                                        <select name="sales_agent_id" id="agentSelect" class="form-control">
-                                             <option value="direct">Direct</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group mb-4">
-                                        <div class="custom-control custom-switch border p-3 rounded bg-light" style="border-radius: 10px !important;">
-                                            <input type="checkbox" class="custom-control-input" id="sampleSetToggleStep1" name="is_sample_set" value="1">
-                                            <label class="custom-control-label font-weight-bold ml-2 pt-1 text-primary" for="sampleSetToggleStep1" style="cursor:pointer; user-select: none;">Use Sample Set Pricing for this Order</label>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group mb-4">
-                                        <label class="text-muted small font-weight-bold text-uppercase">Order Date <span class="text-danger">*</span></label>
-                                        <input type="date" name="order_date" class="form-control" value="{{ old('order_date', date('Y-m-d')) }}" required>
-                                    </div>
-
-                                    <div class="border-top pt-4 d-flex justify-content-between">
-                                        <a href="{{ route('admin.agent-orders.index') }}" class="btn btn-outline-secondary px-4">
-                                            <i class="fas fa-times mr-2"></i> Cancel
-                                        </a>
-                                        <button type="submit" class="btn btn-primary px-5 shadow-sm" style="border-radius: 8px;">
-                                            Proceed <i class="fas fa-arrow-right ml-2"></i>
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
+                <div class="erp-card-body p-0">
+                    <div class="table-responsive">
+                        <table class="erp-table table-bordered table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th width="80" class="text-center">Image</th>
+                                    <th>Product Details</th>
+                                    <th>Size Set</th>
+                                    <th class="text-center">Pcs/Box</th>
+                                    <th class="text-center">Available</th>
+                                    <th class="text-right">Price ({{ request('order_type') == 'direct' ? 'Customer' : 'Agent' }})</th>
+                                    <th width="150" class="text-center px-4">Order Qty (Boxes)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="variation-container">
+                                @forelse($boxes as $variation)
+                                    @php
+                                        $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
+                                        $image = $boxImages[$vKey] ?? null;
+                                    @endphp
+                                    @include('admin.agent_orders.partials.variation_row', ['variation' => $variation, 'vKey' => $vKey, 'image' => $image])
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center py-5 text-muted">No inventory found for selected filters.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            @else
-                <!-- STEP 2: Inventory Selection (Agent Type) -->
-                <div class="row">
-                    <div class="col-12">
-                        <!-- Filters -->
-                        <div class="card shadow-sm border-0 mb-3 bg-light">
-                            <div class="card-body p-2">
-                                <form method="GET" action="{{ route('admin.agent-orders.create') }}" id="filterForm">
-                                    <input type="hidden" name="sales_agent_id" value="{{ $agent->id }}">
-                                    <input type="hidden" name="sales_man_id" value="{{ request('sales_man_id') }}">
-                                    <input type="hidden" name="party_type" value="{{ request('party_type', 'customer') }}">
-                                    <input type="hidden" name="master_customer_id" value="{{ request('master_customer_id') }}">
-                                    <input type="hidden" name="master_vendor_id" value="{{ request('master_vendor_id') }}">
-                                    <input type="hidden" name="order_date" value="{{ request('order_date') }}">
-                                    <input type="hidden" name="order_type" value="{{ request('order_type') }}">
-                                    <div class="row align-items-end">
-                                        <div class="col-md-3 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">Design No</label>
-                                            <select name="design_number" class="form-control form-control-sm select2">
-                                                <option value="">All Designs</option>
-                                                @foreach($designs as $design)
-                                                    <option value="{{ $design }}" {{ request('design_number') == $design ? 'selected' : '' }}>
-                                                        {{ $design }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">Product Name</label>
-                                            <select name="product_name" class="form-control form-control-sm select2">
-                                                <option value="">All Products</option>
-                                                @foreach($product_names as $name)
-                                                    <option value="{{ $name }}" {{ request('product_name') == $name ? 'selected' : '' }}>
-                                                        {{ $name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">Color</label>
-                                            <select name="color_name" class="form-control form-control-sm select2">
-                                                <option value="">All Colors</option>
-                                                @foreach($colors as $color)
-                                                    <option value="{{ $color }}" {{ request('color_name') == $color ? 'selected' : '' }}>
-                                                        {{ $color }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">Size Set</label>
-                                            <select name="size_set_name" class="form-control form-control-sm select2">
-                                                <option value="">All Sets</option>
-                                                @foreach($size_sets as $set)
-                                                    <option value="{{ $set }}" {{ request('size_set_name') == $set ? 'selected' : '' }}>
-                                                        {{ $set }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">Pattern</label>
-                                            <select name="pattern_id" class="form-control form-control-sm select2">
-                                                <option value="">All Patterns</option>
-                                                @foreach($patterns as $id => $name)
-                                                    <option value="{{ $id }}" {{ request('pattern_id') == $id ? 'selected' : '' }}>
-                                                        {{ $name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">Fitting</label>
-                                            <select name="fitting_id" class="form-control form-control-sm select2">
-                                                <option value="">All Fittings</option>
-                                                @foreach($fittings as $id => $name)
-                                                    <option value="{{ $id }}" {{ request('fitting_id') == $id ? 'selected' : '' }}>
-                                                        {{ $name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">Product Nature</label>
-                                            <select name="product_nature_id" class="form-control form-control-sm select2">
-                                                <option value="">All Natures</option>
-                                                @foreach($product_natures as $id => $name)
-                                                    <option value="{{ $id }}" {{ request('product_nature_id') == $id ? 'selected' : '' }}>
-                                                        {{ $name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">Fabric Type</label>
-                                            <select name="fabric_type_id" class="form-control form-control-sm select2">
-                                                <option value="">All Fabrics</option>
-                                                @foreach($fabric_types as $id => $name)
-                                                    <option value="{{ $id }}" {{ request('fabric_type_id') == $id ? 'selected' : '' }}>
-                                                        {{ $name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">Brand</label>
-                                            <select name="brand_id" id="brand_id" class="form-control form-control-sm select2">
-                                                <option value="">All Brands</option>
-                                                @foreach($brands as $id => $name)
-                                                    <option value="{{ $id }}" {{ request('brand_id') == $id ? 'selected' : '' }}>
-                                                        {{ $name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">MRP From</label>
-                                            <div class="input-group input-group-sm">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text py-0">₹</span>
-                                                </div>
-                                                <input type="number" name="mrp_from" id="mrp_from" class="form-control form-control-sm" placeholder="Min" min="0" step="any" value="{{ request('mrp_from') }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">MRP To</label>
-                                            <div class="input-group input-group-sm">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text py-0">₹</span>
-                                                </div>
-                                                <input type="number" name="mrp_to" id="mrp_to" class="form-control form-control-sm" placeholder="Max" min="0" step="any" value="{{ request('mrp_to') }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">Min Boxes</label>
-                                            <div class="input-group input-group-sm">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text py-0"><i class="fas fa-box small"></i></span>
-                                                </div>
-                                                <input type="number" name="min_boxes" id="min_boxes" class="form-control form-control-sm" placeholder="Min Boxes" min="0" value="{{ request('min_boxes') }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2 col-6 mb-1">
-                                            <label class="small font-weight-bold text-muted mb-0">Max Boxes</label>
-                                            <div class="input-group input-group-sm">
-                                                <div class="input-group-prepend">
-                                                    <span class="input-group-text py-0"><i class="fas fa-boxes small"></i></span>
-                                                </div>
-                                                <input type="number" name="max_boxes" id="max_boxes" class="form-control form-control-sm" placeholder="Max Boxes" min="0" value="{{ request('max_boxes') }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-12 mt-2 d-flex justify-content-end align-items-center">
-                                            <button type="submit" class="btn btn-primary btn-sm px-4 mr-2 shadow-sm">
-                                                <i class="fas fa-search mr-1"></i> Filter
-                                            </button>
-                                            <a href="{{ route('admin.agent-orders.create', ['order_type' => request('order_type'), 'sale_type' => request('sale_type'), 'party_type' => request('party_type', 'customer'), 'sales_agent_id' => $agent->id, 'sales_man_id' => request('sales_man_id'), 'master_customer_id' => request('master_customer_id'), 'master_vendor_id' => request('master_vendor_id'), 'order_date' => request('order_date')]) }}" 
-                                               class="btn btn-secondary btn-sm px-3 shadow-sm" title="Reset Filters">
-                                                <i class="fas fa-undo"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <!-- Inventory Table -->
-                        <div class="card shadow-sm border-0 overflow-hidden mb-4" style="border-radius: 12px; margin-bottom: 75px !important;">
-                            <div class="card-header bg-white py-2 px-3">
-                                <div class="d-flex justify-content-between align-items-center flex-wrap">
-                                    <div class="d-flex align-items-center my-1">
-                                        <h6 class="font-weight-bold mb-0 text-dark mr-3">
-                                            <i class="fas fa-boxes mr-2 text-primary"></i> Available Inventory
-                                        </h6>
-                                        <span class="badge badge-light border text-muted px-2 py-1" id="variationsCount">
-                                            {{ $boxes->total() }} Variations Available
-                                        </span>
-                                    </div>
-                                    <div class="d-flex align-items-center my-1">
-                                        <button type="button" class="btn btn-success btn-sm font-weight-bold shadow-sm px-3 open-checkout-modal-btn" id="cardCheckoutBtn" style="border-radius: 6px; display: none;">
-                                            <i class="fas fa-shopping-cart mr-1"></i> Next: Review Order (<span id="cardBoxesCount">0</span> Boxes • ₹<span id="cardGrandTotal">0</span>) <i class="fas fa-arrow-right ml-1"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0 align-middle">
-                                        <thead class="bg-light">
-                                            <tr>
-                                                <th width="80">Image</th>
-                                                <th>Product Details</th>
-                                                <th>Size Set</th>
-                                                <th class="text-center">Pcs/Box</th>
-                                                <th class="text-center">Available</th>
-                                                <th class="text-right">Price ({{ request('order_type') == 'direct' ? 'Customer' : 'Agent' }})</th>
-                                                <th width="150" class="text-center px-4">Order Qty (Boxes)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="variation-container">
-                                            @forelse($boxes as $variation)
-                                                @php
-                                                    $vKey = $variation->product_id . '_' . $variation->color_id . '_' . $variation->size_set_id;
-                                                    $image = $boxImages[$vKey] ?? null;
-                                                @endphp
-                                                @include('admin.agent_orders.partials.variation_row', ['variation' => $variation, 'vKey' => $vKey, 'image' => $image])
-                                            @empty
-                                                <tr>
-                                                    <td colspan="7" class="text-center py-5 text-muted">No inventory found for selected filters.</td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div id="load-more-sentinel" style="height: 20px;"></div>
-                            <div id="loading-spinner" class="text-center py-3" style="display: none;">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="sr-only">Loading...</span>
-                                </div>
-                            </div>
-                        </div>
+                <div id="load-more-sentinel" style="height: 20px;"></div>
+                <div id="loading-spinner" class="text-center py-3" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
                     </div>
                 </div>
+            </div>
 
-                <!-- Sleek Floating Bottom Bar -->
-                <div class="fixed-bottom bg-white shadow-lg border-top py-2 px-3 animate__animated animate__fadeInUp" 
-                     id="summaryBar" style="z-index: 1040; left: 250px; display: none; border-top: 1px solid #dee2e6;">
-                    <div class="container-fluid d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center flex-wrap">
-                            <div class="mr-3">
-                                <span class="text-muted small font-weight-bold mr-1">Selected:</span>
-                                <span class="badge badge-primary font-weight-bold px-2 py-1" style="font-size: 13px;">
-                                    <span id="selectedCount">0</span> Boxes
-                                </span>
+            <!-- Floating Bottom Summary Bar -->
+            <div class="fixed-bottom bg-white border-top py-2 px-3 animate__animated animate__fadeInUp"
+                 id="summaryBar" style="z-index: 1040; left: 250px; display: none;">
+                <div class="container-fluid d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center flex-wrap">
+                        <div class="mr-3">
+                            <span class="erp-sum-label mr-1">Selected:</span>
+                            <span class="badge badge-primary px-2 py-1" style="font-size: 13px;">
+                                <span id="selectedCount">0</span> Boxes
+                            </span>
+                        </div>
+                        <div class="mr-3 border-left pl-3 d-none d-sm-inline-block">
+                            <span class="erp-sum-label mr-1">Subtotal:</span>
+                            <span class="font-weight-bold">₹<span id="bottomSubTotal">0.00</span></span>
+                        </div>
+                        <div class="border-left pl-3">
+                            <span class="erp-sum-label mr-1">Est. Grand Total:</span>
+                            <span class="erp-sum-total">₹<span id="bottomGrandTotal">0.00</span></span>
+                        </div>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-erp btn-erp-primary open-checkout-modal-btn">
+                            Next: Review &amp; Place Order <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Review & Checkout Modal -->
+            <div class="modal fade erp-modal" id="orderCheckoutModal" tabindex="-1" role="dialog" aria-labelledby="orderCheckoutModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered" role="document" style="max-width: 920px;">
+                    <div class="modal-content border-0">
+                        <div class="modal-header">
+                            <div>
+                                <h5 class="modal-title mb-0" id="orderCheckoutModalLabel">
+                                    <i class="fas fa-clipboard-check mr-2"></i> Review &amp; Finalize {{ request('order_type') == 'direct' ? 'Direct' : 'Sales' }} Order
+                                </h5>
+                                <small class="erp-modal-sub">
+                                    Party: <strong>{{ $shop->name }}</strong> ({{ ucfirst(request('party_type', 'customer')) }}) &nbsp;•&nbsp;
+                                    {{ $agent->id === 'direct' ? 'Direct Sale (No Agent)' : 'Agent: ' . $agent->name }}
+                                </small>
                             </div>
-                            <div class="mr-3 border-left pl-3 d-none d-sm-inline-block">
-                                <span class="text-muted small font-weight-bold mr-1">Subtotal:</span>
-                                <span class="font-weight-bold text-dark">₹<span id="bottomSubTotal">0.00</span></span>
+                            <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body p-3">
+                            <div class="row">
+                                <!-- Left: Selected Items Breakdown -->
+                                <div class="col-md-5 mb-3 mb-md-0 border-right">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="erp-section-title"><i class="fas fa-boxes mr-1"></i> Selected Variations</span>
+                                        <span class="erp-stat-pill" id="modalItemsCount">0 Items</span>
+                                    </div>
+                                    <div id="modalSelectedItemsList" class="erp-soft-box p-2" style="max-height: 250px; overflow-y: auto;">
+                                        <!-- Dynamically populated -->
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                                        <span class="erp-sum-label">Total Selected Boxes:</span>
+                                        <span class="badge badge-primary px-2 py-1" style="font-size: 13px;"><span id="modalTotalBoxes">0</span> Boxes</span>
+                                    </div>
+                                </div>
+
+                                <!-- Right: Pricing & Tax Breakdown -->
+                                <div class="col-md-7">
+                                    <span class="erp-section-title d-block mb-2"><i class="fas fa-calculator mr-1"></i> Financial Summary</span>
+                                    <div class="erp-soft-box p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="erp-sum-label">Subtotal:</span>
+                                            <span class="font-weight-bold h6 mb-0">₹<span id="subTotalAmount">0.00</span></span>
+                                        </div>
+
+                                        <div class="row align-items-center mb-2">
+                                            <div class="col-6">
+                                                <div class="input-group input-group-sm" title="Discount Percentage">
+                                                    <div class="input-group-prepend"><span class="input-group-text py-0 px-2 font-weight-bold" style="font-size: 11px;">Disc %</span></div>
+                                                    <input type="number" id="discountPercentage" class="form-control text-right" style="font-weight: bold;" value="0" min="0" max="100" step="any">
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group input-group-sm" title="Discount Amount">
+                                                    <div class="input-group-prepend"><span class="input-group-text py-0 px-2 font-weight-bold" style="font-size: 11px;">Disc ₹</span></div>
+                                                    <input type="number" id="discountAmountInput" class="form-control text-right" style="font-weight: bold;" value="0" min="0">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between align-items-center mb-2 border-top pt-2">
+                                            <span class="erp-sum-label">Taxable Amount:</span>
+                                            <span class="font-weight-bold h6 mb-0">₹<span id="taxableAmount">0.00</span></span>
+                                        </div>
+
+                                        <div class="row align-items-center mb-2">
+                                            <div class="col-6">
+                                                <div class="input-group input-group-sm" title="GST Percentage">
+                                                    <div class="input-group-prepend"><span class="input-group-text py-0 px-2 font-weight-bold" style="font-size: 11px;">GST %</span></div>
+                                                    <input type="number" id="gstPercentage" class="form-control text-right" style="font-weight: bold;" value="{{ $gst_percentage }}" min="0" max="100" step="any">
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group input-group-sm" title="GST Amount">
+                                                    <div class="input-group-prepend"><span class="input-group-text py-0 px-2 font-weight-bold" style="font-size: 11px;">GST ₹</span></div>
+                                                    <input type="number" id="gstAmountInput" class="form-control text-right" style="font-weight: bold;" value="0" min="0">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row align-items-center mb-3">
+                                            <div class="col-6"><span class="erp-sum-label">Other Charges:</span></div>
+                                            <div class="col-6">
+                                                <div class="input-group input-group-sm">
+                                                    <div class="input-group-prepend"><span class="input-group-text py-0 px-2">₹</span></div>
+                                                    <input type="number" id="other_charges" class="form-control text-right font-weight-bold" value="0" min="0" step="1">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Grand Total Box -->
+                                        <div class="erp-grand-box text-center">
+                                            <small class="text-uppercase font-weight-bold d-block">Grand Total</small>
+                                            <span class="erp-grand-val">₹<span id="grandTotalAmount">0.00</span></span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="border-left pl-3">
-                                <span class="text-muted small font-weight-bold mr-1">Est. Grand Total:</span>
-                                <span class="h5 font-weight-bold text-success mb-0">₹<span id="bottomGrandTotal">0.00</span></span>
+
+                            <!-- Logistics & Dispatch Details -->
+                            <div class="border-top pt-3 mt-3">
+                                <span class="erp-section-title d-block mb-2"><i class="fas fa-truck mr-1"></i> Order &amp; Logistics Details</span>
+                                <div class="row">
+                                    @if(request('order_type') != 'direct')
+                                        <div class="col-md-3 col-6 mb-2">
+                                            <label class="erp-label">Expected Dispatch</label>
+                                            <input type="date" id="expectedDispatchDate" class="form-control form-control-sm" value="{{ date('Y-m-d', strtotime('+3 days')) }}">
+                                        </div>
+                                        <div class="col-md-3 col-6 mb-2">
+                                            <label class="erp-label">Status</label>
+                                            <select id="orderStatus" class="form-control form-control-sm">
+                                                <option value="pending" selected>PENDING</option>
+                                                <option value="delayed">DELAYED</option>
+                                                <option value="dispatched">DISPATCHED</option>
+                                            </select>
+                                        </div>
+                                    @endif
+                                    <div class="col-md-3 col-6 mb-2">
+                                        <label class="erp-label">Booking Station</label>
+                                        <input type="text" id="booking_station" class="form-control form-control-sm" placeholder="e.g. Surat">
+                                    </div>
+                                    <div class="col-md-3 col-6 mb-2">
+                                        <label class="erp-label">Transport</label>
+                                        <input type="text" id="transport" class="form-control form-control-sm" placeholder="Transport Name">
+                                    </div>
+                                    <div class="col-12 mb-1">
+                                        <label class="erp-label">Order Remark / Notes</label>
+                                        @php
+                                            $previousRemarks = \DB::table('agent_orders')->whereNotNull('remark')->where('remark', '!=', '')->distinct()->pluck('remark');
+                                        @endphp
+                                        <input type="text" id="remark" class="form-control form-control-sm" list="previous_remarks_list" placeholder="Enter notes or remarks..." autocomplete="off">
+                                        <datalist id="previous_remarks_list">
+                                            @foreach($previousRemarks as $rem)
+                                                <option value="{{ $rem }}">
+                                            @endforeach
+                                        </datalist>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <button type="button" class="btn btn-success btn-sm font-weight-bold px-4 shadow-sm open-checkout-modal-btn" style="border-radius: 6px;">
-                                Next: Review & Place Order <i class="fas fa-arrow-right ml-1"></i>
+
+                        <div class="modal-footer d-flex justify-content-between">
+                            <button type="button" class="btn-erp btn-erp-outline" data-dismiss="modal">
+                                <i class="fas fa-arrow-left mr-1"></i> Back to Inventory
+                            </button>
+                            <button type="button" class="btn-erp btn-erp-primary px-4 place-order-btn">
+                                {{ request('order_type') == 'direct' ? 'Deduct Stock & Bill' : 'Place Order' }} <i class="fas fa-check-circle ml-2"></i>
                             </button>
                         </div>
                     </div>
                 </div>
-
-                <!-- Order Review & Checkout Modal -->
-                <div class="modal fade" id="orderCheckoutModal" tabindex="-1" role="dialog" aria-labelledby="orderCheckoutModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-centered" role="document" style="max-width: 920px;">
-                        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
-                            <div class="modal-header bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="modal-title font-weight-bold text-dark mb-0" id="orderCheckoutModalLabel">
-                                        <i class="fas fa-clipboard-check text-primary mr-2"></i> Review & Finalize {{ request('order_type') == 'direct' ? 'Direct' : 'Sales' }} Order
-                                    </h5>
-                                    <small class="text-muted">
-                                        Party: <strong class="text-dark">{{ $shop->name }}</strong> ({{ ucfirst(request('party_type', 'customer')) }}) &nbsp;•&nbsp;
-                                        {{ $agent->id === 'direct' ? 'Direct Sale (No Agent)' : 'Agent: ' . $agent->name }}
-                                    </small>
-                                </div>
-                                <button type="button" class="close ml-0" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            
-                            <div class="modal-body p-3 p-md-4">
-                                <div class="row">
-                                    <!-- Left: Selected Items Breakdown -->
-                                    <div class="col-md-5 mb-3 mb-md-0 border-right">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <span class="font-weight-bold text-muted small text-uppercase"><i class="fas fa-boxes mr-1"></i> Selected Variations</span>
-                                            <span class="badge badge-info px-2 py-1" id="modalItemsCount">0 Items</span>
-                                        </div>
-                                        <div id="modalSelectedItemsList" class="border rounded bg-light p-2" style="max-height: 250px; overflow-y: auto;">
-                                            <!-- Dynamically populated -->
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center mt-2 px-1">
-                                            <span class="text-muted small font-weight-bold">Total Selected Boxes:</span>
-                                            <span class="badge badge-primary px-2 py-1 font-weight-bold" style="font-size: 13px;"><span id="modalTotalBoxes">0</span> Boxes</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Right: Pricing & Tax Breakdown -->
-                                    <div class="col-md-7">
-                                        <span class="font-weight-bold text-muted small text-uppercase d-block mb-2"><i class="fas fa-calculator mr-1"></i> Financial Summary</span>
-                                        <div class="bg-light p-3 rounded border">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span class="text-muted font-weight-bold">Subtotal:</span>
-                                                <span class="font-weight-bold h6 mb-0">₹<span id="subTotalAmount">0.00</span></span>
-                                            </div>
-
-                                            <div class="row align-items-center mb-2">
-                                                <div class="col-6">
-                                                    <div class="input-group input-group-sm" title="Discount Percentage">
-                                                        <div class="input-group-prepend">
-                                                            <span class="input-group-text py-0 px-2 font-weight-bold" style="font-size: 11px;">Disc %</span>
-                                                        </div>
-                                                        <input type="number" id="discountPercentage" class="form-control text-right" 
-                                                            style="font-weight: bold;" value="0" min="0" max="100" step="any">
-                                                    </div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="input-group input-group-sm" title="Discount Amount">
-                                                        <div class="input-group-prepend">
-                                                            <span class="input-group-text py-0 px-2 font-weight-bold" style="font-size: 11px;">Disc ₹</span>
-                                                        </div>
-                                                        <input type="number" id="discountAmountInput" class="form-control text-right" 
-                                                            style="font-weight: bold;" value="0" min="0">
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="d-flex justify-content-between align-items-center mb-2 border-top pt-2">
-                                                <span class="text-muted font-weight-bold">Taxable Amount:</span>
-                                                <span class="font-weight-bold h6 mb-0">₹<span id="taxableAmount">0.00</span></span>
-                                            </div>
-
-                                            <div class="row align-items-center mb-2">
-                                                <div class="col-6">
-                                                    <div class="input-group input-group-sm" title="GST Percentage">
-                                                        <div class="input-group-prepend">
-                                                            <span class="input-group-text py-0 px-2 font-weight-bold" style="font-size: 11px;">GST %</span>
-                                                        </div>
-                                                        <input type="number" id="gstPercentage" class="form-control text-right" 
-                                                            style="font-weight: bold;" value="{{ $gst_percentage }}" min="0" max="100" step="any">
-                                                    </div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="input-group input-group-sm" title="GST Amount">
-                                                        <div class="input-group-prepend">
-                                                            <span class="input-group-text py-0 px-2 font-weight-bold" style="font-size: 11px;">GST ₹</span>
-                                                        </div>
-                                                        <input type="number" id="gstAmountInput" class="form-control text-right" 
-                                                            style="font-weight: bold;" value="0" min="0">
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="row align-items-center mb-3">
-                                                <div class="col-6">
-                                                    <span class="text-muted font-weight-bold small">Other Charges:</span>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="input-group input-group-sm">
-                                                        <div class="input-group-prepend">
-                                                            <span class="input-group-text py-0 px-2">₹</span>
-                                                        </div>
-                                                        <input type="number" id="other_charges" class="form-control text-right font-weight-bold" value="0" min="0" step="1">
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Grand Total Box -->
-                                            <div class="bg-primary text-white p-2 rounded text-center shadow-sm">
-                                                <small class="text-uppercase tracking-wider font-weight-bold text-white-50 d-block">Grand Total</small>
-                                                <span class="h3 font-weight-bold mb-0">₹<span id="grandTotalAmount">0.00</span></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Logistics & Dispatch Details -->
-                                <div class="border-top pt-3 mt-3">
-                                    <span class="font-weight-bold text-muted small text-uppercase d-block mb-2"><i class="fas fa-truck mr-1"></i> Order & Logistics Details</span>
-                                    <div class="row">
-                                        @if(request('order_type') != 'direct')
-                                            <div class="col-md-3 col-6 mb-2">
-                                                <label class="small text-muted font-weight-bold mb-1">Expected Dispatch</label>
-                                                <input type="date" id="expectedDispatchDate" class="form-control form-control-sm" 
-                                                    value="{{ date('Y-m-d', strtotime('+3 days')) }}">
-                                            </div>
-                                            <div class="col-md-3 col-6 mb-2">
-                                                <label class="small text-muted font-weight-bold mb-1">Status</label>
-                                                <select id="orderStatus" class="form-control form-control-sm">
-                                                    <option value="pending" selected>PENDING</option>
-                                                    <option value="delayed">DELAYED</option>
-                                                    <option value="dispatched">DISPATCHED</option>
-                                                </select>
-                                            </div>
-                                        @endif
-                                        <div class="col-md-3 col-6 mb-2">
-                                            <label class="small text-muted font-weight-bold mb-1">Booking Station</label>
-                                            <input type="text" id="booking_station" class="form-control form-control-sm" placeholder="e.g. Surat">
-                                        </div>
-                                        <div class="col-md-3 col-6 mb-2">
-                                            <label class="small text-muted font-weight-bold mb-1">Transport</label>
-                                            <input type="text" id="transport" class="form-control form-control-sm" placeholder="Transport Name">
-                                        </div>
-                                        <div class="col-12 mb-1">
-                                            <label class="small text-muted font-weight-bold mb-1">Order Remark / Notes</label>
-                                            @php
-                                                $previousRemarks = \DB::table('agent_orders')->whereNotNull('remark')->where('remark', '!=', '')->distinct()->pluck('remark');
-                                            @endphp
-                                            <input type="text" id="remark" class="form-control form-control-sm" list="previous_remarks_list" placeholder="Enter notes or remarks..." autocomplete="off">
-                                            <datalist id="previous_remarks_list">
-                                                @foreach($previousRemarks as $rem)
-                                                    <option value="{{ $rem }}">
-                                                @endforeach
-                                            </datalist>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="modal-footer bg-light py-2 px-3 border-top d-flex justify-content-between">
-                                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-dismiss="modal">
-                                    <i class="fas fa-arrow-left mr-1"></i> Back to Inventory
-                                </button>
-                                <button type="button" class="btn btn-success px-4 font-weight-bold shadow place-order-btn">
-                                    {{ request('order_type') == 'direct' ? 'Deduct Stock & Bill' : 'Place Order' }} <i class="fas fa-check-circle ml-2"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </section>
+            </div>
+        @endif
+    </div>
 </div>
 
 <style>
-    .font-weight-500 { font-weight: 500; }
-    .variation-row { transition: background 0.2s; }
-    .variation-row:hover { background-color: #f8f9fa; }
-    .variation-row.has-qty { background-color: #e3f2fd; }
-    .quantity-control { max-width: 140px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-radius: 6px; overflow: hidden; }
-    .quantity-control input { border-left: 0; border-right: 0; font-weight: bold; }
-    .badge-outline-secondary { border: 1px solid #6c757d; color: #6c757d; background: transparent; }
-    .fixed-bottom { transition: left 0.3s; }
-    #summaryBar { box-shadow: 0 -4px 15px rgba(0,0,0,0.08) !important; }
+    /* ---- Agent Order Create: brand-themed (uses master brand variables from admin_assets/style.css) ---- */
+    .erp-page .erp-party-name { color: var(--erp-green-primary); }
+    .erp-page .erp-link { color: var(--erp-green-primary); font-weight: 600; font-size: 12px; }
+    .erp-page .erp-link:hover { color: var(--brand-wordmark-green, #36b54a); text-decoration: none; }
+    .erp-page .erp-switch-box {
+        border: 1px solid var(--erp-border); border-left: 4px solid var(--brand-yellow, #fcee21);
+        border-radius: 6px; padding: 10px 12px 10px 2.75rem; background: var(--erp-yellow-bg);
+    }
+    .erp-page .erp-switch-box label { color: var(--erp-green-primary); }
+    .erp-page .erp-section-title {
+        font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--erp-green-primary);
+    }
+    .erp-page .erp-sum-label { font-size: 12px; font-weight: 700; color: var(--erp-text-subtle); }
+    .erp-page .erp-sum-total { font-size: 18px; font-weight: 800; color: var(--erp-green-primary); }
+    .erp-page .erp-soft-box { background: var(--erp-green-light); border: 1px solid var(--erp-green-border); border-radius: 6px; }
+    .erp-page .erp-grand-box {
+        background: var(--erp-green-primary); color: #fff; border-radius: 6px; padding: 8px;
+        border-bottom: 4px solid var(--brand-yellow, #fcee21);
+    }
+    .erp-page .erp-grand-box small { color: rgba(255,255,255,.75); letter-spacing: .5px; }
+    .erp-page .erp-grand-val { font-size: 24px; font-weight: 800; color: var(--brand-yellow, #fcee21); }
+    .erp-page .input-group-text {
+        background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid #ced4da; font-size: 12px; font-weight: 700;
+    }
+    .erp-page .input-group-sm .form-control { height: 33px !important; }
+
+    /* Modal header / footer */
+    #orderCheckoutModal .modal-content { border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(5,66,28,.25); }
+    #orderCheckoutModal .modal-header {
+        background: var(--erp-green-primary); color: #fff; padding: 10px 16px;
+        border-bottom: 4px solid var(--brand-yellow, #fcee21); align-items: center;
+    }
+    #orderCheckoutModal .modal-title { font-size: 15px; font-weight: 700; color: #fff; }
+    #orderCheckoutModal .erp-modal-sub, #orderCheckoutModal .erp-modal-sub strong { color: rgba(255,255,255,.85); }
+    #orderCheckoutModal .modal-header .close { color: #fff; opacity: .9; text-shadow: none; }
+    #orderCheckoutModal .modal-footer { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 8px 16px; }
+    #orderCheckoutModal .form-control { height: 33px; font-size: 13px; border-radius: 4px; border: 1px solid #ced4da; }
+    #orderCheckoutModal .form-control:focus { border-color: var(--erp-green-primary); box-shadow: 0 0 0 2px rgba(5,66,28,.15); }
+
+    /* Inventory rows */
+    .variation-row { transition: background .2s; }
+    .variation-row:hover { background-color: var(--erp-green-light); }
+    .variation-row.has-qty, .variation-row.has-qty:hover { background-color: #dff1c8 !important; background-color: color-mix(in srgb, var(--brand-light-green) 28%, #ffffff) !important; box-shadow: inset 5px 0 0 var(--brand-wordmark-green, #36b54a); }
+    .variation-row.has-qty td { border-color: color-mix(in srgb, var(--brand-light-green) 55%, #ffffff) !important; }
+    .erp-table td { vertical-align: middle !important; }
+    .quantity-control { max-width: 140px; margin: 0 auto; border-radius: 4px; overflow: hidden; }
+    .quantity-control input { border-left: 0; border-right: 0; font-weight: bold; text-align: center; }
+    .quantity-control .btn { border: 1px solid #ced4da; background: #fff; color: var(--erp-green-primary); font-weight: 700; }
+    .quantity-control .btn:hover { background: var(--erp-green-light); border-color: var(--erp-green-primary); color: var(--erp-green-primary); }
+    .quantity-control .btn-plus { background: var(--erp-green-primary); color: #fff; border-color: var(--erp-green-primary); }
+    .quantity-control .btn-plus:hover { background: var(--erp-green-hover); color: #fff; }
+
+    /* Summary bar */
+    .fixed-bottom { transition: left .3s; }
+    #summaryBar { border-top: 3px solid var(--brand-yellow, #fcee21) !important; box-shadow: 0 -4px 15px rgba(5,66,28,.12) !important; }
     #modalSelectedItemsList::-webkit-scrollbar { width: 5px; }
-    #modalSelectedItemsList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    #modalSelectedItemsList::-webkit-scrollbar-thumb { background: var(--erp-green-border); border-radius: 4px; }
+    #topCheckoutBtn.btn-erp-primary { background-color: var(--erp-green-primary) !important; color: #fff !important; }
     @media (max-width: 991px) { .fixed-bottom { left: 0 !important; } }
+
+    /* ---- Step 1 form (scoped; overrides global body.km-admin form styles) ---- */
+    .erp-page .ao-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 4px 18px rgba(5,66,28,.07); overflow:hidden; }
+    .erp-page .ao-card-head { padding:18px 24px 14px; background:linear-gradient(135deg,var(--erp-green-light),#fff); border-bottom:1px solid #e2e8f0; border-top:4px solid var(--brand-yellow,#fcee21); }
+    .erp-page .ao-card-head h6 { margin:6px 0 2px; font-size:17px; font-weight:800; color:var(--erp-green-primary); }
+    .erp-page .ao-card-head h6 i { margin-right:8px; color:var(--brand-wordmark-green,#36b54a); }
+    .erp-page .ao-card-head p { margin:0; font-size:13px; color:#64748b !important; }
+    .erp-page .ao-step { display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; background:var(--brand-yellow,#fcee21); color:var(--erp-green-primary); padding:2px 9px; border-radius:20px; }
+
+    .erp-page .ao-section { padding:18px 24px; border-bottom:1px solid #eef2f6; }
+    .erp-page .ao-section-title { font-size:11.5px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; color:var(--erp-green-primary); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .erp-page .ao-section-title i { width:24px; height:24px; border-radius:6px; background:var(--erp-green-light); color:var(--erp-green-primary); display:inline-flex; align-items:center; justify-content:center; font-size:12px; }
+    .erp-page .ao-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px 16px; }
+    @media (max-width:575px){ .erp-page .ao-grid{ grid-template-columns:1fr; } }
+    .erp-page .ao-field { margin-bottom:14px; }
+    .erp-page .ao-grid .ao-field { margin-bottom:0; }
+    .erp-page .ao-label { display:flex; justify-content:space-between; align-items:center; width:100%; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:5px; }
+    .erp-page .ao-label .req { color:#dc2626; margin-left:2px; }
+    .erp-page .ao-links { display:inline-flex; gap:10px; align-items:center; }
+    .erp-page .ao-links a { font-size:12px; font-weight:700; color:var(--erp-green-primary); }
+    .erp-page .ao-links a:hover { color:var(--brand-wordmark-green,#36b54a); text-decoration:none; }
+
+    /* Controls: one consistent look for native inputs/selects and select2 */
+    .erp-page .ao-form .form-control,
+    .erp-page .ao-form .select2-container--default .select2-selection--single,
+    .erp-page .ao-form .select2-container--bootstrap4 .select2-selection--single {
+        height:40px !important; min-height:40px !important; border:1px solid #cbd5e1 !important; border-radius:6px !important;
+        font-size:14px !important; color:#1e293b !important; background-color:#fff; padding:0 12px !important; box-shadow:none;
+    }
+    .erp-page .ao-form select.form-control { padding-right:30px !important; }
+    .erp-page .ao-form .select2-container { width:100% !important; }
+    .erp-page .ao-form .select2-selection--single .select2-selection__rendered { line-height:38px !important; padding:0 !important; color:#1e293b !important; font-weight:500; }
+    .erp-page .ao-form .select2-selection--single .select2-selection__arrow { height:38px !important; top:0 !important; right:8px !important; }
+    .erp-page .ao-form .form-control:focus,
+    .erp-page .ao-form .select2-container--open .select2-selection--single,
+    .erp-page .ao-form .select2-container--focus .select2-selection--single {
+        border-color:var(--erp-green-primary) !important; box-shadow:0 0 0 3px rgba(5,66,28,.12) !important; outline:none;
+    }
+
+    /* Segmented Customer / Vendor toggle */
+    .erp-page .ao-seg { display:inline-flex; border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; background:#f8fafc; }
+    .erp-page .ao-seg input { position:absolute; opacity:0; pointer-events:none; }
+    .erp-page .ao-seg label { margin:0; padding:9px 22px; font-size:13.5px; font-weight:700; color:#475569; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all .15s; user-select:none; }
+    .erp-page .ao-seg label + input + label { border-left:1px solid #cbd5e1; }
+    .erp-page .ao-seg input:checked + label { background:var(--erp-green-primary); color:#fff; }
+    .erp-page .ao-seg input:checked + label i { color:var(--brand-yellow,#fcee21); }
+    .erp-page .ao-seg input:focus-visible + label { outline:2px solid var(--brand-yellow,#fcee21); outline-offset:-2px; }
+
+    /* Sample switch aligned with other fields */
+    .erp-page .ao-switch { height:40px; display:flex; align-items:center; padding-left:3rem; border:1px dashed #cbd5e1; border-radius:6px; background:var(--erp-yellow-bg); }
+    .erp-page .ao-switch label { font-size:13px; font-weight:700; color:var(--erp-green-primary); cursor:pointer; margin:0; user-select:none; line-height:1.9rem; }
+
+    .erp-page .ao-actions { display:flex; justify-content:space-between; align-items:center; padding:14px 24px; background:#f8fafc; }
+    .erp-page .ao-actions .btn-erp { height:38px; padding:0 18px !important; font-size:13.5px !important; }
+
+    /* ---- simplified full-width layout: two fields per row ---- */
+    .erp-page .ao-card-head { display:none; }
+    .erp-page .ao-card { border-top:4px solid var(--brand-yellow,#fcee21); }
+    .erp-page .ao-body { padding:20px 24px 8px; }
+    .erp-page .ao-body .ao-grid { gap:16px 24px; align-items:start; }
+    .erp-page .ao-body .ao-field { margin-bottom:0; }
+    .erp-page .ao-body .ao-field > .ao-seg { display:flex; width:100%; height:40px; }
+    .erp-page .ao-body .ao-seg input + label { flex:1; justify-content:center; padding:0 12px; }
+    .erp-page .ao-actions { border-top:1px solid #eef2f6; margin-top:12px; }
+    .erp-page .ao-switch { background:var(--erp-yellow-bg); padding-right:14px; }
+
+    /* ---- compact inventory rows (more products per screen) ---- */
+    #variation-container td { padding: 3px 8px !important; line-height: 1.25; }
+    #variation-container td img, #variation-container td > div.bg-light { width: 34px !important; height: 34px !important; }
+    #variation-container td:nth-child(2) > div { display: inline-flex !important; align-items: center; vertical-align: middle; margin-right: 8px; font-size: 13px; }
+    #variation-container td:nth-child(2) > div.small { font-size: 12px; }
+    #variation-container td:nth-child(6) > div { display: inline; font-size: 13.5px; }
+    #variation-container td:nth-child(6) small { display: inline; margin-left: 6px; font-size: 11px; }
+    #variation-container .quantity-control { max-width: 120px; }
+    #variation-container .quantity-control .btn,
+    #variation-container .quantity-control input { height: 28px !important; padding-top: 0; padding-bottom: 0; line-height: 26px; font-size: 13px !important; }
+    #variation-container .badge-erp-status { padding: 1px 8px; font-size: 11px; }
+    .erp-table thead th { padding: 6px 10px !important; }
 </style>
 @endsection
 
@@ -862,11 +922,11 @@
                 $('#cardBoxesCount').text(totalBoxes);
 
                 if (totalBoxes > 0) {
-                    $('#topCheckoutBtn').removeClass('btn-secondary').addClass('btn-success');
+                    $('#topCheckoutBtn').removeClass('btn-erp-outline').addClass('btn-erp-primary');
                     $('#cardCheckoutBtn').fadeIn(200);
                     $('#summaryBar').fadeIn(200);
                 } else {
-                    $('#topCheckoutBtn').removeClass('btn-success').addClass('btn-secondary');
+                    $('#topCheckoutBtn').removeClass('btn-erp-primary').addClass('btn-erp-outline');
                     $('#cardCheckoutBtn').fadeOut(200);
                     $('#summaryBar').fadeOut(200);
                 }

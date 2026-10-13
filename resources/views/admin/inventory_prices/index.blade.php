@@ -1,22 +1,16 @@
 @extends('admin.layouts.app')
 @section('content')
-    <div class="content-wrapper">
+    <div class="content-wrapper erp-page p-2">
         <!-- PAGE HEADER -->
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row align-items-center mb-3">
-                    <div class="col-sm-6">
-                        <h1 class="m-0 font-weight-bold text-dark">Inventory Pricing</h1>
-                        <small class="text-muted">Manage the Base Prices / MRP for your Domestic Inventory</small>
-                    </div>
-                    <div class="col-sm-6 text-right">
-                        <a href="{{ route('admin.inventory-prices.create') }}" class="btn btn-primary font-weight-bold shadow-sm" style="border-radius: 8px;">
-                            <i class="fas fa-plus mr-1"></i> Add Pricing Profile
-                        </a>
-                    </div>
-                </div>
+        <div class="erp-header-bar">
+            <div>
+                <div class="erp-header-title"><i class="fas fa-tags text-primary"></i> Inventory Pricing</div>
+                <div class="erp-page-subtitle">Manage the Base Prices / MRP for your Domestic Inventory</div>
             </div>
-        </section>
+            <div class="erp-header-actions">
+                <a href="{{ route('admin.inventory-prices.create') }}" class="btn-erp btn-erp-primary"><i class="fas fa-plus"></i> Add Pricing Profile</a>
+            </div>
+        </div>
 
         <!-- CONTENT -->
         <section class="content">
@@ -38,63 +32,55 @@
                     </div>
                 @endif
 
-                <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
-                    <div class="card-body bg-light rounded p-4">
-                        <form method="GET" action="{{ route('admin.inventory-prices.index') }}">
-                            <div class="row align-items-end">
-                                <div class="col-md-4 form-group mb-0">
-                                    <label class="small font-weight-bold text-muted mb-1">Product</label>
-                                    <select name="product_id" class="form-control select2">
-                                        <option value="">All Products</option>
-                                        @foreach($products as $prod)
-                                            <option value="{{ $prod->id }}" {{ request('product_id') == $prod->id ? 'selected' : '' }}>
-                                                {{ $prod->series ? $prod->series->name : '' }} {{ $prod->name_of_garment }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-4 form-group mb-0">
-                                    <label class="small font-weight-bold text-muted mb-1">Color</label>
-                                    <select name="color_id" class="form-control select2">
-                                        <option value="">All Colors</option>
-                                        @foreach($colors as $color)
-                                            <option value="{{ $color->id }}" {{ request('color_id') == $color->id ? 'selected' : '' }}>
-                                                {{ $color->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-2 form-group mb-0">
-                                    <button type="submit" class="btn btn-primary shadow-sm btn-block">
-                                        <i class="fas fa-search mr-1"></i> Filter
-                                    </button>
-                                </div>
-                                <div class="col-md-2 form-group mb-0">
-                                    <a href="{{ route('admin.inventory-prices.index') }}" class="btn btn-secondary shadow-sm btn-block">
-                                        <i class="fas fa-undo mr-1"></i> Reset
-                                    </a>
+                <div class="erp-filter-bar">
+                    <form method="GET" action="{{ route('admin.inventory-prices.index') }}">
+                        <div class="row align-items-end">
+                            <div class="col-md-4 mb-1">
+                                <label class="erp-filter-label"><i class="fas fa-tshirt mr-1"></i> Product</label>
+                                <select name="product_id" class="form-control select2">
+                                    <option value="">All Products</option>
+                                    @foreach($products as $prod)
+                                        <option value="{{ $prod->id }}" {{ request('product_id') == $prod->id ? 'selected' : '' }}>
+                                            {{ $prod->series ? $prod->series->name : '' }} {{ $prod->name_of_garment }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-1">
+                                <label class="erp-filter-label"><i class="fas fa-palette mr-1"></i> Color</label>
+                                <select name="color_id" class="form-control select2">
+                                    <option value="">All Colors</option>
+                                    @foreach($colors as $color)
+                                        <option value="{{ $color->id }}" {{ request('color_id') == $color->id ? 'selected' : '' }}>{{ $color->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-auto mb-1 ml-auto">
+                                <div class="erp-filter-actions">
+                                    <button type="submit" class="btn-erp btn-erp-primary"><i class="fas fa-filter"></i> Filter</button>
+                                    <a href="{{ route('admin.inventory-prices.index') }}" class="btn-erp btn-erp-outline"><i class="fas fa-undo"></i> Reset</a>
                                 </div>
                             </div>
-                        </form>
-                    </div>
+                        </div>
+                    </form>
                 </div>
 
                 <!-- TABLE CARD -->
-                <div class="card shadow border-0" style="border-radius: 12px; overflow: hidden;">
-                    <div class="card-body p-0">
+                <div class="erp-card">
+                    <div class="erp-card-body p-2">
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="bg-light contrast-text">
+                            <table class="erp-table table table-bordered table-hover mb-0">
+                                <thead>
                                     <tr>
-                                        <th width="5%" class="text-center py-3">#</th>
-                                        <th width="10%" class="text-center py-3">Image</th>
+                                        <th width="5%" class="text-center">#</th>
+                                        <th width="10%" class="text-center">Image</th>
                                         <th class="py-3">Product Name</th>
                                         <th class="py-3">Color</th>
                                         <th class="py-3">Size Set</th>
                                         <th class="py-3">Fitting</th>
                                         <th class="py-3">Pattern</th>
                                         <th class="py-3">MRP (₹)</th>
-                                        <th class="text-center py-3" width="10%">Action</th>
+                                        <th class="text-center" width="10%">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -115,7 +101,7 @@
                                             <td>{{ $price->pattern ? $price->pattern->name : '-' }}</td>
                                             <td class="font-weight-bold text-success">₹{{ number_format($price->mrp, 2) }}</td>
                                             <td class="text-center">
-                                                <button type="button" class="btn btn-warning btn-sm btn-icon shadow-sm"
+                                                <button type="button" class="erp-action-btn erp-btn-edit"
                                                         data-toggle="modal" 
                                                         data-target="#editPriceModal"
                                                         data-id="{{ $price->id }}"
@@ -139,9 +125,12 @@
                     </div>
                 </div>
 
-                <div class="mt-3 d-flex justify-content-end">
-                    {{ $prices->links() }}
+                @if($prices->hasPages())
+                <div class="d-flex justify-content-between align-items-center flex-wrap mt-1">
+                    <small class="text-muted">Showing {{ $prices->firstItem() }} to {{ $prices->lastItem() }} of {{ $prices->total() }} entries</small>
+                    {{ $prices->appends(request()->query())->links() }}
                 </div>
+                @endif
 
             </div>
         </section>
@@ -181,7 +170,7 @@
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer bg-white border-0 py-3">
+                <div class="modal-footer bg-white border-0">
                     <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-warning px-4 font-weight-bold" id="btnUpdatePrice">Save Changes</button>
                 </div>
@@ -190,9 +179,7 @@
     </div>
 
     <style>
-        .contrast-text th { color: #444; font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; }
-        .table tbody td { vertical-align: middle; padding: 1rem 0.75rem; }
-        .btn-icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
+        .erp-table tbody td { vertical-align: middle !important; }
     </style>
 
     <script>

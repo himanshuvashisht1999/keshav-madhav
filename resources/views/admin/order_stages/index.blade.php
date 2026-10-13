@@ -1,19 +1,13 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
 
     <!--  Header (Simplified & Compact) -->
-    <section class="content-header py-2 border-bottom">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold text-dark">
-                <i class="fas fa-tasks text-secondary"></i> {{ $stage_data->name }} Stage
-            </h5>
-            <ol class="breadcrumb float-sm-right mb-0 small">
-                <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-primary">Home</a></li>
-                <li class="breadcrumb-item active text-muted">Manage Stage</li>
-            </ol>
+    <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> <i class="fas fa-tasks text-secondary"></i> {{ $stage_data->name }} Stage</div>
         </div>
-    </section>
+    </div>
 
     <!--  Table Section -->
     <section class="content mt-3">

@@ -6,22 +6,18 @@
         background-color: #ffe6ea !important; /* light pink */
     }
 </style>
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
     <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-12">
-                    <h1 class="text-center">Adjust Unassigned POs With Fabric Shipments</h1>
-                </div>
-            </div>
+    <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> Adjust Unassigned POs With Fabric Shipments</div>
         </div>
-    </section>
+    </div>
 
     <!-- Main content -->
     <section class="content">
-        <div class="container-fluid">
-            <div class="card card-default">
+        <div class="container-fluid p-0">
+            <div class="erp-card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div>
                         <form id="filterForm" method="GET" action="{{ route('admin.purchase_order.adjustment') }}" class="form-inline">

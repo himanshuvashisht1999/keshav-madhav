@@ -1,26 +1,22 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
     <!-- HEADER -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0 font-weight-bold">Order Summary: <span class="text-primary">{{ $order->sku }}</span></h1>
-                </div>
-                <div class="col-sm-6 text-right">
-                    <a href="{{ route('admin.report.order-summary.index') }}" class="btn btn-secondary">
+    <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> Order Summary: <span class="text-primary">{{ $order->sku }}</span></div>
+        </div>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.report.order-summary.index') }}" class="btn-erp btn-erp-primary">
                         <i class="fas fa-arrow-left mr-1"></i> Back to Report
                     </a>
-                </div>
-            </div>
         </div>
-    </section>
+    </div>
 
     <!-- CONTENT -->
     <section class="content">
-        <div class="container-fluid">
+        <div class="container-fluid p-0">
             
             <!-- ORDER INFO CARD -->
             <div class="row">

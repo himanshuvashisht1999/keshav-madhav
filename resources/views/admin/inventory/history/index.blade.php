@@ -36,6 +36,9 @@
                 </div>
                 <div class="col-auto mb-1 ml-auto">
                     <div class="erp-filter-actions">
+                        <button type="button" id="apply_filters" class="btn-erp btn-erp-primary" title="Apply Filters">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
                         <button id="reset_filters" class="btn-erp btn-erp-outline">
                             <i class="fas fa-undo"></i> Reset
                         </button>
@@ -67,11 +70,6 @@
                 <div class="spinner-border text-primary" role="status">
                     <span class="sr-only">Loading...</span>
                 </div>
-                <p class="text-muted small mt-2">Loading more records...</p>
-            </div>
-            <div id="no-more-records" class="text-center py-4" style="display: none;">
-                <hr class="w-25">
-                <p class="text-muted small">No more history records found.</p>
             </div>
         </div>
     </div>
@@ -85,17 +83,11 @@
         let hasMore = true;
 
         function loadMore(reset = false) {
-            if (isLoading || (!hasMore && !reset)) return;
-
-            if (reset) {
-                currentPage = 1;
-                hasMore = true;
-                $('#historyTable tbody').html('');
-            }
-
+            if (isLoading) return;
+            if (reset) currentPage = 1;
             isLoading = true;
             $('#loading-indicator').show();
-            $('#no-more-records').hide();
+            $('#historyTable tbody').css('opacity', '0.5');
 
             $.ajax({
                 url: "{{ route('admin.inventory.attribute-history.list') }}",
@@ -107,18 +99,16 @@
                     type: $('#type_filter').val()
                 },
                 success: function (response) {
-                    $('#historyTable tbody').append(response.html);
-
-                    if (response.next_page) {
-                        currentPage = response.next_page;
-                    } else {
-                        hasMore = false;
-                        if ($('#historyTable tbody tr').length > 0) {
-                            $('#no-more-records').show();
-                        }
+                    const $body = $('#historyTable tbody');
+                    $body.empty().css('opacity', '1').append(response.html);
+                    if (!$body.children().length) {
+                        $body.append('<tr><td colspan="8" class="text-center py-4 text-muted">No history records found.</td></tr>');
                     }
+                    currentPage = (response.meta && response.meta.current) || 1;
+                    if (window.ErpPager) ErpPager.render($('#historyTable'), response.meta, function (pg) { currentPage = pg; loadMore(false); });
                 },
                 error: function () {
+                    $('#historyTable tbody').css('opacity', '1');
                     console.error("Failed to load records.");
                 },
                 complete: function () {
@@ -131,21 +121,13 @@
         // Initial Load
         loadMore();
 
-        // Scroll Event
-        $(window).on('scroll', function () {
-            if ($(window).scrollTop() + $(window).height() >= $(document).height() - 50) {
-                loadMore();
-            }
-        });
-
         // Filters
-        $('#design_search, #type_filter').on('keyup change', function () {
-            loadMore(true);
-        });
+        $('#apply_filters').on('click', function () { loadMore(true); });
+        $('#design_search').on('keydown', function (e) { if (e.which === 13) { e.preventDefault(); loadMore(true); } });
 
         $('#reset_filters').on('click', function () {
             $('#design_search').val('');
-            $('#type_filter').val('');
+            $('#type_filter').val('').trigger('change.select2');
             loadMore(true);
         });
     });

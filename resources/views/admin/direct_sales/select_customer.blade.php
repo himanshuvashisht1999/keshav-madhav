@@ -3,19 +3,15 @@
 @section('title', 'Select Customer for Direct Sales')
 
 @section('content')
-    <div class="content-wrapper">
-        <div class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1 class="m-0">Direct Sales Order</h1>
-                    </div>
-                </div>
-            </div>
+    <div class="content-wrapper erp-page p-2">
+        <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> Direct Sales Order</div>
         </div>
+    </div>
 
         <section class="content">
-            <div class="container-fluid">
+            <div class="container-fluid p-0">
                 <div class="card card-primary card-outline">
                     <div class="card-header">
                         <h3 class="card-title">Choose a Customer</h3>

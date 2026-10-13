@@ -66,6 +66,9 @@
                             <button class="btn-erp btn-erp-outline" type="button" data-toggle="collapse" data-target="#advancedFilters" aria-expanded="false" aria-controls="advancedFilters">
                                 <i class="fas fa-sliders-h"></i> Advanced
                             </button>
+                            <button type="button" id="apply_filters" class="btn-erp btn-erp-primary" title="Apply Filters">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
                             <button id="reset_filters" class="btn-erp btn-erp-outline" title="Reset Filters">
                                 <i class="fas fa-undo"></i> Reset
                             </button>
@@ -456,14 +459,11 @@
 
             function loadMore(reset = false) {
                 if (loading) return;
-                if (!nextPage && !reset) {
-                    $('#no-more-data').show();
-                    return;
-                }
+                
 
                 loading = true;
                 $('#loading-spinner').show();
-                $('#no-more-data').hide();
+                
 
                 if (reset) {
                     nextPage = 1;
@@ -493,12 +493,9 @@
                         stock_status: $('#stock_status_filter').val()
                     },
                     success: function(res) {
-                        if (reset) {
-                            container.empty().css('opacity', '1');
-                        }
-                        
-                        container.append(res.html);
-                        nextPage = res.next_page;
+                        container.empty().css('opacity', '1').append(res.html);
+                    nextPage = (res.meta && res.meta.current) || 1;
+                    if (window.ErpPager) ErpPager.render($('#inventoryTable'), res.meta, function (pg) { nextPage = pg; loadMore(false); });
                         loading = false;
                         $('#loading-spinner').hide();
 
@@ -507,13 +504,11 @@
                             $('#grand_total_orders').text(res.grand_totals.orders);
                         }
 
-                        if (!nextPage) {
-                            $('#no-more-data').show();
-                        }
+                        
                         
                         if (container.is(':empty')) {
                             container.append('<tr><td colspan="10" class="text-center py-5 text-muted">No inventory records found.</td></tr>');
-                            $('#no-more-data').hide();
+                            
                         }
                     },
                     error: function() {
@@ -529,34 +524,23 @@
             loadMore();
 
             // Scroll Event
-            $('.content-wrapper').on('scroll', function() {
-                if (loading || !nextPage) return;
 
-                let scrollTop = $(this).scrollTop();
-                let innerHeight = $(this).innerHeight();
-                let scrollHeight = $(this)[0].scrollHeight;
-
-                if (scrollTop + innerHeight >= scrollHeight - 300) {
-                    loadMore();
-                }
-            });
 
             // Filter events
-            $('#design_number, #size_set_filter, #product_filter, #color_filter, #report_type, #mrp_filter, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter, #min_boxes_filter, #min_order_filter, #stock_status_filter').on('keyup change', function () {
-                if ($(this).attr('id') === 'report_type') {
-                    if ($(this).val() === 'color') {
-                        $('#attribute_header').text('Size Set / Color');
-                    } else {
-                        $('#attribute_header').text('Size Set');
-                    }
-                }
-                loadMore(true);
+            $('#report_type').on('change', function () {
+                if ($(this).val() === 'color') { $('#attribute_header').text('Size Set / Color'); } else { $('#attribute_header').text('Size Set'); }
             });
+
+            // Filters apply only on the Filter button (or Enter)
+            $('#apply_filters').on('click', function () { loadMore(true); });
+            $('#design_number, #mrp_filter, #min_boxes_filter, #min_order_filter').on('keydown', function (e) { if (e.which === 13) { e.preventDefault(); loadMore(true); } });
 
             // Reset filter
             $('#reset_filters').on('click', function () {
                 $('#design_number, #mrp_filter, #min_boxes_filter, #min_order_filter').val('');
                 $('#size_set_filter, #product_filter, #color_filter, #report_type, #series_filter, #brand_filter, #fitting_filter, #pattern_filter, #nature_filter, #fabric_type_filter, #stock_status_filter').val('').trigger('change');
+                $('#attribute_header').text('Size Set');
+                loadMore(true);
             });
 
             // Export Excel & PDF

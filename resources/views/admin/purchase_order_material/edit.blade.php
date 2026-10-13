@@ -1,25 +1,15 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Edit Purchase Order Items</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Edit Purchase Order Items</li>
-                    </ol>
-                </div>
-            </div>
+<div class="content-wrapper erp-page p-2">
+    <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> Edit Purchase Order Items</div>
         </div>
-    </section>
+    </div>
 
     <section class="content">
-        <div class="container-fluid">
-            <div class="card card-default">
+        <div class="container-fluid p-0">
+            <div class="erp-card">
                 <div class="card-header">
                     <h3 class="card-title">Edit Purchase Order Items</h3>
                 </div>

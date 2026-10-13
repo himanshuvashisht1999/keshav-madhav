@@ -1,27 +1,16 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
     <!-- Content Header -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2 align-items-center">
-                <div class="col-sm-6">
-                    <h1 class="mb-0">Fabric Stock Details</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right mb-0">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('admin.stock.index') }}">Fabric Stock</a></li>
-                        <li class="breadcrumb-item active">View Fabric Stock</li>
-                    </ol>
-                </div>
-            </div>
+    <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> Fabric Stock Details</div>
         </div>
-    </section>
+    </div>
 
     <!-- Main Content -->
     <section class="content">
-        <div class="container-fluid">
+        <div class="container-fluid p-0">
             
             <div class="card shadow-lg">
                 <div class="card-header bg-primary text-white">

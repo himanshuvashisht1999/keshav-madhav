@@ -42,15 +42,15 @@
     }
 </style>
 
-<div class="content-wrapper">
-    <section class="content-header">
-        <div class="container-fluid">
-            <h1 class="">Purchase Order</h1>
+<div class="content-wrapper erp-page p-2">
+    <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> Purchase Order</div>
         </div>
-    </section>
+    </div>
 
     <section class="content">
-        <div class="container-fluid">
+        <div class="container-fluid p-0">
 
             <div class="invoice-box">
                 {{-- Header --}}

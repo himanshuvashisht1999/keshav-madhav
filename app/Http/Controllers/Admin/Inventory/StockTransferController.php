@@ -83,6 +83,7 @@ class StockTransferController extends Controller
         return response()->json([
             'html' => $html,
             'next_page' => $results->nextPageUrl() ? $results->currentPage() + 1 : null,
+                'meta' => ['current' => $results->currentPage(), 'last' => $results->lastPage(), 'total' => $results->total(), 'from' => $results->firstItem() ?? 0, 'to' => $results->lastItem() ?? 0],
             'total' => $results->total()
         ]);
     }

@@ -1406,7 +1406,7 @@ class OrderDigitalizationService
                             });
                     })
                         ->with([
-                            'fabric.receiptDetails',
+                            'fabric',
                             'colors',
                             'master_design_pattern',
                             'master_product_fitting',
@@ -1415,7 +1415,7 @@ class OrderDigitalizationService
                             'product_set_details',
                             'orderCuttingStages' => function ($oc) use ($stage_master_unit_id) {
                                 $oc->where('to_assign_id', $stage_master_unit_id)
-                                    ->with(['fabric.receiptDetails', 'pattern', 'master_fitting', 'cutting_master']);
+                                    ->with(['fabric', 'pattern', 'master_fitting', 'cutting_master']);
                             }
                         ]);
                 }

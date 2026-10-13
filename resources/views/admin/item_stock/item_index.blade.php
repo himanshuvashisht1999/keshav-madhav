@@ -1,32 +1,22 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
     <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Manage Item Stock</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Item Stock</li>
-                    </ol>
-                </div>
-            </div>
+    <div class="erp-header-bar">
+        <div class="erp-header-title">
+            <i class="fas fa-list text-primary"></i> Manage Item Stock
         </div>
-    </section>
+    </div>
 
     <!-- Main content -->
     <section class="content">
-        <div class="container-fluid">
+        <div class="container-fluid p-0">
             <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default ">
+            <div class="erp-card">
                 
-                <div class="card-body table-responsive">
+                <div class="erp-card-body p-2 table-responsive">
                 
-                <table id="customers" class="table table-bordered table-hover">
+                <table id="customers" class="erp-table table table-bordered table-hover">
                   <thead>
                     <tr role="row" class="filter">
                         <td>

@@ -1,27 +1,16 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
     <!-- Content Header -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Item Receipt</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('admin.item_receipt.index') }}">Item Receipts</a></li>
-                        <li class="breadcrumb-item active">View Receipt</li>
-                    </ol>
-                </div>
-            </div>
+    <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> Item Receipt</div>
         </div>
-    </section>
+    </div>
 
     <!-- Main Content -->
     <section class="content">
-        <div class="container-fluid">
+        <div class="container-fluid p-0">
 
             <!-- Receipt Info -->
             <div class="card card-primary">
@@ -61,7 +50,7 @@
                 <div class="card-header">
                     <h3 class="card-title">Receipt Details</h3>
                 </div>
-                <div class="card-body table-responsive">
+                <div class="erp-card-body p-2 table-responsive">
                     <table class="table table-bordered">
                         <thead>
                             <tr>

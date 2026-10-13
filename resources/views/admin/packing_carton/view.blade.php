@@ -1,30 +1,23 @@
 @extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
 
     <!-- Page Header -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2 align-items-center">
-                <div class="col-sm-6">
-                    <h1 class="mb-0">Packing Carton Details</h1>
-                </div>
-                <div class="col-sm-6 text-right">
-                    <a href="{{ route('admin.packing-carton.download-pdf', ['id' => $data['cartons_session_data']['id']]) }}" class="btn btn-primary">
-                        <i class="fas fa-file-pdf mr-1"></i> Download PDF
-                    </a>
-                    <a href="{{ route('admin.packing-carton.index') }}" class="btn btn-secondary">
+    <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> Packing Carton Details</div>
+        </div>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.packing-carton.index') }}" class="btn-erp btn-erp-primary">
                         <i class="fas fa-arrow-left mr-1"></i> Back
                     </a>
-                </div>
-            </div>
         </div>
-    </section>
+    </div>
 
     <!-- Main Content -->
     <section class="content">
-        <div class="container-fluid">
+        <div class="container-fluid p-0">
             <!-- PAGE SUMMARY -->
             <div class="card shadow-sm mb-3">
                 <div class="card-body">

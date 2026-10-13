@@ -1,26 +1,22 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
 
     <!-- Page Header -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2 align-items-center">
-                <div class="col-sm-6">
-                    <h1 class="mb-0">Production Order Details</h1>
-                </div>
-                <div class="col-sm-6 text-right">
-                    <a href="{{ route('admin.product_order.index') }}" class="btn btn-secondary">
+    <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> Production Order Details</div>
+        </div>
+        <div class="erp-header-actions">
+            <a href="{{ route('admin.product_order.index') }}" class="btn-erp btn-erp-primary">
                         <i class="fas fa-arrow-left mr-1"></i> Back
                     </a>
-                </div>
-            </div>
         </div>
-    </section>
+    </div>
 
     <!-- Main Section -->
     <section class="content">
-        <div class="container-fluid">
+        <div class="container-fluid p-0">
 
             <!-- Order Info -->
             <div class="card mb-4 shadow-sm border-0">

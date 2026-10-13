@@ -1,35 +1,25 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
     <!-- Content Header (Page header) -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-8">
-                    <h3 style="font-size:1.2rem;">Item Stock SKU : <span class="text-muted">{{ $items->sku }}</span></h3>
-                </div>
-                <div class="col-sm-4">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('admin.dashboard')}}">Home</a></li>
-                        <li class="breadcrumb-item active">Manage Item Stock</li>
-                    </ol>
-                </div>
-            </div>
+    <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> Item Stock SKU : <span class="text-muted">{{ $items->sku }}</span></div>
         </div>
-    </section>
+    </div>
 
     <!-- Main content -->
     <section class="content">
-        <div class="container-fluid">
+        <div class="container-fluid p-0">
             <!-- SELECT2 EXAMPLE -->
-            <div class="card card-default ">
+            <div class="erp-card">
                  <!-- <div class="row" >
                     <div class="col-12 card-header">
                         <h3 class="card-title">Manage Item Stock</h3>
                     </div>
                 </div> -->
                 
-                <div class="card-body table-responsive">
+                <div class="erp-card-body p-2 table-responsive">
                 <!-- <div class="d-flex justify-content-end me-3 ">
                     <button id="generatePDF" class="btn btn-primary m-1" name="generatePDF">
                         <i class="nav-icon fas fa-download"></i> PDF Reports
@@ -42,7 +32,7 @@
                     </button>
                 </div> -->
                 
-                <table id="customers" class="table table-bordered table-hover">
+                <table id="customers" class="erp-table table table-bordered table-hover">
                   <thead>
                     <tr role="row" class="filter">
                         

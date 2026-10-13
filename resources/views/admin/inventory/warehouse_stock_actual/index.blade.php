@@ -288,7 +288,7 @@
                 if (loading) return;
                 loading = true;
                 $('#loading-spinner').show();
-                $('#no-more-data').hide();
+                
 
                 if (reset) {
                     nextPage = 1;
@@ -328,18 +328,17 @@
                             $('#header_total_pcs').text(Number(res.total_pcs).toLocaleString());
                         }
 
-                        container.append(res.html);
-                        nextPage = res.next_page;
+                        container.empty().css('opacity', '1').append(res.html);
+                        nextPage = (res.meta && res.meta.current) || 1;
+                        if (window.ErpPager) ErpPager.render($('#inventoryTable'), res.meta, function (pg) { nextPage = pg; loadMore(false); });
                         loading = false;
                         $('#loading-spinner').hide();
 
-                        if (!nextPage) {
-                            $('#no-more-data').show();
-                        }
+                        
                         
                         if (container.is(':empty')) {
                             container.append('<tr><td colspan="9" class="text-center py-5 text-muted">No actual inventory records found.</td></tr>');
-                            $('#no-more-data').hide();
+                            
                         }
                     },
                     error: function() {
@@ -367,17 +366,7 @@
             loadMore();
 
             // Scroll Event
-            $('.content-wrapper').on('scroll', function() {
-                if (loading || !nextPage) return;
 
-                let scrollTop = $(this).scrollTop();
-                let innerHeight = $(this).innerHeight();
-                let scrollHeight = $(this)[0].scrollHeight;
-
-                if (scrollTop + innerHeight >= scrollHeight - 300) {
-                    loadMore();
-                }
-            });
 
             // Filter events
             // Filters apply only when the Filter button is clicked (or Enter is pressed in a number box)

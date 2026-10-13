@@ -1,20 +1,16 @@
 @extends('admin.layouts.app')
 @section('content')
-<div class="content-wrapper">
+<div class="content-wrapper erp-page p-2">
     <!-- Content Header -->
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-12 text-center">
-                    <h1>Create Purchase Order For Fabric</h1>
-                </div>
-            </div>
+    <div class="erp-header-bar">
+        <div>
+            <div class="erp-header-title"><i class="fas fa-file-alt text-primary"></i> Create Purchase Order For Fabric</div>
         </div>
-    </section>
+    </div>
 
     <!-- Main content -->
     <section class="content">
-        <div class="container-fluid">
+        <div class="container-fluid p-0">
             <div class="card card-default p-3">
                 <div class="card-header mb-2" style="background: blue;">
                     <h3 class="" style="color:white;text-align:center !important;font-size: 1.1rem;font-weight: 600;margin: 0;">Estimation Of Fabric</h3>
