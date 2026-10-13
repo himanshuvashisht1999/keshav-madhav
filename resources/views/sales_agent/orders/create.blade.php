@@ -634,14 +634,18 @@
             });
 
             function handleBarcode(barcode) {
-                // If the barcode is a URL, extract the last segment (the actual barcode)
+                barcode = String(barcode).trim();
+                // If the barcode is a URL, extract the actual barcode value
                 if (barcode.includes('/fc/')) {
-                    const parts = barcode.split('/');
-                    barcode = parts[parts.length - 1];
-                } else if (barcode.startsWith('http')) {
-                    // Fallback for any other URL format
-                    const parts = barcode.split('/');
-                    barcode = parts[parts.length - 1];
+                    const parts = barcode.split('/fc/')[1];
+                    barcode = parts.split('/')[0].split('?')[0].split('#')[0].trim();
+                } else if (barcode.includes('/sc/')) {
+                    const parts = barcode.split('/sc/')[1];
+                    barcode = parts.split('/')[0].split('?')[0].split('#')[0].trim();
+                } else if (barcode.startsWith('http://') || barcode.startsWith('https://')) {
+                    const clean = barcode.split('?')[0].split('#')[0];
+                    const parts = clean.split('/');
+                    barcode = parts[parts.length - 1].trim();
                 }
 
                 Swal.fire({

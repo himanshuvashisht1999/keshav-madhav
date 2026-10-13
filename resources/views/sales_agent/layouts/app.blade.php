@@ -376,7 +376,7 @@
         // Register Service Worker for offline capability
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/agent-sw.js').catch(function(err) {
+                navigator.serviceWorker.register('{{ asset("agent-sw.js") }}').catch(function(err) {
                     console.log('ServiceWorker note:', err);
                 });
             });

@@ -3,7 +3,7 @@
  */
 const SnapKidOfflineDB = (function () {
     const DB_NAME = 'SnapKidOfflineDB';
-    const DB_VERSION = 1;
+    const DB_VERSION = 2;
     let dbInstance = null;
 
     function openDB() {
@@ -29,6 +29,9 @@ const SnapKidOfflineDB = (function () {
                 if (!db.objectStoreNames.contains('meta')) {
                     db.createObjectStore('meta', { keyPath: 'key' });
                 }
+                if (!db.objectStoreNames.contains('images_cache')) {
+                    db.createObjectStore('images_cache', { keyPath: 'key' });
+                }
             };
             request.onsuccess = function (e) {
                 dbInstance = e.target.result;
@@ -38,6 +41,68 @@ const SnapKidOfflineDB = (function () {
                 reject(e.target.error);
             };
         });
+    }
+
+    // Helper: Store image blob in IndexedDB images_cache
+    async function storeImageBlob(db, key, blob) {
+        return new Promise((resolve) => {
+            try {
+                const tx = db.transaction('images_cache', 'readwrite');
+                tx.objectStore('images_cache').put({ key: key, blob: blob, cached_at: Date.now() });
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = () => resolve(false);
+            } catch (_) {
+                resolve(false);
+            }
+        });
+    }
+
+    // Helper: Get image blob from IndexedDB images_cache
+    async function getImageBlob(key) {
+        const db = await openDB();
+        return new Promise((resolve) => {
+            try {
+                const tx = db.transaction('images_cache', 'readonly');
+                const req = tx.objectStore('images_cache').get(key);
+                req.onsuccess = () => resolve(req.result ? req.result.blob : null);
+                req.onerror = () => resolve(null);
+            } catch (_) {
+                resolve(null);
+            }
+        });
+    }
+
+    // Helper: Create Object URL for cached image if available
+    async function getImageBlobUrl(urlOrName) {
+        if (!urlOrName) return null;
+        const filename = urlOrName.split('/').pop().split('?')[0];
+
+        // 1. Check IndexedDB blob cache (by filename or full url)
+        let blob = await getImageBlob(filename);
+        if (!blob) {
+            blob = await getImageBlob(urlOrName);
+        }
+        if (blob) {
+            return URL.createObjectURL(blob);
+        }
+
+        // 2. Check Cache API
+        if ('caches' in window) {
+            try {
+                const cache = await caches.open('snapkid-product-images');
+                let match = await cache.match(urlOrName);
+                if (!match && !urlOrName.startsWith('http') && !urlOrName.startsWith('/')) {
+                    const fullAssetUrl = window.location.origin + '/assets/products/' + filename;
+                    match = await cache.match(fullAssetUrl);
+                }
+                if (match) {
+                    const resBlob = await match.blob();
+                    return URL.createObjectURL(resBlob);
+                }
+            } catch (_) {}
+        }
+
+        return null;
     }
 
     // Save full catalog
@@ -58,21 +123,21 @@ const SnapKidOfflineDB = (function () {
             });
         }
 
-        // 2. Save Catalog Items
+        // 2. Save Catalog Products (Bulk via Transaction)
         if (data.products && data.products.length > 0) {
             await new Promise((resolve, reject) => {
                 const tx = db.transaction('catalog', 'readwrite');
                 const store = tx.objectStore('catalog');
                 store.clear();
-                for (const prod of data.products) {
-                    store.put(prod);
+                for (const item of data.products) {
+                    store.put(item);
                 }
                 tx.oncomplete = () => resolve();
                 tx.onerror = (e) => reject(e.target.error);
             });
         }
 
-        // 3. Save Meta info & Barcode index
+        // 3. Save Barcodes Map & Meta Info
         await new Promise((resolve, reject) => {
             const metaTx = db.transaction('meta', 'readwrite');
             const metaStore = metaTx.objectStore('meta');
@@ -93,26 +158,58 @@ const SnapKidOfflineDB = (function () {
             metaTx.onerror = (e) => reject(e.target.error);
         });
 
-        // 4. Pre-cache product images in Cache Storage
-        if (data.image_urls && data.image_urls.length > 0 && 'caches' in window) {
+        // 4. Pre-cache product images in Cache Storage and IndexedDB
+        const urlsToCache = data.image_urls || [];
+        if (urlsToCache.length > 0) {
             try {
-                const cache = await caches.open('snapkid-product-images');
-                const total = data.image_urls.length;
-                let cachedCount = 0;
-
-                for (let i = 0; i < total; i++) {
-                    const url = data.image_urls[i];
+                let cache = null;
+                if ('caches' in window) {
                     try {
-                        const match = await cache.match(url);
-                        if (!match) {
-                            await cache.add(url);
+                        cache = await caches.open('snapkid-product-images');
+                    } catch (_) {}
+                }
+
+                const total = urlsToCache.length;
+                let cachedCount = 0;
+                const batchSize = 10;
+
+                for (let i = 0; i < total; i += batchSize) {
+                    const batch = urlsToCache.slice(i, i + batchSize);
+                    await Promise.all(batch.map(async (url) => {
+                        const filename = url.split('/').pop().split('?')[0];
+                        try {
+                            if (cache) {
+                                const match = await cache.match(url);
+                                if (!match) {
+                                    const resp = await fetch(url, { mode: 'cors' });
+                                    if (resp && resp.ok) {
+                                        await cache.put(url, resp.clone());
+                                        const blob = await resp.blob();
+                                        await storeImageBlob(db, filename, blob);
+                                        await storeImageBlob(db, url, blob);
+                                    }
+                                } else {
+                                    const blob = await match.blob();
+                                    await storeImageBlob(db, filename, blob);
+                                    await storeImageBlob(db, url, blob);
+                                }
+                            } else {
+                                // No Cache API support: fetch directly and save blob in IndexedDB
+                                const resp = await fetch(url);
+                                if (resp && resp.ok) {
+                                    const blob = await resp.blob();
+                                    await storeImageBlob(db, filename, blob);
+                                    await storeImageBlob(db, url, blob);
+                                }
+                            }
+                        } catch (imgErr) {
+                            // ignore individual photo fetch failure
                         }
-                    } catch (imgErr) {
-                        // ignore individual image failure
-                    }
-                    cachedCount++;
-                    if (onProgress && (cachedCount % 10 === 0 || cachedCount === total)) {
-                        onProgress(cachedCount, total);
+                        cachedCount++;
+                    }));
+
+                    if (onProgress) {
+                        onProgress(Math.min(cachedCount, total), total);
                     }
                 }
             } catch (cacheErr) {
@@ -163,14 +260,19 @@ const SnapKidOfflineDB = (function () {
         });
     }
 
-    async function findVariationByBarcode(barcode) {
-        if (!barcode) return null;
-        let code = String(barcode).trim();
-        if (!code) return null;
+    /**
+     * Search product variation by barcode offline and format as matrix modal structure
+     */
+    async function findVariationByBarcode(rawCode) {
+        if (!rawCode) return null;
+        let code = String(rawCode).trim();
 
-        // 1. If barcode is a URL (e.g. https://domain.com/fc/F123), extract the barcode value
+        // 1. If barcode is a URL, extract the barcode value
         if (code.includes('/fc/')) {
             const parts = code.split('/fc/')[1];
+            code = parts.split('/')[0].split('?')[0].split('#')[0].trim();
+        } else if (code.includes('/sc/')) {
+            const parts = code.split('/sc/')[1];
             code = parts.split('/')[0].split('?')[0].split('#')[0].trim();
         } else if (code.startsWith('http://') || code.startsWith('https://')) {
             const cleanUrl = code.split('?')[0].split('#')[0];
@@ -179,121 +281,159 @@ const SnapKidOfflineDB = (function () {
         }
 
         const catalog = await getCatalog();
+        if (!catalog || catalog.length === 0) return null;
         const barcodesMeta = await getBarcodeMap();
+
+        let targetProductId = null;
+        let targetSizeSetId = null;
+        let targetColorId = null;
+        let matchedItem = null;
 
         // 2. Direct exact barcode match in catalog (e.g. D116S4C2)
         const exactMatch = catalog.find(item => item.barcode && item.barcode.toUpperCase() === code.toUpperCase());
         if (exactMatch) {
-            return Object.assign({}, exactMatch, {
-                type: 'single',
-                item: exactMatch,
-                items: [exactMatch]
-            });
+            targetProductId = exactMatch.product_id;
+            targetSizeSetId = exactMatch.size_set_id;
+            targetColorId = exactMatch.color_id;
+            matchedItem = exactMatch;
         }
 
-        // 3. Lookup in barcodes mapping (Fair Products, Variant Colors, Sample Products)
-        const mapped = barcodesMeta[code] || barcodesMeta[code.toUpperCase()] || barcodesMeta[code.toLowerCase()];
-        if (mapped) {
-            // If mapped barcode specifies an exact color variation
-            if (mapped.color_id) {
-                const specificVar = catalog.find(item =>
-                    item.product_id == mapped.product_id &&
-                    item.size_set_id == mapped.size_set_id &&
-                    item.color_id == mapped.color_id
-                );
-                if (specificVar) {
-                    return Object.assign({}, specificVar, {
-                        type: 'single',
-                        item: specificVar,
-                        items: [specificVar]
-                    });
-                }
+        // 3. Lookup in barcodes mapping (Variant Colors, Fair Products, Sample Products, Design Numbers)
+        if (!targetProductId) {
+            const mapped = barcodesMeta[code] || barcodesMeta[code.toUpperCase()] || barcodesMeta[code.toLowerCase()];
+            if (mapped) {
+                targetProductId = mapped.product_id;
+                targetSizeSetId = mapped.size_set_id || null;
+                targetColorId = mapped.color_id || null;
             }
+        }
 
-            // If sample tag or fair product (which specifies product_id and size_set_id)
-            const matchingVars = catalog.filter(item =>
-                item.product_id == mapped.product_id &&
-                (!mapped.size_set_id || item.size_set_id == mapped.size_set_id)
+        // 4. Try regex match: D{productId}S{sizeSetId}C{colorId}
+        if (!targetProductId) {
+            const matchD = code.match(/^D(\d+)S(\d+)C(\d+)/i);
+            if (matchD) {
+                targetProductId = parseInt(matchD[1]);
+                targetSizeSetId = parseInt(matchD[2]);
+                targetColorId = parseInt(matchD[3]);
+            }
+        }
+
+        // 5. Try regex match: FAIR-{productId}-{sizeSetId} or SMP-{productId}-{sizeSetId}
+        if (!targetProductId) {
+            const matchFs = code.match(/^(?:FAIR|SMP|SAMPLE)-(\d+)-(\d+)/i);
+            if (matchFs) {
+                targetProductId = parseInt(matchFs[1]);
+                targetSizeSetId = parseInt(matchFs[2]);
+            }
+        }
+
+        // 6. Try match by design number (e.g. 26069, #26069, D26069)
+        if (!targetProductId) {
+            const cleanDesign = code.replace(/^[#dD]/, '').trim();
+            const designMatch = catalog.find(item =>
+                (item.design_number && item.design_number.toLowerCase() === code.toLowerCase()) ||
+                (cleanDesign && item.design_number && item.design_number.toLowerCase() === cleanDesign.toLowerCase())
             );
-            if (matchingVars.length > 0) {
-                const isSingle = matchingVars.length === 1;
-                return Object.assign({}, matchingVars[0], {
-                    type: isSingle ? 'single' : 'multiple',
-                    item: matchingVars[0],
-                    items: matchingVars
-                });
-            }
-
-            // Fallback: match by product_id only
-            const productVars = catalog.filter(item => item.product_id == mapped.product_id);
-            if (productVars.length > 0) {
-                return Object.assign({}, productVars[0], {
-                    type: productVars.length === 1 ? 'single' : 'multiple',
-                    item: productVars[0],
-                    items: productVars
-                });
+            if (designMatch) {
+                targetProductId = designMatch.product_id;
+                targetSizeSetId = designMatch.size_set_id;
             }
         }
 
-        // 4. Try regex match: D{productId}S{sizeSetId}C{colorId} (e.g. D116S4C2 or D116S4C2P1F1)
-        const matchD = code.match(/^D(\d+)S(\d+)C(\d+)/i);
-        if (matchD) {
-            const pId = parseInt(matchD[1]);
-            const sId = parseInt(matchD[2]);
-            const cId = parseInt(matchD[3]);
-            const foundD = catalog.find(item => item.product_id == pId && item.size_set_id == sId && item.color_id == cId);
-            if (foundD) {
-                return Object.assign({}, foundD, {
-                    type: 'single',
-                    item: foundD,
-                    items: [foundD]
-                });
+        if (!targetProductId) return null;
+
+        // Gather ALL variations for this product from offline catalog
+        const allProductVars = catalog.filter(item => item.product_id == targetProductId);
+        if (allProductVars.length === 0) return null;
+
+        const first = allProductVars[0];
+        const seriesName = first.series_name || '';
+        const garmentName = first.name_of_garment ? String(first.name_of_garment).trim() : '';
+        const prodTitle = (seriesName && garmentName && seriesName !== garmentName) ? `${seriesName} ${garmentName}` : (seriesName || garmentName || `Design #${first.design_number}`);
+
+        // Find primary hero image
+        let heroImage = '';
+        for (const item of allProductVars) {
+            if (item.image_url) {
+                heroImage = item.image_url;
+                break;
             }
         }
 
-        // 5. Try regex match: FAIR-{productId}-{sizeSetId}
-        const matchFair = code.match(/^FAIR-(\d+)-(\d+)/i);
-        if (matchFair) {
-            const pId = parseInt(matchFair[1]);
-            const sId = parseInt(matchFair[2]);
-            const fairVars = catalog.filter(item => item.product_id == pId && item.size_set_id == sId);
-            if (fairVars.length > 0) {
-                return Object.assign({}, fairVars[0], {
-                    type: fairVars.length === 1 ? 'single' : 'multiple',
-                    item: fairVars[0],
-                    items: fairVars
+        // Group into size sets
+        const sizeSetsMap = new Map();
+        for (const item of allProductVars) {
+            const sId = item.size_set_id;
+            if (!sizeSetsMap.has(sId)) {
+                sizeSetsMap.set(sId, {
+                    size_set_id: sId,
+                    size_set_name: item.size_set_name || `Size Set ${sId}`,
+                    size_group: item.size_group || '',
+                    mrp: item.mrp || 0,
+                    unit_price: item.unit_price || 0,
+                    image: item.image_url || null,
+                    colors: []
                 });
             }
-        }
-
-        // 6. Try match by design number (e.g. 116, #116, D116)
-        const cleanDesign = code.replace(/^[#dD]/, '').trim();
-        const designMatches = catalog.filter(item =>
-            (item.design_number && item.design_number.toLowerCase() === code.toLowerCase()) ||
-            (cleanDesign && item.design_number && item.design_number.toLowerCase() === cleanDesign.toLowerCase())
-        );
-        if (designMatches.length > 0) {
-            return Object.assign({}, designMatches[0], {
-                type: designMatches.length === 1 ? 'single' : 'multiple',
-                item: designMatches[0],
-                items: designMatches
+            const ss = sizeSetsMap.get(sId);
+            if (!ss.image && item.image_url) {
+                ss.image = item.image_url;
+            }
+            // Add color
+            ss.colors.push({
+                id: item.color_id,
+                name: item.color_name || `Color ${item.color_id}`,
+                key: item.key,
+                available_boxes: item.available_boxes || 0,
+                pcs_per_box: item.pcs_per_box || 1,
+                image: item.image_url || null
             });
         }
 
-        return null;
+        const sizeSetsArray = Array.from(sizeSetsMap.values());
+
+        // Sort so scanned size set is first
+        if (targetSizeSetId) {
+            sizeSetsArray.sort((a, b) => {
+                if (a.size_set_id === targetSizeSetId) return -1;
+                if (b.size_set_id === targetSizeSetId) return 1;
+                return 0;
+            });
+        }
+
+        return {
+            success: true,
+            product: {
+                id: first.product_id,
+                design_number: first.design_number || 'N/A',
+                name: prodTitle,
+                series_name: first.series_name || '',
+                brand_name: first.brand_name || 'SNAPKID',
+                image: heroImage || null,
+                image_url: heroImage || null
+            },
+            scanned_size_set_id: targetSizeSetId,
+            scanned_color_id: targetColorId,
+            size_sets: sizeSetsArray,
+            // Compatibility fields
+            type: allProductVars.length === 1 ? 'single' : 'multiple',
+            item: matchedItem || first,
+            items: allProductVars
+        };
     }
 
+    // Save Offline Order
     async function saveOfflineOrder(orderData) {
         const db = await openDB();
-        orderData.local_id = 'OFF_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-        orderData.created_at = new Date().toISOString();
-        orderData.status = 'pending_sync';
-
         return new Promise((resolve, reject) => {
+            orderData.local_id = 'off_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            orderData.created_at = new Date().toISOString();
+            orderData.status = 'pending_sync';
+
             const tx = db.transaction('offline_orders', 'readwrite');
             const req = tx.objectStore('offline_orders').add(orderData);
             req.onsuccess = () => resolve(orderData);
-            req.onerror = () => reject(req.error);
+            req.onerror = (e) => reject(e.target.error);
         });
     }
 
@@ -349,10 +489,12 @@ const SnapKidOfflineDB = (function () {
         getShops,
         getCatalog,
         findVariationByBarcode,
+        getImageBlobUrl,
         saveOfflineOrder,
         getPendingOrders,
         removeOfflineOrder,
         markOrderSynced
     };
 })();
+
 window.SnapKidOfflineDB = SnapKidOfflineDB;

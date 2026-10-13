@@ -100,37 +100,84 @@ class OfflineOrderController extends Controller
                 )
                 ->get();
 
+            // Preload variant info and images in bulk for blazing fast performance
+            $variantsByProductSize = DB::table('production_goods_variants')
+                ->select('id', 'production_goods_id', 'master_size_measurement_id', 'mrp', 'image')
+                ->get()
+                ->groupBy(function($item) {
+                    return $item->production_goods_id . '_' . $item->master_size_measurement_id;
+                });
+
+            $anyVariantImgByProduct = DB::table('production_goods_variants')
+                ->whereNotNull('image')
+                ->where('image', '!=', '')
+                ->pluck('image', 'production_goods_id');
+
+            $colorImgsByVariantColor = DB::table('production_goods_variant_colors')
+                ->whereNotNull('image')
+                ->where('image', '!=', '')
+                ->select('variant_id', 'master_color_id', 'image')
+                ->get()
+                ->groupBy(function($item) {
+                    return $item->variant_id . '_' . $item->master_color_id;
+                });
+
+            $anyColorImgByProductColor = DB::table('production_goods_variant_colors')
+                ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
+                ->whereNotNull('production_goods_variant_colors.image')
+                ->where('production_goods_variant_colors.image', '!=', '')
+                ->select('production_goods_variants.production_goods_id', 'production_goods_variant_colors.master_color_id', 'production_goods_variant_colors.image')
+                ->get()
+                ->groupBy(function($item) {
+                    return $item->production_goods_id . '_' . $item->master_color_id;
+                });
+
             $products = [];
             $imageUrls = [];
+            $imageFiles = [];
 
             foreach ($inventories as $inv) {
                 $vKey = $inv->product_id . '_' . $inv->color_id . '_' . $inv->size_set_id;
 
                 // Variant MRP & Price
-                $variant = DB::table('production_goods_variants')
-                    ->where('production_goods_id', $inv->product_id)
-                    ->where('master_size_measurement_id', $inv->size_set_id)
-                    ->first();
+                $varGroup = $variantsByProductSize[$inv->product_id . '_' . $inv->size_set_id] ?? null;
+                $variant = $varGroup ? $varGroup->first() : null;
 
                 $mrp = $variant->mrp ?? 0;
                 $brand_disc = $brand_discounts[$inv->brand_id] ?? 0;
                 $selling_price = ceil($mrp > 0 ? ($mrp - ($mrp * $brand_disc / 100)) : 0);
 
-                // Variant Color Image
+                // Variant Color Image with intelligent fallbacks
                 $image = null;
                 if ($variant) {
-                    $image = DB::table('production_goods_variant_colors')
-                        ->where('variant_id', $variant->id)
-                        ->where('master_color_id', $inv->color_id)
-                        ->value('image');
+                    $vcGroup = $colorImgsByVariantColor[$variant->id . '_' . $inv->color_id] ?? null;
+                    if ($vcGroup && $vcGroup->first()) {
+                        $image = $vcGroup->first()->image;
+                    }
                     if (!$image) {
                         $image = $variant->image;
                     }
                 }
 
+                if (!$image) {
+                    // Fallback 1: Any variant color for this product and color
+                    $pcGroup = $anyColorImgByProductColor[$inv->product_id . '_' . $inv->color_id] ?? null;
+                    if ($pcGroup && $pcGroup->first()) {
+                        $image = $pcGroup->first()->image;
+                    }
+                }
+
+                if (!$image) {
+                    // Fallback 2: Any variant image for this product
+                    $image = $anyVariantImgByProduct[$inv->product_id] ?? null;
+                }
+
                 $imageUrl = $image ? asset('assets/products/' . $image) : null;
                 if ($imageUrl && !in_array($imageUrl, $imageUrls)) {
                     $imageUrls[] = $imageUrl;
+                    if (!in_array($image, $imageFiles)) {
+                        $imageFiles[] = $image;
+                    }
                 }
 
                 $barcode = 'D' . $inv->product_id . 'S' . $inv->size_set_id . 'C' . $inv->color_id;
@@ -239,6 +286,24 @@ class OfflineOrderController extends Controller
                 }
             }
 
+            // 3d. Design number mappings (so scanning or typing design numbers like 26069, #26069, D26069 resolves instantly offline)
+            foreach ($products as $p) {
+                if (!empty($p['design_number']) && $p['design_number'] !== '-') {
+                    $dn = trim($p['design_number']);
+                    $cleanDn = preg_replace('/^[#dD]/', '', $dn);
+                    $val = [
+                        'product_id' => (int) $p['product_id'],
+                        'size_set_id' => (int) $p['size_set_id'],
+                    ];
+                    $barcodeMap[$dn] = $val;
+                    $barcodeMap['#' . $dn] = $val;
+                    $barcodeMap['D' . $dn] = $val;
+                    if ($cleanDn && $cleanDn !== $dn) {
+                        $barcodeMap[$cleanDn] = $val;
+                    }
+                }
+            }
+
             // 4. Settings & Salesmen
             $settings = DB::table('settings')->first();
             $sales_men = SalesMan::where('status', 1)->get(['id', 'name', 'phone']);
@@ -248,7 +313,8 @@ class OfflineOrderController extends Controller
                 'shops' => $shops,
                 'products' => $products,
                 'barcodes' => $barcodeMap,
-                'image_urls' => array_slice($imageUrls, 0, 300), // Pre-cache up to 300 images
+                'image_urls' => array_slice($imageUrls, 0, 1200), // Pre-cache up to 1200 unique photos
+                'image_files' => array_slice($imageFiles, 0, 1200),
                 'settings' => [
                     'gst_order' => $settings->gst_order ?? 5.00,
                     'agent_app_show_stock' => $settings->agent_app_show_stock ?? 1,

@@ -1,5 +1,121 @@
 @extends('sales_agent.layouts.app', ['title' => 'Offline Order'])
 
+@push('styles')
+<style>
+    .quantity-control-app {
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #ced4da;
+    }
+    .quantity-control-app .btn-q {
+        background: #f8f9fa;
+        border: none;
+        padding: 2px 8px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .quantity-control-app .btn-q:hover {
+        background: #e9ecef;
+    }
+    .rounded-xl {
+        border-radius: 14px !important;
+    }
+    .shadow-xs {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    /* Mobile Drawer Style Modal */
+    #offlineScanSelectionModal .modal-dialog {
+        max-width: 980px;
+        width: 96%;
+    }
+    @media (max-width: 768px) {
+        .modal.bottom-drawer .modal-dialog {
+            margin: 0;
+            margin-top: auto;
+            align-items: flex-end;
+            display: flex;
+            height: 100%;
+            max-width: 100% !important;
+        }
+        .modal.bottom-drawer .modal-content {
+            border-radius: 20px 20px 0 0;
+            width: 100%;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal.bottom-drawer .modal-body {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            flex: 1;
+        }
+    }
+    /* Matrix Table Styles */
+    .matrix-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+    }
+    .matrix-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #f8f9fa;
+        border-top: none;
+    }
+    .matrix-table th:first-child,
+    .matrix-table td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 5;
+        background-color: #fefce8;
+        box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
+    }
+    .matrix-table thead th:first-child {
+        z-index: 15;
+        background: linear-gradient(135deg, #ffd600 0%, #f59e0b 100%) !important;
+        background-color: #ffd600 !important;
+        color: #78350f !important;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    .matrix-row-deselected {
+        opacity: 0.38 !important;
+        background-color: #f1f3f5 !important;
+    }
+    .matrix-row-deselected td,
+    .matrix-row-deselected td:first-child {
+        background-color: #f1f3f5 !important;
+    }
+    .matrix-col-deselected {
+        opacity: 0.5 !important;
+        background-color: #495057 !important;
+    }
+    .matrix-cell.cell-disabled {
+        opacity: 0.35 !important;
+        background-color: #f1f3f5 !important;
+    }
+    .matrix-col-header .custom-control-label::before {
+        background-color: rgba(255, 255, 255, 0.3);
+        border: 2px solid #ffffff;
+        border-radius: 4px;
+    }
+    .matrix-col-header .custom-control-input:checked ~ .custom-control-label::before {
+        background-color: #ffffff !important;
+        border-color: #ffffff !important;
+    }
+    .matrix-col-header .custom-control-input:checked ~ .custom-control-label::after {
+        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%2316a34a' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3E%3C/svg%3E") !important;
+    }
+    .btn-xs {
+        padding: 1px 5px;
+        font-size: 11px;
+        line-height: 1.5;
+        border-radius: 3px;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid px-2 py-2" style="max-width: 800px; padding-bottom: 140px;">
 
@@ -17,9 +133,23 @@
             <button type="button" class="btn btn-sm btn-light border rounded-circle mr-1 shadow-sm" id="btnToggleFilters" style="width: 32px; height: 32px;" title="Filters">
                 <i class="fas fa-filter text-primary"></i>
             </button>
+            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2 mr-1 shadow-sm" id="btnSyncCatalogInline" title="Sync / Download Latest Data">
+                <i class="fas fa-sync-alt mr-1" id="inlineSyncIcon"></i><span class="small font-weight-bold">Sync</span>
+            </button>
             <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm" id="btnOpenScanner">
                 <i class="fas fa-qrcode mr-1"></i> Scan Tag
             </button>
+        </div>
+    </div>
+
+    <!-- INLINE SYNC PROGRESS BAR (HIDDEN BY DEFAULT) -->
+    <div id="inlineSyncProgressContainer" class="card border-0 shadow-sm p-2 mb-2 bg-light" style="display: none; border-radius: 12px;">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small font-weight-bold text-dark" id="inlineSyncStatusText">Downloading catalog data...</span>
+            <span class="small font-weight-bold text-success" id="inlineSyncPercentText">0%</span>
+        </div>
+        <div class="progress" style="height: 6px; border-radius: 4px;">
+            <div id="inlineSyncProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
         </div>
     </div>
 
@@ -223,11 +353,82 @@
         </div>
     </div>
 </div>
+
+<!-- OFFLINE SCAN SELECTION / COLOR MATRIX MODAL -->
+<div class="modal fade bottom-drawer" id="offlineScanSelectionModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document" style="max-width: 980px; width: 96%;">
+        <div class="modal-content border-0 position-relative shadow" style="border-radius: 20px 20px 0 0;">
+            <button type="button" class="close position-absolute" data-dismiss="modal" aria-label="Close" style="top: 10px; right: 16px; z-index: 1050; font-size: 26px; opacity: 0.7;">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <div class="modal-body bg-white pt-2 px-3" style="overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; max-height: calc(100vh - 120px);">
+                <div id="offlineColorSelectionList" class="pb-2">
+                    <!-- Excel Matrix Content dynamically injected here -->
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-white shadow-lg pt-1 pb-3">
+                <button type="button" class="btn btn-primary btn-block btn-lg rounded-xl font-weight-bold" data-dismiss="modal">Apply Selections</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 <script src="{{ asset('assets/js/html5-qrcode.min.js') }}"></script>
 <script>
+// Global helper to resolve offline image errors via IndexedDB blob cache or Cache API
+window.handleOfflineImageError = function (imgEl, filename) {
+    if (!imgEl) return;
+    const key = filename || (imgEl.getAttribute('data-src') || imgEl.src || '').split('/').pop().split('?')[0];
+    if (!key) {
+        imgEl.style.display = 'none';
+        if (imgEl.nextElementSibling && imgEl.nextElementSibling.classList.contains('placeholder-box')) {
+            imgEl.nextElementSibling.style.display = 'flex';
+        }
+        if (imgEl.id === 'scanHeroImage') {
+            const ph = document.getElementById('scanHeroPlaceholder');
+            if (ph) ph.style.display = 'flex';
+        }
+        return;
+    }
+    if (window.SnapKidOfflineDB && SnapKidOfflineDB.getImageBlobUrl) {
+        SnapKidOfflineDB.getImageBlobUrl(key).then(blobUrl => {
+            if (blobUrl) {
+                imgEl.onerror = null;
+                imgEl.src = blobUrl;
+                imgEl.dataset.src = blobUrl;
+                imgEl.style.display = '';
+                if (imgEl.nextElementSibling && imgEl.nextElementSibling.classList.contains('placeholder-box')) {
+                    imgEl.nextElementSibling.style.display = 'none';
+                }
+                if (imgEl.id === 'scanHeroImage') {
+                    const ph = document.getElementById('scanHeroPlaceholder');
+                    if (ph) ph.style.display = 'none';
+                }
+            } else {
+                imgEl.style.display = 'none';
+                if (imgEl.nextElementSibling && imgEl.nextElementSibling.classList.contains('placeholder-box')) {
+                    imgEl.nextElementSibling.style.display = 'flex';
+                }
+                if (imgEl.id === 'scanHeroImage') {
+                    const ph = document.getElementById('scanHeroPlaceholder');
+                    if (ph) ph.style.display = 'flex';
+                }
+            }
+        }).catch(() => {
+            imgEl.style.display = 'none';
+            if (imgEl.nextElementSibling && imgEl.nextElementSibling.classList.contains('placeholder-box')) {
+                imgEl.nextElementSibling.style.display = 'flex';
+            }
+            if (imgEl.id === 'scanHeroImage') {
+                const ph = document.getElementById('scanHeroPlaceholder');
+                if (ph) ph.style.display = 'flex';
+            }
+        });
+    }
+};
+
 $(document).ready(function () {
     let allProducts = [];
     let displayedProducts = [];
@@ -407,6 +608,7 @@ $(document).ready(function () {
         toRender.forEach(prod => {
             const inCartQty = cart.has(prod.key) ? cart.get(prod.key).qty : 0;
             const imgSrc = prod.image_url || '';
+            const imgFile = prod.image || (prod.image_url ? prod.image_url.split('/').pop().split('?')[0] : '');
 
             // Clean title logic
             const seriesName = prod.series_name || '';
@@ -429,8 +631,8 @@ $(document).ready(function () {
                         <!-- Image Container with Badges -->
                         <div style="height: 140px; background: #f8fafc;" class="d-flex align-items-center justify-content-center position-relative">
                             ${imgSrc ? `
-                                <img src="${imgSrc}" class="w-100 h-100 zoom-image-trigger" data-src="${imgSrc}" style="object-fit: contain; cursor: pointer;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <div class="w-100 h-100 align-items-center justify-content-center text-muted" style="display:none;">
+                                <img src="${imgSrc}" class="w-100 h-100 zoom-image-trigger" data-src="${imgSrc}" style="object-fit: contain; cursor: pointer;" onerror="handleOfflineImageError(this, '${imgFile}')">
+                                <div class="w-100 h-100 align-items-center justify-content-center text-muted placeholder-box" style="display:none;">
                                     <i class="fas fa-tshirt fa-2x opacity-25"></i>
                                 </div>
                             ` : `
@@ -622,12 +824,13 @@ $(document).ready(function () {
         $('#modalProdTitle').text(title || prod.design_number);
 
         const imgSrc = prod.image_url || '';
+        const imgFile = prod.image || (prod.image_url ? prod.image_url.split('/').pop().split('?')[0] : '');
         let bodyHtml = `
             <div class="row align-items-center mb-3">
                 <div class="col-4 text-center">
                     <div style="height: 120px; background: #f8fafc; border-radius: 12px; overflow: hidden;" class="d-flex align-items-center justify-content-center border">
                         ${imgSrc ? `
-                            <img src="${imgSrc}" class="w-100 h-100 zoom-image-trigger" data-src="${imgSrc}" style="object-fit: contain; cursor: pointer;">
+                            <img src="${imgSrc}" class="w-100 h-100 zoom-image-trigger" data-src="${imgSrc}" style="object-fit: contain; cursor: pointer;" onerror="handleOfflineImageError(this, '${imgFile}')">
                         ` : `
                             <i class="fas fa-tshirt fa-3x text-muted opacity-25"></i>
                         `}
@@ -690,11 +893,17 @@ $(document).ready(function () {
         $('#productDetailsModal').modal('show');
     });
 
-    // 5. Image Zoom Handler
-    $(document).on('click', '.zoom-image-trigger', function (e) {
+    // 5. Image Zoom Handler (with IndexedDB blob support)
+    $(document).on('click', '.zoom-image-trigger', async function (e) {
         e.stopPropagation();
-        const src = $(this).data('src') || $(this).attr('src');
+        let src = $(this).data('src') || $(this).attr('src');
         if (!src) return;
+        if (!src.startsWith('blob:') && !src.startsWith('data:') && window.SnapKidOfflineDB) {
+            try {
+                const blobUrl = await SnapKidOfflineDB.getImageBlobUrl(src);
+                if (blobUrl) src = blobUrl;
+            } catch (_) {}
+        }
         $('#zoomedImage').attr('src', src);
         $('#imageZoomModal').modal('show');
     });
@@ -848,13 +1057,80 @@ $(document).ready(function () {
         }
     });
 
+
+
+    // Inline Catalog Sync
+    $('#btnSyncCatalogInline').click(async function () {
+        if (!navigator.onLine) {
+            Swal.fire('No Internet', 'Please connect to internet to sync catalog data.', 'warning');
+            return;
+        }
+
+        const btn = $(this);
+        const icon = $('#inlineSyncIcon');
+        btn.prop('disabled', true);
+        icon.addClass('fa-spin');
+        $('#inlineSyncProgressContainer').slideDown();
+        $('#inlineSyncStatusText').text('Downloading latest catalog...');
+        $('#inlineSyncProgressBar').css('width', '25%');
+        $('#inlineSyncPercentText').text('25%');
+
+        try {
+            const res = await $.ajax({
+                url: "{{ route('agent.offline.catalog-data') }}",
+                method: "GET"
+            });
+
+            if (res.success) {
+                $('#inlineSyncStatusText').text('Updating offline database...');
+                $('#inlineSyncProgressBar').css('width', '60%');
+                $('#inlineSyncPercentText').text('60%');
+
+                await SnapKidOfflineDB.saveCatalogData(res, function (cached, total) {
+                    const pct = Math.round(60 + ((cached / total) * 40));
+                    $('#inlineSyncProgressBar').css('width', pct + '%');
+                    $('#inlineSyncPercentText').text(pct + '%');
+                    $('#inlineSyncStatusText').text('Caching photos (' + cached + '/' + total + ')...');
+                });
+
+                $('#inlineSyncProgressBar').css('width', '100%');
+                $('#inlineSyncPercentText').text('100%');
+                $('#inlineSyncStatusText').text('Synced!');
+
+                setTimeout(() => {
+                    $('#inlineSyncProgressContainer').slideUp();
+                    btn.prop('disabled', false);
+                    icon.removeClass('fa-spin');
+                    initOfflineCatalog();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Catalog Synced!',
+                        text: res.shops.length + ' shops and ' + res.products.length + ' products ready offline.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }, 600);
+            } else {
+                throw new Error(res.message || 'Sync failed');
+            }
+        } catch (err) {
+            $('#inlineSyncProgressContainer').slideUp();
+            btn.prop('disabled', false);
+            icon.removeClass('fa-spin');
+            Swal.fire('Sync Error', 'Could not sync catalog: ' + (err.message || 'Network error'), 'error');
+        }
+    });
+
     async function processBarcodeMatch(rawCode) {
         if (!rawCode) return;
         let code = String(rawCode).trim();
 
-        // 1. If scanned text is a URL (e.g. sample tag QR code: http://domain.com/fc/F123), extract barcode
+        // If scanned text is a URL, extract barcode segment
         if (code.includes('/fc/')) {
             const parts = code.split('/fc/')[1];
+            code = parts.split('/')[0].split('?')[0].split('#')[0].trim();
+        } else if (code.includes('/sc/')) {
+            const parts = code.split('/sc/')[1];
             code = parts.split('/')[0].split('?')[0].split('#')[0].trim();
         } else if (code.startsWith('http://') || code.startsWith('https://')) {
             const cleanUrl = code.split('?')[0].split('#')[0];
@@ -862,54 +1138,425 @@ $(document).ready(function () {
             code = parts[parts.length - 1].trim();
         }
 
-        const match = await SnapKidOfflineDB.findVariationByBarcode(code);
-        if (match) {
-            if (match.type === 'multiple' && match.items && match.items.length > 1) {
-                // Multiple color variations exist for this product / size set
-                $('#offlineSearchInput').val(match.design_number);
-                $('#btnClearSearch').show();
-                filterAndRenderProducts(true);
-
-                Swal.fire({
-                    icon: 'info',
-                    title: `Design #${match.design_number}`,
-                    text: `Found ${match.items.length} colors. Please select box quantities below.`,
-                    timer: 2200,
-                    showConfirmButton: false
-                });
-
-                $('html, body').animate({
-                    scrollTop: $("#productsGrid").offset().top - 70
-                }, 400);
-            } else {
-                // Single variation matched
-                const targetKey = match.key || (match.item ? match.item.key : null);
-                if (targetKey) {
-                    const current = cart.has(targetKey) ? cart.get(targetKey).qty : 0;
-                    updateCartItem(targetKey, current + 1);
-
-                    const designNo = match.design_number || (match.item ? match.item.design_number : '');
-                    const colorName = match.color_name || (match.item ? match.item.color_name : '');
-                    const sizeName = match.size_set_name || (match.item ? match.item.size_set_name : '');
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Item Added!',
-                        text: `#${designNo} (${colorName} - ${sizeName}) added to cart. Total: ${current + 1} Boxes.`,
-                        timer: 1600,
-                        showConfirmButton: false
-                    });
-                }
-            }
+        const res = await SnapKidOfflineDB.findVariationByBarcode(code);
+        if (res && res.success && res.size_sets && res.size_sets.length > 0) {
+            showOfflineColorSelection(res);
         } else {
             Swal.fire({
                 icon: 'warning',
                 title: 'Barcode Not Found',
-                text: `No matching product found for code: "${code}" in offline catalog.`,
+                text: `No matching product found for code "${code}" in offline catalog. If newly added, please tap "Sync" to update.`,
                 confirmButtonText: 'OK'
             });
         }
     }
+
+    function showOfflineColorSelection(data) {
+        const list = $('#offlineColorSelectionList');
+        list.empty();
+
+        if (!data.size_sets || data.size_sets.length === 0) {
+            list.append('<div class="alert alert-warning">No variations found for this product.</div>');
+            $('#offlineScanSelectionModal').modal('show');
+            return;
+        }
+
+        // Hero Image resolution
+        let initialHeroImage = data.product.image || '';
+        if (!initialHeroImage) {
+            for (let ss of data.size_sets) {
+                if (ss.image) { initialHeroImage = ss.image; break; }
+                if (ss.colors) {
+                    for (let c of ss.colors) {
+                        if (c.image) { initialHeroImage = c.image; break; }
+                    }
+                }
+                if (initialHeroImage) break;
+            }
+        }
+
+        const heroFilename = (initialHeroImage || (data.product && (data.product.image || data.product.image_url)) || '').split('/').pop().split('?')[0];
+
+        let maxColors = 0;
+        data.size_sets.forEach(ss => {
+            const count = (ss.colors || []).length;
+            if (count > maxColors) maxColors = count;
+        });
+        if (maxColors === 0) maxColors = 1;
+
+        let html = '';
+
+        // 1. Header with Design Number & Series / Garment
+        html += `
+            <div class="text-center mb-1">
+                <span class="badge badge-primary px-3 py-1 font-weight-bold shadow-sm d-inline-block" style="font-size: 15px; border-radius: 8px; letter-spacing: 0.5px;">
+                    DESIGN NO: ${data.product.design_number || 'N/A'}
+                </span>
+                ${(data.product.name && data.product.name !== data.product.design_number) ? `
+                    <div class="font-weight-bold text-dark mt-1" style="font-size: 14px;">${data.product.name}</div>
+                ` : ''}
+                ${data.product.series_name ? `
+                    <div class="small text-muted font-weight-bold"><i class="fas fa-layer-group mr-1"></i> ${data.product.series_name}</div>
+                ` : ''}
+            </div>
+        `;
+
+        // 2. Centered Large Preview Hero Image
+        html += `
+            <div class="text-center mb-2">
+                <div class="d-inline-block position-relative rounded-xl shadow-sm border overflow-hidden bg-white" style="max-width: 100%;">
+                    <img id="scanHeroImage" 
+                         src="${initialHeroImage || ''}" 
+                         class="img-fluid zoom-image-trigger" 
+                         style="max-height: 380px; min-height: 200px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer; ${!initialHeroImage ? 'display:none;' : ''}" 
+                         data-src="${initialHeroImage || ''}"
+                         onerror="handleOfflineImageError(this, '${heroFilename}')"
+                         alt="Product Preview">
+                    <div id="scanHeroPlaceholder" style="width: 260px; height: 180px; display: ${initialHeroImage ? 'none' : 'flex'}; align-items: center; justify-content: center; background: #f8f9fa;">
+                        <div class="text-muted text-center"><i class="fas fa-image fa-3x opacity-50 mb-1"></i><div class="small font-weight-bold">No Image</div></div>
+                    </div>
+                    <span class="badge badge-dark position-absolute" style="bottom: 8px; right: 8px; opacity: 0.85; pointer-events: none; font-size: 11px; padding: 4px 8px; border-radius: 6px;">
+                        <i class="fas fa-search-plus mr-1"></i>Tap to Zoom
+                    </span>
+                </div>
+            </div>
+        `;
+
+        // 3. Master Global Apply Bar
+        html += `
+            <div class="card border-0 mb-3 shadow-sm" style="background: linear-gradient(90deg, #fefce8 0%, #f0fdf4 100%); border: 1.5px solid #facc15 !important; border-radius: 12px;">
+                <div class="card-body p-2 d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
+                    <div>
+                        <span class="font-weight-bold" style="color: #854d0e;"><i class="fas fa-bolt mr-1" style="color: #eab308;"></i> Apply Quantity to All</span>
+                        <div class="small text-muted">Set quantity for all size sets and colors</div>
+                    </div>
+                    <div class="quantity-control-app d-flex align-items-center p-1 bg-white shadow-xs" style="border-radius: 8px; border: 1.5px solid #facc15;">
+                        <button type="button" class="btn-q btn-minus-master font-weight-bold" style="color: #854d0e;">-</button>
+                        <input type="number" id="masterQtyInput" class="font-weight-bold" min="0" value="0" style="color: #854d0e; width: 45px; text-align: center; border: 0; background: transparent;">
+                        <button type="button" class="btn-q btn-plus-master font-weight-bold" style="color: #854d0e;">+</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 4. Matrix Structure Table
+        html += `
+            <div class="table-responsive border rounded-lg mb-3 shadow-sm bg-white" style="max-height: 440px; overflow-y: auto;">
+                <table class="table table-bordered table-sm mb-0 matrix-table text-center align-middle" style="font-size: 13px;">
+                    <thead>
+                        <tr>
+                            <th class="align-middle text-center font-weight-bold px-2 py-2" style="min-width: 140px; width: 140px; background: linear-gradient(135deg, #ffd600 0%, #f59e0b 100%); background-color: #ffd600; color: #78350f !important; text-shadow: 0 1px 0 rgba(255,255,255,0.3);">
+                                SIZE SET
+                            </th>
+                            ${Array.from({ length: maxColors }).map((_, idx) => {
+                                let colColorObj = null;
+                                for (let ss of data.size_sets) {
+                                    if (ss.colors && ss.colors[idx]) {
+                                        colColorObj = ss.colors[idx];
+                                        break;
+                                    }
+                                }
+                                const colName = colColorObj ? (colColorObj.name ? `${colColorObj.name}` : `COLOR ${colColorObj.id}`) : `COL ${idx + 1}`;
+
+                                return `
+                                    <th class="align-middle text-center font-weight-bold text-white p-2 matrix-col-header matrix-col-${idx}" data-col-index="${idx}" style="min-width: 145px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); background-color: #16a34a; color: #fff;">
+                                        <div class="custom-control custom-checkbox d-inline-block text-left" style="max-width: 100%;">
+                                            <input type="checkbox" class="custom-control-input toggle-col-checkbox" id="toggle_col_${idx}" data-col-index="${idx}" checked>
+                                            <label class="custom-control-label font-weight-bold text-white" for="toggle_col_${idx}" style="font-size: 13px; cursor: pointer; user-select: none; line-height: 1.5;" title="${colName}">
+                                                <span class="d-inline-block text-truncate" style="max-width: 105px; vertical-align: middle;">${colName}</span>
+                                            </label>
+                                        </div>
+                                        <div class="mt-1">
+                                            <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px;">
+                                                <button type="button" class="btn-q btn-minus-col px-2 py-0 text-success font-weight-bold" data-col-index="${idx}" style="line-height: 1;">-</button>
+                                                <input type="number" class="col-batch-qty-input font-weight-bold text-center text-success" data-col-index="${idx}" min="0" value="0" style="width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
+                                                <button type="button" class="btn-q btn-plus-col px-2 py-0 text-success font-weight-bold" data-col-index="${idx}" style="line-height: 1;">+</button>
+                                            </div>
+                                        </div>
+                                    </th>
+                                `;
+                            }).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        data.size_sets.forEach(ss => {
+            html += `
+                <tr class="matrix-row-${ss.size_set_id}">
+                    <td class="align-middle p-2 text-center matrix-ss-header-cell" style="min-width: 140px; width: 140px; background-color: #fefce8; border-right: 2px solid #fef08a;">
+                        <div class="custom-control custom-checkbox d-inline-block mb-1">
+                            <input type="checkbox" class="custom-control-input toggle-ss-checkbox" id="toggle_ss_${ss.size_set_id}" data-size-set="${ss.size_set_id}" checked>
+                            <label class="custom-control-label font-weight-bold" for="toggle_ss_${ss.size_set_id}" style="color: #854d0e; font-size: 14px; cursor: pointer; user-select: none;">
+                                ${ss.size_set_name}
+                            </label>
+                        </div>
+                        <div>
+                            <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px; border-color: #fde047 !important;">
+                                <button type="button" class="btn-q btn-minus-ss px-2 py-0 font-weight-bold" data-size-set="${ss.size_set_id}" style="color: #854d0e; line-height: 1;">-</button>
+                                <input type="number" class="ss-batch-qty-input font-weight-bold text-center" data-size-set="${ss.size_set_id}" min="0" value="0" style="color: #854d0e; width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
+                                <button type="button" class="btn-q btn-plus-ss px-2 py-0 font-weight-bold" data-size-set="${ss.size_set_id}" style="color: #854d0e; line-height: 1;">+</button>
+                            </div>
+                        </div>
+                    </td>
+            `;
+
+            for (let c = 0; c < maxColors; c++) {
+                const colorObj = (ss.colors && ss.colors[c]) ? ss.colors[c] : null;
+                if (!colorObj) {
+                    html += `<td class="matrix-cell align-middle text-muted bg-light p-2" data-size-set="${ss.size_set_id}" data-col-index="${c}">-</td>`;
+                } else {
+                    const vKey = colorObj.key || (data.product.id + '_' + colorObj.id + '_' + ss.size_set_id);
+                    const currentQty = cart.has(vKey) ? cart.get(vKey).qty : 0;
+                    const cImg = colorObj.image || ss.image || '';
+
+                    html += `
+                        <td class="matrix-cell matrix-cell-ss-${ss.size_set_id} matrix-cell-col-${c} align-middle p-2" data-size-set="${ss.size_set_id}" data-col-index="${c}" style="background: #fff; min-width: 145px;">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="font-weight-bold text-dark text-truncate text-left flex-grow-1" style="font-size: 13px;" title="${colorObj.name}">
+                                    ${colorObj.name}
+                                </span>
+                                ${cImg ? `
+                                    <button type="button" class="btn btn-outline-info btn-xs rounded-circle p-0 ml-1 d-inline-flex align-items-center justify-content-center zoom-image-trigger" data-src="${cImg}" title="View Photo" style="width: 22px; height: 22px; flex-shrink: 0;">
+                                        <i class="fas fa-camera" style="font-size: 10px;"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <div class="d-flex justify-content-center align-items-center">
+                                <div class="quantity-control-app d-inline-flex align-items-center p-0 border shadow-xs" style="border-radius: 8px;">
+                                    <button type="button" class="btn-q btn-minus-scan px-2 py-1" data-key="${vKey}">-</button>
+                                    <input type="number" 
+                                        class="box-qty-scan-input font-weight-bold" 
+                                        data-key="${vKey}"
+                                        data-size-set="${ss.size_set_id}"
+                                        data-col-index="${c}"
+                                        min="0"
+                                        max="${colorObj.available_boxes}"
+                                        value="${currentQty}"
+                                        style="width: 38px; border: 0; background: transparent; text-align: center; font-size: 13px;">
+                                    <button type="button" class="btn-q btn-plus-scan px-2 py-1" data-key="${vKey}">+</button>
+                                </div>
+                            </div>
+                            <div class="text-muted text-center mt-1" style="font-size: 10px; line-height: 1;">${colorObj.available_boxes} avl</div>
+                        </td>
+                    `;
+                }
+            }
+
+            html += `</tr>`;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        list.append(html);
+        if (heroFilename && window.SnapKidOfflineDB) {
+            SnapKidOfflineDB.getImageBlobUrl(heroFilename).then(blob => {
+                if (blob) {
+                    const heroImg = document.getElementById('scanHeroImage');
+                    const heroPh = document.getElementById('scanHeroPlaceholder');
+                    if (heroImg) {
+                        heroImg.src = blob;
+                        heroImg.dataset.src = blob;
+                        heroImg.style.display = '';
+                        if (heroPh) heroPh.style.display = 'none';
+                    }
+                }
+            }).catch(() => {});
+        }
+        $('#offlineScanSelectionModal').modal('show');
+    }
+
+    // Modal Stepper Listeners
+    $(document).on('click', '.btn-plus-master', function () {
+        let input = $('#masterQtyInput');
+        let val = parseInt(input.val()) || 0;
+        input.val(val + 1).trigger('change');
+    });
+
+    $(document).on('click', '.btn-minus-master', function () {
+        let input = $('#masterQtyInput');
+        let val = parseInt(input.val()) || 0;
+        if (val > 0) input.val(val - 1).trigger('change');
+    });
+
+    $(document).on('change', '#masterQtyInput', function () {
+        let masterQty = parseInt($(this).val()) || 0;
+        if (masterQty < 0) { masterQty = 0; $(this).val(0); }
+
+        $('.matrix-table .ss-batch-qty-input:not(:disabled)').val(masterQty);
+        $('.matrix-table .col-batch-qty-input:not(:disabled)').val(masterQty);
+
+        $('.matrix-table .box-qty-scan-input:not(:disabled)').each(function () {
+            const max = parseInt($(this).attr('max'));
+            let targetQty = masterQty;
+            if (!isNaN(max) && targetQty > max) targetQty = max;
+            const key = $(this).data('key');
+            $(this).val(targetQty);
+            updateCartItem(key, targetQty);
+        });
+    });
+
+    $(document).on('click', '.btn-plus-ss', function () {
+        let input = $(this).siblings('.ss-batch-qty-input');
+        if (input.prop('disabled')) return;
+        let val = parseInt(input.val()) || 0;
+        input.val(val + 1).trigger('change');
+    });
+
+    $(document).on('click', '.btn-minus-ss', function () {
+        let input = $(this).siblings('.ss-batch-qty-input');
+        if (input.prop('disabled')) return;
+        let val = parseInt(input.val()) || 0;
+        if (val > 0) input.val(val - 1).trigger('change');
+    });
+
+    $(document).on('change', '.ss-batch-qty-input', function () {
+        const ssId = $(this).data('size-set');
+        let rowQty = parseInt($(this).val()) || 0;
+        if (rowQty < 0) { rowQty = 0; $(this).val(0); }
+
+        $(`.matrix-row-${ssId} .box-qty-scan-input:not(:disabled)`).each(function () {
+            const max = parseInt($(this).attr('max'));
+            let targetQty = rowQty;
+            if (!isNaN(max) && targetQty > max) targetQty = max;
+            const key = $(this).data('key');
+            $(this).val(targetQty);
+            updateCartItem(key, targetQty);
+        });
+    });
+
+    $(document).on('click', '.btn-plus-col', function () {
+        let input = $(this).siblings('.col-batch-qty-input');
+        if (input.prop('disabled')) return;
+        let val = parseInt(input.val()) || 0;
+        input.val(val + 1).trigger('change');
+    });
+
+    $(document).on('click', '.btn-minus-col', function () {
+        let input = $(this).siblings('.col-batch-qty-input');
+        if (input.prop('disabled')) return;
+        let val = parseInt(input.val()) || 0;
+        if (val > 0) input.val(val - 1).trigger('change');
+    });
+
+    $(document).on('change', '.col-batch-qty-input', function () {
+        const colIndex = $(this).data('col-index');
+        let colQty = parseInt($(this).val()) || 0;
+        if (colQty < 0) { colQty = 0; $(this).val(0); }
+
+        $(`.matrix-cell-col-${colIndex} .box-qty-scan-input:not(:disabled)`).each(function () {
+            const max = parseInt($(this).attr('max'));
+            let targetQty = colQty;
+            if (!isNaN(max) && targetQty > max) targetQty = max;
+            const key = $(this).data('key');
+            $(this).val(targetQty);
+            updateCartItem(key, targetQty);
+        });
+    });
+
+    // Cell +/- Handlers
+    $(document).on('click', '.btn-plus-scan', function () {
+        const input = $(this).siblings('.box-qty-scan-input');
+        if (input.prop('disabled')) return;
+        const key = $(this).data('key');
+        let val = parseInt(input.val()) || 0;
+        const max = parseInt(input.attr('max'));
+        if (!isNaN(max) && val >= max) return;
+        input.val(val + 1);
+        updateCartItem(key, val + 1);
+    });
+
+    $(document).on('click', '.btn-minus-scan', function () {
+        const input = $(this).siblings('.box-qty-scan-input');
+        if (input.prop('disabled')) return;
+        const key = $(this).data('key');
+        let val = parseInt(input.val()) || 0;
+        if (val > 0) {
+            input.val(val - 1);
+            updateCartItem(key, val - 1);
+        }
+    });
+
+    $(document).on('change', '.box-qty-scan-input', function () {
+        const key = $(this).data('key');
+        let val = parseInt($(this).val()) || 0;
+        const max = parseInt($(this).attr('max'));
+        if (val < 0) val = 0;
+        if (!isNaN(max) && val > max) val = max;
+        $(this).val(val);
+        updateCartItem(key, val);
+    });
+
+    // Toggle Size Set Row Selection
+    $(document).on('change', '.toggle-ss-checkbox', function () {
+        const ssId = $(this).data('size-set');
+        const isChecked = $(this).is(':checked');
+        const row = $(this).closest('tr');
+
+        if (!isChecked) {
+            row.addClass('matrix-row-deselected');
+            row.find('.ss-batch-qty-input').prop('disabled', true).val(0);
+            row.find('.btn-minus-ss, .btn-plus-ss').prop('disabled', true);
+            row.find('.box-qty-scan-input').each(function () {
+                $(this).prop('disabled', true);
+                const key = $(this).data('key');
+                $(this).val(0);
+                updateCartItem(key, 0);
+            });
+            row.find('.btn-minus-scan, .btn-plus-scan').prop('disabled', true);
+        } else {
+            row.removeClass('matrix-row-deselected');
+            row.find('.ss-batch-qty-input').prop('disabled', false);
+            row.find('.btn-minus-ss, .btn-plus-ss').prop('disabled', false);
+            row.find('.matrix-cell').each(function () {
+                const colIndex = $(this).data('col-index');
+                const isColChecked = $(`.toggle-col-checkbox[data-col-index="${colIndex}"]`).is(':checked');
+                if (isColChecked) {
+                    $(this).find('.box-qty-scan-input').prop('disabled', false);
+                    $(this).find('.btn-minus-scan, .btn-plus-scan').prop('disabled', false);
+                }
+            });
+        }
+    });
+
+    // Toggle Color Column Selection
+    $(document).on('change', '.toggle-col-checkbox', function () {
+        const colIndex = $(this).data('col-index');
+        const isChecked = $(this).is(':checked');
+        const th = $(`.matrix-col-${colIndex}`);
+
+        if (!isChecked) {
+            th.addClass('matrix-col-deselected');
+            th.find('.col-batch-qty-input').prop('disabled', true).val(0);
+            th.find('.btn-minus-col, .btn-plus-col').prop('disabled', true);
+            $(`.matrix-cell-col-${colIndex}`).each(function () {
+                $(this).addClass('cell-disabled');
+                const input = $(this).find('.box-qty-scan-input');
+                input.prop('disabled', true);
+                const key = input.data('key');
+                input.val(0);
+                updateCartItem(key, 0);
+                $(this).find('.btn-minus-scan, .btn-plus-scan').prop('disabled', true);
+            });
+        } else {
+            th.removeClass('matrix-col-deselected');
+            th.find('.col-batch-qty-input').prop('disabled', false);
+            th.find('.btn-minus-col, .btn-plus-col').prop('disabled', false);
+            $(`.matrix-cell-col-${colIndex}`).each(function () {
+                const ssId = $(this).data('size-set');
+                const isRowChecked = $(`#toggle_ss_${ssId}`).is(':checked');
+                if (isRowChecked) {
+                    $(this).removeClass('cell-disabled');
+                    $(this).find('.box-qty-scan-input').prop('disabled', false);
+                    $(this).find('.btn-minus-scan, .btn-plus-scan').prop('disabled', false);
+                }
+            });
+        }
+    });
 
     // 9. Save Offline Order
     async function saveCurrentOrder() {

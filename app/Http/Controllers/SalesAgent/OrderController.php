@@ -11,6 +11,7 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\FairProduct;
 use App\Models\ProductionGoods;
@@ -1463,10 +1464,38 @@ class OrderController extends Controller
     public function getVariationByBarcode(Request $request)
     {
         try {
-            $barcode = $request->get('barcode');
+            $barcode = trim($request->get('barcode', ''));
             if (!$barcode) return response()->json(['success' => false, 'message' => 'No barcode provided.']);
 
-            // Format: BX-{{ boxNo }}
+            // If the barcode is a URL, extract the last segment (the actual barcode)
+            if (strpos($barcode, '/fc/') !== false) {
+                $parts = explode('/fc/', $barcode);
+                $clean = explode('/', $parts[1])[0];
+                $clean = explode('?', $clean)[0];
+                $clean = explode('#', $clean)[0];
+                $barcode = trim($clean);
+            } elseif (strpos($barcode, '/sc/') !== false) {
+                $parts = explode('/sc/', $barcode);
+                $clean = explode('/', $parts[1])[0];
+                $clean = explode('?', $clean)[0];
+                $clean = explode('#', $clean)[0];
+                $barcode = trim($clean);
+            } elseif (strpos($barcode, 'http://') === 0 || strpos($barcode, 'https://') === 0) {
+                $clean = explode('?', $barcode)[0];
+                $clean = explode('#', $clean)[0];
+                $parts = explode('/', $clean);
+                $barcode = trim(end($parts));
+            }
+
+            $productId = null;
+            $scannedSizeSetId = null;
+            $colorId = null;
+            $isFairBarcode = false;
+            $fairProduct = null;
+            $agent_id = Auth::guard('sales_agent')->id();
+            $agent = Auth::guard('sales_agent')->user();
+
+            // 1. Format: BX-{{ boxNo }}
             if (strpos($barcode, 'BX-') === 0) {
                 $box = DB::table('packing_boxes')->where('box_no', $barcode)->first();
                 if ($box && $box->barcode) {
@@ -1476,51 +1505,127 @@ class OrderController extends Controller
                 }
             }
 
-            // Format: D{productId}S{sizeSetId}C{colorId}P{patternId}F{fittingId}
+            // 2. Format: D{productId}S{sizeSetId}C{colorId}P{patternId}F{fittingId}
             if (strpos($barcode, 'D') === 0 && strpos($barcode, 'S') !== false) {
-                if (preg_match('/^D(\d+)S(\d+)C(\d+)(?:P(\d+)F(\d+))?$/', $barcode, $matches)) {
-                    $productId = $matches[1];
-                    $scannedSizeSetId = $matches[2];
-                    $colorId = $matches[3];
+                if (preg_match('/^D(\d+)S(\d+)C(\d+)(?:P(\d+)F(\d+))?$/i', $barcode, $matches)) {
+                    $productId = (int) $matches[1];
+                    $scannedSizeSetId = (int) $matches[2];
+                    $colorId = (int) $matches[3];
                     $isFairBarcode = false;
                     $fairProduct = null;
                     \Log::info("Scanning Domestic Barcode", ['barcode' => $barcode, 'productId' => $productId, 'sizeSetId' => $scannedSizeSetId, 'colorId' => $colorId]);
                 }
             }
 
-            // Format: FAIR-{{ productId }}-{{ sizeSetId }}-{{ timestamp }} OR F{{ id_base36 }}
-            if (strpos($barcode, 'FAIR-') === 0 || preg_match('/^F[A-Z0-9]+$/', $barcode)) {
+            // 3. Format: FAIR-{{ productId }}-{{ sizeSetId }}-{{ timestamp }} OR F{{ id_base36 }}
+            if (!$productId && (strpos($barcode, 'FAIR-') === 0 || preg_match('/^F[A-Z0-9]+$/i', $barcode))) {
                 $fairProduct = \App\Models\FairProduct::where('barcode', $barcode)->first();
                 
                 if (strpos($barcode, 'FAIR-') === 0) {
                     $parts = explode('-', $barcode);
-                    if (count($parts) < 3) return response()->json(['success' => false, 'message' => 'Invalid Fair barcode format.']);
-                    $productId = $parts[1];
-                    $scannedSizeSetId = $parts[2];
+                    if (count($parts) >= 3 && is_numeric($parts[1]) && is_numeric($parts[2])) {
+                        $productId = (int) $parts[1];
+                        $scannedSizeSetId = (int) $parts[2];
+                    }
                 } elseif ($fairProduct) {
-                    $agent_id = Auth::guard('sales_agent')->id();
                     $batch = \App\Models\FairBatch::find($fairProduct->fair_batch_id);
                     if ($batch) {
                         if ($batch->status == 0) {
                             return response()->json(['success' => false, 'message' => 'This sample set is inactive and cannot be scanned.']);
                         }
-                        $assignedAgents = is_array($batch->sales_agent_ids) ? $batch->sales_agent_ids : json_decode($batch->sales_agent_ids, true) ?? [];
-                        if (!in_array((string)$agent_id, $assignedAgents, true) && !in_array((int)$agent_id, $assignedAgents, true)) {
-                            return response()->json(['success' => false, 'message' => 'This sample set barcode is not assigned to your account.']);
+                        if ($agent && !$agent->is_master_agent) {
+                            $assignedAgents = is_array($batch->sales_agent_ids) ? $batch->sales_agent_ids : json_decode($batch->sales_agent_ids, true) ?? [];
+                            if (!empty($assignedAgents) && !in_array((string)$agent_id, $assignedAgents, true) && !in_array((int)$agent_id, $assignedAgents, true)) {
+                                return response()->json(['success' => false, 'message' => 'This sample set barcode is not assigned to your account.']);
+                            }
                         }
                     }
 
-                    $productId = $fairProduct->product_id;
-                    $scannedSizeSetId = $fairProduct->size_set_id;
-                } else {
-                    return response()->json(['success' => false, 'message' => 'Fair product not found.']);
+                    $productId = (int) $fairProduct->product_id;
+                    $scannedSizeSetId = (int) $fairProduct->size_set_id;
                 }
                 
-                \Log::info("Scanning Fair Barcode", ['barcode' => $barcode, 'productId' => $productId, 'sizeSetId' => $scannedSizeSetId]);
-                $isFairBarcode = true;
+                if ($productId) {
+                    \Log::info("Scanning Fair Barcode", ['barcode' => $barcode, 'productId' => $productId, 'sizeSetId' => $scannedSizeSetId]);
+                    $isFairBarcode = true;
+                }
             }
 
-            if (isset($productId) && isset($scannedSizeSetId)) {
+            // 4. Format: SMP-{{ productId }}-{{ sizeSetId }}-{{ timestamp }} OR SAMPLE-...
+            if (!$productId && (strpos($barcode, 'SMP-') === 0 || strpos($barcode, 'SAMPLE-') === 0)) {
+                $parts = explode('-', $barcode);
+                if (count($parts) >= 3 && is_numeric($parts[1]) && is_numeric($parts[2])) {
+                    $productId = (int) $parts[1];
+                    $scannedSizeSetId = (int) $parts[2];
+                } else if (Schema::hasTable('sample_products')) {
+                    $sample = DB::table('sample_products')->where('barcode', $barcode)->first();
+                    if ($sample) {
+                        $productId = (int) $sample->product_id;
+                        $scannedSizeSetId = (int) $sample->size_set_id;
+                    }
+                }
+            }
+
+            // 5. Direct lookup in production_goods_variant_colors by barcode
+            if (!$productId && Schema::hasTable('production_goods_variant_colors')) {
+                $vcRow = DB::table('production_goods_variant_colors')
+                    ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
+                    ->where('production_goods_variant_colors.barcode', $barcode)
+                    ->select(
+                        'production_goods_variants.production_goods_id as product_id',
+                        'production_goods_variants.master_size_measurement_id as size_set_id',
+                        'production_goods_variant_colors.master_color_id as color_id'
+                    )
+                    ->first();
+                if ($vcRow) {
+                    $productId = (int) $vcRow->product_id;
+                    $scannedSizeSetId = (int) $vcRow->size_set_id;
+                    $colorId = (int) $vcRow->color_id;
+                }
+            }
+
+            // 6. Direct lookup in sample_products by barcode
+            if (!$productId && Schema::hasTable('sample_products')) {
+                $sp = DB::table('sample_products')->where('barcode', $barcode)->first();
+                if ($sp) {
+                    $productId = (int) $sp->product_id;
+                    $scannedSizeSetId = (int) $sp->size_set_id;
+                }
+            }
+
+            // 7. Direct lookup in fair_products by barcode
+            if (!$productId && Schema::hasTable('fair_products')) {
+                $fp = DB::table('fair_products')->where('barcode', $barcode)->first();
+                if ($fp) {
+                    $productId = (int) $fp->product_id;
+                    $scannedSizeSetId = (int) $fp->size_set_id;
+                    $isFairBarcode = true;
+                    $fairProduct = $fp;
+                }
+            }
+
+            // 8. Lookup by Design Number or SKU (e.g. 26069, #26069, D26069)
+            if (!$productId) {
+                $cleanDesign = preg_replace('/^[#dD]/', '', $barcode);
+                $prodRow = DB::table('production_goods')
+                    ->where(function($q) use ($barcode, $cleanDesign) {
+                        $q->where('design_number', $barcode)
+                          ->orWhere('sku', $barcode);
+                        if (!empty($cleanDesign)) {
+                            $q->orWhere('design_number', $cleanDesign);
+                        }
+                    })
+                    ->first();
+                if ($prodRow) {
+                    $productId = (int) $prodRow->id;
+                    $scannedSizeSetId = DB::table('domestic_inventories')
+                        ->where('product_id', $productId)
+                        ->where('status', 1)
+                        ->value('size_set_id') ?? DB::table('production_goods_variants')->where('production_goods_id', $productId)->value('master_size_measurement_id');
+                }
+            }
+
+            if (isset($productId)) {
                 $product = \App\Models\ProductionGoods::with(['series', 'variants'])->find($productId);
 
                 if (!$product) {
@@ -1543,15 +1648,19 @@ class OrderController extends Controller
                         ->unique()
                         ->toArray();
 
-                    $agent_id = Auth::guard('sales_agent')->id();
                     $discount_percentage = DB::table('sales_agent_brand_discounts')
                         ->where('sales_agent_id', $agent_id)
                         ->where('brand_id', $product->brand_id)
                         ->value('discount_percentage') ?? 0;
                 }
 
-                if (!in_array($scannedSizeSetId, $availableSizeSetIds)) {
-                    $availableSizeSetIds[] = $scannedSizeSetId;
+                if (!empty($scannedSizeSetId) && !in_array($scannedSizeSetId, $availableSizeSetIds)) {
+                    $availableSizeSetIds[] = (int) $scannedSizeSetId;
+                }
+
+                if (empty($availableSizeSetIds)) {
+                    // Fallback to variants size sets if no inventory recorded
+                    $availableSizeSetIds = $product->variants->pluck('master_size_measurement_id')->unique()->filter()->toArray();
                 }
 
                 $isAdvanceSample = \DB::table('domestic_inventories')
@@ -1562,7 +1671,29 @@ class OrderController extends Controller
                     ->exists();
 
                 $sizeSetsData = [];
-                $main_image_base = $product->photo;
+
+                // Intelligent Hero Image resolution:
+                $main_image_base = null;
+                $vWithImg = $product->variants->first(function($v) {
+                    return !empty($v->image);
+                });
+                if ($vWithImg) {
+                    $main_image_base = $vWithImg->image;
+                }
+                if (!$main_image_base) {
+                    $vcImg = DB::table('production_goods_variant_colors')
+                        ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
+                        ->where('production_goods_variants.production_goods_id', $productId)
+                        ->whereNotNull('production_goods_variant_colors.image')
+                        ->where('production_goods_variant_colors.image', '!=', '')
+                        ->value('production_goods_variant_colors.image');
+                    if ($vcImg) {
+                        $main_image_base = $vcImg;
+                    }
+                }
+                if (!$main_image_base && method_exists($product, 'mainImage') && $product->mainImage) {
+                    $main_image_base = $product->mainImage->image;
+                }
 
                 foreach ($availableSizeSetIds as $sizeSetId) {
                     $availableColorsQuery = \App\Models\DomesticInventory::where('product_id', $productId)
@@ -1604,10 +1735,7 @@ class OrderController extends Controller
                     $mrp = $variant->mrp ?? 0;
                     $unit_price = ceil($mrp - ($mrp * $discount_percentage / 100));
                     
-                    $main_image = $main_image_base;
-                    if (!$main_image && $variant && $variant->image) {
-                        $main_image = $variant->image;
-                    }
+                    $main_image = ($variant && !empty($variant->image)) ? $variant->image : $main_image_base;
 
                     foreach ($availableColors as $color) {
                         if ($isAdvanceSample) {
@@ -1617,20 +1745,33 @@ class OrderController extends Controller
                             $color->available_boxes = max(0, $color->available_boxes - $allocated);
                         }
 
-                        $cImg = DB::table('production_goods_variant_colors')
-                            ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
-                            ->where('production_goods_variants.production_goods_id', $productId)
-                            ->where('production_goods_variants.master_size_measurement_id', $sizeSetId)
-                            ->where('production_goods_variant_colors.master_color_id', $color->id)
-                            ->whereNotNull('production_goods_variant_colors.image')
-                            ->value('production_goods_variant_colors.image');
+                        $cImg = null;
+                        if ($variant) {
+                            $cImg = DB::table('production_goods_variant_colors')
+                                ->where('variant_id', $variant->id)
+                                ->where('master_color_id', $color->id)
+                                ->whereNotNull('image')
+                                ->where('image', '!=', '')
+                                ->value('image');
+                        }
+
+                        if (!$cImg) {
+                            // Fallback to any variant color for this product and color
+                            $cImg = DB::table('production_goods_variant_colors')
+                                ->join('production_goods_variants', 'production_goods_variant_colors.variant_id', '=', 'production_goods_variants.id')
+                                ->where('production_goods_variants.production_goods_id', $productId)
+                                ->where('production_goods_variant_colors.master_color_id', $color->id)
+                                ->whereNotNull('production_goods_variant_colors.image')
+                                ->where('production_goods_variant_colors.image', '!=', '')
+                                ->value('production_goods_variant_colors.image');
+                        }
                         
                         $color->image = $cImg ? asset('assets/products/' . $cImg) : ($main_image ? asset('assets/products/' . $main_image) : null);
                     }
                     
                     $sizeSetsData[] = [
                         'size_set_id' => (int)$sizeSetId,
-                        'size_set_name' => DB::table('master_size_measurements')->where('id', $sizeSetId)->value('name'),
+                        'size_set_name' => DB::table('master_size_measurements')->where('id', $sizeSetId)->value('name') ?? ('Size ' . $sizeSetId),
                         'mrp' => $mrp,
                         'unit_price' => $unit_price,
                         'image' => $main_image ? asset('assets/products/' . $main_image) : null,
@@ -1645,9 +1786,11 @@ class OrderController extends Controller
                         'id' => $product->id,
                         'name' => trim(($product->series->name ?? '') . ' ' . $product->name_of_garment),
                         'design_number' => $product->design_number,
+                        'series_name' => $product->series->name ?? '',
                         'image' => $main_image_base ? asset('assets/products/' . $main_image_base) : null,
                     ],
-                    'scanned_size_set_id' => (int)$scannedSizeSetId,
+                    'scanned_size_set_id' => $scannedSizeSetId ? (int)$scannedSizeSetId : null,
+                    'scanned_color_id' => $colorId ? (int)$colorId : null,
                     'size_sets' => $sizeSetsData
                 ]);
             }
