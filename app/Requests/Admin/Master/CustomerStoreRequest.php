@@ -35,10 +35,8 @@ class CustomerStoreRequest extends FormRequest
             // $rules['shop_phone'] = 'required';
         }
 
-        if ($this->type == 'domestic' && $this->subtype == 'direct') {
-            $rules['brand_discounts'] = 'nullable|array';
-            $rules['brand_discounts.*'] = 'nullable|numeric|min:0|max:100';
-        }
+        $rules['brand_discounts'] = 'nullable|array';
+        $rules['brand_discounts.*'] = 'nullable|numeric|min:0|max:100';
 
         return $rules;
     }

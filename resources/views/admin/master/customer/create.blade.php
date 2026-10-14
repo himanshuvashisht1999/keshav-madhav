@@ -138,36 +138,6 @@
                     </div>
                 </div>
 
-                <!-- Direct Fields (Per Brand Discounts) -->
-                <div class="col-md-12" id="direct_fields" style="display: none;">
-                    <hr class="my-3">
-                    <h6 class="font-weight-bold mb-2">Per brand discounts (%)</h6>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm mb-2">
-                            <thead class="thead-light">
-                                <tr>
-                                    <th>Brand name</th>
-                                    <th style="width: 200px;">Discount percentage (%)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($items['brands'] as $brand)
-                                    <tr>
-                                        <td>{{ $brand->name }}</td>
-                                        <td>
-                                            <input type="number" step="0.01" min="0" max="100"
-                                                name="brand_discounts[{{ $brand->id }}]"
-                                                class="form-control form-control-sm erp-filter-input"
-                                                value="{{ old('brand_discounts.' . $brand->id, 0) }}">
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    <hr class="my-3">
-                </div>
-
                 <!-- Agent/Shop Fields -->
                 <div class="col-md-6" id="agent_fields" style="display: none;">
                     <div class="form-group mb-3">
@@ -268,6 +238,40 @@
                     </div>
                 </div>
 
+                <!-- Per Brand Discounts (all customer types) -->
+                <div class="col-md-12" id="direct_fields">
+                    <hr class="my-3">
+                    @php
+                        $agentDiscountMap = DB::table("sales_agent_brand_discounts")->get()->groupBy("sales_agent_id")
+                            ->map(function ($g) { return $g->pluck('discount_percentage', 'brand_id'); });
+                    @endphp
+                    <h6 class="font-weight-bold mb-2">Per brand discounts (%)</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm mb-2">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Brand name</th>
+                                    <th style="width: 200px;">Discount percentage (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($items['brands'] as $brand)
+                                    <tr>
+                                        <td>{{ $brand->name }}</td>
+                                        <td>
+                                            <input type="number" data-brand="{{ $brand->id }}" step="0.01" min="0" max="100"
+                                                name="brand_discounts[{{ $brand->id }}]"
+                                                class="form-control form-control-sm erp-filter-input"
+                                                value="{{ old('brand_discounts.' . $brand->id, 0) }}">
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <hr class="my-3">
+                </div>
+
                 <div class="col-md-12 d-flex justify-content-end align-items-center mt-3 pt-2 border-top">
                     <a href="{{ route('admin.master.customer.index') }}" class="btn-erp btn-erp-outline mr-2">Cancel</a>
                     <button type="submit" class="btn-erp btn-erp-primary">
@@ -295,13 +299,13 @@
                     $('#shop_details_section').hide().find('input, select, textarea').prop('disabled', true);
                 } else if (subtype === 'agent') {
                     $('#standard_fields').hide().find('input, select, textarea').prop('disabled', true);
-                    $('#direct_fields').hide().find('input, select, textarea').prop('disabled', true);
+                    $('#direct_fields').show().find('input, select, textarea').prop('disabled', false);
                     $('#agent_fields').show().find('input, select, textarea').prop('disabled', false);
                     $('#agent_comm_fields').hide().find('input, select, textarea').prop('disabled', true);
                     $('#shop_details_section').show().find('input, select, textarea').prop('disabled', false);
                 } else {
                     $('#standard_fields').show().find('input, select, textarea').prop('disabled', false);
-                    $('#direct_fields').hide().find('input, select, textarea').prop('disabled', true);
+                    $('#direct_fields').show().find('input, select, textarea').prop('disabled', false);
                     $('#agent_fields').hide().find('input, select, textarea').prop('disabled', true);
                     $('#agent_comm_fields').hide().find('input, select, textarea').prop('disabled', true);
                     $('#shop_details_section').hide().find('input, select, textarea').prop('disabled', true);
@@ -309,7 +313,7 @@
             } else {
                 $('#subtype_wrapper').hide();
                 $('#standard_fields').show().find('input, select, textarea').prop('disabled', false);
-                $('#direct_fields').hide().find('input, select, textarea').prop('disabled', true);
+                $('#direct_fields').show().find('input, select, textarea').prop('disabled', false);
                 $('#agent_fields').hide().find('input, select, textarea').prop('disabled', true);
                 $('#agent_comm_fields').hide().find('input, select, textarea').prop('disabled', true);
                 $('#shop_details_section').hide().find('input, select, textarea').prop('disabled', true);
@@ -322,6 +326,17 @@
 
         // Initial call
         toggleFields();
+        // ---- Fill brand discounts from the selected agent ----
+        var agentDiscounts = @json($agentDiscountMap ?? []);
+
+        $('select[name="sales_agent_id"]').on('change select2:select', function () {
+            var map = agentDiscounts[$(this).val()];
+            if (!map) return;
+            $('input[name^="brand_discounts"]').each(function () {
+                var v = map[$(this).data('brand')];
+                $(this).val(v !== undefined ? parseFloat(v).toFixed(2) : 0);
+            });
+        });
     });
 </script>
 @endsection

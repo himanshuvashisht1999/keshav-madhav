@@ -131,6 +131,9 @@ class SalesAgentService
                     ]);
                 }
             }
+
+            // Customers under this agent follow the agent's discounts (except per-customer overrides)
+            \App\Models\CustomerBrandDiscount::syncFromAgent($update_data->id);
         }
 
         return true;

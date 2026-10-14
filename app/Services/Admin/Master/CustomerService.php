@@ -455,6 +455,10 @@ class CustomerService
                 ]
             );
 
+            if ($request->has('brand_discounts')) {
+                \App\Models\CustomerBrandDiscount::saveForCustomer($shop->id, $request->brand_discounts);
+            }
+
             return true;
         }
 
@@ -497,16 +501,8 @@ class CustomerService
             ]
         );
 
-        if ($type == 'domestic' && $subtype == 'direct' && $request->has('brand_discounts')) {
-            foreach ($request->brand_discounts as $brand_id => $discount) {
-                if ($discount !== null && $discount !== '') {
-                    \App\Models\CustomerBrandDiscount::create([
-                        'customer_id' => $save_data->id,
-                        'brand_id' => $brand_id,
-                        'discount_percentage' => $discount,
-                    ]);
-                }
-            }
+        if ($request->has('brand_discounts')) {
+            \App\Models\CustomerBrandDiscount::saveForCustomer($save_data->id, $request->brand_discounts);
         }
         return true;
     }
@@ -572,17 +568,8 @@ class CustomerService
             ]
         );
 
-        if ($type == 'domestic' && $subtype == 'direct' && $request->has('brand_discounts')) {
-            \App\Models\CustomerBrandDiscount::where('customer_id', $update_data->id)->delete();
-            foreach ($request->brand_discounts as $brand_id => $discount) {
-                if ($discount !== null && $discount !== '') {
-                    \App\Models\CustomerBrandDiscount::create([
-                        'customer_id' => $update_data->id,
-                        'brand_id' => $brand_id,
-                        'discount_percentage' => $discount,
-                    ]);
-                }
-            }
+        if ($request->has('brand_discounts')) {
+            \App\Models\CustomerBrandDiscount::saveForCustomer($update_data->id, $request->brand_discounts);
         }
 
         return true;
