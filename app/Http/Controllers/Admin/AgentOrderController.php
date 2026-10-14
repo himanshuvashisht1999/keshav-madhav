@@ -23,6 +23,21 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class AgentOrderController extends Controller
 {
+    /**
+     * Brand discount % for an order's party: the customer's own per-brand discount (vendors get none).
+     */
+    private function customerBrandDiscount($order, $brandId)
+    {
+        if (($order->party_type ?? 'customer') === 'vendor' || empty($order->master_customer_id)) {
+            return 0;
+        }
+
+        return DB::table('customer_brand_discounts')
+            ->where('customer_id', $order->master_customer_id)
+            ->where('brand_id', $brandId)
+            ->value('discount_percentage') ?? 0;
+    }
+
     public function create(Request $request)
     {
         $agent_id = $request->get('sales_agent_id');
@@ -137,37 +152,34 @@ class AgentOrderController extends Controller
         $isSampleSet = $request->query('sample_set') == '1';
 
         // Add brand-based discount join
-        if ($agent_id === 'direct') {
+        // Discount comes from the customer's own per-brand discount (vendors get none)
+        if ($party_type === 'vendor') {
+            $discount_col = '0';
+        } else {
             $query->leftJoin('customer_brand_discounts', function ($join) use ($shop_id) {
                 $join->on('production_goods.brand_id', '=', 'customer_brand_discounts.brand_id')
                     ->where('customer_brand_discounts.customer_id', '=', $shop_id);
             });
             $discount_col = 'COALESCE(customer_brand_discounts.discount_percentage, 0)';
-        } else {
-            $query->leftJoin('sales_agent_brand_discounts', function ($join) use ($agent_id) {
-                $join->on('production_goods.brand_id', '=', 'sales_agent_brand_discounts.brand_id')
-                    ->where('sales_agent_brand_discounts.sales_agent_id', '=', $agent_id);
+        }
+
+        // Fair / sample-set batches keep their own batch discount first
+        if ($isSampleSet && $agent_id !== 'direct') {
+            $agentBatches = DB::table('fair_batches')
+                ->whereJsonContains('sales_agent_ids', (string)$agent_id)
+                ->pluck('id')
+                ->toArray();
+
+            $fpSubquery = DB::table('fair_products')
+                ->select('product_id', 'size_set_id', DB::raw('MAX(discount_percent) as max_discount'))
+                ->whereIn('fair_batch_id', empty($agentBatches) ? [-1] : $agentBatches)
+                ->groupBy('product_id', 'size_set_id');
+
+            $query->leftJoinSub($fpSubquery, 'fp', function ($join) {
+                $join->on('production_goods.id', '=', 'fp.product_id')
+                     ->on('domestic_inventories.size_set_id', '=', 'fp.size_set_id');
             });
-            
-            if ($isSampleSet) {
-                $agentBatches = DB::table('fair_batches')
-                    ->whereJsonContains('sales_agent_ids', (string)$agent_id)
-                    ->pluck('id')
-                    ->toArray();
-                    
-                $fpSubquery = DB::table('fair_products')
-                    ->select('product_id', 'size_set_id', DB::raw('MAX(discount_percent) as max_discount'))
-                    ->whereIn('fair_batch_id', empty($agentBatches) ? [-1] : $agentBatches)
-                    ->groupBy('product_id', 'size_set_id');
-                    
-                $query->leftJoinSub($fpSubquery, 'fp', function ($join) {
-                    $join->on('production_goods.id', '=', 'fp.product_id')
-                         ->on('domestic_inventories.size_set_id', '=', 'fp.size_set_id');
-                });
-                $discount_col = 'COALESCE(fp.max_discount, sales_agent_brand_discounts.discount_percentage, 0)';
-            } else {
-                $discount_col = 'COALESCE(sales_agent_brand_discounts.discount_percentage, 0)';
-            }
+            $discount_col = 'COALESCE(fp.max_discount, ' . $discount_col . ')';
         }
 
         if ($request->filled('design_number')) {
@@ -412,18 +424,9 @@ class AgentOrderController extends Controller
 
                 // Fetch Brand-based Discount
                 $brand_discount = 0;
-                if ($request->sales_agent_id === 'direct') {
-                    if ($request->party_type === 'vendor') {
-                        $brand_discount = 0; // Vendors don't have brand discounts in this schema yet
-                    } else {
-                        $brand_discount = DB::table('customer_brand_discounts')
-                            ->where('customer_id', $request->master_customer_id)
-                            ->where('brand_id', $product->brand_id)
-                            ->value('discount_percentage') ?? 0;
-                    }
-                } else {
-                    $brand_discount = DB::table('sales_agent_brand_discounts')
-                        ->where('sales_agent_id', $request->sales_agent_id)
+                if ($request->party_type !== 'vendor') {
+                    $brand_discount = DB::table('customer_brand_discounts')
+                        ->where('customer_id', $request->master_customer_id)
                         ->where('brand_id', $product->brand_id)
                         ->value('discount_percentage') ?? 0;
                 }
@@ -1427,37 +1430,34 @@ class AgentOrderController extends Controller
         }
 
         // Add brand-based discount join
-        if ($order->sales_agent_id === 'direct' || empty($order->sales_agent_id)) {
+        // Discount comes from the customer's own per-brand discount (vendors get none)
+        if ($order->party_type === 'vendor') {
+            $discount_col = '0';
+        } else {
             $query->leftJoin('customer_brand_discounts', function ($join) use ($shop) {
                 $join->on('production_goods.brand_id', '=', 'customer_brand_discounts.brand_id')
                     ->where('customer_brand_discounts.customer_id', '=', $shop->id);
             });
             $discount_col = 'COALESCE(customer_brand_discounts.discount_percentage, 0)';
-        } else {
-            $query->leftJoin('sales_agent_brand_discounts', function ($join) use ($order) {
-                $join->on('production_goods.brand_id', '=', 'sales_agent_brand_discounts.brand_id')
-                    ->where('sales_agent_brand_discounts.sales_agent_id', '=', $order->sales_agent_id);
+        }
+
+        // Fair / sample-set batches keep their own batch discount first
+        if ($isSampleSet && !empty($order->sales_agent_id) && $order->sales_agent_id !== 'direct') {
+            $agentBatches = DB::table('fair_batches')
+                ->whereJsonContains('sales_agent_ids', (string)$order->sales_agent_id)
+                ->pluck('id')
+                ->toArray();
+
+            $fpSubquery = DB::table('fair_products')
+                ->select('product_id', 'size_set_id', DB::raw('MAX(discount_percent) as max_discount'))
+                ->whereIn('fair_batch_id', empty($agentBatches) ? [-1] : $agentBatches)
+                ->groupBy('product_id', 'size_set_id');
+
+            $query->leftJoinSub($fpSubquery, 'fp', function ($join) {
+                $join->on('production_goods.id', '=', 'fp.product_id')
+                     ->on('domestic_inventories.size_set_id', '=', 'fp.size_set_id');
             });
-            
-            if ($isSampleSet) {
-                $agentBatches = DB::table('fair_batches')
-                    ->whereJsonContains('sales_agent_ids', (string)$order->sales_agent_id)
-                    ->pluck('id')
-                    ->toArray();
-                    
-                $fpSubquery = DB::table('fair_products')
-                    ->select('product_id', 'size_set_id', DB::raw('MAX(discount_percent) as max_discount'))
-                    ->whereIn('fair_batch_id', empty($agentBatches) ? [-1] : $agentBatches)
-                    ->groupBy('product_id', 'size_set_id');
-                    
-                $query->leftJoinSub($fpSubquery, 'fp', function ($join) {
-                    $join->on('production_goods.id', '=', 'fp.product_id')
-                         ->on('domestic_inventories.size_set_id', '=', 'fp.size_set_id');
-                });
-                $discount_col = 'COALESCE(fp.max_discount, sales_agent_brand_discounts.discount_percentage, 0)';
-            } else {
-                $discount_col = 'COALESCE(sales_agent_brand_discounts.discount_percentage, 0)';
-            }
+            $discount_col = 'COALESCE(fp.max_discount, ' . $discount_col . ')';
         }
 
         if ($request->filled('design_number')) {
@@ -1827,18 +1827,7 @@ class AgentOrderController extends Controller
                 $remaining_boxes = $var['qty'] - $dispBoxes;
                 if ($remaining_boxes > 0) {
                     // Fetch Brand-based Discount
-                    $brand_discount = 0;
-                    if ($order->sales_agent_id === 'direct' || empty($order->sales_agent_id)) {
-                        $brand_discount = DB::table('customer_brand_discounts')
-                            ->where('customer_id', $order->master_customer_id)
-                            ->where('brand_id', $product->brand_id)
-                            ->value('discount_percentage') ?? 0;
-                    } else {
-                        $brand_discount = DB::table('sales_agent_brand_discounts')
-                            ->where('sales_agent_id', $order->sales_agent_id)
-                            ->where('brand_id', $product->brand_id)
-                            ->value('discount_percentage') ?? 0;
-                    }
+                    $brand_discount = $this->customerBrandDiscount($order, $product->brand_id);
 
                     $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $var['product_id'])
                         ->where('master_size_measurement_id', $var['size_set_id'])
@@ -2488,10 +2477,7 @@ class AgentOrderController extends Controller
             foreach ($itemsToDispatch as $item) {
                 $product = DB::table('production_goods')->where('id', $item->product_id)->first();
                 if ($product) {
-                    $discount_percentage = DB::table('sales_agent_brand_discounts')
-                        ->where('sales_agent_id', $order->sales_agent_id)
-                        ->where('brand_id', $product->brand_id)
-                        ->value('discount_percentage') ?? 0;
+                    $discount_percentage = $this->customerBrandDiscount($order, $product->brand_id);
 
                     $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $item->product_id)
                         ->where('master_size_measurement_id', $item->size_set_id)
@@ -2637,10 +2623,7 @@ class AgentOrderController extends Controller
             ->get();
 
         foreach ($items as $item) {
-            $brand_discount = DB::table('sales_agent_brand_discounts')
-                ->where('sales_agent_id', $order->sales_agent_id)
-                ->where('brand_id', $item->brand_id)
-                ->value('discount_percentage') ?? 0;
+            $brand_discount = $this->customerBrandDiscount($order, $item->brand_id);
 
             $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $item->product_id)
                 ->where('master_size_measurement_id', $item->size_set_id)
@@ -3967,10 +3950,7 @@ class AgentOrderController extends Controller
                 foreach ($itemsToDispatch as $item) {
                     $product = DB::table('production_goods')->where('id', $item->product_id)->first();
                     if ($product) {
-                        $discount_percentage = DB::table('sales_agent_brand_discounts')
-                            ->where('sales_agent_id', $order->sales_agent_id)
-                            ->where('brand_id', $product->brand_id)
-                            ->value('discount_percentage') ?? 0;
+                        $discount_percentage = $this->customerBrandDiscount($order, $product->brand_id);
 
                         $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $item->product_id)
                             ->where('master_size_measurement_id', $item->size_set_id)
