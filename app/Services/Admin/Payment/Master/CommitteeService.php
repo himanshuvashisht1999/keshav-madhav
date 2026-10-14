@@ -41,7 +41,7 @@ class CommitteeService
             [
                 'master_type' => 'committee',
                 'master_id' => $committee->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                'financial_year' => MasterOpeningBalance::openingKey(),
             ],
             [
                 'amount' => abs($request->balance ?? 0),
@@ -60,29 +60,16 @@ class CommitteeService
     public function update(Request $request)
     {
         $committee = Committee::find($request->id);
-        $committee->name = $request->name;
-        $committee->amount = $request->amount;
-        $balance = $request->balance ?? 0;
-        if ($request->balance_type == 'Debit') {
-            $balance = -abs($balance);
-        } else {
-            $balance = abs($balance);
-        }
-        $committee->balance = $balance;
-        $committee->period = $request->period;
-        $committee->save();
 
-        MasterOpeningBalance::updateOrCreate(
-            [
-                'master_type' => 'committee',
-                'master_id' => $committee->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
-            ],
-            [
-                'amount' => abs($request->balance ?? 0),
-                'balance_type' => $request->balance_type ?? 'Credit',
-            ]
-        );
+        // Editing the opening balance moves the running balance by the difference only,
+        // so transactions already applied to this account are never wiped out.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($committee, $request) {
+            $committee->name = $request->name;
+            $committee->amount = $request->amount;
+            $committee->period = $request->period;
+            MasterOpeningBalance::applyOpeningChange($committee, 'committee', $request->has('balance') ? ($request->balance ?? 0) : null, $request->balance_type ?? 'Credit');
+            $committee->save();
+        });
 
         return true;
     }

@@ -235,24 +235,17 @@ class JournalVoucherController extends Controller
         if (!$item)
             return;
 
-        $isSpecial = in_array($masterId, [1, 12, 19, 26, 27, 28, 29, 30]);
-
+        // One sign rule for every account, same as adjustments and every ledger screen:
+        // Credit = +, Debit = -. (Committee, bank, hulayati, machinery, loan, factory head,
+        // discount and salary accounts used to get the opposite sign here.)
         $net = ($type == 'debit') ? $amount : -$amount;
         if ($action == 'reverse')
             $net = -$net;
 
         if (isset($item->balance)) {
-            if ($isSpecial) {
-                $item->balance += $net;
-            } else {
-                $item->balance -= $net;
-            }
+            $item->balance -= $net;
         } elseif (isset($item->amount)) {
-            if ($isSpecial) {
-                $item->amount += $net;
-            } else {
-                $item->amount -= $net;
-            }
+            $item->amount -= $net;
         }
         $item->save();
 

@@ -42,35 +42,14 @@ class CustomerService
             $endDate = $temp;
         }
 
-        // Determine financial year for opening balance (from startDate, fallback to endDate, fallback to current year)
-        $opRefDate = $startDate ?: $endDate;
-        $opFinancialYear = \App\Models\MasterOpeningBalance::getFinancialYearForDate($opRefDate);
-
-        // Determine financial year for closing balance (from endDate, fallback to startDate, fallback to current year)
-        $clRefDate = $endDate ?: $startDate;
-        $clFinancialYear = \App\Models\MasterOpeningBalance::getFinancialYearForDate($clRefDate);
-        
-        $opStartYear = explode('-', $opFinancialYear)[0];
-        $opFyStartDate = $opStartYear . '-04-01';
-
-        $clStartYear = explode('-', $clFinancialYear)[0];
-        $clFyStartDate = $clStartYear . '-04-01';
-
-        $queryStartDate = min($opFyStartDate, $clFyStartDate);
-
-        // 1. Get initial opening balances of the opening financial year
+        // Each customer has ONE opening balance (not year based). Any date range simply adds the
+        // transactions before the range start (opening) / up to the range end (closing) on top of it.
         $opOpeningBalances = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
             ->whereIn('master_id', $customerIds)
-            ->where('financial_year', $opFinancialYear)
+            ->where('financial_year', \App\Models\MasterOpeningBalance::openingKey())
             ->get()
             ->keyBy('master_id');
-
-        // 2. Get initial opening balances of the closing financial year
-        $clOpeningBalances = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
-            ->whereIn('master_id', $customerIds)
-            ->where('financial_year', $clFinancialYear)
-            ->get()
-            ->keyBy('master_id');
+        $clOpeningBalances = $opOpeningBalances;
 
         // Initialize balances
         foreach ($customerIds as $id) {
@@ -447,7 +426,7 @@ class CustomerService
                 [
                     'master_type' => 'customer',
                     'master_id' => $shop->id,
-                    'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                    'financial_year' => MasterOpeningBalance::openingKey(),
                 ],
                 [
                     'amount' => abs($request->balance ?? 0),
@@ -493,7 +472,7 @@ class CustomerService
             [
                 'master_type' => 'customer',
                 'master_id' => $save_data->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                'financial_year' => MasterOpeningBalance::openingKey(),
             ],
             [
                 'amount' => abs($request->balance ?? 0),
@@ -539,34 +518,17 @@ class CustomerService
             $update_data->sales_agent_id = null;
         }
 
-        if ($request->has('balance')) {
-            $balance = $request->balance ?? $update_data->balance;
-            if ($request->balance_type == 'Debit') {
-                $balance = -abs($balance);
-            } else {
-                $balance = abs($balance);
-            }
-            $update_data->balance = $balance;
-        }
-
         $update_data->status = $request->status ?? $update_data->status;
         $update_data->type = $type;
         $update_data->subtype = ($type == 'domestic') ? $subtype : null;
         $update_data->payment_term_days = $request->payment_term_days ?? $update_data->payment_term_days;
 
-        $update_data->save();
-
-        MasterOpeningBalance::updateOrCreate(
-            [
-                'master_type' => 'customer',
-                'master_id' => $update_data->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
-            ],
-            [
-                'amount' => abs($request->balance ?? 0),
-                'balance_type' => $request->balance_type ?? 'Credit',
-            ]
-        );
+        // Editing the opening balance moves the running balance by the difference only,
+        // so sales, returns and payments already applied to this customer are never wiped out.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($update_data, $request) {
+            MasterOpeningBalance::applyOpeningChange($update_data, 'customer', $request->has('balance') ? ($request->balance ?? 0) : null, $request->balance_type ?? 'Credit');
+            $update_data->save();
+        });
 
         if ($request->has('brand_discounts')) {
             \App\Models\CustomerBrandDiscount::saveForCustomer($update_data->id, $request->brand_discounts);

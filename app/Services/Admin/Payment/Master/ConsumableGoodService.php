@@ -40,7 +40,7 @@ class ConsumableGoodService
             [
                 'master_type' => 'consumable_good',
                 'master_id' => $consumableGood->id,
-                'financial_year' => \App\Models\MasterOpeningBalance::getCurrentFinancialYear(),
+                'financial_year' => \App\Models\MasterOpeningBalance::openingKey(),
             ],
             [
                 'amount' => abs($data['balance'] ?? 0),
@@ -59,30 +59,15 @@ class ConsumableGoodService
     public function update(Request $request)
     {
         $data = $request->all();
-        $balance = $data['balance'] ?? 0;
-        if (($data['balance_type'] ?? '') == 'Debit') {
-            $balance = -abs($balance);
-        } else {
-            $balance = abs($balance);
-        }
-
         $consumableGood = ConsumableGood::find($request->id);
-        $consumableGood->update([
-            'name' => $request->name,
-            'balance' => $balance,
-        ]);
 
-        \App\Models\MasterOpeningBalance::updateOrCreate(
-            [
-                'master_type' => 'consumable_good',
-                'master_id' => $consumableGood->id,
-                'financial_year' => \App\Models\MasterOpeningBalance::getCurrentFinancialYear(),
-            ],
-            [
-                'amount' => abs($data['balance'] ?? 0),
-                'balance_type' => $data['balance_type'] ?? 'Credit',
-            ]
-        );
+        // Editing the opening balance moves the running balance by the difference only,
+        // so transactions already applied to this account are never wiped out.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($consumableGood, $request, $data) {
+            $consumableGood->name = $request->name;
+            \App\Models\MasterOpeningBalance::applyOpeningChange($consumableGood, 'consumable_good', array_key_exists('balance', $data) ? ($data['balance'] ?? 0) : null, $data['balance_type'] ?? 'Credit');
+            $consumableGood->save();
+        });
 
         return true;
     }

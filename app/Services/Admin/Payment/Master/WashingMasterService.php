@@ -39,7 +39,7 @@ class WashingMasterService
             [
                 'master_type' => 'washing_master',
                 'master_id' => $item->id,
-                'financial_year' => \App\Models\MasterOpeningBalance::getCurrentFinancialYear(),
+                'financial_year' => \App\Models\MasterOpeningBalance::openingKey(),
             ],
             [
                 'amount' => abs($data['balance'] ?? 0),
@@ -58,32 +58,17 @@ class WashingMasterService
     public function update($request)
     {
         $data = $request->validated();
-        $balance = $data['balance'] ?? 0;
-        if (($data['balance_type'] ?? '') == 'Debit') {
-            $balance = -abs($balance);
-        } else {
-            $balance = abs($balance);
-        }
 
         $washingMaster = WashingMaster::find($request->id);
         if ($washingMaster) {
-            $washingMaster->update([
-                'name' => $data['name'],
-                'balance' => $balance,
-                'status' => $request->status ?? 1,
-            ]);
-
-            \App\Models\MasterOpeningBalance::updateOrCreate(
-                [
-                    'master_type' => 'washing_master',
-                    'master_id' => $washingMaster->id,
-                    'financial_year' => \App\Models\MasterOpeningBalance::getCurrentFinancialYear(),
-                ],
-                [
-                    'amount' => abs($data['balance'] ?? 0),
-                    'balance_type' => $data['balance_type'] ?? 'Credit',
-                ]
-            );
+            // Editing the opening balance moves the running balance by the difference only,
+            // so transactions already applied to this account are never wiped out.
+            \Illuminate\Support\Facades\DB::transaction(function () use ($washingMaster, $request, $data) {
+                $washingMaster->name = $data['name'];
+                $washingMaster->status = $request->status ?? 1;
+                \App\Models\MasterOpeningBalance::applyOpeningChange($washingMaster, 'washing_master', array_key_exists('balance', $data) ? ($data['balance'] ?? 0) : null, $data['balance_type'] ?? 'Credit');
+                $washingMaster->save();
+            });
 
             return $washingMaster;
         }

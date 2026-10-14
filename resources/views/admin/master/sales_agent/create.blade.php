@@ -91,7 +91,7 @@
 
                 <div class="col-md-6">
                     <div class="form-group mb-3">
-                        <label class="form-label">Opening balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
+                        <label class="form-label">Opening balance</label>
                         <input type="number" step="0.01" name="balance" class="form-control erp-filter-input" placeholder="Enter opening balance" value="{{ old('balance', 0) }}">
                     </div>
                 </div>

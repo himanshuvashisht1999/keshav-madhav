@@ -29,7 +29,7 @@ class PurchaseAgentDataTable
         if (!empty($agentIds)) {
             $opBalances = \App\Models\MasterOpeningBalance::where('master_type', 'purchase_agent')
                 ->whereIn('master_id', $agentIds)
-                ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
+                ->where('financial_year', \App\Models\MasterOpeningBalance::openingKey())
                 ->get();
             foreach ($opBalances as $ob) {
                 $amt = (float) $ob->amount;

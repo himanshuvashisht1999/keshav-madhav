@@ -57,7 +57,7 @@ class SalesAgentService
             [
                 'master_type' => 'sales_agent',
                 'master_id' => $save_data->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                'financial_year' => MasterOpeningBalance::openingKey(),
             ],
             [
                 'amount' => abs($request->balance ?? 0),
@@ -111,7 +111,7 @@ class SalesAgentService
             [
                 'master_type' => 'sales_agent',
                 'master_id' => $update_data->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                'financial_year' => MasterOpeningBalance::openingKey(),
             ],
             [
                 'amount' => abs($request->balance ?? 0),

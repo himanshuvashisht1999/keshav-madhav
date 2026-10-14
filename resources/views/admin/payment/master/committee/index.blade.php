@@ -10,7 +10,7 @@
             </div>
             <div class="erp-header-actions">
                 <div class="hud-stat-box">
-                    <span class="hud-stat-label">Opening ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</span>
+                    <span class="hud-stat-label">Opening</span>
                     <span class="hud-stat-value text-info font-weight-bold">₹{{ number_format(abs($total_opening_balance), 2) }} {{ $total_opening_balance >= 0 ? 'Cr' : 'Dr' }}</span>
                 </div>
                 <div class="hud-stat-box">

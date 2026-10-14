@@ -23,7 +23,7 @@
                         <i class="fas fa-truck"></i>
                     </div>
                     <div>
-                        <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Opening ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</div>
+                        <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Opening</div>
                         <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-green-primary); line-height: 1.2;">
                             <span id="opening-balance-text">₹ {{ number_format(abs($total_opening_balance), 2) }} {{ $total_opening_balance >= 0 ? 'Cr' : 'Dr' }}</span>
                         </div>

@@ -55,7 +55,7 @@ class VendorService {
             [
                 'master_type' => 'vendor',
                 'master_id' => $save_data->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                'financial_year' => MasterOpeningBalance::openingKey(),
             ],
             [
                 'amount' => abs($request->balance ?? 0),
@@ -79,31 +79,16 @@ class VendorService {
         $update_data->email = $request->email;
         $update_data->address = $request->address;
         $update_data->purchase_agent_id = $request->purchase_agent_id;
-        
-        $balance = $request->balance ?? 0;
-        if ($request->type == 'Debit') {
-            $balance = -abs($balance);
-        } else {
-            $balance = abs($balance);
-        }
-        $update_data->balance = $balance;
-        
         $update_data->sku = NULL;
         $update_data->status = $request->status;
         $update_data->description = $request->description;
-        $update_data->save();
 
-        MasterOpeningBalance::updateOrCreate(
-            [
-                'master_type' => 'vendor',
-                'master_id' => $update_data->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
-            ],
-            [
-                'amount' => abs($request->balance ?? 0),
-                'balance_type' => $request->type ?? 'Credit',
-            ]
-        );
+        // Editing the opening balance moves the running balance by the difference only,
+        // so purchases and payments already applied to this vendor are never wiped out.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($update_data, $request) {
+            MasterOpeningBalance::applyOpeningChange($update_data, 'vendor', $request->has('balance') ? ($request->balance ?? 0) : null, $request->type ?? 'Credit');
+            $update_data->save();
+        });
 
         return true;
     }

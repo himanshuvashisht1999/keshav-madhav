@@ -120,7 +120,7 @@
 
                         <div class="col-md-4">
                             <div class="form-group mb-3">
-                                <label class="form-label">Opening balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
+                                <label class="form-label">Opening balance</label>
                                 <input type="number" step="0.01" name="balance" class="form-control erp-filter-input" placeholder="Enter opening balance" value="{{ old('balance', $data->currentOpeningBalance ? $data->currentOpeningBalance->amount : 0) }}">
                                 @if ($errors->has('balance'))
                                     <span class="invalid-feedback d-block">{{ $errors->first('balance') }}</span>
@@ -227,7 +227,7 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group mb-3">
-                                <label class="form-label">Opening balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
+                                <label class="form-label">Opening balance</label>
                                 <input type="number" step="0.01" name="balance" class="form-control erp-filter-input" placeholder="Enter opening balance" value="{{ old('balance', ($shop && $shop->currentOpeningBalance) ? $shop->currentOpeningBalance->amount : 0) }}">
                                 @if ($errors->has('balance'))
                                     <span class="invalid-feedback d-block">{{ $errors->first('balance') }}</span>

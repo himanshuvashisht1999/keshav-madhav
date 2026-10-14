@@ -93,7 +93,7 @@
                     </div>
 
                     <div class="col-md-4 mb-3">
-                        <label class="form-label font-weight-bold" style="font-size: 13px;">Opening Balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
+                        <label class="form-label font-weight-bold" style="font-size: 13px;">Opening Balance</label>
                         <input type="number" step="0.01" name="balance" class="form-control erp-filter-input" placeholder="Enter opening balance" value="{{ old('balance', 0) }}">
                         @if ($errors->has('balance'))
                             <span class="invalid-feedback d-block">{{ $errors->first('balance') }}</span>

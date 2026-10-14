@@ -43,7 +43,7 @@ class BankAccountService
             [
                 'master_type' => 'bank_account',
                 'master_id' => $bankAccount->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                'financial_year' => MasterOpeningBalance::openingKey(),
             ],
             [
                 'amount' => abs($request->balance ?? 0),
@@ -62,31 +62,18 @@ class BankAccountService
     public function update(Request $request)
     {
         $bankAccount = BankAccount::find($request->id);
-        $bankAccount->bank_name = $request->bank_name;
-        $bankAccount->account_name = $request->account_name;
-        $bankAccount->account_number = $request->account_number;
-        $bankAccount->ifsc_code = $request->ifsc_code;
-        $bankAccount->branch_name = $request->branch_name;
-        $balance = $request->balance ?? 0;
-        if ($request->balance_type == 'Debit') {
-            $balance = -abs($balance);
-        } else {
-            $balance = abs($balance);
-        }
-        $bankAccount->balance = $balance;
-        $bankAccount->save();
 
-        MasterOpeningBalance::updateOrCreate(
-            [
-                'master_type' => 'bank_account',
-                'master_id' => $bankAccount->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
-            ],
-            [
-                'amount' => abs($request->balance ?? 0),
-                'balance_type' => $request->balance_type ?? 'Credit',
-            ]
-        );
+        // Editing the opening balance moves the running balance by the difference only,
+        // so transactions already applied to this account are never wiped out.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($bankAccount, $request) {
+            $bankAccount->bank_name = $request->bank_name;
+            $bankAccount->account_name = $request->account_name;
+            $bankAccount->account_number = $request->account_number;
+            $bankAccount->ifsc_code = $request->ifsc_code;
+            $bankAccount->branch_name = $request->branch_name;
+            MasterOpeningBalance::applyOpeningChange($bankAccount, 'bank_account', $request->has('balance') ? ($request->balance ?? 0) : null, $request->balance_type ?? 'Credit');
+            $bankAccount->save();
+        });
 
         return true;
     }

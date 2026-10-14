@@ -3,25 +3,24 @@
 namespace App\Services\Admin\Payment\Master;
 
 use App\Models\CapitalMaster;
+use App\Models\MasterOpeningBalance;
+use Illuminate\Support\Facades\DB;
 
 class CapitalService
 {
     public function store(array $data)
     {
-        $balance = $data['opening_balance'] ?? 0;
-        $balance_type = $data['balance_type'] ?? 'Credit';
+        return DB::transaction(function () use ($data) {
+            $item = new CapitalMaster(['name' => $data['name'], 'status' => 1]);
+            $item->balance = 0;
+            $item->save();
 
-        if ($balance_type == 'Debit') {
-            $balance = -abs($balance);
-        } else {
-            $balance = abs($balance);
-        }
+            // Save the opening like every other party, so the capital ledger starts from it
+            MasterOpeningBalance::applyOpeningChange($item, 'capital', $data['opening_balance'] ?? 0, $data['balance_type'] ?? 'Credit');
+            $item->save();
 
-        return CapitalMaster::create([
-            'name' => $data['name'],
-            'balance' => $balance,
-            'status' => 1,
-        ]);
+            return $item;
+        });
     }
 
     public function find($id)
@@ -33,19 +32,13 @@ class CapitalService
     {
         $item = CapitalMaster::findOrFail($id);
 
-        $balance = $data['opening_balance'] ?? 0;
-        $balance_type = $data['balance_type'] ?? 'Credit';
-
-        if ($balance_type == 'Debit') {
-            $balance = -abs($balance);
-        } else {
-            $balance = abs($balance);
-        }
-
-        return $item->update([
-            'name' => $data['name'],
-            'balance' => $balance,
-        ]);
+        // Editing the opening balance moves the running balance by the difference only,
+        // so transactions already applied to this account are never wiped out.
+        return DB::transaction(function () use ($item, $data) {
+            $item->name = $data['name'];
+            MasterOpeningBalance::applyOpeningChange($item, 'capital', array_key_exists('opening_balance', $data) ? ($data['opening_balance'] ?? 0) : null, $data['balance_type'] ?? 'Credit');
+            return $item->save();
+        });
     }
 
     public function delete($id)

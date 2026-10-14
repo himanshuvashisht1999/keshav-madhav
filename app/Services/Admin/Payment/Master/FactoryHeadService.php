@@ -26,7 +26,7 @@ class FactoryHeadService
             [
                 'master_type' => 'factory_head',
                 'master_id' => $item->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                'financial_year' => MasterOpeningBalance::openingKey(),
             ],
             [
                 'amount' => abs($data['balance'] ?? 0),
@@ -46,29 +46,13 @@ class FactoryHeadService
     {
         $item = FactoryHeadMaster::findOrFail($id);
 
-        $balance = $data['balance'] ?? 0;
-        if ($data['balance_type'] == 'Debit') {
-            $balance = -abs($balance);
-        } else {
-            $balance = abs($balance);
-        }
-
-        $item->update([
-            'name' => $data['name'],
-            'balance' => $balance,
-        ]);
-
-        MasterOpeningBalance::updateOrCreate(
-            [
-                'master_type' => 'factory_head',
-                'master_id' => $item->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
-            ],
-            [
-                'amount' => abs($data['balance'] ?? 0),
-                'balance_type' => $data['balance_type'] ?? 'Credit',
-            ]
-        );
+        // Editing the opening balance moves the running balance by the difference only,
+        // so transactions already applied to this account are never wiped out.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($item, $data) {
+            $item->name = $data['name'];
+            MasterOpeningBalance::applyOpeningChange($item, 'factory_head', array_key_exists('balance', $data) ? ($data['balance'] ?? 0) : null, $data['balance_type'] ?? 'Credit');
+            $item->save();
+        });
 
         return true;
     }

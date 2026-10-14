@@ -62,6 +62,6 @@ class MasterCustomer extends Model
     {
         return $this->hasOne(MasterOpeningBalance::class, 'master_id')
             ->where('master_type', 'customer')
-            ->where('financial_year', MasterOpeningBalance::getCurrentFinancialYear());
+            ->where('financial_year', MasterOpeningBalance::openingKey());
     }
 }

@@ -101,7 +101,6 @@ use App\Http\Controllers\Admin\Master\SalesAgentController as AdminSalesAgentCon
 use App\Http\Controllers\Admin\Master\PurchaseAgentController as AdminPurchaseAgentController;
 use App\Http\Controllers\Admin\Master\BrandController as AdminBrandController;
 use App\Http\Controllers\Admin\Master\CompanyController as AdminCompanyController;
-use App\Http\Controllers\Admin\BalanceCarryForwardController as AdminBalanceCarryForwardController;
 
 
 
@@ -254,7 +253,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::get('/dashboard', [AdminDashboardController::class, 'dashboard'])->name('dashboard');
         Route::get('/download-db', [AdminDashboardController::class, 'downloadDatabase'])->name('download-db');
         Route::get('/getDashboardData', [AdminDashboardController::class, 'getDashboardData'])->name('getDashboardData');
-        Route::get('/carry-forward-balances', [AdminBalanceCarryForwardController::class, 'carryForward'])->name('carry-forward-balances');
+
+        // Balances: URL 1 = correct the database (one button), URL 2 = list of wrong ledgers
+        Route::get('/balance-fix', [\App\Http\Controllers\Admin\BalanceFixController::class, 'show'])->name('balance-fix.show');
+        Route::post('/balance-fix', [\App\Http\Controllers\Admin\BalanceFixController::class, 'run'])->name('balance-fix.run');
+        Route::get('/balance-issues', [\App\Http\Controllers\Admin\BalanceFixController::class, 'issues'])->name('balance-issues');
 
         Route::prefix('/purchase-order')->name('purchase_order.')->group(function () {
             Route::get('/index', [AdminPurchaseOrderController::class, 'index'])->name('index');

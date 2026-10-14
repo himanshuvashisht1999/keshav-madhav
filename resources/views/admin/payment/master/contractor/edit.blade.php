@@ -56,7 +56,7 @@
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="erp-label">Opening balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
+                        <label class="erp-label">Opening balance</label>
                         <input type="number" step="0.01" name="balance" class="form-control form-control-sm erp-input" placeholder="0.00" value="{{ old('balance', $data->currentOpeningBalance->amount ?? 0) }}">
                         @error('balance')
                             <span class="text-danger small font-weight-bold mt-1 d-block">{{ $message }}</span>

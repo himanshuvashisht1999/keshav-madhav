@@ -74,7 +74,7 @@ class CustomerController extends Controller
                 [
                     'master_type' => 'customer',
                     'master_id' => $shop->id,
-                    'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                    'financial_year' => MasterOpeningBalance::openingKey(),
                 ],
                 [
                     'amount' => abs($request->balance ?? 0),
@@ -110,7 +110,7 @@ class CustomerController extends Controller
             [
                 'master_type' => 'customer',
                 'master_id' => $save_data->id,
-                'financial_year' => MasterOpeningBalance::getCurrentFinancialYear(),
+                'financial_year' => MasterOpeningBalance::openingKey(),
             ],
             [
                 'amount' => abs($request->balance ?? 0),

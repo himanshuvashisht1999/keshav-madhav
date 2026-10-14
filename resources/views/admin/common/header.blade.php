@@ -20,18 +20,23 @@
           </a>
         </li>
         @php
-          $isCarriedForward = \App\Models\CarryForwardLog::where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())->exists();
+          // Result of the last balance check (daily schedule or "Run check now")
+          $balanceReportFile = storage_path('app/' . \App\Services\Ledger\BalanceReconciler::REPORT_FILE);
+          $balanceReport = is_file($balanceReportFile) ? json_decode(@file_get_contents($balanceReportFile), true) : null;
+          $balanceMismatches = $balanceReport['mismatch_count'] ?? null;
         @endphp
         <li class="nav-item">
-          @if(!$isCarriedForward)
-            <a class="nav-link text-primary" href="{{ route('admin.carry-forward-balances') }}" 
-               onclick="return confirm('Are you sure you want to carry forward all current balances as opening balances for the financial year {{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }}? This will update existing opening balances for this year.')" 
-               title="Carry Forward Balances">
-              <i class="fas fa-file-invoice-dollar"></i> Carry Forward
+          @if($balanceMismatches === null)
+            <a class="nav-link text-muted" href="{{ route('admin.balance-issues') }}" title="Balances have not been checked yet">
+              <i class="fas fa-balance-scale"></i> Balance check
+            </a>
+          @elseif($balanceMismatches > 0)
+            <a class="nav-link text-danger font-weight-bold" href="{{ route('admin.balance-issues') }}" title="{{ $balanceMismatches }} account(s) differ from their ledger">
+              <i class="fas fa-exclamation-triangle"></i> Balances: {{ $balanceMismatches }} differ
             </a>
           @else
-            <a class="nav-link text-muted disabled" href="javascript:void(0)" title="Balances already carried forward for this year">
-              <i class="fas fa-check-circle"></i> Carried Forward
+            <a class="nav-link text-success" href="{{ route('admin.balance-issues') }}" title="All balances match their ledgers">
+              <i class="fas fa-check-circle"></i> Balances OK
             </a>
           @endif
         </li>

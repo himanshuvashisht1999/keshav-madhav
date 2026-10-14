@@ -30,9 +30,13 @@
                             <span class="text-danger small font-weight-bold mt-1 d-block">{{ $message }}</span>
                         @enderror
                     </div>
+                    @php
+                        // The saved opening balance (not the running balance) is what this form edits
+                        $capitalOpening = \App\Models\MasterOpeningBalance::signedOpening('capital', $data->id);
+                    @endphp
                     <div class="col-md-3 mb-3">
                         <label class="erp-label">Opening balance (₹)</label>
-                        <input type="number" step="0.01" name="opening_balance" class="form-control form-control-sm erp-input @error('opening_balance') is-invalid @enderror" placeholder="0.00" value="{{ old('opening_balance', abs($data->balance)) }}">
+                        <input type="number" step="0.01" name="opening_balance" class="form-control form-control-sm erp-input @error('opening_balance') is-invalid @enderror" placeholder="0.00" value="{{ old('opening_balance', abs($capitalOpening)) }}">
                         @error('opening_balance')
                             <span class="text-danger small font-weight-bold mt-1 d-block">{{ $message }}</span>
                         @enderror
@@ -40,8 +44,8 @@
                     <div class="col-md-3 mb-3">
                         <label class="erp-label">Balance type</label>
                         <select name="balance_type" class="form-control form-control-sm erp-input select2" style="width: 100%;">
-                            <option value="Credit" {{ old('balance_type', $data->balance >= 0 ? 'Credit' : 'Debit') == 'Credit' ? 'selected' : '' }}>Credit (Cr)</option>
-                            <option value="Debit" {{ old('balance_type', $data->balance >= 0 ? 'Credit' : 'Debit') == 'Debit' ? 'selected' : '' }}>Debit (Dr)</option>
+                            <option value="Credit" {{ old('balance_type', $capitalOpening >= 0 ? 'Credit' : 'Debit') == 'Credit' ? 'selected' : '' }}>Credit (Cr)</option>
+                            <option value="Debit" {{ old('balance_type', $capitalOpening >= 0 ? 'Credit' : 'Debit') == 'Debit' ? 'selected' : '' }}>Debit (Dr)</option>
                         </select>
                         @error('balance_type')
                             <span class="text-danger small font-weight-bold mt-1 d-block">{{ $message }}</span>

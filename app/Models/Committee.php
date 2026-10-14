@@ -15,6 +15,6 @@ class Committee extends Model
     {
         return $this->hasOne(MasterOpeningBalance::class, 'master_id')
             ->where('master_type', 'committee')
-            ->where('financial_year', MasterOpeningBalance::getCurrentFinancialYear());
+            ->where('financial_year', MasterOpeningBalance::openingKey());
     }
 }

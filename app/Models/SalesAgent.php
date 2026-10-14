@@ -57,6 +57,6 @@ class SalesAgent extends Authenticatable
     {
         return $this->hasOne(MasterOpeningBalance::class, 'master_id')
             ->where('master_type', 'sales_agent')
-            ->where('financial_year', MasterOpeningBalance::getCurrentFinancialYear());
+            ->where('financial_year', MasterOpeningBalance::openingKey());
     }
 }

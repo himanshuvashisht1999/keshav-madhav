@@ -15,7 +15,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Every night: compare every stored balance with its ledger (result shows in the admin header)
+        $schedule->command('balances:check')->dailyAt('02:00')->withoutOverlapping();
     }
 
     /**

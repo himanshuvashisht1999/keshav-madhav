@@ -37,7 +37,7 @@ class VendorDataTable  {
         if (!empty($vendorIds)) {
             $opBalances = \App\Models\MasterOpeningBalance::where('master_type', 'vendor')
                 ->whereIn('master_id', $vendorIds)
-                ->where('financial_year', \App\Models\MasterOpeningBalance::getCurrentFinancialYear())
+                ->where('financial_year', \App\Models\MasterOpeningBalance::openingKey())
                 ->get();
             foreach ($opBalances as $ob) {
                 $amt = (float) $ob->amount;

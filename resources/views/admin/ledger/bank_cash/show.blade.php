@@ -34,6 +34,8 @@
         </div>
     </div>
 
+    @include('admin.ledger.partials.balance_mismatch')
+
     <!-- Summary Metrics Strip (Exact Fabric Module Standard) -->
     <div class="row mb-2">
         <div class="col-md-3 col-sm-6 mb-1">

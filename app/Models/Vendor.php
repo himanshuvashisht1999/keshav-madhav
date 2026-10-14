@@ -40,7 +40,7 @@ class Vendor extends Model
     {
         return $this->hasOne(MasterOpeningBalance::class, 'master_id')
             ->where('master_type', 'vendor')
-            ->where('financial_year', MasterOpeningBalance::getCurrentFinancialYear());
+            ->where('financial_year', MasterOpeningBalance::openingKey());
     }
     
 }

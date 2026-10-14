@@ -42,7 +42,7 @@ class ContractorService
             [
                 'master_type' => 'contractor',
                 'master_id' => $contractor->id,
-                'financial_year' => \App\Models\MasterOpeningBalance::getCurrentFinancialYear(),
+                'financial_year' => \App\Models\MasterOpeningBalance::openingKey(),
             ],
             [
                 'amount' => abs($data['balance'] ?? 0),
@@ -61,32 +61,17 @@ class ContractorService
     public function update(Request $request)
     {
         $data = $request->all();
-        $balance = $data['balance'] ?? 0;
-        if (($data['balance_type'] ?? '') == 'Debit') {
-            $balance = -abs($balance);
-        } else {
-            $balance = abs($balance);
-        }
-
         $contractor = Contractor::find($request->id);
-        $contractor->update([
-            'name' => $request->name,
-            'balance' => $balance,
-            'phone' => $request->phone,
-            'address' => $request->address,
-        ]);
 
-        \App\Models\MasterOpeningBalance::updateOrCreate(
-            [
-                'master_type' => 'contractor',
-                'master_id' => $contractor->id,
-                'financial_year' => \App\Models\MasterOpeningBalance::getCurrentFinancialYear(),
-            ],
-            [
-                'amount' => abs($data['balance'] ?? 0),
-                'balance_type' => $data['balance_type'] ?? 'Credit',
-            ]
-        );
+        // Editing the opening balance moves the running balance by the difference only,
+        // so transactions already applied to this account are never wiped out.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($contractor, $request, $data) {
+            $contractor->name = $request->name;
+            $contractor->phone = $request->phone;
+            $contractor->address = $request->address;
+            \App\Models\MasterOpeningBalance::applyOpeningChange($contractor, 'contractor', array_key_exists('balance', $data) ? ($data['balance'] ?? 0) : null, $data['balance_type'] ?? 'Credit');
+            $contractor->save();
+        });
 
         return true;
     }

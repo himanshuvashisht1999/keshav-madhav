@@ -14,6 +14,6 @@ class MachineryMaster extends Model
     {
         return $this->hasOne(MasterOpeningBalance::class, 'master_id')
             ->where('master_type', 'machinery')
-            ->where('financial_year', MasterOpeningBalance::getCurrentFinancialYear());
+            ->where('financial_year', MasterOpeningBalance::openingKey());
     }
 }

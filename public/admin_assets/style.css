@@ -3601,6 +3601,12 @@ select:-webkit-autofill:focus {
     border: 1px solid #fde047 !important;
 }
 
+.badge-erp-danger {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+    border: 1px solid #fecaca !important;
+}
+
 /* =========================================================================
    ERP PAGE POLISH (shared) - single-row filter bars, equal control heights,
    tidy DataTables footer. Applies to every page using .erp-filter-bar/.erp-card

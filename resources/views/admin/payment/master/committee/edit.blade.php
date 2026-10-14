@@ -49,7 +49,7 @@
                     </div>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label class="erp-label">Opening Balance ({{ \App\Models\MasterOpeningBalance::getCurrentFinancialYear() }})</label>
+                    <label class="erp-label">Opening Balance</label>
                     <input type="number" step="0.01" name="balance" class="form-control erp-input" placeholder="Enter Opening Balance"
                         value="{{ $data->currentOpeningBalance ? $data->currentOpeningBalance->amount : 0 }}">
                 </div>
