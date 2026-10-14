@@ -318,14 +318,45 @@ const SnapKidOfflineDB = (function () {
         });
     }
 
+    /**
+     * Brand discounts of the shop currently chosen in the offline order screen
+     * (each shop carries its own per-brand discounts, synced from the customer master).
+     */
+    async function getActiveBrandDiscounts() {
+        try {
+            const shopId = localStorage.getItem('last_offline_shop_id');
+            if (!shopId) return {};
+            const shops = await getShops();
+            const shop = shops.find(s => String(s.id) === String(shopId));
+            return (shop && shop.brand_discounts) || {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    /**
+     * Selling price for an item: fair/sample-batch items keep their fixed price,
+     * everything else = MRP less the selected shop's brand discount.
+     */
+    function priceItem(item, discounts) {
+        if (!item) return 0;
+        if (item.fixed_price) return item.unit_price || 0;
+        const d = parseFloat((discounts || {})[item.brand_id]) || 0;
+        const mrp = parseFloat(item.mrp) || 0;
+        return Math.ceil(mrp - (mrp * d / 100));
+    }
+
     async function getCatalog() {
         const db = await openDB();
-        return new Promise((resolve) => {
+        const items = await new Promise((resolve) => {
             const tx = db.transaction('catalog', 'readonly');
             const req = tx.objectStore('catalog').getAll();
             req.onsuccess = () => resolve(req.result || []);
             req.onerror = () => resolve([]);
         });
+        const discounts = await getActiveBrandDiscounts();
+        items.forEach(it => { it.unit_price = priceItem(it, discounts); });
+        return items;
     }
 
     /**
@@ -356,6 +387,13 @@ const SnapKidOfflineDB = (function () {
             const payloads = await getScanPayloads();
             const payload = payloads[fairMapped.payload_key];
             if (payload && payload.size_sets && payload.size_sets.length) {
+                // sample-product payloads are not batch-priced: use the selected shop's brand discount
+                const discounts = await getActiveBrandDiscounts();
+                payload.size_sets.forEach(ss => {
+                    if (ss.fixed_price) return;
+                    ss.unit_price = priceItem(ss, discounts);
+                    (ss.colors || []).forEach(c => { if (c.item) c.item.unit_price = priceItem(c.item, discounts); });
+                });
                 return Object.assign({}, payload, {
                     scanned_size_set_id: fairMapped.size_set_id || null,
                     scanned_color_id: fairMapped.color_id || null
@@ -570,6 +608,8 @@ const SnapKidOfflineDB = (function () {
         getBarcodeMap,
         getScanPayloads,
         getShops,
+        getActiveBrandDiscounts,
+        priceItem,
         getCatalog,
         findVariationByBarcode,
         getImageBlobUrl,

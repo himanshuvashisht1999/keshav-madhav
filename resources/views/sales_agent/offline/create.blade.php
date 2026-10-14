@@ -497,7 +497,7 @@ $(document).ready(function () {
                 shopSelect.trigger('change');
             }
 
-            allProducts = await SnapKidOfflineDB.getCatalog();
+            allProducts = await SnapKidOfflineDB.getCatalog(); // already priced for the selected shop
             $('#catalogLoadingMsg').hide();
 
             if (allProducts.length === 0) {
@@ -571,9 +571,21 @@ $(document).ready(function () {
             $('#shopAddressText').text(selected.address || 'N/A');
             $('#shopDetailsBox').slideDown();
         } else {
+            localStorage.removeItem('last_offline_shop_id');
             $('#shopDetailsBox').slideUp();
         }
+        repriceForShop();
     });
+
+    // Prices = MRP less the selected shop's own brand discount (fair/sample-batch items keep their fixed price)
+    async function repriceForShop() {
+        if (!allProducts.length) return;
+        const discounts = await SnapKidOfflineDB.getActiveBrandDiscounts();
+        allProducts.forEach(p => { p.unit_price = SnapKidOfflineDB.priceItem(p, discounts); });
+        scanItems.forEach(it => { if (!it.fixed_price) it.unit_price = SnapKidOfflineDB.priceItem(it, discounts); });
+        filterAndRenderProducts(false);
+        updateSummaryUI();
+    }
 
     // 2. Filter & Render Product Cards
     function filterAndRenderProducts(resetPage = true) {

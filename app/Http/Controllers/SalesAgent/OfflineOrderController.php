@@ -49,11 +49,19 @@ class OfflineOrderController extends Controller
                 'id', 'name', 'phone', 'address', 'gst_number', 'balance'
             ]);
 
-            // 2. Fetch Active Products / Variations
-            $brand_discounts = DB::table('sales_agent_brand_discounts')
-                ->where('sales_agent_id', $agent_id)
-                ->pluck('discount_percentage', 'brand_id');
+            // Each shop's own per-brand discounts (the app prices orders with the selected shop's discount)
+            $shopDiscountRows = DB::table('customer_brand_discounts')
+                ->whereIn('customer_id', $shops->pluck('id'))
+                ->get(['customer_id', 'brand_id', 'discount_percentage'])
+                ->groupBy('customer_id');
+            $shops = $shops->map(function ($shop) use ($shopDiscountRows) {
+                $row = $shop->toArray();
+                $row['brand_discounts'] = ($shopDiscountRows[$shop->id] ?? collect())
+                    ->pluck('discount_percentage', 'brand_id')->map(function ($v) { return (float) $v; })->all();
+                return $row;
+            });
 
+            // 2. Fetch Active Products / Variations
             $inventories = DB::table('domestic_inventories')
                 ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
                 ->leftJoin('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
@@ -144,8 +152,8 @@ class OfflineOrderController extends Controller
                 $variant = $varGroup ? $varGroup->first() : null;
 
                 $mrp = $variant->mrp ?? 0;
-                $brand_disc = $brand_discounts[$inv->brand_id] ?? 0;
-                $selling_price = ceil($mrp > 0 ? ($mrp - ($mrp * $brand_disc / 100)) : 0);
+                // Undiscounted base price; the app applies the selected shop's brand discount
+                $selling_price = ceil($mrp > 0 ? $mrp : 0);
 
                 // Variant Color Image with intelligent fallbacks
                 $image = null;
@@ -190,6 +198,7 @@ class OfflineOrderController extends Controller
                 $products[] = [
                     'key' => $vKey,
                     'product_id' => $inv->product_id,
+                    'brand_id' => $inv->brand_id,
                     'color_id' => $inv->color_id,
                     'size_set_id' => $inv->size_set_id,
                     'design_number' => $inv->design_number ?? '-',
@@ -302,14 +311,13 @@ class OfflineOrderController extends Controller
 
                 foreach ($sampleRows->groupBy('product_id') as $pid => $group) {
                     $brandId = DB::table('production_goods')->where('id', $pid)->value('brand_id');
-                    $disc = (float) ($brand_discounts[$brandId] ?? 0);
                     $sizeIds = $group->pluck('size_set_id')->map(function ($v) { return (int) $v; })->all();
                     $sizeIds = array_values(array_unique(array_merge(
                         $sizeIds,
                         DB::table('domestic_inventories')->where('product_id', $pid)->where('status', 1)->pluck('size_set_id')->map(function ($v) { return (int) $v; })->all()
                     )));
 
-                    $payload = $this->buildScanPayload((int) $pid, $sizeIds, function () use ($disc) { return $disc; }, [], '', $scanImageFiles);
+                    $payload = $this->buildScanPayload((int) $pid, $sizeIds, function () { return 0; }, [], '', $scanImageFiles, false);
                     if (!$payload) continue;
 
                     $payloadKey = 'D' . $pid;
@@ -389,7 +397,7 @@ class OfflineOrderController extends Controller
      * @param callable $discountFor fn(int $sizeSetId): float
      * @param string   $keyPrefix   keeps cart keys unique per pricing context
      */
-    private function buildScanPayload($productId, array $sizeSetIds, callable $discountFor, array $colorFilter, $keyPrefix, array &$imageFiles)
+    private function buildScanPayload($productId, array $sizeSetIds, callable $discountFor, array $colorFilter, $keyPrefix, array &$imageFiles, $fixedPrice = true)
     {
         $product = ProductionGoods::with('series', 'brand', 'variants')->find($productId);
         if (!$product) return null;
@@ -482,6 +490,8 @@ class OfflineOrderController extends Controller
                     // everything the cart / order save needs, so no catalog lookup is required
                     'item' => [
                         'key' => $key,
+                        'brand_id' => $product->brand_id,
+                        'fixed_price' => $fixedPrice,
                         'product_id' => (int) $productId,
                         'color_id' => (int) $c->id,
                         'size_set_id' => (int) $sizeSetId,
@@ -503,6 +513,8 @@ class OfflineOrderController extends Controller
             $sizeSets[] = [
                 'size_set_id' => (int) $sizeSetId,
                 'size_set_name' => $sizeName,
+                'brand_id' => $product->brand_id,
+                'fixed_price' => $fixedPrice,
                 'mrp' => $mrp,
                 'unit_price' => $unitPrice,
                 'image' => $trackImage($mainImage),
@@ -614,8 +626,8 @@ class OfflineOrderController extends Controller
                     if (isset($var['unit_price']) && $var['unit_price'] !== '' && $var['unit_price'] !== null) {
                         $selling_price = (float) $var['unit_price'];
                     } else {
-                        $brand_discount = DB::table('sales_agent_brand_discounts')
-                            ->where('sales_agent_id', $agent_id)
+                        $brand_discount = DB::table('customer_brand_discounts')
+                            ->where('customer_id', $customer->id)
                             ->where('brand_id', $product->brand_id)
                             ->value('discount_percentage') ?? 0;
                         $selling_price = $mrp - ($mrp * $brand_discount / 100);

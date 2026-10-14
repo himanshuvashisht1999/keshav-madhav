@@ -656,7 +656,7 @@
 
                 $.ajax({
                     url: "{{ route('agent.orders.get-variation-by-barcode') }}",
-                    data: { barcode: barcode },
+                    data: { barcode: barcode, shop_id: '{{ $shop->id }}', party_type: '{{ $party_type }}' },
                     success: function(res) {
                         Swal.close();
                         if (res.success) {
