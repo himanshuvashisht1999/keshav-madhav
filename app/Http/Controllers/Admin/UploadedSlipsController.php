@@ -52,6 +52,9 @@ class UploadedSlipsController extends Controller
             'orderPrintingStageTransaction.getToUnitMaster',
             'orderPrintingToStichingTransaction.to_stage',
             'orderPrintingToStichingTransaction.getToUnitMaster',
+            'orderGodamStageTransaction.to_stage',
+            'orderGodamStageTransaction.getToUnitMaster',
+            'parts',
             'packingMain',
             'fabricRollAssignings.fabricRollAssigningsDetail'
         ])
@@ -106,6 +109,9 @@ class UploadedSlipsController extends Controller
                     })
                     ->orWhereHas('orderPrintingToStichingTransaction', function ($stq) use ($lot_no) {
                         $stq->where('lot_no', 'like', '%' . $lot_no . '%');
+                    })
+                    ->orWhereHas('orderGodamStageTransaction', function ($gq) use ($lot_no) {
+                        $gq->where('lot_no', 'like', '%' . $lot_no . '%');
                     });
             });
         }
@@ -410,6 +416,20 @@ class UploadedSlipsController extends Controller
         return redirect()->back()->with('success', 'Slip marked as Finalized.');
     }
 
+    /**
+     * A skipped slip goes back to Pending so it can be digitized.
+     */
+    public function restore($id)
+    {
+        $slip = ProductionSlipDigitization::findOrFail($id);
+        if ($slip->status != 2) {
+            return redirect()->back()->with('error', 'Only skipped slips can be restored.');
+        }
+        $slip->update(['status' => 0]);
+
+        return redirect()->back()->with('success', 'Slip #' . $slip->id . ' is back in Pending.');
+    }
+
     public function destroy($id)
     {
         $slip = ProductionSlipDigitization::findOrFail($id);
@@ -419,6 +439,8 @@ class UploadedSlipsController extends Controller
             $slip->orderStageTransaction()->exists() ||
             $slip->orderPrintingStageTransaction()->exists() ||
             $slip->orderPrintingToStichingTransaction()->exists() ||
+            $slip->orderGodamStageTransaction()->exists() ||
+            $slip->parts()->exists() ||
             $slip->fabricRollAssignings()->exists() ||
             $slip->packingMain()->exists();
 

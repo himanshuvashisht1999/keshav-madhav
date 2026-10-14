@@ -415,7 +415,7 @@ class UnitAuthController extends Controller
                         'start_date' => $timing->start_date ?? $item->start_date ?? null,
                         'end_date' => $timing->end_date ?? $item->end_date ?? null,
                         'complete_date' => $timing->complete_date ?? $item->complete_date ?? null,
-                        'status' => ($item->image || $item->_event_type === 'sent') ? 1 : 0
+                        'status' => ($item->image || $item->_event_type === 'sent' || $item->remaining_quantity <= 0) ? 1 : 0
                     ]);
                 } elseif ($item->_source_type === 'roll') {
                     $customerName = $item->orderProductSet?->orderMain?->customer?->name ?? '-';

@@ -8,9 +8,13 @@
             <i class="fas fa-clock text-primary"></i> Time Allocation
         </div>
         <div class="erp-header-actions">
-            <a href="{{ route('admin.time_allocation.backfill') }}" class="btn-erp btn-erp-outline" title="Sync Missing Production Lots">
-                <i class="fas fa-sync-alt"></i> Sync Missing Lots
-            </a>
+            <form action="{{ route('admin.time_allocation.backfill') }}" method="POST" class="d-inline m-0"
+                  onsubmit="return confirm('Create time allocations for production lots that do not have one yet?');">
+                @csrf
+                <button type="submit" class="btn-erp btn-erp-outline" title="Sync Missing Production Lots">
+                    <i class="fas fa-sync-alt"></i> Sync Missing Lots
+                </button>
+            </form>
         </div>
     </div>
 

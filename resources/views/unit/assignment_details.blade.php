@@ -48,7 +48,8 @@
 
 @section('content')
     @php
-        $isCompleted = !empty($transaction->image) || (isset($transaction->is_closed_for_unit) && $transaction->is_closed_for_unit == 1);
+        $isCompleted = !empty($transaction->image) || (isset($transaction->is_closed_for_unit) && $transaction->is_closed_for_unit == 1)
+            || ($type !== 'cutting' && isset($transaction->remaining_quantity) && $transaction->remaining_quantity <= 0);
         $endDate = $header['end_date'] ?? null;
         $completeDate = $header['complete_date'] ?? null;
         $isDelayed = !$isCompleted && $endDate && now()->startOfDay() > \Carbon\Carbon::parse($endDate)->startOfDay();

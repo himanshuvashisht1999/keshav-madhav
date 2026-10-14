@@ -91,7 +91,7 @@
                     $toStageName = $firstTask->to_stage->name ?? 'Next Stage';
 
                     foreach($tasks as $task) {
-                        $isCompleted = !empty($task->image) || $task->is_closed_for_unit == 1;
+                        $isCompleted = !empty($task->image) || $task->is_closed_for_unit == 1 || $task->remaining_quantity <= 0;
                         if (!$isCompleted) $allCompleted = false;
                         
                         $endDate = $task->timing->end_date ?? $task->end_date ?? null;
@@ -123,7 +123,7 @@
                     // Grouping for Third Row
                     $dateGroups = [];
                     foreach($tasks as $task) {
-                        $isTaskCompleted = !empty($task->image) || $task->is_closed_for_unit == 1;
+                        $isTaskCompleted = !empty($task->image) || $task->is_closed_for_unit == 1 || $task->remaining_quantity <= 0;
                         $tStartDate = $task->timing->start_date ?? $task->start_date ?? null;
                         $tEndDate = $task->timing->end_date ?? $task->end_date ?? null;
                         

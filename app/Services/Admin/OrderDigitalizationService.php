@@ -1781,6 +1781,13 @@ class OrderDigitalizationService
                 OrderGodamStageTransactionDetail::whereIn('order_godam_stage_transaction_id', $godamIds)->update([
                     'remaining_quantity' => 0
                 ]);
+
+                // Godam has handed over all its parts of this lot: Godam stage is complete for the lot
+                if (!$this->stageStillHoldsLot($request->lot_no, 13)) {
+                    \App\Models\OrderLotStageTiming::where('lot_no', $request->lot_no)->where('master_stage_id', 13)
+                        ->whereNull('complete_date')
+                        ->update(['complete_date' => $request->production_datetime ?: now(), 'status' => 2]);
+                }
             }
 
             // Check if it was returned to cutting from another stage (e.g. printing)
@@ -1819,8 +1826,6 @@ class OrderDigitalizationService
                     throw new \Exception("Cannot finalize slip: Total digitized pieces ($currentDigitizedTotal) does not match entered Total Pieces ($totalPieces). Please use 'Save & Next' until all pieces/lots are digitized or adjust Total Pieces.");
                 }
                 $slipUpdate['status'] = 1;
-                // Close ANY incoming assignments for this lot and this unit to hide from Unit assignments list
-                $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime);
             } else {
                 if ($slip->status != 1) {
                     $slipUpdate['status'] = 0;
@@ -1828,6 +1833,9 @@ class OrderDigitalizationService
             }
 
             $slip->update($slipUpdate);
+
+            // Complete this unit's fully-sent incoming entries for the lot on every save
+            $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime, $request->is_final == 1);
 
             // Send WhatsApp notification
             if ($request->has('send_whatsapp')) {
@@ -1938,10 +1946,8 @@ class OrderDigitalizationService
             // Stage 3 is Cutting. Stage 1 is Printing.
             $this->createTransactionWithDetails($request->lot_no, 3, 1, $slip->id, $fab_roll_assigning->order_products_set_id, $slip->stage_master_unit_id, $request->to_stage_unit_id, $fab_roll_assigning->id, $request->production_datetime, $request->sizes);
 
-            if ($request->is_final == 1) {
-                // Close ANY incoming assignments for this lot and this unit
-                $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime);
-            }
+            // Complete this unit's fully-sent incoming entries for the lot on every save
+            $this->closeIncomingAssignments($request->lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime, $request->is_final == 1);
 
             // Send WhatsApp notification
             if ($request->has('send_whatsapp')) {
@@ -2013,6 +2019,10 @@ class OrderDigitalizationService
         if ($to_stage_id != 4 || !$existingTiming || (!$existingTiming->start_date && !$existingTiming->end_date)) {
             $timingData['start_date'] = $startTime;
             $timingData['end_date'] = $expectedAt;
+        }
+        // New pieces arrived at a stage that had finished this lot: it is open again
+        if ($existingTiming && $existingTiming->complete_date) {
+            $timingData['complete_date'] = null;
         }
 
         if ($to_stage_id != 3) {
@@ -2141,11 +2151,10 @@ class OrderDigitalizationService
         return $availableLots;
     }
 
-    public function getLotDetailsForHandSlip($lot_no, $current_stage_id, $movement_type = 1, $production_slip_digitization_id = null)
+    public function getLotDetailsForHandSlip($lot_no, $current_stage_id, $movement_type = 1, $production_slip_digitization_id = null, $unit_id = null)
     {
-        // Get the current unit ID from the production slip
-        $unit_id = null;
-        if ($production_slip_digitization_id) {
+        // Stock is always counted for one unit: the given unit, else the unit of the production slip
+        if (!$unit_id && $production_slip_digitization_id) {
             $slip = ProductionSlipDigitization::find($production_slip_digitization_id);
             $unit_id = $slip ? $slip->stage_master_unit_id : null;
         }
@@ -2495,23 +2504,26 @@ class OrderDigitalizationService
 
             $stage_master_unit_from = StageMasterUnit::where('id', $request->from_stage_id)->first();
             $stage_master_unit_to = StageMasterUnit::where('id', $request->to_stage_id)->first();
+            if (!$stage_master_unit_from || !$stage_master_unit_to) {
+                throw new \Exception('Please select both the From unit and the To unit.');
+            }
 
             $from_stage_id = $stage_master_unit_from->master_stage_id;
             $to_stage_id = $stage_master_unit_to->master_stage_id;
             $lot_no = $request->lot_no;
-            $sizes = $request->sizes;
+            $sizes = is_array($request->sizes) ? $request->sizes : [];
 
             $movement_type = $request->movement_type ?? 1;
 
-            // 1. Validate Inventory (using new core logic)
-            $inventoryData = $this->getLotDetailsForHandSlip($lot_no, $from_stage_id, $movement_type);
+            // 1. Validate stock of THIS unit (not the whole stage): a unit can never send more than it holds
+            $inventoryData = $this->getLotDetailsForHandSlip($lot_no, $from_stage_id, $movement_type, $slip->id, $stage_master_unit_from->id);
             $currentInventory = $inventoryData['inventory'];
             $totalMoved = 0;
 
             foreach ($sizes as $size => $qty) {
                 if ($qty > 0) {
                     if (!isset($currentInventory[$size]) || $currentInventory[$size] < $qty) {
-                        throw new \Exception("Insufficient inventory for Size $size. Available: " . ($currentInventory[$size] ?? 0));
+                        throw new \Exception("Insufficient inventory for Size $size. Available: " . max(0, $currentInventory[$size] ?? 0));
                     }
                     $totalMoved += $qty;
                 }
@@ -2519,6 +2531,30 @@ class OrderDigitalizationService
 
             if ($totalMoved == 0)
                 throw new \Exception('No quantity selected to move.');
+
+            // ...and never more than the unit's remaining balance of this lot
+            $unitBalance = OrderStageTransaction::where('to_stage_id', $from_stage_id)
+                ->where(function ($q) use ($stage_master_unit_from) {
+                    $q->where('sub_stage_id_to', $stage_master_unit_from->id)->orWhereNull('sub_stage_id_to');
+                })
+                ->where('lot_no', $lot_no)->where('remaining_quantity', '>', 0)->sum('remaining_quantity');
+            if ($from_stage_id == 1) {
+                $unitBalance += OrderPrintingStageTransaction::where('to_stage_id', 1)
+                    ->where(function ($q) use ($stage_master_unit_from) {
+                        $q->where('sub_stage_id_to', $stage_master_unit_from->id)->orWhereNull('sub_stage_id_to');
+                    })
+                    ->where('lot_no', $lot_no)->where('remaining_quantity', '>', 0)->sum('remaining_quantity');
+            }
+            if ($from_stage_id == 4) {
+                $unitBalance += OrderPrintingToStichingTransaction::where('to_stage_id', 4)
+                    ->where(function ($q) use ($stage_master_unit_from) {
+                        $q->where('sub_stage_id_to', $stage_master_unit_from->id)->orWhereNull('sub_stage_id_to');
+                    })
+                    ->where('lot_no', $lot_no)->where('remaining_quantity', '>', 0)->sum('remaining_quantity');
+            }
+            if ($totalMoved > $unitBalance) {
+                throw new \Exception("{$stage_master_unit_from->name} has only {$unitBalance} pcs of lot {$lot_no} left. You entered {$totalMoved}.");
+            }
 
             // 2. Identify and Update Source Transactions (Loop for multiple split assignments)
             $remainingToDecrement = $totalMoved;
@@ -2757,9 +2793,10 @@ class OrderDigitalizationService
             }
 
             $slip->update($slipUpdate);
-            if ($request->is_final == 1) {
-                $this->closeIncomingAssignments($lot_no, $slip->stage_master_unit_id, $slip->slip_file, $request->production_datetime);
-            }
+
+            // A unit's task is complete as soon as its whole lot has been sent - on every save,
+            // whichever button was used ("Save & Finalize" only finishes the slip itself).
+            $this->closeIncomingAssignments($lot_no, $stage_master_unit_from->id, $slip->slip_file, $request->production_datetime);
 
             // Send WhatsApp notification
             if ($request->has('send_whatsapp')) {
@@ -2787,11 +2824,29 @@ class OrderDigitalizationService
                     $timingData['start_date'] = $startTime;
                     $timingData['end_date'] = $finishEta;
                 }
+                // Stitching belongs to the unit that got the Cutting pieces; Embroidery parts must not move it
+                if ($to_stage_id == 4 && $existingTiming && $existingTiming->unit_id) {
+                    unset($timingData['unit_id'], $timingData['days_allocated']);
+                }
+                if ($existingTiming && $existingTiming->complete_date) {
+                    if ($to_stage_id == 4 && $from_stage_id == 1) {
+                        // Embroidery parts reaching a finished Stitching stage: same pieces, stage stays complete
+                        unset($timingData['status']);
+                    } else {
+                        // New pieces arrived at a stage that had finished this lot: it is open again
+                        $timingData['complete_date'] = null;
+                    }
+                }
 
                 \App\Models\OrderLotStageTiming::updateOrCreate(
                     ['lot_no' => $lot_no, 'master_stage_id' => $to_stage_id],
                     $timingData
                 );
+            }
+
+            // Embroidery parts that reach a Stitching unit which already sent all its Cutting pieces are done at once
+            if ($to_stage_id == 4 && $from_stage_id == 1) {
+                $this->closeIncomingAssignments($lot_no, $stage_master_unit_to->id, $slip->slip_file, $request->production_datetime);
             }
 
             DB::commit();
@@ -2839,9 +2894,28 @@ class OrderDigitalizationService
     /**
      * Core logic to mark incoming assignments as consumed after admin digitization.
      */
-    private function closeIncomingAssignments($lot_no, $unit_id, $slip_file, $completeDate = null)
+    /**
+     * A unit's task for a lot is complete when its whole quantity has been sent on (balance 0).
+     * Stitching: the Embroidery parts are the same pieces as the Cutting pieces, so once the
+     * unit's Cutting pieces are all sent, its Embroidery parts for that lot complete too.
+     * The stage end date is set only when no unit of that stage still holds the lot.
+     */
+    private function closeIncomingAssignments($lot_no, $unit_id, $slip_file, $completeDate = null, $updateTiming = true)
     {
         $finishTime = $completeDate ?: now();
+        $unit = \App\Models\StageMasterUnit::find($unit_id);
+
+        // Stitching: Cutting pieces all sent -> Embroidery parts of this lot at this unit are done as well
+        if ($unit && $unit->master_stage_id == 4) {
+            $cuttingRows = \App\Models\OrderStageTransaction::where('lot_no', $lot_no)
+                ->where('sub_stage_id_to', $unit_id)->where('to_stage_id', 4);
+            if ((clone $cuttingRows)->exists() && !(clone $cuttingRows)->where('remaining_quantity', '>', 0)->exists()) {
+                \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lot_no)
+                    ->where('sub_stage_id_to', $unit_id)
+                    ->where('remaining_quantity', '>', 0)
+                    ->update(['remaining_quantity' => 0, 'status' => 2]);
+            }
+        }
 
         // 1. Regular/Legacy stage transfers that are fully consumed
         \App\Models\OrderStageTransaction::where('lot_no', $lot_no)
@@ -2876,32 +2950,46 @@ class OrderDigitalizationService
                 'is_closed_for_unit' => 1
             ]);
 
-        // Check if any quantity is still pending at this unit
-        $hasPending = \App\Models\OrderStageTransaction::where('lot_no', $lot_no)
-            ->where('sub_stage_id_to', $unit_id)
-            ->where('remaining_quantity', '>', 0)
-            ->exists()
-            || \App\Models\OrderPrintingStageTransaction::where('lot_no', $lot_no)
-            ->where('sub_stage_id_to', $unit_id)
-            ->where('remaining_quantity', '>', 0)
-            ->exists()
-            || \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lot_no)
-            ->where('sub_stage_id_to', $unit_id)
-            ->where('remaining_quantity', '>', 0)
-            ->exists();
-
-        // ✅ Update Unified Timing only if no quantity remains pending at this unit
-        if (!$hasPending) {
-            $unit = \App\Models\StageMasterUnit::find($unit_id);
-            if ($unit) {
-                \App\Models\OrderLotStageTiming::where('lot_no', $lot_no)
-                    ->where('master_stage_id', $unit->master_stage_id)
-                    ->update([
-                        'complete_date' => $finishTime,
-                        'status' => 2
-                    ]);
-            }
+        // ✅ Stage end date: only when no unit of this stage still holds any of the lot
+        if ($updateTiming && $unit && !$this->stageStillHoldsLot($lot_no, $unit->master_stage_id)) {
+            \App\Models\OrderLotStageTiming::where('lot_no', $lot_no)
+                ->where('master_stage_id', $unit->master_stage_id)
+                ->whereNull('complete_date')
+                ->update([
+                    'complete_date' => $finishTime,
+                    'status' => 2
+                ]);
         }
+    }
+
+    /**
+     * Does any unit of this stage still hold pieces of the lot? (same counting rules as the unit app:
+     * at Stitching, Embroidery parts count only for a unit that got no Cutting pieces of the lot)
+     */
+    private function stageStillHoldsLot($lot_no, $stage_id)
+    {
+        if (\App\Models\OrderStageTransaction::where('lot_no', $lot_no)->where('to_stage_id', $stage_id)->where('remaining_quantity', '>', 0)->exists()) {
+            return true;
+        }
+        if ($stage_id == 1 && \App\Models\OrderPrintingStageTransaction::where('lot_no', $lot_no)->where('to_stage_id', 1)->where('remaining_quantity', '>', 0)->exists()) {
+            return true;
+        }
+        if ($stage_id == 4) {
+            return \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lot_no)
+                ->where('to_stage_id', 4)
+                ->where('remaining_quantity', '>', 0)
+                ->whereNotExists(function ($q) {
+                    $q->select(DB::raw(1))->from('order_stage_transactions as c')
+                        ->whereColumn('c.lot_no', 'order_printing_to_stiching_transactions.lot_no')
+                        ->whereColumn('c.sub_stage_id_to', 'order_printing_to_stiching_transactions.sub_stage_id_to')
+                        ->where('c.to_stage_id', 4);
+                })
+                ->exists();
+        }
+        if ($stage_id == 13) {
+            return OrderGodamStageTransaction::where('lot_no', $lot_no)->where('to_stage_id', 13)->where('remaining_quantity', '>', 0)->exists();
+        }
+        return false;
     }
 
     public function getAssignments($unitId)

@@ -282,6 +282,7 @@
                                                         $slip->orderPrintingToStichingTransaction->count() +
                                                         $slip->orderGodamStageTransaction->count() +
                                                         $slip->fabricRollAssignings->count() +
+                                                        $slip->parts->count() +
                                                         ($slip->packingMain ? 1 : 0);
                                     @endphp
                                     
@@ -302,6 +303,15 @@
                                             @csrf
                                             <button type="submit" class="erp-action-btn" style="color: #05421c; border-color: #c3e6cb; background: #edf7e4;" title="Mark Finalized">
                                                 <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if($slip->status == 2)
+                                        <form action="{{ route('admin.uploaded-slips.restore', $slip->id) }}" method="POST" onsubmit="return confirm('Restore this skipped slip to Pending?');" style="display:inline-block; margin: 0;">
+                                            @csrf
+                                            <button type="submit" class="erp-action-btn" style="color: #05421c; border-color: #c3e6cb; background: #fff;" title="Restore to Pending">
+                                                <i class="fas fa-undo"></i>
                                             </button>
                                         </form>
                                     @endif

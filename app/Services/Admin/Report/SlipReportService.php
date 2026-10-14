@@ -22,10 +22,91 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class SlipReportService
 {
+    /** OrderLot rows by normalised lot no, loaded in bulk (design / customer fallback) */
+    protected $lotCache = [];
+
     /**
      * Get paginated slip-wise report with metrics and filters
      */
     public function getSlipWiseReport(Request $request)
+    {
+        $query = $this->slipQuery($request);
+
+        // KPI boxes: only quantities and lot numbers are needed, so load just those relations
+        $allMatchingSlips = (clone $query)->setEagerLoads([])->with([
+            'orderLots',
+            'fabricRollAssignings.fabricRollAssigningsDetail',
+            'orderPrintingStageTransaction',
+            'orderStageTransaction',
+            'orderPrintingToStichingTransaction',
+            'orderGodamStageTransaction',
+            'packingMain.cartons.items',
+            'parts',
+        ])->get();
+
+        $totalSlips = $allMatchingSlips->count();
+        $digitizedSlips = $allMatchingSlips->where('status', 1)->count();
+        $pendingSlips = $allMatchingSlips->where('status', 0)->count();
+        $skippedSlips = $allMatchingSlips->where('status', 2)->count();
+
+        $allUniqueLots = collect();
+        $totalProcessedPieces = 0;
+
+        foreach ($allMatchingSlips as $s) {
+            $sData = $this->aggregateSlipTotals($s);
+            $totalProcessedPieces += $sData['total_quantity'];
+            $allUniqueLots = $allUniqueLots->merge($sData['lots']);
+        }
+
+        $kpis = [
+            'total_slips' => $totalSlips,
+            'digitized_slips' => $digitizedSlips,
+            'pending_slips' => $pendingSlips,
+            'skipped_slips' => $skippedSlips,
+            'total_pieces' => $totalProcessedPieces,
+            'total_unique_lots' => $allUniqueLots->map(fn($l) => (string) $l)->unique(null, true)->filter()->count(),
+        ];
+
+        // Paginate results
+        $perPage = $request->get('per_page', 20);
+        $slips = $query->paginate($perPage)->withQueryString();
+
+        // Attach computed summaries to each paginated slip
+        $this->prefetchLots($slips->getCollection());
+        $slips->getCollection()->transform(function ($slip) {
+            $slip->computed_data = $this->aggregateSlipEntriesSummary($slip);
+            return $slip;
+        });
+
+        $stages = MasterProductStage::where('status', 1)->get();
+        $units = StageMasterUnit::with('masterStage')->where('status', 1)->orderBy('name')->get();
+
+        // Get distinct design numbers for dropdown filter
+        $designs = \App\Models\OrderProductSet::whereNotNull('design_number')
+            ->where('design_number', '!=', '')
+            ->pluck('design_number')
+            ->merge(
+                \App\Models\ProductionGoods::whereNotNull('design_number')
+                    ->where('design_number', '!=', '')
+                    ->pluck('design_number')
+            )
+            ->merge(
+                \App\Models\ProductionSlipDigitizationParts::whereNotNull('design_number')
+                    ->where('design_number', '!=', '')
+                    ->pluck('design_number')
+            )
+            ->unique()
+            ->filter()
+            ->sort()
+            ->values();
+
+        return compact('slips', 'kpis', 'stages', 'units', 'designs');
+    }
+
+    /**
+     * Slips matching the report filters (with everything the report rows display)
+     */
+    protected function slipQuery(Request $request)
     {
         $query = ProductionSlipDigitization::with([
             'fromStage',
@@ -216,66 +297,119 @@ class SlipReportService
             });
         }
 
-        // Calculate KPI Metrics before pagination
-        $kpiQuery = clone $query;
-        $allMatchingSlips = $kpiQuery->get();
+        return $query;
+    }
 
-        $totalSlips = $allMatchingSlips->count();
-        $digitizedSlips = $allMatchingSlips->where('status', 1)->count();
-        $pendingSlips = $allMatchingSlips->where('status', 0)->count();
-        $skippedSlips = $allMatchingSlips->where('status', 2)->count();
+    /**
+     * Pieces and lot numbers of one slip - exactly the totals of aggregateSlipEntriesSummary(),
+     * without the design / customer details (used for the KPI boxes over all matching slips)
+     */
+    protected function aggregateSlipTotals(ProductionSlipDigitization $slip)
+    {
+        $lots = [];
+        $totalQty = 0;
+        $add = function ($lotNo, $qty) use (&$lots, &$totalQty) {
+            $lots[$lotNo] = true;
+            $totalQty += $qty;
+        };
 
-        $allUniqueLots = collect();
-        $totalProcessedPieces = 0;
-
-        foreach ($allMatchingSlips as $s) {
-            $sData = $this->aggregateSlipEntriesSummary($s);
-            $totalProcessedPieces += $sData['total_quantity'];
-            $allUniqueLots = $allUniqueLots->merge($sData['lots']);
+        foreach ($slip->orderLots ?? [] as $lot) {
+            $lots[$lot->lot_no] = true;
+        }
+        foreach ($slip->fabricRollAssignings ?? [] as $roll) {
+            $add($roll->lot_no, $roll->fabricRollAssigningsDetail ? $roll->fabricRollAssigningsDetail->sum('quantity') : 0);
+        }
+        foreach (['orderPrintingStageTransaction', 'orderStageTransaction', 'orderPrintingToStichingTransaction', 'orderGodamStageTransaction'] as $rel) {
+            foreach ($slip->{$rel} ?? [] as $tx) {
+                $add($tx->lot_no, $tx->quantity);
+            }
+        }
+        if ($slip->packingMain) {
+            foreach ($slip->packingMain->cartons ?? [] as $c) {
+                foreach ($c->items ?? [] as $it) {
+                    $add($it->lot_no ?? 'Packing', $it->quantity);
+                }
+            }
+        }
+        foreach ($slip->parts ?? [] as $part) {
+            if ($part->lot_no) {
+                $add($part->lot_no, $part->set_quantity ?? $part->single_quantity ?? 0);
+            }
+        }
+        if (empty($lots) && $slip->lot_no) {
+            $lots[$slip->lot_no] = true;
         }
 
-        $kpis = [
-            'total_slips' => $totalSlips,
-            'digitized_slips' => $digitizedSlips,
-            'pending_slips' => $pendingSlips,
-            'skipped_slips' => $skippedSlips,
-            'total_pieces' => $totalProcessedPieces,
-            'total_unique_lots' => $allUniqueLots->unique()->filter()->count(),
-        ];
+        return ['lots' => array_keys($lots), 'total_quantity' => $totalQty];
+    }
 
-        // Paginate results
-        $perPage = $request->get('per_page', 20);
-        $slips = $query->paginate($perPage)->withQueryString();
+    protected function lotKey($lotNo)
+    {
+        return mb_strtolower(rtrim((string) $lotNo));
+    }
 
-        // Attach computed summaries to each paginated slip
-        $slips->getCollection()->transform(function ($slip) {
-            $slip->computed_data = $this->aggregateSlipEntriesSummary($slip);
-            return $slip;
-        });
-
-        $stages = MasterProductStage::where('status', 1)->get();
-        $units = StageMasterUnit::with('masterStage')->where('status', 1)->orderBy('name')->get();
-
-        // Get distinct design numbers for dropdown filter
-        $designs = \App\Models\OrderProductSet::whereNotNull('design_number')
-            ->where('design_number', '!=', '')
-            ->pluck('design_number')
-            ->merge(
-                \App\Models\ProductionGoods::whereNotNull('design_number')
-                    ->where('design_number', '!=', '')
-                    ->pluck('design_number')
-            )
-            ->merge(
-                \App\Models\ProductionSlipDigitizationParts::whereNotNull('design_number')
-                    ->where('design_number', '!=', '')
-                    ->pluck('design_number')
-            )
-            ->unique()
-            ->filter()
-            ->sort()
+    /**
+     * Load the OrderLot rows for every lot on these slips in a few queries (instead of one query per slip)
+     */
+    protected function prefetchLots($slips)
+    {
+        $lotNos = collect();
+        foreach ($slips as $s) {
+            foreach (['orderLots', 'fabricRollAssignings', 'orderPrintingStageTransaction', 'orderStageTransaction', 'orderPrintingToStichingTransaction', 'orderGodamStageTransaction', 'parts'] as $rel) {
+                if ($s->relationLoaded($rel)) {
+                    $lotNos = $lotNos->merge($s->{$rel}->pluck('lot_no'));
+                }
+            }
+            if ($s->relationLoaded('packingMain') && $s->packingMain) {
+                foreach ($s->packingMain->cartons ?? [] as $c) {
+                    $lotNos = $lotNos->merge(collect($c->items ?? [])->pluck('lot_no'));
+                }
+            }
+        }
+        $lotNos = $lotNos->filter(fn($l) => $l !== null && $l !== '')
+            ->map(fn($l) => (string) $l)->unique()
+            ->reject(fn($l) => array_key_exists($this->lotKey($l), $this->lotCache))
             ->values();
 
-        return compact('slips', 'kpis', 'stages', 'units', 'designs');
+        foreach ($lotNos->chunk(1000) as $chunk) {
+            foreach ($chunk as $l) {
+                $this->lotCache[$this->lotKey($l)] = [];
+            }
+            OrderLot::whereIn('lot_no', $chunk->values()->all())
+                ->with(['orderProductSet.orderMain.customer'])
+                ->get()
+                ->each(function ($ol) {
+                    $this->lotCache[$this->lotKey($ol->lot_no)][] = $ol;
+                });
+        }
+    }
+
+    /**
+     * OrderLot rows for these lot numbers (same rows, same order as OrderLot::whereIn('lot_no', ...)->get())
+     */
+    protected function orderLotsFor(array $lotNos)
+    {
+        $missing = array_values(array_filter($lotNos, fn($l) => !array_key_exists($this->lotKey($l), $this->lotCache)));
+        if (!empty($missing)) {
+            foreach ($missing as $l) {
+                $this->lotCache[$this->lotKey($l)] = [];
+            }
+            OrderLot::whereIn('lot_no', $missing)->with(['orderProductSet.orderMain.customer'])->get()
+                ->each(function ($ol) {
+                    $this->lotCache[$this->lotKey($ol->lot_no)][] = $ol;
+                });
+        }
+        $rows = collect();
+        $seen = [];
+        foreach ($lotNos as $l) {
+            foreach ($this->lotCache[$this->lotKey($l)] ?? [] as $ol) {
+                if (!isset($seen[$ol->id])) {
+                    $seen[$ol->id] = true;
+                    $rows->push($ol);
+                }
+            }
+        }
+        return $rows->sortBy('id')->values();
     }
 
     /**
@@ -472,9 +606,7 @@ class SlipReportService
             return !isset($lotToDesignMap[$l]);
         });
         if (!empty($missingLots)) {
-            $orderLotsLookup = OrderLot::whereIn('lot_no', $missingLots)
-                ->with(['orderProductSet.orderMain.customer'])
-                ->get();
+            $orderLotsLookup = $this->orderLotsFor(array_map('strval', $missingLots));
             foreach ($orderLotsLookup as $ol) {
                 if ($ol->orderProductSet) {
                     if ($ol->orderProductSet->design_number) {
@@ -501,7 +633,7 @@ class SlipReportService
         }
 
         // Include any remaining unique designs
-        foreach ($designNumbers->unique()->filter() as $dsn) {
+        foreach ($designNumbers->unique(null, true)->filter() as $dsn) {
             if (!isset($designsWithQty[$dsn])) {
                 $designsWithQty[$dsn] = 0;
             }
@@ -520,12 +652,12 @@ class SlipReportService
             'entries_count' => max(1, $entriesCount),
             'lots' => array_keys($lotsWithQty),
             'lots_with_qty' => $lotsWithQty,
-            'designs' => $designNumbers->unique()->filter()->values()->toArray(),
+            'designs' => $designNumbers->unique(null, true)->filter()->values()->toArray(),
             'designs_with_qty' => $designsWithQty,
             'total_quantity' => $totalQty,
-            'destinations' => $destinationStages->unique()->filter()->values()->toArray(),
-            'destination_units' => $destinationUnits->unique()->filter()->values()->toArray(),
-            'customers' => $customers->unique()->filter()->values()->toArray()
+            'destinations' => $destinationStages->unique(null, true)->filter()->values()->toArray(),
+            'destination_units' => $destinationUnits->unique(null, true)->filter()->values()->toArray(),
+            'customers' => $customers->unique(null, true)->filter()->values()->toArray()
         ];
     }
 
@@ -719,7 +851,7 @@ class SlipReportService
         $totalMovedOutflow = max(0, $totalInputQty - $totalRemainingQty);
 
         $summary = [
-            'total_lots' => $distinctLots->unique()->filter()->count(),
+            'total_lots' => $distinctLots->map(fn($l) => (string) $l)->unique(null, true)->filter()->count(),
             'total_sessions' => max(1, $lots->count() + $printings->count() + $stage_transactions->count() + $packing_details->count()),
             'total_pieces' => $totalInputQty,
             'total_moved_outflow' => $totalMovedOutflow,
@@ -734,8 +866,12 @@ class SlipReportService
      */
     public function exportSlipWiseExcel(Request $request)
     {
-        $reportData = $this->getSlipWiseReport($request);
-        $slips = $reportData['slips'];
+        // Export every slip that matches the filters (not only the 20 shown on one page)
+        $slips = $this->slipQuery($request)->get();
+        $this->prefetchLots($slips);
+        $slips->each(function ($slip) {
+            $slip->computed_data = $this->aggregateSlipEntriesSummary($slip);
+        });
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();

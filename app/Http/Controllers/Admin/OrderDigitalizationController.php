@@ -18,14 +18,12 @@ class OrderDigitalizationController extends Controller
     }
     public function index_slip_production(Request $request)
     {
-        // $response['customers'] = $this->productOrderService->customers();
-        // $response['order_main_id'] = $request->id ?? 0;
-        // // $response['order_main'] = $this->productOrderService->orderMainDetails($request);
-        return view('admin.order_digitalization.index-slip-production');
+        // Old list page: slips are managed from Uploaded Slips now
+        return redirect()->route('admin.uploaded-slips.index');
     }
     public function indexList(Request $request)
     {
-        return $this->service->indexList($request);
+        return redirect()->route('admin.uploaded-slips.index');
     }
 
     public function createSlipsProduction(Request $request)
@@ -57,14 +55,8 @@ class OrderDigitalizationController extends Controller
 
     public function createRollsAssign()
     {
-        $response['order_no_data'] = $this->service->orderMainForRollAssign();
-        $response['cutting_units'] = $this->fabricReceiptService->cutting_units();
-        // dd($response['cutting_units']);
-        $response['fabrics'] = $this->service->getFabricsData();
-        $response['slip_data'] = $this->service->getSlipDigitalization();
-        $response['skip_slip_data'] = $this->service->getSkipSlips();
-        // dd($response['slip_data']);
-        return view('admin.order_digitalization.create-rolls-assign', $response);
+        // Old page: rolls are allotted from a cutting slip (Uploaded Slips -> pencil)
+        return redirect()->route('admin.uploaded-slips.index')->withError('Open a Cutting slip from Uploaded Slips to allot rolls.');
     }
 
 
@@ -172,6 +164,9 @@ class OrderDigitalizationController extends Controller
 
     public function cuttingMaster(Request $request)
     {
+        if (!$request->filled('slip_id')) {
+            return redirect()->route('admin.uploaded-slips.index')->withError('Open a Cutting slip from Uploaded Slips to digitize it.');
+        }
         $production_slip_digitization = $this->service->cutting_slip($request);
 
         if ($production_slip_digitization) {

@@ -260,6 +260,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::post('/balance-fix', [\App\Http\Controllers\Admin\BalanceFixController::class, 'run'])->name('balance-fix.run');
         Route::get('/balance-issues', [\App\Http\Controllers\Admin\BalanceFixController::class, 'issues'])->name('balance-issues');
 
+        // Digitized slips: one-time repair of old production data (preview + one button)
+        Route::get('/production-fix', [\App\Http\Controllers\Admin\ProductionFixController::class, 'show'])->name('production-fix.show');
+        Route::post('/production-fix', [\App\Http\Controllers\Admin\ProductionFixController::class, 'run'])->name('production-fix.run');
+
         Route::prefix('/purchase-order')->name('purchase_order.')->group(function () {
             Route::get('/index', [AdminPurchaseOrderController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminPurchaseOrderController::class, 'indexList'])->name('indexList');
@@ -558,7 +562,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/edit/{id}', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'edit'])->name('edit');
             Route::post('/update/{id}', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'update'])->name('update');
             Route::post('/get-lot-details', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'getLotDetails'])->name('get-lot-details');
-            Route::get('/backfill', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'backfill'])->name('backfill');
+            Route::post('/backfill', [\App\Http\Controllers\Admin\TimeAllocationController::class, 'backfill'])->name('backfill');
         });
 
         Route::prefix('/packing-carton')->name('packing-carton.')->group(function () {
@@ -1900,7 +1904,8 @@ Route::prefix('/admin')->name('admin.')->middleware(['web', 'checkAdminLogin'])-
         Route::get('/{id}/download', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'download'])->name('download');
         Route::get('/outflow-receipt/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'downloadOutflowReceipt'])->name('outflow-receipt');
         Route::post('/corporate-excel/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'corporateExcel'])->name('corporate-excel');
-        Route::get('/delete-session/{type}/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'deleteSession'])->name('delete-session');
+        Route::post('/delete-session/{type}/{id}', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'deleteSession'])->name('delete-session');
+        Route::post('/{id}/restore', [\App\Http\Controllers\Admin\UploadedSlipsController::class, 'restore'])->name('restore');
     });
 });
 

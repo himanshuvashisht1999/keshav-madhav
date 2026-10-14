@@ -33,19 +33,23 @@
     </div>
 
     @php
-        function is_lot_deletable($lot, $printings, $stage_transactions) {
-            $lp = $printings->where('lot_no', $lot->lot_no);
-            foreach($lp as $p) {
-                if ($p->remaining_quantity != $p->quantity) return false;
+        if (!function_exists('is_lot_deletable')) {
+            function is_lot_deletable($lot, $printings, $stage_transactions) {
+                $lp = $printings->where('lot_no', $lot->lot_no);
+                foreach($lp as $p) {
+                    if ($p->remaining_quantity != $p->quantity) return false;
+                }
+                $lt = $stage_transactions->where('lot_no', $lot->lot_no)->where('from_stage_id', 3);
+                foreach($lt as $t) {
+                    if ($t->remaining_quantity != $t->quantity) return false;
+                }
+                return true;
             }
-            $lt = $stage_transactions->where('lot_no', $lot->lot_no)->where('from_stage_id', 3);
-            foreach($lt as $t) {
-                if ($t->remaining_quantity != $t->quantity) return false;
-            }
-            return true;
         }
-        function is_transaction_deletable($tx) {
-            return ($tx->remaining_quantity == $tx->quantity);
+        if (!function_exists('is_transaction_deletable')) {
+            function is_transaction_deletable($tx) {
+                return ($tx->remaining_quantity == $tx->quantity);
+            }
         }
 
         $all_sizes = [];
@@ -130,11 +134,13 @@
                                 <h4 class="fw-bold text-dark mb-0">Digitization Session #{{ $index + 1 }}</h4>
                                 <div>
                                     @if(is_lot_deletable($lot, $printings, $stage_transactions))
-                                        <a href="{{ route('admin.uploaded-slips.delete-session', ['type' => 'lot', 'id' => $lot->id]) }}" 
-                                           class="btn btn-sm btn-outline-danger border shadow-xs me-2"
-                                           onclick="return confirm('Are you sure you want to delete this session and restore used quantities?')">
-                                            <i class="fas fa-trash-alt me-1"></i> Delete
-                                        </a>
+                                        <form action="{{ route('admin.uploaded-slips.delete-session', ['type' => 'lot', 'id' => $lot->id]) }}" method="POST" class="d-inline"
+                                              onsubmit="return confirm('Are you sure you want to delete this session and restore used quantities?')">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-danger border shadow-xs me-2">
+                                                <i class="fas fa-trash-alt me-1"></i> Delete
+                                            </button>
+                                        </form>
                                     @else
                                         <span class="badge bg-light text-muted border py-2 me-2" title="Lot has been moved to Printing/Stitching">
                                             <i class="fas fa-lock me-1"></i> Read-only
@@ -247,11 +253,13 @@
                                 <h5 class="fw-bold text-dark mb-0">Digitization Session #{{ $index + 1 }}</h5>
                                 <div>
                                     @if(is_transaction_deletable($printing))
-                                        <a href="{{ route('admin.uploaded-slips.delete-session', ['type' => 'printing', 'id' => $printing->id]) }}" 
-                                           class="btn-erp btn-erp-outline text-danger mr-2"
-                                           onclick="return confirm('Are you sure you want to delete this session and restore quantities?')">
-                                            <i class="fas fa-trash-alt mr-1"></i> Delete
-                                        </a>
+                                        <form action="{{ route('admin.uploaded-slips.delete-session', ['type' => 'printing', 'id' => $printing->id]) }}" method="POST" class="d-inline"
+                                              onsubmit="return confirm('Are you sure you want to delete this session and restore quantities?')">
+                                            @csrf
+                                            <button type="submit" class="btn-erp btn-erp-outline text-danger mr-2">
+                                                <i class="fas fa-trash-alt mr-1"></i> Delete
+                                            </button>
+                                        </form>
                                     @else
                                         <span class="badge px-2 py-1 text-muted border mr-2" style="background: #f8fafc;" title="Quantity has been moved to further stages">
                                             <i class="fas fa-lock mr-1"></i> Read-only
@@ -352,11 +360,13 @@
                                         }
                                     @endphp
                                     @if(is_transaction_deletable($transaction))
-                                        <a href="{{ route('admin.uploaded-slips.delete-session', ['type' => $type, 'id' => $transaction->id]) }}" 
-                                           class="btn-erp btn-erp-outline text-danger mr-2"
-                                           onclick="return confirm('Are you sure you want to delete this session and restore quantities?')">
-                                            <i class="fas fa-trash-alt mr-1"></i> Delete
-                                        </a>
+                                        <form action="{{ route('admin.uploaded-slips.delete-session', ['type' => $type, 'id' => $transaction->id]) }}" method="POST" class="d-inline"
+                                              onsubmit="return confirm('Are you sure you want to delete this session and restore quantities?')">
+                                            @csrf
+                                            <button type="submit" class="btn-erp btn-erp-outline text-danger mr-2">
+                                                <i class="fas fa-trash-alt mr-1"></i> Delete
+                                            </button>
+                                        </form>
                                     @else
                                         <span class="badge px-2 py-1 text-muted border mr-2" style="background: #f8fafc;" title="Quantity has been moved to further stages">
                                             <i class="fas fa-lock mr-1"></i> Read-only

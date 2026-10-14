@@ -36,7 +36,7 @@
             $totalPieces += ($tx->quantity ?? $tx->remaining_quantity ?? 0);
             if ($tx->lot_no) $lots[] = $tx->lot_no;
 
-            $status = !empty($tx->image) || $tx->is_closed_for_unit == 1;
+            $status = !empty($tx->image) || $tx->is_closed_for_unit == 1 || $tx->remaining_quantity <= 0;
             if (!$status) $isCompleted = false;
         }
 
@@ -47,7 +47,7 @@
         $dateGroups = [];
         $hasDelay = false;
         foreach($transactions as $tx) {
-            $isTaskCompleted = !empty($tx->image) || $tx->is_closed_for_unit == 1;
+            $isTaskCompleted = !empty($tx->image) || $tx->is_closed_for_unit == 1 || $tx->remaining_quantity <= 0;
             $tStartDate = $tx->timing->start_date ?? $tx->start_date ?? $tx->timing->created_at ?? null;
             $tEndDate = $tx->timing->end_date ?? $tx->end_date ?? null;
 

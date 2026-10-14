@@ -778,6 +778,26 @@ if (!function_exists('send_whatsapp_attachment')) {
         return $ret;
     }
 }
+if (!function_exists('reopen_production_entry')) {
+    /**
+     * Pieces were given back to a unit's entry (an onward move was deleted): it is no longer complete,
+     * and neither is that stage for the lot.
+     */
+    function reopen_production_entry($entry)
+    {
+        foreach (['is_closed_for_unit' => 0, 'image' => null, 'complete_date' => null] as $column => $value) {
+            if (array_key_exists($column, $entry->getAttributes())) {
+                $entry->{$column} = $value;
+            }
+        }
+        if (!empty($entry->lot_no) && !empty($entry->to_stage_id)) {
+            \App\Models\OrderLotStageTiming::where('lot_no', $entry->lot_no)
+                ->where('master_stage_id', $entry->to_stage_id)
+                ->update(['complete_date' => null, 'status' => 1]);
+        }
+    }
+}
+
 if (!function_exists('deleteProductionSession')) {
     function deleteProductionSession($type, $id)
     {
@@ -912,6 +932,7 @@ if (!function_exists('deleteProductionSession')) {
                             $restoreAmt = min($space, $qtyToRestore);
                             $src->remaining_quantity += $restoreAmt;
                             $src->status = 1; // Mark as active again since quantity was restored
+                            reopen_production_entry($src);
                             $src->save();
                             $qtyToRestore -= $restoreAmt;
                         }
@@ -957,6 +978,7 @@ if (!function_exists('deleteProductionSession')) {
                             $restoreAmt = min($space, $qtyToRestore);
                             $src->remaining_quantity += $restoreAmt;
                             $src->status = 1;
+                            reopen_production_entry($src);
                             $src->save();
                             $qtyToRestore -= $restoreAmt;
                         }
@@ -998,6 +1020,7 @@ if (!function_exists('deleteProductionSession')) {
                                     $restoreAmt = min($space, $qtyToRestore);
                                     $gTx->remaining_quantity += $restoreAmt;
                                     $gTx->status = 1;
+                                    reopen_production_entry($gTx);
                                     $gTx->save();
                                     $qtyToRestore -= $restoreAmt;
                                 }
@@ -1050,6 +1073,7 @@ if (!function_exists('deleteProductionSession')) {
                                 $restoreAmt = min($space, $qtyToRestore);
                                 $src->remaining_quantity += $restoreAmt;
                                 $src->status = 1; // Mark as active again since quantity was restored
+                            reopen_production_entry($src);
                                 $src->save();
                                 $qtyToRestore -= $restoreAmt;
                             }
@@ -1116,10 +1140,17 @@ if (!function_exists('deleteProductionSession')) {
                 $checkSources = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)->get();
                 foreach ($checkSources as $tx) {
                     if ($tx->remaining_quantity != $tx->quantity) {
-                        $hasChild = \App\Models\OrderStageTransaction::where('lot_no', $tx->lot_no)
-                            ->where('from_stage_id', $tx->to_stage_id)
-                            ->where('sub_stage_id', $tx->sub_stage_id_to)
-                            ->exists();
+                        // Pieces may have left this unit by any kind of move (normal, Printing, Embroidery->Stitching, Godam)
+                        $hasChild = false;
+                        foreach ([\App\Models\OrderStageTransaction::class, \App\Models\OrderPrintingStageTransaction::class, \App\Models\OrderPrintingToStichingTransaction::class, \App\Models\OrderGodamStageTransaction::class] as $childModel) {
+                            if ($childModel::where('lot_no', $tx->lot_no)
+                                ->where('from_stage_id', $tx->to_stage_id)
+                                ->where('sub_stage_id', $tx->sub_stage_id_to)
+                                ->exists()) {
+                                $hasChild = true;
+                                break;
+                            }
+                        }
                         $hasOutflow = \App\Models\ProductionOutflowInventory::where('lot_no', $tx->lot_no)
                             ->where('responsible_unit_id', $tx->sub_stage_id_to)
                             ->exists();
@@ -1136,6 +1167,7 @@ if (!function_exists('deleteProductionSession')) {
                             $tx->remaining_quantity = $tx->quantity;
                             $tx->is_closed_for_unit = 0;
                             $tx->status = 1;
+                            reopen_production_entry($tx);
                             $tx->save();
                         }
                     }

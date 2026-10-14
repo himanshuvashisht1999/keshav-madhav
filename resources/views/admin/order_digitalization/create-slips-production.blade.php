@@ -495,9 +495,9 @@ $(function(){
                             <span class="badge badge-light border px-2 py-1">${qty}</span>
                         </td>
                         <td class="align-middle">
-                            <input type="number" name="sizes[${size}]" 
-                                   class="form-control form-control-sm send-qty text-center font-weight-bold" 
-                                   min="0" 
+                            <input type="number" name="sizes[${size}]"
+                                   class="form-control form-control-sm send-qty text-center font-weight-bold"
+                                   min="0" max="${qty}"
                                    style="border: 1px solid #c3e6cb;"
                                    placeholder="0">
                         </td>
@@ -516,11 +516,33 @@ $(function(){
         $('#totalMovingQty').text(total);
     });
 
+    // A unit can never send more of a size than it holds
+    $(document).on('input', '.send-qty', function(){
+        let max = parseInt($(this).attr('max'));
+        let val = parseInt($(this).val()) || 0;
+        if (!isNaN(max) && val > max) {
+            $(this).val(max).trigger('input');
+        }
+    });
+
     $('#handSlipForm').on('submit', function(e){
         let totalRaw = $('#totalMovingQty').text();
         let total = parseInt(totalRaw) || 0;
         if(total <= 0) {
             alert('Please enter quantity to move.');
+            e.preventDefault();
+            return;
+        }
+        let over = [];
+        $('.send-qty').each(function(){
+            let max = parseInt($(this).attr('max'));
+            let val = parseInt($(this).val()) || 0;
+            if (!isNaN(max) && val > max) {
+                over.push($(this).closest('tr').find('td:first').text().trim() + ' (available ' + max + ')');
+            }
+        });
+        if (over.length) {
+            alert('Send Qty is more than available for: ' + over.join(', '));
             e.preventDefault();
         }
     });
