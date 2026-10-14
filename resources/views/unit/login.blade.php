@@ -24,9 +24,9 @@
     }
 
     :root {
-      --primary: #667eea;
-      --secondary: #764ba2;
-      --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --primary: #05421c;
+      --secondary: #05421c;
+      --bg-gradient: #05421c;
     }
 
     body {
@@ -96,7 +96,8 @@
 
     .card {
       background: white;
-      border-radius: 24px;
+      border-radius: 10px;
+      border-top: 4px solid #fcee21;
       padding: 32px 28px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     }
@@ -115,8 +116,8 @@
     }
 
     .alert {
-      padding: 16px;
-      border-radius: 16px;
+      padding: 14px 16px;
+      border-radius: 8px;
       margin-bottom: 24px;
       font-size: 15px;
       display: flex;
@@ -154,16 +155,16 @@
       position: relative;
       display: flex;
       align-items: center;
-      background: #f9fafb;
-      border-radius: 16px;
-      border: 2px solid #e5e7eb;
+      background: #f6f9f3;
+      border-radius: 8px;
+      border: 2px solid #d3ddcd;
       transition: all 0.3s;
     }
 
     .input-wrapper:focus-within {
-      border-color: var(--primary);
+      border-color: #8bc63e;
       background: white;
-      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      box-shadow: 0 0 0 3px rgba(139, 198, 62, 0.25);
     }
 
     .input-icon {
@@ -192,8 +193,8 @@
       background: var(--bg-gradient);
       color: white;
       border: none;
-      border-radius: 16px;
-      padding: 18px;
+      border-radius: 8px;
+      padding: 16px;
       font-size: 17px;
       font-weight: 700;
       letter-spacing: 0.5px;
@@ -204,7 +205,12 @@
       justify-content: center;
       gap: 10px;
       margin-top: 28px;
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 8px 24px rgba(5, 66, 28, 0.4);
+    }
+
+    .btn-login:hover {
+      background: #0b6b31;
+      color: #fcee21;
     }
 
     .btn-login:active {

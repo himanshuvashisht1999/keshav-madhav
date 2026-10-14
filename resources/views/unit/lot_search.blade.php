@@ -1,36 +1,32 @@
 @extends('layouts.unit')
 
-@section('title', 'Search Lot')
+@section('title', 'Track Lot')
+
+@push('styles')
+<style>
+    .ls-error { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; padding: 9px 12px; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+    .ls-form { display: flex; gap: 8px; align-items: flex-end; }
+    .ls-form .xl-field { flex: 1; }
+    .ls-form .xl-field input { min-height: 42px; font-size: 16px; font-weight: 700; }
+    .ls-form .xl-btn { height: 42px; }
+    .ls-help { font-size: 12px; color: var(--u-muted); margin-top: 8px; }
+</style>
+@endpush
 
 @section('content')
-<div class="container-fluid" style="padding-top: 20px;">
-    
     @if(session('error'))
-        <div class="alert alert-danger" style="border-radius: 12px; margin-bottom: 20px;">
-            <i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}
-        </div>
+        <div class="ls-error"><i class="fas fa-exclamation-circle"></i> {{ session('error') }}</div>
     @endif
 
-    <div class="card" style="border-radius: 16px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-        <div class="card-body" style="padding: 30px 20px; text-align: center;">
-            
-            <div style="width: 60px; height: 60px; background: #e0e7ff; color: #4f46e5; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">
-                <i class="fas fa-search"></i>
+    <form action="{{ route('unit.lot.details') }}" method="GET" class="xl-panel">
+        <div class="xl-panel-title"><i class="fas fa-search"></i> Search Lot</div>
+        <div class="ls-form">
+            <div class="xl-field">
+                <label for="lot_no">Lot No</label>
+                <input type="text" id="lot_no" name="lot_no" placeholder="e.g. 557" value="{{ request('lot_no') }}" required autofocus>
             </div>
-            
-            <h4 style="font-weight: 700; color: #1e293b; margin-bottom: 10px;">Track Lot</h4>
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 24px;">Enter a lot number below to view full details including cutting info, fabric used, slips uploaded, and progress.</p>
-            
-            <form action="{{ route('unit.lot.details') }}" method="GET">
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <input type="text" name="lot_no" class="form-control form-control-lg" placeholder="e.g. LOT-12345" required style="border-radius: 12px; border: 2px solid #e2e8f0; font-size: 16px; padding: 12px 20px; text-align: center;">
-                </div>
-                <button type="submit" class="btn btn-primary btn-block btn-lg" style="border-radius: 12px; font-weight: 600; padding: 12px;">
-                    Search Lot Details
-                </button>
-            </form>
-
+            <button type="submit" class="xl-btn"><i class="fas fa-search"></i> Search</button>
         </div>
-    </div>
-</div>
+        <div class="ls-help">Shows the lot's design, fabric, size-wise pieces, rolls used and the cutting slip.</div>
+    </form>
 @endsection

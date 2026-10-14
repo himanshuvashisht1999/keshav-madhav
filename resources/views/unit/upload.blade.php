@@ -1,163 +1,101 @@
 @extends('layouts.unit')
 
-@section('title', 'Dashboard')
-{{-- We hide the app-header because dashboard has its own hero section --}}
+@section('title', 'Home')
+
 @push('styles')
-    <style>
-        .app-header {
-            display: none !important;
-        }
+<style>
+    .hm-hello {
+        background: var(--u-green);
+        color: #fff;
+        border-radius: 6px;
+        border-bottom: 3px solid var(--u-yellow);
+        padding: 14px 14px 12px;
+        margin-bottom: 10px;
+    }
+    .hm-hello small { display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; opacity: 0.8; }
+    .hm-hello strong { display: block; font-size: 22px; font-weight: 800; line-height: 1.2; margin-top: 2px; }
+    .hm-hello .hm-stage { display: inline-block; margin-top: 6px; background: var(--u-yellow); color: var(--u-green); font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 2px 9px; border-radius: 10px; }
 
-        body {
-            padding-top: 0;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-top: -45px;
-            padding: 0 20px;
-            position: relative;
-            z-index: 10;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 16px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s;
-        }
-
-        .stat-card:active {
-            transform: scale(0.95);
-        }
-
-        .stat-icon {
-            font-size: 24px;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .stat-label {
-            font-size: 11px;
-            color: #9ca3af;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .stat-value {
-            font-size: 14px;
-            font-weight: 700;
-            color: #1f2937;
-        }
-
-        .menu-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
-        }
-
-        .menu-item {
-            background: white;
-            padding: 24px;
-            border-radius: 24px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            text-decoration: none;
-            color: #1f2937;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s;
-        }
-
-        .menu-item:active {
-            transform: scale(0.98);
-            background: #f9fafb;
-        }
-
-        .menu-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .menu-details h3 {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .menu-details p {
-            font-size: 14px;
-            color: #6b7280;
-        }
-    </style>
+    .hm-menu tr { cursor: pointer; }
+    .hm-menu td:first-child { width: 44px; text-align: center; color: var(--u-green); font-size: 17px; }
+    .hm-menu .hm-name { font-weight: 800; color: var(--u-text); font-size: 14px; }
+    .hm-menu .hm-desc { font-size: 12px; color: var(--u-muted); }
+    .hm-menu td:last-child { width: 30px; text-align: center; color: #b8c4b9; }
+</style>
 @endpush
 
 @section('content')
-    <!-- Dashboard Hero Section -->
-    <div
-        style="background: var(--bg-gradient); padding: 50px 20px 70px; color: white; position: relative; margin: -20px -20px 0;">
-        <!-- Logout Button -->
-        <a href="{{ route('unit.logout') }}"
-            style="position: absolute; top: 25px; right: 20px; color: white; font-size: 20px; background: rgba(255,255,255,0.15); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
-            <i class="fas fa-sign-out-alt"></i>
-        </a>
+    @php
+        $stageId = $data->master_stage_id;
+        $isCuttingUnit = $stageId == 3;
+        $phone = (string) ($data->phone ?? '');
+    @endphp
 
-        <div
-            style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8; margin-bottom: 8px; font-weight: 700;">
-            Dashboard</div>
-        <div style="font-size: 32px; font-weight: 800; margin-bottom: 5px;">Hello,</div>
-        <div style="font-size: 22px; font-weight: 600; opacity: 0.95;">{{ $data->name }}</div>
+    <div class="hm-hello">
+        <small>Welcome</small>
+        <strong>{{ $data->name }}</strong>
+        <span class="hm-stage">{{ $data->masterStage->name ?? 'N/A' }}</span>
     </div>
 
-    <!-- Stats Section -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <span class="stat-icon">🧵</span>
-            <span class="stat-value">{{ Str::limit($data->masterStage->name ?? 'N/A', 15) }}</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-icon">🏭</span>
-            <span class="stat-value">{{ Str::limit($data->masterFabricWarehouse->cutting_master_name ?? 'N/A', 15) }}</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-icon">📞</span>
-            <span class="stat-value">{{ substr($data->phone ?? '0000', -4) }}</span>
-        </div>
+    <div class="xl-head">
+        <h3><i class="fas fa-th-list"></i> Menu</h3>
+    </div>
+    <div class="xl-wrap">
+        <table class="hm-menu">
+            <tbody>
+                <tr data-href="{{ route('unit.assignments') }}">
+                    <td><i class="fas fa-clipboard-list"></i></td>
+                    <td><div class="hm-name">Tasks</div><div class="hm-desc">Lots and orders assigned to you</div></td>
+                    <td><i class="fas fa-chevron-right"></i></td>
+                </tr>
+                @unless($isCuttingUnit)
+                    <tr data-href="{{ route('unit.pending-tasks') }}">
+                        <td><i class="fas fa-tasks"></i></td>
+                        <td><div class="hm-name">Pending</div><div class="hm-desc">Lot-wise balance still to deliver</div></td>
+                        <td><i class="fas fa-chevron-right"></i></td>
+                    </tr>
+                @endunless
+                <tr class="open-upload-modal" data-type="{{ $isCuttingUnit ? '1' : '2' }}" data-product-set-id=""
+                    data-transaction-id="" data-transaction-type="production">
+                    <td><i class="fas fa-camera"></i></td>
+                    <td><div class="hm-name">Upload Slip</div><div class="hm-desc">Take a photo of a {{ $isCuttingUnit ? 'fabric' : 'piece' }} slip</div></td>
+                    <td><i class="fas fa-chevron-right"></i></td>
+                </tr>
+                <tr data-href="{{ route('unit.lot.search') }}">
+                    <td><i class="fas fa-search"></i></td>
+                    <td><div class="hm-name">Track Lot</div><div class="hm-desc">See where a lot is right now</div></td>
+                    <td><i class="fas fa-chevron-right"></i></td>
+                </tr>
+                <tr data-href="{{ route('unit.history') }}">
+                    <td><i class="fas fa-clock"></i></td>
+                    <td><div class="hm-name">History</div><div class="hm-desc">Slips and tasks you have done</div></td>
+                    <td><i class="fas fa-chevron-right"></i></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
-    <!-- Menu Section -->
-    <div style="margin-top: 24px;">
-        <div class="menu-grid">
-            <a href="{{ route('unit.assignments') }}" class="menu-item">
-                <div class="menu-icon" style="background: rgba(102, 126, 234, 0.1); color: var(--primary);">
-                    <i class="fas fa-tasks"></i>
-                </div>
-                <div class="menu-details">
-                    <h3>Assignments</h3>
-                    <p>View pending lots & orders</p>
-                </div>
-                <i class="fas fa-chevron-right" style="margin-left: auto; color: #d1d5db;"></i>
-            </a>
-
-            <a href="{{ route('unit.history') }}" class="menu-item">
-                <div class="menu-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
-                    <i class="fas fa-history"></i>
-                </div>
-                <div class="menu-details">
-                    <h3>Work History</h3>
-                    <p>Track your completed tasks</p>
-                </div>
-                <i class="fas fa-chevron-right" style="margin-left: auto; color: #d1d5db;"></i>
-            </a>
-        </div>
+    <div class="xl-head">
+        <h3><i class="fas fa-id-badge"></i> My Details</h3>
+    </div>
+    <div class="xl-wrap">
+        <table class="xl-kv">
+            <tbody>
+                <tr><th>Name</th><td class="xl-strong">{{ $data->name }}</td></tr>
+                <tr><th>Employee ID</th><td>{{ $data->employee_id ?? '-' }}</td></tr>
+                <tr><th>Stage</th><td>{{ $data->masterStage->name ?? 'N/A' }}</td></tr>
+                <tr><th>Cutting Master</th><td>{{ $data->masterFabricWarehouse->cutting_master_name ?? 'N/A' }}</td></tr>
+                <tr><th>Phone</th><td>{{ $phone !== '' ? '••••' . substr($phone, -4) : '-' }}</td></tr>
+            </tbody>
+        </table>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('click', function (e) {
+        var row = e.target.closest('.hm-menu tr[data-href]');
+        if (row) window.location.href = row.getAttribute('data-href');
+    });
+</script>
+@endpush

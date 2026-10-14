@@ -4016,3 +4016,64 @@ body.km-admin .erp-page .quantity-control .btn-minus:hover {
 }
 body.km-admin .erp-page .quantity-control .btn-minus:hover { background: var(--erp-green-light) !important; }
 body.km-admin .erp-page .quantity-control .btn { font-weight: 800; line-height: 1; }
+
+/* Filter bars with many fields (add class "erp-filter-grid"): fields sit in a tidy grid
+   and wrap to a second row instead of being squeezed into one line. */
+.erp-filter-bar.erp-filter-grid > .row {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px 10px;
+    margin: 0 !important;
+    align-items: end;
+}
+.erp-filter-bar.erp-filter-grid > .row > [class*="col"] {
+    width: auto !important;
+    max-width: none !important;
+    flex: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-width: 0;
+}
+.erp-filter-bar.erp-filter-grid .fg-span-2 { grid-column: span 2; }
+.erp-filter-bar.erp-filter-grid .fg-actions { grid-column: span 2; justify-self: end; }
+.erp-filter-bar.erp-filter-grid .erp-filter-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+@media (max-width: 1199px) {
+    .erp-filter-bar.erp-filter-grid > .row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .erp-filter-bar.erp-filter-grid .fg-span-2 { grid-column: span 3; }
+    .erp-filter-bar.erp-filter-grid .fg-actions { grid-column: span 3; }
+}
+@media (max-width: 575px) {
+    .erp-filter-bar.erp-filter-grid > .row { grid-template-columns: minmax(0, 1fr); }
+    .erp-filter-bar.erp-filter-grid .fg-span-2,
+    .erp-filter-bar.erp-filter-grid .fg-actions { grid-column: span 1; }
+    .erp-filter-bar.erp-filter-grid .fg-actions { justify-self: stretch; }
+}
+
+/* Sales order documents: compact one-line file tags (create / edit form and order view page) */
+.order-docs-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
+.order-docs-hint { font-size: 12px; color: #6b7a6b; white-space: nowrap; }
+.order-docs-inline .order-docs-add { height: 31px; white-space: nowrap; }
+.order-docs-list { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.order-docs-list li {
+    display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+    padding: 3px 4px 3px 10px; border: 1px solid #d6e6cc; border-radius: 16px;
+    background: #f4f9ef; font-size: 13px; line-height: 1.4; margin: 0;
+}
+.order-docs-list .order-docs-name { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: #05421c; }
+.order-docs-list a.order-docs-name:hover { text-decoration: underline; }
+.order-docs-list .order-docs-size { font-size: 11px; color: #6b7a6b; white-space: nowrap; padding-right: 6px; }
+.order-docs-new:empty { display: none; }
+.order-docs-remove { font-size: 11px; font-weight: 600; color: #b91c1c; cursor: pointer; white-space: nowrap; padding-right: 6px; }
+.order-docs-remove input { vertical-align: middle; margin-right: 2px; }
+.order-docs-drop {
+    background: none; border: 0; width: 22px; height: 22px; border-radius: 50%;
+    color: #b91c1c; cursor: pointer; line-height: 22px; padding: 0; flex: 0 0 auto;
+}
+.order-docs-drop:hover { background: #fde2e2; }
+.order-docs-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 8px 12px; }
+.order-docs-strip .order-docs-title { font-weight: 700; color: #05421c; white-space: nowrap; }
+.order-docs-strip .order-docs-list li { padding-right: 10px; }

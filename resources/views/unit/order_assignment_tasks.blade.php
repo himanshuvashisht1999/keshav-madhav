@@ -64,9 +64,9 @@
     }
 
     .order-badge-simple {
-        background: #eff6ff;
-        color: #2563eb;
-        border: 1px solid #bfdbfe;
+        background: #eaf4e2;
+        color: #05421c;
+        border: 1px solid #cfe3c2;
         padding: 4px 12px;
         border-radius: 6px;
         font-size: 14px;

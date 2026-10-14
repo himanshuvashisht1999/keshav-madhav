@@ -1,0 +1,304 @@
+/* =========================================================================
+   Snapkid unit (worker) app theme - brand colours + Excel-style tables.
+   Loaded after every page's own styles (layouts/unit.blade.php), so it wins.
+   ========================================================================= */
+:root {
+    --u-green: #05421c;      /* brand dark green */
+    --u-green-2: #0b6b31;    /* hover / secondary */
+    --u-word: #36b54a;       /* wordmark green */
+    --u-lime: #8bc63e;       /* light green */
+    --u-yellow: #fcee21;     /* accent */
+    --u-bg: #f3f6f1;
+    --u-line: #d3ddcd;       /* grid lines */
+    --u-zebra: #f6f9f3;
+    --u-soft: #eaf4e2;
+    --u-text: #1f2d1f;
+    --u-muted: #66756a;
+}
+
+body.unit-app {
+    background: var(--u-bg);
+    color: var(--u-text);
+    font-size: 14px;
+    padding-bottom: 100px;
+}
+
+/* ---------- header ---------- */
+body.unit-app .app-header {
+    background: var(--u-green) !important;
+    border-bottom: 3px solid var(--u-yellow);
+    box-shadow: 0 2px 8px rgba(5, 66, 28, 0.25);
+    padding: 12px 16px;
+}
+body.unit-app .app-header .page-title { font-size: 18px; letter-spacing: 0.2px; }
+body.unit-app .app-header a { color: #fff !important; }
+body.unit-app .app-header a:hover { color: var(--u-yellow) !important; }
+body.unit-app .app-content { padding: 12px; }
+
+/* ---------- bottom navigation ---------- */
+body.unit-app .bottom-nav {
+    border-top: 2px solid var(--u-green);
+    padding: 6px 6px 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    gap: 6px;
+    box-shadow: 0 -2px 10px rgba(5, 66, 28, 0.08);
+}
+body.unit-app .bottom-nav .nav-item {
+    color: #5f6f63;
+    min-width: 0;
+    padding: 6px 0 5px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    gap: 3px;
+}
+body.unit-app .bottom-nav .nav-item i { font-size: 22px; color: var(--u-green); }
+body.unit-app .bottom-nav .nav-late i { color: #dc2626; }
+/* selected button = yellow */
+body.unit-app .bottom-nav .nav-item.active {
+    background: var(--u-yellow);
+    color: var(--u-green);
+    box-shadow: inset 0 0 0 1px #e5d500;
+}
+body.unit-app .bottom-nav .nav-item:active { background: #fff8b0; }
+
+/* worker name under the page title */
+body.unit-app .app-header .hdr-worker {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--u-yellow);
+    margin-top: 2px;
+    letter-spacing: 0.2px;
+}
+body.unit-app .app-header .hdr-worker i { font-size: 11px; opacity: 0.9; }
+
+/* All / Late chips at the top of My Work */
+.xl-chips { display: flex; gap: 8px; margin-bottom: 10px; }
+.xl-chips a {
+    flex: 1;
+    text-align: center;
+    padding: 9px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--u-line);
+    background: #fff;
+    color: var(--u-text);
+    font-weight: 800;
+    font-size: 14px;
+    text-decoration: none !important;
+}
+.xl-chips a .xl-chip-n { display: inline-block; min-width: 24px; padding: 1px 7px; margin-left: 4px; border-radius: 10px; background: var(--u-soft); color: var(--u-green); font-size: 12px; }
+.xl-chips a.active { background: var(--u-green); border-color: var(--u-green); color: #fff; }
+.xl-chips a.active .xl-chip-n { background: var(--u-yellow); color: var(--u-green); }
+.xl-chips a.xl-chip-late { color: #b91c1c; }
+.xl-chips a.xl-chip-late .xl-chip-n { background: #fee2e2; color: #b91c1c; }
+.xl-chips a.xl-chip-late.active { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+.xl-chips a.xl-chip-late.active .xl-chip-n { background: #fff; color: #b91c1c; }
+
+/* tappable rows */
+body.unit-app .app-content table tr.xl-tap { cursor: pointer; }
+body.unit-app .app-content table tr.xl-tap td:last-child { color: var(--u-lime); }
+body.unit-app .app-content table tr.xl-late-row td { background: #fff1f2 !important; }
+.xl-big { font-size: 16px !important; font-weight: 800 !important; }
+
+/* ---------- SweetAlert popups in brand colours ---------- */
+body.unit-app .swal2-styled.swal2-confirm { background-color: var(--u-green) !important; color: #fff !important; }
+body.unit-app .swal2-styled.swal2-confirm:focus { box-shadow: 0 0 0 3px rgba(139, 198, 62, 0.45) !important; }
+body.unit-app .swal2-styled.swal2-cancel { background-color: #fff !important; color: var(--u-green) !important; border: 1px solid var(--u-green) !important; }
+body.unit-app .swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(54, 181, 74, 0.35) !important; }
+body.unit-app .swal2-icon.swal2-success [class^='swal2-success-line'] { background-color: var(--u-word) !important; }
+
+/* ---------- buttons & form controls ---------- */
+body.unit-app .btn-primary,
+body.unit-app .btn-info {
+    background: var(--u-green) !important;
+    border-color: var(--u-green) !important;
+    color: #fff !important;
+}
+body.unit-app .btn-primary:hover,
+body.unit-app .btn-info:hover { background: var(--u-green-2) !important; color: var(--u-yellow) !important; }
+body.unit-app .form-control:focus,
+body.unit-app input:focus,
+body.unit-app select:focus {
+    border-color: var(--u-lime) !important;
+    box-shadow: 0 0 0 2px rgba(139, 198, 62, 0.25) !important;
+    outline: none;
+}
+
+/* ---------- Excel-style tables (every table in the app) ---------- */
+body.unit-app .app-content table {
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    width: 100%;
+    background: #fff;
+    font-size: 13px;
+    margin: 0;
+}
+body.unit-app .app-content table thead th,
+body.unit-app .app-content table > tr:first-child > th {
+    background: var(--u-green) !important;
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 8px 10px !important;
+    border: 1px solid #0a5a28 !important;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+body.unit-app .app-content table td {
+    padding: 7px 10px !important;
+    border: 1px solid var(--u-line) !important;
+    vertical-align: middle;
+    background: #fff;
+}
+body.unit-app .app-content table tbody tr:nth-child(even) td { background: var(--u-zebra); }
+body.unit-app .app-content table tbody tr:hover td { background: #fffbd6; }
+body.unit-app .app-content table tfoot td,
+body.unit-app .app-content table tr.xl-total td {
+    background: var(--u-soft) !important;
+    font-weight: 700;
+    border-top: 2px solid var(--u-green) !important;
+}
+body.unit-app .app-content table a { color: var(--u-green); font-weight: 700; }
+
+/* scroll container for tables (sideways on phones, header sticks while scrolling down) */
+.xl-wrap {
+    width: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--u-line);
+    border-radius: 6px;
+    background: #fff;
+}
+.xl-wrap > table { border: 0 !important; }
+.xl-wrap thead th { position: sticky; top: 0; z-index: 2; }
+.xl-num { text-align: right !important; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.xl-nowrap { white-space: nowrap; }
+.xl-strong { font-weight: 700; }
+
+/* status pills used inside tables */
+.xl-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+.xl-pill-done { background: #dcfce7; color: #166534; }
+.xl-pill-late { background: #fee2e2; color: #b91c1c; }
+.xl-pill-open { background: #fef9c3; color: #854d0e; }
+.xl-pill-info { background: var(--u-soft); color: var(--u-green); }
+
+/* panel = flat Excel-like box (filters, summaries) */
+.xl-panel {
+    background: #fff;
+    border: 1px solid var(--u-line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+}
+.xl-panel-title {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--u-green);
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.xl-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--u-green);
+    background: var(--u-green);
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 13px;
+    text-decoration: none !important;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.xl-btn:hover { background: var(--u-green-2); color: var(--u-yellow) !important; }
+.xl-btn-outline { background: #fff; color: var(--u-green) !important; }
+.xl-btn-outline:hover { background: var(--u-soft); color: var(--u-green) !important; }
+.xl-btn-sm { padding: 4px 9px; font-size: 12px; }
+.xl-btn-block { display: flex; width: 100%; padding: 11px 14px; font-size: 15px; }
+.xl-btn-danger { background: #fff; border-color: #dc2626; color: #b91c1c !important; }
+.xl-btn-danger:hover { background: #fee2e2; color: #b91c1c !important; }
+.xl-btn:disabled, .xl-btn.disabled { opacity: 0.55; pointer-events: none; }
+
+/* key / value sheet (slip, lot and task summaries) */
+body.unit-app .app-content table.xl-kv th {
+    background: var(--u-soft) !important;
+    color: var(--u-green) !important;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 7px 10px !important;
+    border: 1px solid var(--u-line) !important;
+    width: 36%;
+    white-space: nowrap;
+    vertical-align: middle;
+    text-align: left;
+}
+body.unit-app .app-content table.xl-kv tbody tr:nth-child(even) td { background: #fff; }
+
+/* section heading above a sheet: title left, actions right */
+.xl-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 16px 2px 6px;
+}
+.xl-head:first-child { margin-top: 0; }
+.xl-head h3 {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--u-green);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.xl-sub { font-size: 11px; color: var(--u-muted); font-weight: 500; }
+body.unit-app .app-content table td.xl-empty { padding: 28px 16px !important; text-align: center; color: var(--u-muted); }
+.xl-late { color: #b91c1c !important; font-weight: 700; }
+.xl-hl { background: #fffbd6 !important; }
+
+/* form fields inside panels */
+.xl-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--u-muted);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+.xl-field input,
+.xl-field select,
+.xl-field textarea {
+    width: 100%;
+    min-height: 36px;
+    padding: 6px 10px;
+    border: 1px solid var(--u-line);
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+    color: var(--u-text);
+}

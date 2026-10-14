@@ -190,6 +190,7 @@ class ProductOrderController extends Controller
     {
         $response['order_main_id'] = $request->id ?? 0;
         $response['order_main'] = $this->service->orderMainDetails($request);
+        $response['documents'] = app(\App\Services\Admin\OrderDocumentService::class)->forOrder($request->id ?? 0);
         $response['check_assign'] = $this->service->checkAssign($request);
         $response['cutting_units'] = $this->service->cutting_units();
         $response['printing_units'] = $this->service->printing_units();
@@ -236,9 +237,12 @@ class ProductOrderController extends Controller
 
     public function store(ProductOrderStoreRequest $request)
     {
+        $request->validate(\App\Services\Admin\OrderDocumentService::RULES, \App\Services\Admin\OrderDocumentService::MESSAGES);
 
         $data = $this->service->store($request);
         if ($data['status_code'] == 1) {
+            // Documents are saved only after the order itself is saved successfully
+            app(\App\Services\Admin\OrderDocumentService::class)->attachUploads($request, [$data['order_main_id'] ?? null]);
             return redirect()->route('admin.product_order.indexOrder')->withSuccess($data['message']);
         } else {
             return redirect()->back()->withError($data['message']);
@@ -262,8 +266,12 @@ class ProductOrderController extends Controller
 
     public function storeDomestic(Request $request)
     {
+        $request->validate(\App\Services\Admin\OrderDocumentService::RULES, \App\Services\Admin\OrderDocumentService::MESSAGES);
+
         $data = $this->service->storeDomestic($request);
         if ($data['status_code'] == 1) {
+            // One form can create several domestic orders: the documents are attached to each of them
+            app(\App\Services\Admin\OrderDocumentService::class)->attachUploads($request, $data['order_main_ids'] ?? []);
             return redirect()->route('admin.product_order.indexOrder')->withSuccess($data['message']);
         } else {
             return redirect()->back()->withError($data['message']);
@@ -309,13 +317,19 @@ class ProductOrderController extends Controller
     {
         $response['data'] = $this->service->editOrderMain($id);
         $response['customers'] = $this->service->customers();
+        $response['documents'] = app(\App\Services\Admin\OrderDocumentService::class)->forOrder($id);
         return view('admin.product_order.edit-order-main', $response);
     }
 
     public function updateOrderMain(Request $request, $id)
     {
+        $request->validate(\App\Services\Admin\OrderDocumentService::RULES, \App\Services\Admin\OrderDocumentService::MESSAGES);
+
         $response = $this->service->updateOrderMain($request, $id);
         if ($response['status_code'] == 1) {
+            $documents = app(\App\Services\Admin\OrderDocumentService::class);
+            $documents->remove($id, (array) $request->input('remove_documents', []));
+            $documents->attachUploads($request, [$id]);
             return redirect()->route('admin.product_order.indexOrder')->with('success', $response['message']);
         } else {
             return back()->with('error', $response['message']);

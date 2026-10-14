@@ -27,6 +27,8 @@
         </div>
     </div>
 
+    @include('admin.product_order.partials.documents_view', ['order' => $order_main, 'documents' => $documents ?? collect()])
+
     <!-- Compact ERP Filter Bar -->
     <div class="erp-filter-bar">
         <div class="row align-items-end">

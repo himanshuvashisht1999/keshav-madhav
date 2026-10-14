@@ -42,7 +42,7 @@
 
     .badge-assigned { background: #fef3c7; color: #92400e; }
     .badge-closed { background: #d1fae5; color: #065f46; }
-    .badge-incoming { background: #e0e7ff; color: #3730a3; }
+    .badge-incoming { background: #eaf4e2; color: #05421c; }
 
     .card-body-simple {
         padding: 16px;
@@ -94,12 +94,12 @@
     }
 
     .btn-simple-primary {
-        background: #4f46e5;
+        background: #05421c;
         color: #ffffff;
     }
 
     .btn-simple-primary:hover {
-        background: #4338ca;
+        background: #05421c;
         color: #ffffff;
     }
 
@@ -193,7 +193,7 @@
             </div>
             <div>
                 <span class="info-label-simple">Quantity</span>
-                <span class="info-value-simple" style="color: #4f46e5;">{{ $item->quantity ?? 0 }} Pcs</span>
+                <span class="info-value-simple" style="color: #05421c;">{{ $item->quantity ?? 0 }} Pcs</span>
             </div>
 
             @php
@@ -258,7 +258,7 @@
                         <span style="font-size: 13px; color: #1e293b; font-weight: 700;">Detailed Piece Breakdown</span>
                         <div style="display: flex; gap: 8px;">
                             <span style="font-size: 11px; background: #fdf2f8; color: #be185d; padding: 2px 8px; border-radius: 4px; font-weight: 600; border: 1px solid #fce7f3;">Set: {{ $sizeSetRange }}</span>
-                            <span style="font-size: 11px; background: #f0f9ff; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 600; border: 1px solid #e0f2fe;">Pcs/Set: {{ $totalPcsInSet }}</span>
+                            <span style="font-size: 11px; background: #f0f9ff; color: #0b6b31; padding: 2px 8px; border-radius: 4px; font-weight: 600; border: 1px solid #eaf4e2;">Pcs/Set: {{ $totalPcsInSet }}</span>
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -282,7 +282,7 @@
                             <tfoot>
                                 <tr>
                                     <td colspan="2" class="font-weight-bold pt-3" style="color: #475569; font-size: 13px; padding-left:0;">GRAND TOTAL</td>
-                                    <td class="text-right font-weight-bold pt-3" style="color: #2563eb; font-size: 15px; padding-right:0;">{{ number_format($calculatedTotal, 0) }}</td>
+                                    <td class="text-right font-weight-bold pt-3" style="color: #05421c; font-size: 15px; padding-right:0;">{{ number_format($calculatedTotal, 0) }}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -340,7 +340,7 @@
                 </div>
                 <div class="info-col">
                     <span class="info-label-simple">Quantity</span>
-                    <span class="info-value-simple" style="color: #4f46e5;">{{ $item->remaining_quantity ?? '-' }} Pcs</span>
+                    <span class="info-value-simple" style="color: #05421c;">{{ $item->remaining_quantity ?? '-' }} Pcs</span>
                 </div>
             </div>
             <div>

@@ -154,6 +154,7 @@ class ProductOrderService
 
             // Commit everything if all successful
             DB::commit();
+            $return_data['order_main_id'] = $save_data_main->id; // documents are attached to it by the controller
             $return_data['message'] = 'The sales order has been successfully created.';
             $return_data['status_code'] = 1;
             return $return_data;
@@ -1435,6 +1436,7 @@ class ProductOrderService
             $fabricId = !empty($fabricId) ? $fabricId : null;
 
             $createdCount = 0;
+            $createdIds = []; // order_main ids created by this form (documents are attached to each)
 
             foreach ($rawItems as $item) {
                 $prodGoodsId = $item['production_goods_id'] ?? null;
@@ -1558,6 +1560,7 @@ class ProductOrderService
                 }
 
                 $createdCount++;
+                $createdIds[] = $save_data_main->id;
             }
 
             if ($createdCount === 0) {
@@ -1569,7 +1572,7 @@ class ProductOrderService
             $msg = $createdCount > 1 
                 ? "{$createdCount} domestic orders and assignments have been successfully created." 
                 : "The domestic order and assignment have been successfully created.";
-            return ['status_code' => 1, 'message' => $msg];
+            return ['status_code' => 1, 'message' => $msg, 'order_main_ids' => $createdIds];
         } catch (\Exception $e) {
             DB::rollBack();
             return ['status_code' => 0, 'message' => $e->getMessage()];

@@ -4,243 +4,80 @@
 
 @push('styles')
     <style>
-        body {
-            background: #f1f5f9;
-            color: #1e293b;
-        }
-
-        .dashboard-header-simple {
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 24px 0;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .dashboard-title-simple {
-            font-size: 24px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 4px;
-        }
-
-        .dashboard-subtitle-simple {
-            font-size: 14px;
-            color: #64748b;
-        }
-
-        .tabs-simple {
-            display: flex;
-            background: #e2e8f0;
-            padding: 4px;
-            border-radius: 8px;
-            margin-bottom: 24px;
-        }
-
-        .tab-item-simple {
-            flex: 1;
-            text-align: center;
-            padding: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            border-radius: 6px;
-            text-decoration: none !important;
-            color: #64748b;
-            transition: all 0.2s;
-        }
-
-        .tab-item-simple.active {
-            background: #ffffff;
-            color: #4f46e5;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .task-card {
-            background: #ffffff;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            padding: 16px;
-            margin-bottom: 16px;
-            transition: all 0.2s;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .task-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px dashed #e2e8f0;
-        }
-
-        .task-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #1e293b;
-        }
-        
-        .task-subtitle {
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 4px;
-        }
-
-        .status-badge {
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .status-pending {
-            background: #fef9c3;
-            color: #a16207;
-            border: 1px solid #fde047;
-        }
-
-        .status-completed {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #86efac;
-        }
-        
-        .status-delayed {
-            background: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .info-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .info-label {
-            font-size: 11px;
-            color: #94a3b8;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 2px;
-        }
-
-        .info-value {
-            font-size: 14px;
-            color: #334155;
-            font-weight: 600;
-        }
-
-        .total-pieces {
-            color: #4f46e5;
-            font-size: 16px;
-            font-weight: 700;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-        }
-        
-        .btn-view-slip {
-            background: #f8fafc;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 13px;
-            font-weight: 600;
-            text-align: center;
-            text-decoration: none;
-            flex: 1;
-            transition: all 0.2s;
-        }
-        
-        .btn-view-slip:hover {
-            background: #f1f5f9;
-            color: #1e293b;
-        }
-
-        .btn-close-task {
-            background: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 13px;
-            font-weight: 600;
-            text-align: center;
-            flex: 1;
-            border: none;
-            transition: all 0.2s;
-        }
-
-        .btn-close-task:hover {
-            background: #fecaca;
+        .tk-filter { display: grid; grid-template-columns: 2fr repeat(3, minmax(0, 1fr)); gap: 8px; }
+        .tk-filter label { display: block; font-size: 11px; font-weight: 700; color: var(--u-muted); text-transform: uppercase; margin-bottom: 3px; }
+        .tk-filter input, .tk-filter select { width: 100%; height: 34px; padding: 4px 10px; border: 1px solid var(--u-line); border-radius: 6px; font-size: 14px; background: #fff; }
+        .tk-count { font-size: 13px; color: var(--u-muted); margin: 0 2px 8px; }
+        .tk-count strong { color: var(--u-green); }
+        .tk-table td.tk-slip { font-weight: 800; white-space: nowrap; }
+        .tk-table .tk-slip-link { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; background: var(--u-green); color: #fff !important; text-decoration: none; }
+        .tk-table .tk-slip-link i { font-size: 10px; color: var(--u-yellow); }
+        .tk-table .tk-slip-link:hover { background: var(--u-green-2); }
+        .tk-table td.tk-lots { font-weight: 700; color: var(--u-green); min-width: 90px; }
+        .tk-table td.tk-stage { white-space: nowrap; font-size: 12px; }
+        .tk-table td.tk-stage i { color: var(--u-lime); margin: 0 3px; }
+        .tk-table tbody { border-top: 2px solid var(--u-green); }
+        .tk-table td.tk-late { color: #b91c1c; font-weight: 700; }
+        @media (max-width: 640px) {
+            .tk-filter { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .tk-filter .tk-search { grid-column: 1 / -1; }
         }
     </style>
 @endpush
-
 @section('content')
+    @if(session('success'))
+        <div class="alert alert-success py-2 mb-2"><i class="fas fa-check-circle mr-1"></i> {{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger py-2 mb-2"><i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}</div>
+    @endif
 
-
-    <div class="container pb-5">
-        @if(session('success'))
-            <div class="alert alert-success border-0 shadow-sm mb-4">
-                <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
+    {{-- Filters --}}
+    <div class="xl-panel">
+        <div class="tk-filter">
+            <div class="tk-search">
+                <label for="filter-lot">Search</label>
+                <input type="text" id="filter-lot" placeholder="Search lot no...">
             </div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-danger border-0 shadow-sm mb-4">
-                <i class="fas fa-exclamation-circle mr-2"></i> {{ session('error') }}
-            </div>
-        @endif
-
-        {{-- Filters Section --}}
-        <div style="background: #ffffff; border-radius: 12px; padding: 16px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: flex; gap: 16px; flex-wrap: wrap;">
-            
-            <div style="flex: 1; min-width: 200px;">
-                <label style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; display: block;">Search</label>
-                <input type="text" id="filter-lot" class="form-control" placeholder="Search Lot No..." style="width: 100%; border-radius: 8px; padding: 10px 14px; border: 1px solid #cbd5e1; font-size: 14px; background: #f8fafc;">
-            </div>
-
             @if(isset($isHistory) && $isHistory)
-                @php
-                    $activity = request('activity', 'received');
-                @endphp
-                <div style="flex: 1; min-width: 150px;">
-                    <label style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; display: block;">Type</label>
-                    <select class="form-control" onchange="window.location.href=this.value" style="width: 100%; border-radius: 8px; padding: 10px 14px; border: 1px solid #cbd5e1; font-size: 14px; background: #f8fafc; appearance: auto;">
+                @php $activity = request('activity', 'received'); @endphp
+                <div>
+                    <label>Type</label>
+                    <select onchange="window.location.href=this.value">
                         <option value="{{ route('unit.history', ['activity' => 'received']) }}" {{ $activity === 'received' ? 'selected' : '' }}>Received Tasks</option>
                         <option value="{{ route('unit.history', ['activity' => 'sent']) }}" {{ $activity === 'sent' ? 'selected' : '' }}>Sent Tasks</option>
                     </select>
                 </div>
             @endif
-
-            <div style="flex: 1; min-width: 150px;">
-                <label style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; display: block;">From Stage</label>
-                <select id="filter-from-stage" class="form-control" style="width: 100%; border-radius: 8px; padding: 10px 14px; border: 1px solid #cbd5e1; font-size: 14px; background: #f8fafc; appearance: auto;">
-                    <option value="">All From Stages</option>
-                </select>
+            <div>
+                <label for="filter-from-stage">From Stage</label>
+                <select id="filter-from-stage"><option value="">All</option></select>
             </div>
-
-            <div style="flex: 1; min-width: 150px;">
-                <label style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px; display: block;">To Stage</label>
-                <select id="filter-to-stage" class="form-control" style="width: 100%; border-radius: 8px; padding: 10px 14px; border: 1px solid #cbd5e1; font-size: 14px; background: #f8fafc; appearance: auto;">
-                    <option value="">All To Stages</option>
-                </select>
+            <div>
+                <label for="filter-to-stage">To Stage</label>
+                <select id="filter-to-stage"><option value="">All</option></select>
             </div>
-
         </div>
+    </div>
 
-        <div class="row" id="assignments-container">
+    <div class="tk-count"><strong id="tk-visible">{{ $groupedAssignments->count() }}</strong> slip(s)</div>
+
+    <div class="xl-wrap">
+        <table class="tk-table">
+            <thead>
+                <tr>
+                    <th>Slip</th>
+                    <th>Lots</th>
+                    <th>Status</th>
+                    <th>Est. Complete</th>
+                    <th class="xl-num">Pieces</th>
+                    <th>Assigned</th>
+                    @if(!$isCutting)
+                        <th>From &rarr; To</th>
+                        <th>Sent By</th>
+                    @endif
+                </tr>
+            </thead>
             @forelse($groupedAssignments as $slipNo => $tasks)
                 @php
                     $firstTask = $tasks->first();
@@ -312,107 +149,64 @@
                         }
                     }
                 @endphp
-                <div class="col-lg-4 col-md-6 mb-4 assignment-item" 
-                     data-lot="{{ strtolower(implode(',', array_unique($lots))) }}"
-                     data-from-stage="{{ strtolower($fromStageName) }}"
-                     data-to-stage="{{ strtolower($toStageName) }}">
-                    <div class="card-simple" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                        <!-- Row 1: Slip No and Total Pieces -->
-                        <div class="task-header" style="align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 12px; margin-bottom: 12px;">
-                            <div class="task-title" style="font-size: 18px; margin: 0;">Slip #{{ $cleanSlipNo }}</div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 2px;">Total Pieces</div>
-                                <div style="font-size: 18px; font-weight: 800; color: #4f46e5; line-height: 1;">{{ $totalPieces }}</div>
-                            </div>
-                        </div>
-
-                        <!-- Row 2: From Stage and Sent By -->
-                        @if(!$isCutting)
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                            <div>
-                                <div style="flex: 1;">
-                                    <div class="info-label" style="font-size: 11px; color: #64748b; margin-bottom: 4px;">From Stage</div>
-                                    <div class="info-value" style="font-size: 13px; font-weight: 500; color: #0f172a;">
-                                        {{ $fromStageName }}
-                                    </div>
-                                </div>
-                                <div style="flex: 1;">
-                                    <div class="info-label" style="font-size: 11px; color: #64748b; margin-bottom: 4px;">To Stage</div>
-                                    <div class="info-value" style="font-size: 13px; font-weight: 500; color: #0f172a;">
-                                        {{ $toStageName }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div class="info-label" style="font-size: 11px; color: #64748b; margin-bottom: 4px;"><i class="fas fa-user mr-1"></i> Sent By</div>
-                                    <div style="font-size: 13px; font-weight: 600; color: #1e293b;">{{ $tasks->first()->getFromUnitMaster->name ?? '-' }}</div>
-                                </div>
-                            </div>
-                        </div>
-                        @endif
-
-                        <!-- Row 3: Lot No, Assigned, Est Estimate, Status (Looped) -->
-                        <div style="background: #f8fafc; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 15px;">
-                            <!-- Header -->
-                            <div style="display: grid; grid-template-columns: 1.5fr 1.5fr 1.5fr 1fr; gap: 8px; padding: 8px 12px; background: #f1f5f9; border-bottom: 1px solid #e2e8f0;">
-                                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Lots</div>
-                                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Assigned</div>
-                                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Est. Complete</div>
-                                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Status</div>
-                            </div>
-                            <!-- Rows -->
-                            @foreach($dateGroups as $group)
-                                <div style="display: grid; grid-template-columns: 1.5fr 1.5fr 1.5fr 1fr; gap: 8px; padding: 10px 12px; border-bottom: 1px dashed #e2e8f0;">
-                                    <div style="font-size: 12px; font-weight: 700; color: #4f46e5; word-break: break-all; align-self: center;">
-                                        {{ empty($group['lots']) ? '-' : implode(', ', array_unique($group['lots'])) }}
-                                    </div>
-                                    <div style="font-size: 12px; font-weight: 600; color: #1e293b; align-self: center;">
-                                        {{ $group['start_date'] ? date('d M, Y', strtotime($group['start_date'])) : '-' }}
-                                    </div>
-                                    <div style="font-size: 12px; font-weight: 600; {{ $group['status'] === 'Delayed' ? 'color: #dc2626;' : 'color: #1e293b;' }} align-self: center;">
-                                        {{ $group['end_date'] ? date('d M, Y', strtotime($group['end_date'])) : '-' }}
-                                    </div>
-                                    <div style="align-self: center;">
-                                        @if($group['status'] === 'Delayed')
-                                            <span style="background: #fee2e2; color: #b91c1c; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase;">Delayed</span>
-                                        @elseif($group['status'] === 'Completed')
-                                            <span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase;">Completed</span>
-                                        @else
-                                            <span style="background: #fef9c3; color: #a16207; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase;">Pending</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        <!-- Row 4: View Slip Details -->
-                        <div class="task-actions mt-3">
-                            <a href="{{ route('unit.assignments.slip_details', ['slip_id' => $slipNo]) }}" class="btn-view-slip w-100" style="display: block; background: #4f46e5; color: white; border: none; padding: 12px; font-size: 15px;">
-                                <i class="fas fa-eye mr-2"></i> View Slip Details
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                @php
+                    $rowGroups = $dateGroups ?: [['lots' => [], 'start_date' => null, 'end_date' => null, 'status' => $statusText]];
+                    $rows = count($rowGroups);
+                    $first = true;
+                @endphp
+                <tbody class="assignment-item"
+                       data-lot="{{ strtolower(implode(',', array_unique($lots))) }}"
+                       data-from-stage="{{ strtolower($fromStageName) }}"
+                       data-to-stage="{{ strtolower($toStageName) }}">
+                    @foreach($rowGroups as $group)
+                        <tr>
+                            @if($first)
+                                <td class="tk-slip" rowspan="{{ $rows }}">
+                                    <a href="{{ route('unit.assignments.slip_details', ['slip_id' => $slipNo]) }}" class="tk-slip-link" title="Open slip details">
+                                        #{{ $cleanSlipNo }} <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </td>
+                            @endif
+                            <td class="tk-lots">{{ empty($group['lots']) ? '-' : implode(', ', array_unique($group['lots'])) }}</td>
+                            <td>
+                                @if($group['status'] === 'Delayed')
+                                    <span class="xl-pill xl-pill-late">Delayed</span>
+                                @elseif($group['status'] === 'Completed')
+                                    <span class="xl-pill xl-pill-done">Completed</span>
+                                @else
+                                    <span class="xl-pill xl-pill-open">Pending</span>
+                                @endif
+                            </td>
+                            <td class="xl-nowrap {{ $group['status'] === 'Delayed' ? 'tk-late' : '' }}">{{ $group['end_date'] ? date('d M Y', strtotime($group['end_date'])) : '-' }}</td>
+                            @if($first)
+                                <td class="xl-num xl-strong" rowspan="{{ $rows }}">{{ number_format($totalPieces) }}</td>
+                            @endif
+                            <td class="xl-nowrap">{{ $group['start_date'] ? date('d M Y', strtotime($group['start_date'])) : '-' }}</td>
+                            @if($first && !$isCutting)
+                                <td class="tk-stage" rowspan="{{ $rows }}">{{ $fromStageName }}<i class="fas fa-arrow-right"></i>{{ $toStageName }}</td>
+                                <td class="xl-nowrap" rowspan="{{ $rows }}">{{ $tasks->first()->getFromUnitMaster->name ?? '-' }}</td>
+                            @endif
+                        </tr>
+                        @php $first = false; @endphp
+                    @endforeach
+                </tbody>
             @empty
-                <div class="col-12">
-                    <div class="card border-0 shadow-sm p-5 text-center">
-                        <h3 class="h5 font-weight-bold">No Tasks Found</h3>
-                        <p class="text-muted mb-0">
+                <tbody>
+                    <tr>
+                        <td colspan="9" class="text-center" style="padding: 30px 16px; color: var(--u-muted);">
+                            <strong>No tasks found</strong><br>
                             @if(($view ?? 'open') === 'closed')
                                 Your archived tasks list is empty.
                             @else
                                 You have no pending assignments at the moment.
                             @endif
-                        </p>
-                    </div>
-                </div>
+                        </td>
+                    </tr>
+                </tbody>
             @endforelse
-        </div>
+        </table>
     </div>
 @endsection
-
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -491,6 +285,8 @@
                     item.style.display = 'none';
                 }
             });
+            var counter = document.getElementById('tk-visible');
+            if (counter) { counter.textContent = Array.prototype.filter.call(items, function (i) { return i.style.display !== 'none'; }).length; }
         }
 
         filterLot.addEventListener('input', filterAssignments);

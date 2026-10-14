@@ -23,7 +23,7 @@
     </div>
 
     <!-- Compact ERP Filter Bar -->
-    <div class="erp-filter-bar">
+    <div class="erp-filter-bar erp-filter-grid">
         <div class="row align-items-end">
             <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
                 <label class="erp-filter-label"><i class="fas fa-barcode mr-1"></i> PO Number</label>
@@ -69,7 +69,7 @@
             </div>
 
             <!-- Date row -->
-            <div class="col-lg-4 col-md-6 mb-1">
+            <div class="col-lg-4 col-md-6 mb-1 fg-span-2">
                 <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> Order Date / Period</label>
                 <div class="row no-gutters">
                     <div class="col-6 pr-1">
@@ -94,7 +94,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-4 col-md-6 mb-1">
+            <div class="col-lg-4 col-md-6 mb-1 fg-span-2">
                 <label class="erp-filter-label"><i class="fas fa-calendar-check mr-1"></i> Expected Delivery Date</label>
                 <div class="row no-gutters">
                     <div class="col-6 pr-1">
@@ -119,7 +119,7 @@
                 </div>
             </div>
 
-            <div class="col-auto mb-1 ml-auto">
+            <div class="col-auto mb-1 ml-auto fg-actions">
                 <div class="erp-filter-actions">
                     <button type="button" class="btn-erp btn-erp-primary" id="btnApplyFilter" title="Apply Filter">
                         <i class="fas fa-filter"></i> Filter

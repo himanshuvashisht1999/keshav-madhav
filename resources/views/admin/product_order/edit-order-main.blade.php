@@ -173,10 +173,14 @@
                         <div id="fileBox" class="d-none p-1 px-2 border rounded bg-light w-100">
                             <strong>File:</strong>
                             <span id="fileName" class="text-truncate"></span>
-                            <a href="#" id="openFileBtn" target="_blank" class="btn-erp btn-erp-primary ml-auto">
+                            <a href="#" id="openFileBtn" target="_blank" class="btn-erp btn-erp-outline ml-auto">
                                 <i class="fas fa-external-link-alt"></i> Preview
                             </a>
                         </div>
+                    </div>
+
+                    <div class="col-12 mb-1">
+                        @include('admin.product_order.partials.documents', ['documents' => $documents ?? collect(), 'inline' => true])
                     </div>
                 </div>
             </div>

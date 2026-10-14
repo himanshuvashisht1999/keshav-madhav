@@ -16,8 +16,8 @@
         }
 
         :root {
-            --primary: #667eea;
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary: #05421c;
+            --bg-gradient: #05421c;
         }
 
         body {
@@ -34,7 +34,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 20px rgba(5, 66, 28, 0.3);
         }
 
         .header-top {
@@ -182,7 +182,7 @@
         }
 
         .btn-modal-capture {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            background: #05421c;
             color: white;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
@@ -252,19 +252,26 @@
         }
     </style>
     @stack('styles')
+    {{-- brand theme + Excel-style tables; loaded last so it wins over page styles --}}
+    <link rel="stylesheet" href="{{ asset('unit_assets/unit-theme.css') }}?v={{ @filemtime(public_path('unit_assets/unit-theme.css')) }}">
     @php
         $stageId = session('unit_auth')['stage_id'] ?? 0;
         $uploadLabel = ($stageId == 3) ? 'Fabric' : 'Piece';
         $uploadIcon = ($stageId == 3) ? 'fa-cut' : 'fa-tshirt';
+        $workerName = session('unit_auth')['name'] ?? '';
+        $workerStage = $stageId ? \App\Models\MasterProductStage::find($stageId)?->name : null;
     @endphp
 </head>
 
-<body>
+<body class="unit-app">
 
     <div class="app-header">
         <div class="header-top">
             <div class="page-title">
                 @yield('header_icon') @yield('title')
+                @if($workerName)
+                    <div class="hdr-worker"><i class="fas fa-user-circle"></i> {{ $workerName }}@if($workerStage) · {{ $workerStage }}@endif</div>
+                @endif
             </div>
             <div style="display: flex; align-items: center; gap: 15px;">
                 @yield('header_right')
@@ -283,30 +290,31 @@
     </div>
 
     <!-- Bottom Navigation -->
+    {{-- 4 buttons for every stage: My Work · Late · Send Slip · History --}}
+    @php
+        $navIsCutting = $stageId == 3;
+        $navLate = (request()->routeIs('unit.pending-tasks') && request('is_delayed'))
+            || (request()->routeIs('unit.assignments') && request()->boolean('delayed'));
+        $navWork = !$navLate && request()->routeIs('unit.pending-tasks', 'unit.assignments', 'unit.work.lot', 'unit.assignments.details', 'unit.assignments.slip_details');
+    @endphp
     <div class="bottom-nav">
-        <a href="{{ route('unit.dashboard') }}"
-            class="nav-item {{ request()->routeIs('unit.dashboard') ? 'active' : '' }}">
-            <i class="fas fa-home"></i>
-            <span>Home</span>
-        </a>
-        <a href="{{ route('unit.assignments') }}"
-            class="nav-item {{ request()->routeIs('unit.assignments') ? 'active' : '' }}">
+        <a href="{{ $navIsCutting ? route('unit.assignments') : route('unit.pending-tasks') }}"
+            class="nav-item {{ $navWork ? 'active' : '' }}">
             <i class="fas fa-clipboard-list"></i>
-            <span>Tasks</span>
+            <span>My Work</span>
         </a>
-        @if((session('unit_auth')['stage_id'] ?? 0) != 3)
-        <a href="{{ route('unit.pending-tasks') }}" class="nav-item {{ request()->routeIs('unit.pending-tasks') ? 'active' : '' }}">
-            <i class="fas fa-tasks"></i>
-            <span>Pending</span>
+        <a href="{{ $navIsCutting ? route('unit.assignments', ['view' => 'open', 'delayed' => 1]) : route('unit.pending-tasks', ['is_delayed' => 1]) }}"
+            class="nav-item nav-late {{ $navLate ? 'active' : '' }}">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Late</span>
         </a>
-        @endif
-        <a href="javascript:void(0)" class="nav-item open-upload-modal"
-            data-type="{{ (session('unit_auth')['stage_id'] ?? 0) == 3 ? '1' : '2' }}" data-product-set-id=""
+        <a href="javascript:void(0)" class="nav-item nav-send open-upload-modal"
+            data-type="{{ $navIsCutting ? '1' : '2' }}" data-product-set-id=""
             data-transaction-id="" data-transaction-type="production">
             <i class="fas fa-camera"></i>
-            <span>Upload</span>
+            <span>Send Slip</span>
         </a>
-        <a href="{{ route('unit.history') }}" class="nav-item {{ request()->routeIs('unit.history') ? 'active' : '' }}">
+        <a href="{{ route('unit.history') }}" class="nav-item {{ request()->routeIs('unit.history', 'unit.view.slip') ? 'active' : '' }}">
             <i class="fas fa-clock"></i>
             <span>History</span>
         </a>
@@ -342,17 +350,17 @@
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                                 <label
                                     style="flex: 1; min-width: 100px; background: #1e293b; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; border: 1px solid #334155;">
-                                    <input type="radio" name="save_type" value="1" checked style="accent-color: #667eea;">
+                                    <input type="radio" name="save_type" value="1" checked style="accent-color: #05421c;">
                                     <span style="font-size: 12px; font-weight: 600;">Rolls Allot</span>
                                 </label>
                                 <label
                                     style="flex: 1; min-width: 100px; background: #1e293b; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; border: 1px solid #334155;">
-                                    <input type="radio" name="save_type" value="3" style="accent-color: #667eea;">
+                                    <input type="radio" name="save_type" value="3" style="accent-color: #05421c;">
                                     <span style="font-size: 12px; font-weight: 600;">Stitching</span>
                                 </label>
                                 <label
                                     style="flex: 1; min-width: 100px; background: #1e293b; padding: 10px; border-radius: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; border: 1px solid #334155;">
-                                    <input type="radio" name="save_type" value="2" style="accent-color: #667eea;">
+                                    <input type="radio" name="save_type" value="2" style="accent-color: #05421c;">
                                     <span style="font-size: 12px; font-weight: 600;">Printing</span>
                                 </label>
                             </div>

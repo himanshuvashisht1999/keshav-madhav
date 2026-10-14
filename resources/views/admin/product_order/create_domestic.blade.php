@@ -84,7 +84,7 @@
         </div>
     </div>
 
-    <form action="{{ route('admin.sales_order.store_domestic') }}" method="POST" id="domesticOrderForm">
+    <form action="{{ route('admin.sales_order.store_domestic') }}" method="POST" enctype="multipart/form-data" id="domesticOrderForm">
         @csrf
 
         <!-- Card 1: Select Design & Size Set -->
@@ -270,6 +270,8 @@
                 </div>
             </div>
         </div>
+
+        @include('admin.product_order.partials.documents')
 
         <!-- Submit Footer -->
         <div class="erp-card p-2 d-flex justify-content-between align-items-center">

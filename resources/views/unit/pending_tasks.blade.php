@@ -1,192 +1,145 @@
 @extends('layouts.unit')
 
-@section('title', 'Pending Tasks')
+@section('title', $lateOnly ? 'Late Work' : 'My Work')
+
+@push('styles')
+<style>
+    .mw-search { display: flex; gap: 8px; align-items: center; }
+    .mw-search input { flex: 1; height: 42px; padding: 6px 12px; border: 1px solid var(--u-line); border-radius: 6px; font-size: 16px; font-weight: 700; }
+    .mw-search .xl-btn { height: 42px; }
+    .mw-msg { border-radius: 6px; padding: 9px 12px; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+    .mw-msg-error { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .mw-msg-info { background: var(--u-soft); color: var(--u-green); border: 1px solid #cfe3c2; }
+    .mw-summary { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--u-muted); margin: 0 2px 8px; }
+    .mw-summary strong { color: var(--u-green); }
+    .mw-bal { color: #b45309; }
+    /* lot column stays visible while scrolling sideways */
+    .mw-table th:first-child, .mw-table td:first-child { position: sticky; left: 0; z-index: 1; box-shadow: 2px 0 0 var(--u-line); }
+    .mw-table thead th:first-child { z-index: 3; }
+    .mw-lot { font-size: 15px; font-weight: 800; color: var(--u-green); white-space: nowrap; }
+    .mw-empty i { font-size: 30px; color: var(--u-word); display: block; margin-bottom: 6px; }
+</style>
+@endpush
 
 @section('content')
-<style>
-    .filter-section {
-        background: white;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e5e7eb;
-    }
-    .filter-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 12px;
-    }
-    .filter-group label {
-        display: block;
-        font-size: 12px;
-        font-weight: 600;
-        color: #4b5563;
-        margin-bottom: 4px;
-        text-transform: uppercase;
-    }
-    .filter-input {
-        width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        font-size: 14px;
-    }
-    .filter-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 16px;
-    }
-    .btn-apply {
-        background: #17a2b8;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 600;
-        flex: 1;
-    }
-    .btn-clear {
-        background: #f3f4f6;
-        color: #4b5563;
-        padding: 8px 16px;
-        border-radius: 6px;
-        text-decoration: none;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex: 1;
-    }
+    @php
+        $totalBalance = $grouped->sum('total_pending');
+        $searching = request()->filled('lot_no');
+        $baseParams = $lateOnly ? ['is_delayed' => 1] : [];
+    @endphp
 
-    /* Table Styles */
-    .table-container {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e5e7eb;
-        overflow-x: auto; /* Allow horizontal scroll */
-    }
-    .excel-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-    }
-    .excel-table th {
-        background: #f8f9fa;
-        color: #4b5563;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 11px;
-        letter-spacing: 0.5px;
-        padding: 12px;
-        text-align: left;
-        border-bottom: 2px solid #e5e7eb;
-        white-space: nowrap;
-    }
-    .excel-table td {
-        padding: 12px;
-        border-bottom: 1px solid #f3f4f6;
-        color: #000000;
-        vertical-align: middle;
-    }
-    .excel-table tr:hover {
-        background-color: #f9fafb;
-    }
-    .badge-delayed {
-        background: #fee2e2;
-        color: #b91c1c;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
-        margin-left: 6px;
-    }
-    .text-center { text-align: center; }
+    @if(session('error'))
+        <div class="mw-msg mw-msg-error"><i class="fas fa-exclamation-circle"></i> {{ session('error') }}</div>
+    @endif
 
-    /* Mobile Responsive Design */
-    @media (max-width: 768px) {
-        .filter-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-
-<div class="content-wrapper">
-    <div class="container-fluid py-4">
-        
-        <!-- Filter Form -->
-        <form action="{{ route('unit.pending-tasks') }}" method="GET" class="filter-section">
-            <div class="filter-grid">
-                <div class="filter-group">
-                    <label for="lot_no">Lot No</label>
-                    <input type="text" id="lot_no" name="lot_no" class="filter-input" placeholder="e.g. 557"
-                        value="{{ request('lot_no') }}">
-                </div>
-                <div class="filter-group">
-                    <label for="min_balance">Min Balance</label>
-                    <input type="number" id="min_balance" name="min_balance" class="filter-input" placeholder="e.g. 50"
-                        value="{{ request('min_balance') }}" min="0">
-                </div>
-                <div class="filter-group">
-                    <label for="max_balance">Max Balance</label>
-                    <input type="number" id="max_balance" name="max_balance" class="filter-input" placeholder="e.g. 1000"
-                        value="{{ request('max_balance') }}" min="0">
-                </div>
-            </div>
-            <div class="filter-actions">
-                <button type="submit" class="btn-apply"><i class="fas fa-search"></i> Apply Filters</button>
-                <a href="{{ route('unit.pending-tasks') }}" class="btn-clear">Clear All</a>
-            </div>
-        </form>
-
-        <div class="table-container">
-            <table class="excel-table">
-                <thead>
-                    <tr>
-                        <th>S.No</th>
-                        <th>Lot No</th>
-                        <th>Cutting Pieces</th>
-                        <th>Size Set</th>
-                        <th>Assign Qty</th>
-                        <th>Delivery QTY</th>
-                        <th>Balance</th>
-                        <th>Sent By</th>
-                        <th>Design Number</th>
-                        <th>Assign Date</th>
-                        <th>Estimated Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($grouped as $task)
-                        <tr>
-                            <td data-label="S.No">{{ $loop->iteration }}</td>
-                            <td data-label="Lot No">
-                                <strong>{{ $task['lot_no'] }}</strong>
-                            </td>
-                            <td data-label="Cutting Pieces">{{ number_format($task['total_cutting_pieces']) }}</td>
-                            <td data-label="Size Set">{{ $task['size_set'] }}</td>
-                            <td data-label="Assign Qty">{{ number_format($task['total_assigned']) }}</td>
-                            <td data-label="Delivery QTY">{{ number_format($task['total_assigned'] - $task['total_pending']) }}</td>
-                            <td data-label="Balance" style="font-weight: 700; color: #d97706;">{{ number_format($task['total_pending']) }}</td>
-                            <td data-label="Sent By">{{ $task['sent_by'] }}</td>
-                            <td data-label="Design Number">{{ $task['design_no'] }}</td>
-                            <td data-label="Assign Date">{{ $task['assigned_date'] ? \Carbon\Carbon::parse($task['assigned_date'])->format('d M Y') : '-' }}</td>
-                            <td data-label="Estimated Date">{{ $task['estimated_date'] ? \Carbon\Carbon::parse($task['estimated_date'])->format('d M Y') : '-' }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="11" class="text-center" style="padding: 40px 20px; color: #6b7280; border: none;">
-                                <i class="fas fa-inbox mb-2" style="font-size: 32px; color: #d1d5db;"></i><br><br>
-                                <span style="font-weight: 600; font-size: 16px;">No pending tasks found</span>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        
+    <!-- All / Late -->
+    <div class="xl-chips">
+        <a href="{{ route('unit.pending-tasks', request()->only('lot_no')) }}" class="{{ $lateOnly ? '' : 'active' }}">
+            All lots <span class="xl-chip-n">{{ $allCount }}</span>
+        </a>
+        <a href="{{ route('unit.pending-tasks', ['is_delayed' => 1] + request()->only('lot_no')) }}" class="xl-chip-late {{ $lateOnly ? 'active' : '' }}">
+            <i class="fas fa-exclamation-triangle"></i> Late <span class="xl-chip-n">{{ $lateCount }}</span>
+        </a>
     </div>
-</div>
+
+    <!-- Lot search -->
+    <form action="{{ route('unit.pending-tasks') }}" method="GET" class="xl-panel">
+        @if($lateOnly)
+            <input type="hidden" name="is_delayed" value="1">
+        @endif
+        <div class="mw-search">
+            <input type="text" name="lot_no" placeholder="Search lot no" value="{{ request('lot_no') }}" inputmode="search">
+            <button type="submit" class="xl-btn"><i class="fas fa-search"></i> Find</button>
+            @if($searching)
+                <a href="{{ route('unit.pending-tasks', $baseParams) }}" class="xl-btn xl-btn-outline" title="Show all"><i class="fas fa-times"></i></a>
+            @endif
+        </div>
+    </form>
+
+    @if($grouped->isNotEmpty())
+        <div class="mw-summary">
+            <span><strong>{{ $grouped->count() }}</strong> lot(s)</span>
+            <span>Balance to deliver <strong class="mw-bal">{{ number_format($totalBalance) }}</strong> pcs</span>
+            <span><i class="fas fa-hand-pointer"></i> Tap a lot to see details</span>
+        </div>
+    @endif
+
+    <div class="xl-wrap">
+        <table class="mw-table">
+            <thead>
+                <tr>
+                    <th>Lot No</th>
+                    <th>Design No</th>
+                    <th class="xl-num">Balance</th>
+                    <th>Due Date</th>
+                    <th>Size Set</th>
+                    <th class="xl-num">Received</th>
+                    <th class="xl-num">Done</th>
+                    <th>From</th>
+                    <th>Received On</th>
+                    <th class="xl-num">Cut Pcs</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($grouped as $task)
+                    <tr class="xl-tap {{ $task['is_delayed'] ? 'xl-late-row' : '' }}" data-href="{{ route('unit.work.lot', ['lot_no' => $task['lot_no']]) }}">
+                        <td class="mw-lot">{{ $task['lot_no'] }}</td>
+                        <td class="xl-nowrap">{{ $task['design_no'] }}</td>
+                        <td class="xl-num xl-big mw-bal">{{ number_format($task['total_pending']) }}</td>
+                        <td class="xl-nowrap {{ $task['is_delayed'] ? 'xl-late' : '' }}">
+                            {{ $task['estimated_date'] ? $task['estimated_date']->format('d M y') : '-' }}
+                            @if($task['is_delayed'])
+                                <span class="xl-pill xl-pill-late">Late</span>
+                            @endif
+                        </td>
+                        <td class="xl-nowrap">{{ $task['size_set'] }}</td>
+                        <td class="xl-num">{{ number_format($task['total_assigned']) }}</td>
+                        <td class="xl-num">{{ number_format($task['total_assigned'] - $task['total_pending']) }}</td>
+                        <td class="xl-nowrap">{{ $task['sent_by'] }}</td>
+                        <td class="xl-nowrap">{{ $task['assigned_date'] ? \Carbon\Carbon::parse($task['assigned_date'])->format('d M y') : '-' }}</td>
+                        <td class="xl-num">{{ number_format($task['total_cutting_pieces']) }}</td>
+                        <td><i class="fas fa-chevron-right"></i></td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="11" class="xl-empty mw-empty">
+                            @if($searching)
+                                <i class="fas fa-search" style="color: var(--u-muted);"></i>
+                                <strong>Lot {{ request('lot_no') }} is not in your {{ $lateOnly ? 'late ' : '' }}work.</strong>
+                            @elseif($lateOnly)
+                                <i class="fas fa-check-circle"></i>
+                                <strong>Nothing is late. Good work!</strong>
+                            @else
+                                <i class="fas fa-check-circle"></i>
+                                <strong>No work pending right now.</strong>
+                            @endif
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+            @if($grouped->count() > 1)
+                <tfoot>
+                    <tr>
+                        <td>Total</td>
+                        <td></td>
+                        <td class="xl-num">{{ number_format($totalBalance) }}</td>
+                        <td colspan="2"></td>
+                        <td class="xl-num">{{ number_format($grouped->sum('total_assigned')) }}</td>
+                        <td class="xl-num">{{ number_format($grouped->sum('total_assigned') - $totalBalance) }}</td>
+                        <td colspan="4"></td>
+                    </tr>
+                </tfoot>
+            @endif
+        </table>
+    </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('click', function (e) {
+        var row = e.target.closest('.mw-table tr.xl-tap[data-href]');
+        if (row) window.location.href = row.getAttribute('data-href');
+    });
+</script>
+@endpush

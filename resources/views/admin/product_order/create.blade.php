@@ -140,16 +140,16 @@
                     <div class="col-md-4 col-sm-6 mb-1">
                         <label class="erp-label">Upload Order File (Image/PDF)</label>
                         <input type="file" name="corporate_order_file" id="corporate_order_file" class="form-control erp-input">
-                    </div>
-
-                    <div class="col-md-8 col-sm-6 mb-1 d-flex align-items-end">
-                        <div id="fileBox" class="d-none p-1 px-2 border rounded bg-light w-100">
-                            <strong>File:</strong>
-                            <span id="fileName" class="text-truncate"></span>
-                            <a href="#" id="openFileBtn" target="_blank" class="btn-erp btn-erp-primary ml-auto">
+                        <div id="fileBox" class="d-none p-1 px-2 border rounded bg-light w-100 mt-1">
+                            <span id="fileName" class="text-truncate small font-weight-bold mr-2"></span>
+                            <a href="#" id="openFileBtn" target="_blank" class="btn-erp btn-erp-outline ml-auto">
                                 <i class="fas fa-external-link-alt"></i> Preview
                             </a>
                         </div>
+                    </div>
+
+                    <div class="col-md-8 col-sm-6 mb-1">
+                        @include('admin.product_order.partials.documents', ['inline' => true])
                     </div>
                 </div>
             </div>

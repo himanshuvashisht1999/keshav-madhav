@@ -15,8 +15,8 @@
         }
 
         :root {
-            --primary: #667eea;
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary: #05421c;
+            --bg-gradient: #05421c;
         }
 
         body {
@@ -34,7 +34,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 20px rgba(5, 66, 28, 0.3);
             display: flex;
             align-items: center;
             justify-content: space-between;

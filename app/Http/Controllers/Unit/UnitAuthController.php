@@ -72,19 +72,12 @@ class UnitAuthController extends Controller
             return redirect()->route('unit.login');
         }
 
-        $unitAuth = session('unit_auth');
-        $unit = StageMasterUnit::findOrFail($unitAuth['id']);
+        // The app opens straight on "My Work": cutting sees its cutting orders, every other stage its lots.
+        $unit = StageMasterUnit::findOrFail(session('unit_auth')['id']);
 
-        $response['data'] = $unit;
-        $response['stage_master_unit_id'] = Crypt::encryptString($unit->id);
-
-        // Pass next stages for Cutting Master
-        $nextStages = [];
-        if ($unit->master_stage_id == self::STAGE_CUTTING) {
-            $nextStages = \App\Models\MasterProductStage::whereIn('id', [self::STAGE_PRINTING, self::STAGE_STITCHING])->get();
-        }
-
-        return view('unit.upload', $response + ['nextStages' => $nextStages]);
+        return $unit->master_stage_id == self::STAGE_CUTTING
+            ? redirect()->route('unit.assignments')
+            : redirect()->route('unit.pending-tasks');
     }
 
     public function submitSlip(Request $request)
@@ -523,6 +516,32 @@ class UnitAuthController extends Controller
 
         $allSlips = collect();
 
+        // Transfers after cutting carry only the lot number (no order product link),
+        // so design / size set / customer are read from the lot itself.
+        $lotInfoCache = [];
+        $lotInfo = function ($lotNo) use (&$lotInfoCache) {
+            if (!array_key_exists($lotNo, $lotInfoCache)) {
+                $lot = \App\Models\OrderLot::where('lot_no', $lotNo)->with(['orderProductSet', 'orderMain.customer'])->first();
+                $lotInfoCache[$lotNo] = [
+                    'design_no' => $lot?->orderProductSet?->design_number ?: '-',
+                    'size_sets' => $lot?->orderProductSet?->size_set_name ?: '-',
+                    'customer' => $lot?->orderMain?->customer?->name ?: '-',
+                ];
+            }
+            return $lotInfoCache[$lotNo];
+        };
+        $fillFromLot = function (array $session) use ($lotInfo) {
+            $keys = ['design_no', 'size_sets', 'customer'];
+            $missing = collect($keys)->contains(fn($k) => in_array($session[$k] ?? null, [null, '', '-'], true));
+            if ($missing && !empty($session['lot_no'])) {
+                $info = $lotInfo($session['lot_no']);
+                foreach ($keys as $k) {
+                    if (in_array($session[$k] ?? null, [null, '', '-'], true)) $session[$k] = $info[$k];
+                }
+            }
+            return $session;
+        };
+
         foreach ($paginator->items() as $slip) {
             if ($slip->_source_type === 'fabric') {
                 $totalPieces = $slip->fabricRollAssigningsDetail->sum('quantity');
@@ -572,6 +591,8 @@ class UnitAuthController extends Controller
                     if ($partDetails->isNotEmpty()) { $pieces = $partDetails->sum('qauntity'); $sizes = $partDetails->pluck('size'); } else { $pieces = $part->single_quantity ?? 0; if ($part->single_size) $sizes->push($part->single_size); }
                     $sessions->push([ 'type' => 'Part', 'lot_no' => $part->lot_no, 'pieces' => $pieces, 'size_sets' => \App\Models\MasterSizeMeasurement::find($part->set_size)?->name ?? '-', 'design_no' => $part->design_number ?? '-', 'customer' => '-' ]);
                 }
+
+                $sessions = $sessions->map($fillFromLot);
 
                 $allLots = $sessions->pluck('lot_no')->unique()->filter()->values();
                 if ($allLots->isEmpty() && $slip->lot_no) $allLots->push($slip->lot_no);
@@ -804,7 +825,7 @@ class UnitAuthController extends Controller
         $packing_details = null;
         if ($slip->from_stage_id == 11) {
             $packing_details = \App\Models\PackingMain::where('slip_id', $slip->id)
-                ->with(['cartons.boxes.items.detail', 'cartons.items.detail'])
+                ->with(['cartons.items.detail'])
                 ->first();
         }
 
@@ -942,7 +963,7 @@ class UnitAuthController extends Controller
                 ->orderBy('created_at', 'desc');
 
             if ($lotNo) $query->whereHas('productSet', function ($q) use ($lotNo) { $q->where('design_number', 'like', '%' . $lotNo . '%'); });
-            if ($customerSearch) $query->whereHas('productSet.orderMain', function ($q) use ($customerSearch) { $q->where('sku', 'like', '%' . $orderNo . '%'); });
+            if ($customerSearch) $query->whereHas('productSet.orderMain', function ($q) use ($orderNo) { $q->where('sku', 'like', '%' . $orderNo . '%'); });
 
             $assignments = ($view === 'closed') ? $query->where('is_closed_for_unit', 1)->get() : $query->where(function ($q) { $q->whereNull('is_closed_for_unit')->orWhere('is_closed_for_unit', 0); })->get();
 
@@ -1151,7 +1172,7 @@ class UnitAuthController extends Controller
 
         $orders = $grouped->map(function($items, $sku) use ($groupLabel) {
             $isDelayed = $items->contains(function($item) {
-                return isset($item->timing) && !$item->timing->complete_date && now() > $item->timing->end_date;
+                return isset($item->timing) && !$item->timing->complete_date && $item->timing->end_date && now() > $item->timing->end_date;
             });
 
             // Find min start and max end
@@ -1206,7 +1227,15 @@ class UnitAuthController extends Controller
             ];
         })->sortByDesc('latest_task');
 
-        return view('unit.assignments', compact('orders', 'unit', 'type', 'view', 'canCloseTasks', 'groupLabel'));
+        // "Delayed" bottom-nav tab: only orders past their estimated end date
+        $delayedOnly = $request->boolean('delayed');
+        $allCount = $orders->count();
+        $lateCount = $orders->where('is_delayed', true)->count();
+        if ($delayedOnly) {
+            $orders = $orders->where('is_delayed', true);
+        }
+
+        return view('unit.assignments', compact('orders', 'unit', 'type', 'view', 'canCloseTasks', 'groupLabel', 'delayedOnly', 'allCount', 'lateCount'));
     }
 
     public function orderSummary($sku, \App\Services\Admin\Report\OrderSummaryReportService $service)
@@ -1645,54 +1674,115 @@ class UnitAuthController extends Controller
         return view('unit.lot_details', $response);
     }
 
+    /**
+     * "My Work" / "Late": lots this unit still has to deliver (balance > 0), late ones first.
+     */
     public function pendingTasks(Request $request)
     {
         if (!session()->has('unit_auth')) {
             return redirect()->route('unit.login');
         }
 
-        $unitAuth = session('unit_auth');
-        $unitId = $unitAuth['id'];
-        $unit = \App\Models\StageMasterUnit::find($unitId);
-        
-        $lotNo = $request->get('lot_no');
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        $isDelayed = $request->get('is_delayed');
+        $unit = \App\Models\StageMasterUnit::find(session('unit_auth')['id']);
+        $lots = $this->pendingLots($unit, $request->only(['lot_no', 'start_date', 'end_date', 'min_balance', 'max_balance']));
+
+        $lateOnly = (bool) $request->get('is_delayed');
+        $allCount = $lots->count();
+        $lateCount = $lots->where('is_delayed', true)->count();
+
+        $grouped = ($lateOnly ? $lots->where('is_delayed', true) : $lots)
+            ->sort(function ($a, $b) {
+                if ($a['is_delayed'] !== $b['is_delayed']) return $a['is_delayed'] ? -1 : 1;
+                $da = $a['estimated_date'] ? $a['estimated_date']->timestamp : PHP_INT_MAX;
+                $db = $b['estimated_date'] ? $b['estimated_date']->timestamp : PHP_INT_MAX;
+                return $da <=> $db ?: strnatcmp((string) $a['lot_no'], (string) $b['lot_no']);
+            })
+            ->values();
+
+        return view('unit.pending_tasks', compact('grouped', 'allCount', 'lateCount', 'lateOnly'));
+    }
+
+    /**
+     * One lot of "My Work": what came in, from whom, by size, and what is still left.
+     */
+    public function myWorkLot(Request $request)
+    {
+        if (!session()->has('unit_auth')) {
+            return redirect()->route('unit.login');
+        }
+        if (!$request->filled('lot_no')) {
+            return redirect()->route('unit.pending-tasks');
+        }
+
+        $unit = \App\Models\StageMasterUnit::find(session('unit_auth')['id']);
+        $lot = $this->pendingLots($unit, ['lot_no' => $request->lot_no, 'include_done' => true])->first();
+
+        if (!$lot) {
+            return redirect()->route('unit.pending-tasks')->with('error', 'Lot ' . $request->lot_no . ' was not sent to you.');
+        }
+
+        foreach ($lot['items'] as $item) {
+            $item->loadMissing($item->source === 'godam' ? 'godamDetails' : 'details');
+            $item->size_rows = $item->source === 'godam' ? $item->godamDetails : $item->details;
+        }
+
+        return view('unit.my_work_lot', compact('lot', 'unit'));
+    }
+
+    /**
+     * Lot-wise balance for a receiving unit (shared by My Work, Late and the lot page).
+     * Rules (unchanged): when a lot came from Cutting AND from Embroidery/Godam, only the Cutting
+     * rows are counted (same pieces, no double count); Packing subtracts pieces already packed.
+     * Finished lots are skipped before any per-lot lookup, and lookups are done in one query each.
+     */
+    private function pendingLots(\App\Models\StageMasterUnit $unit, array $filters = [])
+    {
+        $unitId = $unit->id;
+        $lotNo = $filters['lot_no'] ?? null;
+        $startDate = $filters['start_date'] ?? null;
+        $endDate = $filters['end_date'] ?? null;
+        $minBalance = $filters['min_balance'] ?? null;
+        $maxBalance = $filters['max_balance'] ?? null;
+        $includeDone = !empty($filters['include_done']);
 
         $ass1Query = \App\Models\OrderStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster']);
         $ass2Query = \App\Models\OrderPrintingStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster']);
         $ass3Query = \App\Models\OrderPrintingToStichingTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster']);
         $ass4Query = \App\Models\OrderGodamStageTransaction::where('sub_stage_id_to', $unitId)->with(['from_stage', 'getFromUnitMaster']);
 
-        if ($lotNo) {
-            $ass1Query->where('lot_no', $lotNo);
-            $ass2Query->where('lot_no', $lotNo);
-            $ass3Query->where('lot_no', $lotNo);
-            $ass4Query->where('lot_no', $lotNo);
+        foreach ([$ass1Query, $ass2Query, $ass3Query, $ass4Query] as $q) {
+            if ($lotNo) $q->where('lot_no', $lotNo);
+            if ($startDate) $q->whereDate('created_at', '>=', $startDate);
         }
 
-        if ($startDate) {
-            $ass1Query->whereDate('created_at', '>=', $startDate);
-            $ass2Query->whereDate('created_at', '>=', $startDate);
-            $ass3Query->whereDate('created_at', '>=', $startDate);
-            $ass4Query->whereDate('created_at', '>=', $startDate);
-        }
+        $all = collect()
+            ->concat($ass1Query->get()->map(function ($i) { $i->source = 'cutting'; return $i; }))
+            ->concat($ass2Query->get()->map(function ($i) { $i->source = 'printing'; return $i; }))
+            ->concat($ass3Query->get()->map(function ($i) { $i->source = 'printing_to_stitching'; return $i; }))
+            ->concat($ass4Query->get()->map(function ($i) { $i->source = 'godam'; return $i; }));
 
-        $ass1 = $ass1Query->get()->map(function($i) { $i->source = 'cutting'; return $i; });
-        $ass2 = $ass2Query->get()->map(function($i) { $i->source = 'printing'; return $i; });
-        $ass3 = $ass3Query->get()->map(function($i) { $i->source = 'printing_to_stitching'; return $i; });
-        $ass4 = $ass4Query->get()->map(function($i) { $i->source = 'godam'; return $i; });
-
-        $all = collect()->concat($ass1)->concat($ass2)->concat($ass3)->concat($ass4);
-        
-        $lotNos = $all->pluck('lot_no')->unique()->toArray();
         $masterStageId = $unit->master_stage_id ?? 0;
         $isPacking = ($masterStageId == self::STAGE_PACKING);
-        $timings = \App\Models\OrderLotStageTiming::whereIn('lot_no', $lotNos)->where('master_stage_id', $masterStageId)->get();
+
+        // 1) Cheap pass: rows that count + raw balance per lot; drop lots with nothing left.
+        $groups = [];
+        foreach ($all->groupBy('lot_no') as $lot_no => $items) {
+            $cuttingItems = $items->where('source', 'cutting');
+            $itemsToSum = $cuttingItems->count() > 0 ? $cuttingItems : $items;
+            $rawPending = $itemsToSum->sum('remaining_quantity');
+            if (!$includeDone && $rawPending <= 0) continue;
+            $groups[$lot_no] = ['items' => $items, 'counted' => $itemsToSum, 'raw_pending' => $rawPending];
+        }
+
+        if (empty($groups)) return collect();
+
+        $lotNos = array_map('strval', array_keys($groups));
+        $norm = fn($v) => mb_strtolower(rtrim((string) $v));
+
+        $timings = \App\Models\OrderLotStageTiming::whereIn('lot_no', $lotNos)->where('master_stage_id', $masterStageId)->orderBy('id')->get();
 
         $packedQuantities = [];
-        if ($isPacking && !empty($lotNos)) {
+        if ($isPacking) {
             $packedQuantities = \App\Models\PackingItem::whereIn('lot_no', $lotNos)
                 ->selectRaw('lot_no, SUM(quantity) as total_packed')
                 ->groupBy('lot_no')
@@ -1700,33 +1790,29 @@ class UnitAuthController extends Controller
                 ->toArray();
         }
 
-        $minBalance = $request->get('min_balance');
-        $maxBalance = $request->get('max_balance');
+        // 2) One query each for lot info and cutting pieces (was one query per lot).
+        $orderLots = \App\Models\OrderLot::with(['orderProductSet.size_measurement'])
+            ->whereIn('lot_no', $lotNos)->orderBy('id')->get()
+            ->groupBy(fn($l) => $norm($l->lot_no))->map->first();
 
-        $grouped = $all->groupBy('lot_no')->map(function ($items, $lot_no) use ($timings, $isPacking, $packedQuantities) {
+        $cutPieces = \App\Models\FabricRollAssigning::with('fabricRollAssigningsDetail')
+            ->whereIn('lot_no', $lotNos)->get()
+            ->groupBy(fn($r) => $norm($r->lot_no))
+            ->map(fn($rolls) => $rolls->flatMap(fn($roll) => $roll->fabricRollAssigningsDetail)->sum('quantity'));
+
+        $result = collect();
+        foreach ($groups as $lot_no => $g) {
+            $items = $g['items'];
             $firstItem = $items->first();
             $timing = $timings->where('lot_no', $lot_no)->first();
-            
+
             $assignedDate = $firstItem->created_at;
             $estimatedDate = $timing?->end_date ? \Carbon\Carbon::parse($timing->end_date) : ($firstItem->end_date ? \Carbon\Carbon::parse($firstItem->end_date) : null);
-            
-            $isTaskDelayed = false;
-            if ($estimatedDate && now()->gt($estimatedDate)) {
-                $isTaskDelayed = true;
-            }
-            
-            // Fix double counting by only considering 'cutting' source if it exists, as requested by user.
-            $cuttingItems = $items->where('source', 'cutting');
-            if ($cuttingItems->count() > 0) {
-                $itemsToSum = $cuttingItems;
-            } else {
-                $itemsToSum = $items;
-            }
-            
+            $isTaskDelayed = $estimatedDate && now()->gt($estimatedDate);
+
             $sentBy = '-';
             $stageName = $firstItem->from_stage->name ?? ($firstItem->source == 'cutting' ? 'Cutting' : '-');
             $unitName = $firstItem->getFromUnitMaster->name ?? null;
-            
             if ($stageName !== '-' && $unitName) {
                 $sentBy = $stageName . ' (' . $unitName . ')';
             } elseif ($unitName) {
@@ -1735,52 +1821,36 @@ class UnitAuthController extends Controller
                 $sentBy = $stageName;
             }
 
-            // Fetch extra info via OrderLot
-            $orderLot = \App\Models\OrderLot::with(['orderProductSet.orderCuttingStages', 'orderProductSet.size_measurement'])->where('lot_no', $lot_no)->first();
-            $designNo = $orderLot?->orderProductSet?->design_number ?? '-';
-            $sizeSet = $orderLot?->orderProductSet?->size_measurement?->name ?? '-';
-            
-            // Total cutting pieces
-            $totalCuttingPieces = 0;
-            $rolls = \App\Models\FabricRollAssigning::with('fabricRollAssigningsDetail')->where('lot_no', $lot_no)->get();
-            if ($rolls->isNotEmpty()) {
-                $totalCuttingPieces = $rolls->flatMap(function($roll) {
-                    return $roll->fabricRollAssigningsDetail;
-                })->sum('quantity');
-            }
-
-            $totalAssigned = $itemsToSum->sum('quantity');
-            $totalPending = $itemsToSum->sum('remaining_quantity');
+            $orderLot = $orderLots->get($norm($lot_no));
+            $totalPending = $g['raw_pending'];
             if ($isPacking) {
-                $packedQty = $packedQuantities[$lot_no] ?? 0;
-                $totalPending = max(0, $totalPending - $packedQty);
+                $totalPending = max(0, $totalPending - ($packedQuantities[$lot_no] ?? 0));
             }
 
-            return [
+            $row = [
                 'lot_no' => $lot_no,
-                'design_no' => $designNo,
-                'size_set' => $sizeSet,
-                'total_cutting_pieces' => $totalCuttingPieces,
+                'design_no' => $orderLot?->orderProductSet?->design_number ?? '-',
+                'size_set' => $orderLot?->orderProductSet?->size_measurement?->name ?? '-',
+                'total_cutting_pieces' => $cutPieces->get($norm($lot_no), 0),
                 'sent_by' => $sentBy,
-                'total_assigned' => $totalAssigned,
+                'total_assigned' => $g['counted']->sum('quantity'),
                 'total_pending' => $totalPending,
                 'assigned_date' => $assignedDate,
                 'estimated_date' => $estimatedDate,
-                'is_delayed' => $isTaskDelayed
+                'is_delayed' => $isTaskDelayed,
+                'items' => $items,
+                'counted_sources' => $g['counted']->pluck('source')->unique()->values()->all(),
             ];
-        })->filter(function($item) use ($isDelayed, $endDate, $minBalance, $maxBalance) {
-            if ($item['total_pending'] <= 0) return false;
-            if ($isDelayed && !$item['is_delayed']) return false;
-            if ($endDate && $item['estimated_date']) {
-                if (\Carbon\Carbon::parse($item['estimated_date'])->format('Y-m-d') > \Carbon\Carbon::parse($endDate)->format('Y-m-d')) {
-                    return false;
-                }
-            }
-            if ($minBalance !== null && $minBalance !== '' && $item['total_pending'] < $minBalance) return false;
-            if ($maxBalance !== null && $maxBalance !== '' && $item['total_pending'] > $maxBalance) return false;
-            return true;
-        })->values();
 
-        return view('unit.pending_tasks', compact('grouped'));
+            if (!$includeDone) {
+                if ($row['total_pending'] <= 0) continue;
+                if ($endDate && $row['estimated_date'] && $row['estimated_date']->format('Y-m-d') > \Carbon\Carbon::parse($endDate)->format('Y-m-d')) continue;
+                if ($minBalance !== null && $minBalance !== '' && $row['total_pending'] < $minBalance) continue;
+                if ($maxBalance !== null && $maxBalance !== '' && $row['total_pending'] > $maxBalance) continue;
+            }
+            $result->push($row);
+        }
+
+        return $result;
     }
 }

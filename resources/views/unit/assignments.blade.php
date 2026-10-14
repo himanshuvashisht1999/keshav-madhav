@@ -1,260 +1,167 @@
 @extends('layouts.unit')
 
-@section('title', 'Assignments')
+@section('title', !empty($delayedOnly) ? 'Late Work' : 'My Work')
 
 @push('styles')
-    <style>
-        body {
-            background: #f1f5f9;
-            color: #1e293b;
-        }
-
-        .dashboard-header-simple {
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 24px 0;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .dashboard-title-simple {
-            font-size: 24px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 4px;
-        }
-
-        .dashboard-subtitle-simple {
-            font-size: 14px;
-            color: #64748b;
-        }
-
-        .tabs-simple {
-            display: flex;
-            background: #e2e8f0;
-            padding: 4px;
-            border-radius: 8px;
-            margin-bottom: 24px;
-        }
-
-        .tab-item-simple {
-            flex: 1;
-            text-align: center;
-            padding: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            border-radius: 6px;
-            text-decoration: none !important;
-            color: #64748b;
-            transition: all 0.2s;
-        }
-
-        .tab-item-simple.active {
-            background: #ffffff;
-            color: #4f46e5;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .order-card-simple {
-            background: #ffffff;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            padding: 16px;
-            margin-bottom: 16px;
-            text-decoration: none !important;
-            display: block;
-            transition: all 0.2s;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .order-card-simple:hover {
-            border-color: #4f46e5;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .order-sku-simple {
-            font-size: 16px;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 4px;
-        }
-
-        .customer-info-simple {
-            font-size: 13px;
-            color: #64748b;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .task-badge-simple {
-            background: #f1f5f9;
-            color: #475569;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
-            border: 1px solid #e2e8f0;
-        }
-
-        .latest-activity-simple {
-            font-size: 11px;
-            color: #94a3b8;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #f1f5f9;
-        }
-
-        .order-card-delayed {
-            border-color: #fca5a5 !important;
-            background-color: #fff1f2 !important;
-        }
-
-        .order-card-delayed:hover {
-            border-color: #ef4444 !important;
-        }
-
-        .order-card-delayed .order-sku-simple {
-            color: #991b1b !important;
-        }
-
-        .delay-indicator {
-            background: #ef4444;
-            color: white;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 800;
-            text-transform: uppercase;
-            margin-left: 8px;
-        }
-
-        .grid-info-simple {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-        }
-
-        .info-item-small {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .info-label-small {
-            font-size: 10px;
-            text-transform: uppercase;
-            color: #94a3b8;
-            font-weight: 700;
-            margin-bottom: 2px;
-        }
-
-        .info-value-small {
-            font-size: 12px;
-            color: #334155;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-    </style>
+<style>
+    .as-tabs { display: flex; background: #fff; border: 1px solid var(--u-line); border-radius: 6px; padding: 3px; margin-bottom: 10px; }
+    .as-tabs a { flex: 1; text-align: center; padding: 8px 6px; border-radius: 4px; font-size: 13px; font-weight: 700; color: var(--u-muted); text-decoration: none !important; }
+    .as-tabs a.active { background: var(--u-green); color: #fff; }
+    .as-tabs a.active i { color: var(--u-yellow); }
+    .as-filter { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) auto auto; gap: 8px; align-items: end; }
+    .as-filter .xl-btn { height: 36px; }
+    .as-filter .as-actions { display: contents; }
+    .as-summary { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--u-muted); margin: 0 2px 8px; }
+    .as-summary strong { color: var(--u-green); }
+    .as-table tbody tr { cursor: pointer; }
+    .as-table td:nth-child(2), .as-table th:nth-child(2) { position: sticky; left: 0; z-index: 1; box-shadow: 2px 0 0 var(--u-line); }
+    .as-table thead th:nth-child(2) { z-index: 3; }
+    .as-table tr.as-late td { background: #fff1f2 !important; }
+    .as-sku { font-weight: 800; white-space: nowrap; }
+    .mw-msg { border-radius: 6px; padding: 9px 12px; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+    .mw-msg-error { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .mw-msg-ok { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    @media (max-width: 640px) {
+        .as-filter { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .as-filter .as-actions { grid-column: 1 / -1; display: flex; gap: 8px; }
+        .as-filter .as-actions .xl-btn { flex: 1; }
+    }
+</style>
 @endpush
 
 @section('content')
-    <div class="dashboard-header-simple">
-        <div class="container">
-            <h1 class="dashboard-title-simple">Assignments</h1>
-            <p class="dashboard-subtitle-simple">Track and manage your manufacturing tasks by
-                {{ strtolower($groupLabel ?? 'Order') }}</p>
-        </div>
+    @php
+        $label = $groupLabel ?? 'Order';
+        $currentView = $view ?? 'open';
+        $totalPcs = collect($orders)->sum('total_quantity');
+        $delayedOnly = !empty($delayedOnly);
+        $allCount = $allCount ?? count($orders);
+        $lateCount = $lateCount ?? collect($orders)->where('is_delayed', true)->count();
+        $isArchive = $currentView === 'closed';
+    @endphp
+
+    @if(session('success'))
+        <div class="mw-msg mw-msg-ok"><i class="fas fa-check-circle"></i> {{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="mw-msg mw-msg-error"><i class="fas fa-exclamation-circle"></i> {{ session('error') }}</div>
+    @endif
+
+    <!-- Open / Late / Done -->
+    <div class="xl-chips">
+        <a href="{{ route('unit.assignments', ['view' => 'open']) }}" class="{{ !$isArchive && !$delayedOnly ? 'active' : '' }}">
+            Open @unless($isArchive)<span class="xl-chip-n">{{ $allCount }}</span>@endunless
+        </a>
+        <a href="{{ route('unit.assignments', ['view' => 'open', 'delayed' => 1]) }}" class="xl-chip-late {{ !$isArchive && $delayedOnly ? 'active' : '' }}">
+            <i class="fas fa-exclamation-triangle"></i> Late @unless($isArchive)<span class="xl-chip-n">{{ $lateCount }}</span>@endunless
+        </a>
+        @if(!empty($canCloseTasks) && $canCloseTasks)
+            <a href="{{ route('unit.assignments', ['view' => 'closed']) }}" class="{{ $isArchive ? 'active' : '' }}">
+                <i class="fas fa-archive"></i> Closed
+            </a>
+        @endif
     </div>
 
-    <div class="container pb-5">
-        @if(!empty($canCloseTasks) && $canCloseTasks)
-            <div class="tabs-simple">
-                <a href="{{ route('unit.assignments', ['view' => 'open']) }}"
-                    class="tab-item-simple {{ ($view ?? 'open') === 'open' ? 'active' : '' }}">
-                    <i class="fas fa-folder-open mr-2"></i> Active {{ Str::plural($groupLabel ?? 'Order') }}
-                </a>
-                <a href="{{ route('unit.assignments', ['view' => 'closed']) }}"
-                    class="tab-item-simple {{ ($view ?? 'open') === 'closed' ? 'active' : '' }}">
-                    <i class="fas fa-archive mr-2"></i> Archived {{ Str::plural($groupLabel ?? 'Order') }}
-                </a>
-            </div>
+    <form action="{{ route('unit.assignments') }}" method="GET" class="xl-panel">
+        <input type="hidden" name="view" value="{{ $currentView }}">
+        @if($delayedOnly)
+            <input type="hidden" name="delayed" value="1">
         @endif
+        <div class="as-filter">
+            <div class="xl-field">
+                <label for="order_no">Order No</label>
+                <input type="text" id="order_no" name="order_no" placeholder="e.g. 398" value="{{ request('order_no') }}">
+            </div>
+            <div class="xl-field">
+                <label for="lot_no">Design No</label>
+                <input type="text" id="lot_no" name="lot_no" placeholder="e.g. 217788" value="{{ request('lot_no') }}">
+            </div>
+            <div class="as-actions">
+                <button type="submit" class="xl-btn"><i class="fas fa-filter"></i> Filter</button>
+                <a href="{{ route('unit.assignments', $delayedOnly ? ['view' => $currentView, 'delayed' => 1] : ['view' => $currentView]) }}" class="xl-btn xl-btn-outline"><i class="fas fa-undo"></i> Clear</a>
+            </div>
+        </div>
+    </form>
 
-        <div class="row">
-            @forelse($orders as $sku => $order)
-                <div class="col-12 col-md-6 col-lg-4">
-                    <a href="{{ $order['direct_url'] ?? route('unit.assignments', ['order_sku' => $order['sku'], 'view' => $view]) }}"
-                        class="order-card-simple {{ $order['is_delayed'] ? 'order-card-delayed' : '' }}">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="order-sku-simple">
-                                    <i class="fas fa-barcode text-muted mr-2"></i>
-                                    {{ $order['sku'] }}
-                                    @if($order['is_delayed'])
-                                        <span class="delay-indicator">Delayed</span>
-                                    @endif
-                                </div>
-                                <!-- <div class="customer-info-simple">
-                                        <i class="fas fa-user-tie mr-1 opacity-50"></i> {{ $order['customer'] }}
-                                    </div> -->
+    <div class="as-summary">
+        <span><strong>{{ count($orders) }}</strong> {{ strtolower(Str::plural($label, count($orders))) }}</span>
+        <span>Total <strong>{{ number_format($totalPcs) }}</strong> pcs</span>
+        @if(count($orders))
+            <span><i class="fas fa-hand-pointer"></i> Tap an {{ strtolower($label) }} to open</span>
+        @endif
+    </div>
 
-                                <div class="mt-3 grid-info-simple">
-                                    <div class="info-item-small">
-                                        <span class="info-label-small">Design</span>
-                                        <span class="info-value-small">{{ $order['design_no'] }}</span>
-                                    </div>
-                                    <div class="info-item-small">
-                                        <span class="info-label-small">Color</span>
-                                        <span class="info-value-small">{{ $order['color'] }}</span>
-                                    </div>
-                                    <div class="info-item-small">
-                                        <span class="info-label-small">Total Pcs</span>
-                                        <span
-                                            class="info-value-small font-weight-bold text-primary">{{ $order['total_quantity'] }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="task-badge-simple">
-                                {{ $order['task_count'] }} {{ Str::plural('Task', $order['task_count']) }}
-                            </span>
-                        </div>
-
-                        @if($order['start_date'] || $order['end_date'])
-                            <div class="mt-2 d-flex gap-3" style="font-size: 11px; color: #64748b;">
-                                <span><i class="far fa-calendar-alt mr-1"></i>
-                                    {{ $order['start_date'] ? date('d M', strtotime($order['start_date'])) : '-' }}</span>
-                                <span><i class="fas fa-arrow-right mx-1" style="font-size: 9px; opacity: 0.5;"></i></span>
-                                <span class="{{ $order['is_delayed'] ? 'text-danger font-weight-bold' : '' }}">
-                                    <i class="far fa-calendar-check mr-1"></i>
-                                    {{ $order['end_date'] ? date('d M', strtotime($order['end_date'])) : '-' }}
-                                </span>
-                            </div>
-                        @endif
-
-                        <div class="latest-activity-simple">
-                            <i class="far fa-clock mr-1"></i>
-                            Updated
-                            {{ $order['latest_task'] ? \Carbon\Carbon::parse($order['latest_task'])->diffForHumans() : 'Recently' }}
-                        </div>
-                    </a>
-                </div>
-            @empty
-                <div class="col-12">
-                    <div class="card border-0 shadow-sm p-5 text-center">
-                        <h3 class="h5 font-weight-bold">No {{ Str::plural($groupLabel ?? 'Order') }} Found</h3>
-                        <p class="text-muted mb-0">
-                            @if(($view ?? 'open') === 'closed')
-                                Your archived {{ strtolower(Str::plural($groupLabel ?? 'Order')) }} list is empty.
+    <div class="xl-wrap">
+        <table class="as-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>{{ $label }} No</th>
+                    <th>Design No</th>
+                    <th>Color</th>
+                    <th class="xl-num">Tasks</th>
+                    <th class="xl-num">Total Pcs</th>
+                    <th>Start</th>
+                    <th>Est. End</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($orders as $sku => $order)
+                    @php $href = $order['direct_url'] ?? route('unit.assignments', ['order_sku' => $order['sku'], 'view' => $currentView]); @endphp
+                    <tr data-href="{{ $href }}" class="{{ $order['is_delayed'] ? 'as-late' : '' }}">
+                        <td>{{ $loop->iteration }}</td>
+                        <td class="as-sku"><a href="{{ $href }}">{{ $order['sku'] }}</a></td>
+                        <td class="xl-nowrap">{{ $order['design_no'] }}</td>
+                        <td class="xl-nowrap">{{ $order['color'] }}</td>
+                        <td class="xl-num">{{ $order['task_count'] }}</td>
+                        <td class="xl-num xl-strong">{{ number_format((float) $order['total_quantity']) }}</td>
+                        <td class="xl-nowrap">{{ $order['start_date'] ? date('d M y', strtotime($order['start_date'])) : '-' }}</td>
+                        <td class="xl-nowrap {{ $order['is_delayed'] ? 'xl-late' : '' }}">
+                            {{ $order['end_date'] ? date('d M y', strtotime($order['end_date'])) : '-' }}
+                            @if($order['is_delayed'])
+                                <span class="xl-pill xl-pill-late">Late</span>
+                            @endif
+                        </td>
+                        <td class="xl-nowrap xl-sub">{{ $order['latest_task'] ? \Carbon\Carbon::parse($order['latest_task'])->diffForHumans() : 'Recently' }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="9" class="xl-empty">
+                            <strong>{{ $delayedOnly ? 'No Delayed' : 'No' }} {{ Str::plural($label) }} Found</strong><br>
+                            @if($delayedOnly)
+                                Nothing is past its estimated end date.
+                            @elseif($currentView === 'closed')
+                                Your archived {{ strtolower(Str::plural($label)) }} list is empty.
                             @else
                                 You have no pending assignments at the moment.
                             @endif
-                        </p>
-                    </div>
-                </div>
-            @endforelse
-        </div>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+            @if(count($orders))
+                <tfoot>
+                    <tr>
+                        <td></td>
+                        <td>Total</td>
+                        <td colspan="2"></td>
+                        <td class="xl-num">{{ collect($orders)->sum('task_count') }}</td>
+                        <td class="xl-num">{{ number_format($totalPcs) }}</td>
+                        <td colspan="3"></td>
+                    </tr>
+                </tfoot>
+            @endif
+        </table>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('click', function (e) {
+        var row = e.target.closest('.as-table tbody tr[data-href]');
+        if (!row || e.target.closest('a, button, form, input')) return;
+        window.location.href = row.getAttribute('data-href');
+    });
+</script>
+@endpush
