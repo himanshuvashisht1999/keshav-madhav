@@ -288,6 +288,12 @@
             }
         });
 
+        // "28*40 [28, 30, 32...]" so same-named size sets can be told apart
+        function sizeSetLabel(id, name) {
+            let info = sizeSetsMap[id];
+            return (info && info.sizes.length) ? `${name} [${info.sizes.join(', ')}]` : name;
+        }
+
         let sourceCounter = 0;
         let generatedCounter = 0;
 
@@ -619,7 +625,7 @@
                 let uniqueSizeSets = [];
                 values.variants.forEach(function (v) {
                     if (!uniqueSizeSets.includes(v.size_set_id)) {
-                        sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                        sizeSelect.append(`<option value="${v.size_set_id}">${sizeSetLabel(v.size_set_id, v.size_set_name)}</option>`);
                         uniqueSizeSets.push(v.size_set_id);
                     }
                 });
@@ -945,7 +951,7 @@
 
             let sList = Object.values(sizeTally);
             sList.forEach(s => {
-                sSelect.append(`<option value="${s.id}">${s.name} (${s.boxes} Bx)</option>`);
+                sSelect.append(`<option value="${s.id}">${sizeSetLabel(s.id, s.name)} (${s.boxes} Bx)</option>`);
             });
 
             if (selectedSizeSetId) {
@@ -1243,7 +1249,7 @@
                     let uniqueSizeSets = [];
                     data.variants.forEach(function (v) {
                         if (!uniqueSizeSets.includes(v.size_set_id)) {
-                            sizeSelect.append(`<option value="${v.size_set_id}">${v.size_set_name}</option>`);
+                            sizeSelect.append(`<option value="${v.size_set_id}">${sizeSetLabel(v.size_set_id, v.size_set_name)}</option>`);
                             uniqueSizeSets.push(v.size_set_id);
                         }
                     });
