@@ -778,6 +778,23 @@ if (!function_exists('send_whatsapp_attachment')) {
         return $ret;
     }
 }
+if (!function_exists('admin_logo_url')) {
+    /**
+     * The logo the admin panel shows in its sidebar: logo-mascot.png when that file is uploaded,
+     * else the logo saved in General Settings (used by the sales agent app too).
+     */
+    function admin_logo_url()
+    {
+        static $url = null;
+        if ($url === null) {
+            $url = file_exists(public_path('assets/general-settings-image/logo-mascot.png'))
+                ? asset('assets/general-settings-image/logo-mascot.png')
+                : (optional(\App\Models\GeneralSettings::where('status', 1)->first())->logo
+                    ?? asset('assets/general-settings-image/default-image.png'));
+        }
+        return $url;
+    }
+}
 if (!function_exists('whatsapp_pdf_path')) {
     /**
      * Where a PDF is saved before it is sent on WhatsApp: private storage (the sender reads the file itself,

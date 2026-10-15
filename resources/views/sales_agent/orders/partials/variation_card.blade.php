@@ -26,20 +26,21 @@
             <span class="small text-muted"><i class="fas fa-ruler-combined mr-1"></i> {{ $variation->size_set_name }}</span>
         </div>
         
-        <div class="bg-light rounded p-2 mb-3 d-flex justify-content-between align-items-center">
-            @if(!isset($settings) || $settings->agent_app_show_stock)
-              <div>
-                  <small class="text-muted d-block uppercase tracking-wider font-weight-bold" style="font-size: 0.65rem;">Available</small>
-                  <span class="font-weight-bold text-dark available-text" data-base-available="{{ $variation->available_boxes }}">{{ $variation->available_boxes }} Boxes</span>
-              </div>
-            @endif
+        @php $showStockBox = !isset($settings) || $settings->agent_app_show_stock; @endphp
+        @if($showStockBox || $see_price)
+        <div class="sk-pricebar">
             @if($see_price)
-            <div class="text-right">
-                <small class="text-muted d-block uppercase tracking-wider font-weight-bold" style="font-size: 0.65rem;">Price</small>
-                <span class="text-primary font-weight-bold">₹{{ number_format($variation->unit_price, 2) }}</span>
-            </div>
+                <div class="sk-price">
+                    @include('sales_agent.partials.price', ['price' => $variation->unit_price, 'mrp' => $variation->mrp ?? 0])
+                </div>
+            @endif
+            @if($showStockBox)
+                <span class="sk-stock"><i class="fas fa-box"></i>
+                    <span class="available-text" data-base-available="{{ $variation->available_boxes }}">{{ $variation->available_boxes }} Boxes</span>
+                </span>
             @endif
         </div>
+        @endif
 
         @php
             $canOverstock = false;

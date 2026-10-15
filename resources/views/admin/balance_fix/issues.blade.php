@@ -59,8 +59,11 @@
 
         @if($corrected->isNotEmpty())
             <div class="erp-card">
-                <div class="erp-card-header">
+                <div class="erp-card-header d-flex justify-content-between align-items-center">
                     <h3 class="erp-card-title mb-0"><i class="fas fa-history"></i> Already corrected ({{ $corrected->count() }})</h3>
+                    <a href="{{ route('admin.balance-issues.corrected-excel') }}" class="btn-erp btn-erp-outline">
+                        <i class="fas fa-file-excel mr-1 text-success"></i> Download Excel
+                    </a>
                 </div>
                 <div class="table-responsive">
                     <table class="table erp-table mb-0">
@@ -78,7 +81,7 @@
                             @foreach($corrected as $c)
                                 <tr>
                                     <td class="text-nowrap">{{ \Carbon\Carbon::parse($c->created_at)->format('d M Y, h:i A') }}</td>
-                                    <td>{{ ucwords($c->ledger_type) }}</td>
+                                    <td>{{ ucwords(str_replace('_', ' ', $c->ledger_type)) }}</td>
                                     <td>
                                         <a href="{{ route('admin.ledger.party.show', ['type' => $c->ledger_type, 'id' => $c->party_id]) }}" target="_blank">{{ $c->party_name }}</a>
                                     </td>

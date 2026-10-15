@@ -4,9 +4,9 @@
 <div class="container py-2" style="max-width: 600px; padding-bottom: 90px;">
 
     <!-- HEADER / STATUS CARD -->
-    <div class="app-card shadow-sm border-0 mb-3 text-center p-3" style="border-radius: 16px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff;">
+    <div class="app-card shadow-sm border-0 mb-3 text-center p-3" style="border-radius: 16px; background: linear-gradient(135deg, #0b6b31 0%, #05421c 100%); color: #fff;">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="small font-weight-bold text-uppercase" style="letter-spacing: 1px; color: #94a3b8;">Connection Status</span>
+            <span class="small font-weight-bold text-uppercase" style="letter-spacing: 1px; color: #d6ebc4;">Connection Status</span>
             <span id="networkStatusBadge" class="badge badge-pill badge-success px-3 py-1 font-weight-bold" style="font-size: 12px;">
                 <i class="fas fa-wifi mr-1"></i> Checking...
             </span>
@@ -87,17 +87,15 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/js/offline-db.js') }}"></script>
+{{-- offline-db.js is already loaded by the layout --}}
 <script>
 $(document).ready(function () {
+    // "Show pricing info" from admin: the page's value, or the last catalogue download when that is newer
     const agentSeePrice = {{ (isset($agent) && $agent->see_price) ? 'true' : 'false' }};
+    const pageRenderedAt = {{ (int) round(microtime(true) * 1000) }};
     async function canSeePrice() {
-        if (!agentSeePrice) return false;
         try {
-            const meta = await SnapKidOfflineDB.getMeta();
-            if (meta && typeof meta.see_price !== 'undefined') {
-                return (meta.see_price === true || meta.see_price === 1 || meta.see_price === '1');
-            }
+            return await SnapKidOfflineDB.resolveSeePrice(agentSeePrice, pageRenderedAt);
         } catch (e) {}
         return agentSeePrice;
     }
@@ -113,7 +111,7 @@ $(document).ready(function () {
             checkPendingOrders();
         } else {
             badge.removeClass('badge-success').addClass('badge-danger')
-                .html('<i class="fas fa-wifi-slash mr-1"></i> Offline');
+                .html('<i class="fas fa-plane mr-1"></i> Offline');
             $('#btnDownloadCatalog').prop('disabled', true);
         }
     }

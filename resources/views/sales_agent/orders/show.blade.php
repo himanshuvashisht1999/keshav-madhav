@@ -11,20 +11,20 @@
 
         <!-- ORDER INFO CARD -->
         <div class="app-card shadow-sm border-0 mb-4 bg-primary text-white position-relative" style="border-radius: 18px;">
-            <div style="height: 5px; background: #ffe600; width: 100%; position: absolute; top: 0; left: 0; border-top-left-radius: 18px; border-top-right-radius: 18px;"></div>
+            <div style="height: 5px; background: #fcee21; width: 100%; position: absolute; top: 0; left: 0; border-top-left-radius: 18px; border-top-right-radius: 18px;"></div>
             <div class="d-flex justify-content-between align-items-center pt-2">
                 <div>
-                    <p class="small mb-1 font-weight-bold uppercase" style="color: #fef08a; letter-spacing: 0.5px; font-size: 11px;">Status</p>
-                    <span class="badge px-3 py-1 font-weight-bold shadow-xs" style="background: #ffe600; color: #14532d; font-size: 0.95rem; border-radius: 8px; letter-spacing: 0.5px;">
+                    <p class="small mb-1 font-weight-bold uppercase" style="color: #fff59d; letter-spacing: 0.5px; font-size: 11px;">Status</p>
+                    <span class="badge px-3 py-1 font-weight-bold shadow-xs" style="background: #fcee21; color: #05421c; font-size: 0.95rem; border-radius: 8px; letter-spacing: 0.5px;">
                         {{ strtoupper($order->status) }}
                     </span>
                 </div>
                 <div class="text-right">
-                    <p class="small mb-1 font-weight-bold uppercase" style="color: #fef08a; letter-spacing: 0.5px; font-size: 11px;">Total Items</p>
-                    <h3 class="font-weight-bold mb-0 text-white" style="font-size: 1.6rem; text-shadow: 0 1px 2px rgba(0,0,0,0.15);">{{ $order->total_qty }} <span style="font-size: 1rem; color: #fef08a;">pcs</span></h3>
+                    <p class="small mb-1 font-weight-bold uppercase" style="color: #fff59d; letter-spacing: 0.5px; font-size: 11px;">Total Items</p>
+                    <h3 class="font-weight-bold mb-0 text-white" style="font-size: 1.6rem; text-shadow: 0 1px 2px rgba(0,0,0,0.15);">{{ $order->total_qty }} <span style="font-size: 1rem; color: #fff59d;">pcs</span></h3>
                     <div class="d-flex flex-wrap justify-content-end mt-2">
                         <div class="dropdown mr-2 mb-1">
-                            <button class="btn btn-sm btn-success dropdown-toggle rounded-pill px-3 font-weight-bold shadow-sm text-nowrap" 
+                            <button class="btn btn-sm btn-whatsapp dropdown-toggle rounded-pill px-3 font-weight-bold shadow-sm text-nowrap" 
                                 type="button" id="whatsappOrderDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="background-color: #25D366; border-color: #25D366;">
                                 <i class="fab fa-whatsapp"></i> WA PDF
                             </button>
@@ -101,7 +101,7 @@
                         @else
                             <span class="badge badge-secondary mr-2">PENDING</span>
                         @endif
-                        <span class="badge font-weight-bold px-2 py-1" style="background: #fef08a; color: #854d0e; border: 1px solid #fde047; border-radius: 6px;">{{ $group->box_count }} Boxes</span>
+                        <span class="badge font-weight-bold px-2 py-1" style="background: #fff59d; color: #05421c; border: 1px solid #e2d514; border-radius: 6px;">{{ $group->box_count }} Boxes</span>
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mb-2">
@@ -125,6 +125,9 @@
                         @if(Auth::guard('sales_agent')->user()->see_price)
                             <span class="text-primary font-weight-bold d-block">₹{{ number_format($group->selling_price, 2) }} /
                                 pc</span>
+                            @if((float) $group->mrp > 0)
+                                <small class="text-muted">MRP ₹{{ number_format($group->mrp, 2) }}</small>
+                            @endif
                         @else
                             <span class="text-primary font-weight-bold d-block">Packed</span>
                             <small class="text-muted">Ready</small>
@@ -199,7 +202,7 @@
         }
 
         .bg-primary {
-            background: linear-gradient(135deg, #26A744 0%, #16812d 100%) !important;
+            background: linear-gradient(135deg, #05421c 0%, #0b6b31 100%) !important;
         }
     </style>
 @endpush

@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ $title ?? 'Sales Agent Portal' }}</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Font: Roboto (same as the admin panel) -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Bootstrap 4 -->
@@ -18,193 +18,202 @@
         href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
 
     <style>
+        /* Snapkid brand colours - the same 4 colours as the admin panel and the unit worker app */
         :root {
-            --primary-color: #26A744;
-            --primary-light: #32c454;
-            --primary-dark: #1a8733;
-            --accent-yellow: #ffe600;
-            --accent-yellow-light: #fef08a;
-            --secondary-color: #84d232;
-            --bg-color: #f8fafc;
-            --card-shadow: 0 4px 12px -2px rgba(38, 167, 68, 0.1), 0 2px 6px -2px rgba(0, 0, 0, 0.05);
-            --header-height: 62px;
-            --nav-height: 65px;
+            --primary-color: #05421c;        /* brand dark green */
+            --primary-light: #36b54a;        /* wordmark green */
+            --primary-dark: #032b12;
+            --accent-yellow: #fcee21;        /* sun yellow */
+            --accent-yellow-light: #fffde0;
+            --secondary-color: #8bc63e;      /* light (mascot) green */
+            --bg-color: #f3f6f1;
+            --card-shadow: 0 1px 3px rgba(5, 66, 28, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --header-height: 60px;
+            --nav-height: 64px;
         }
 
         body {
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background-color: var(--bg-color);
-            color: #1e293b;
-            padding-bottom: var(--nav-height);
-            /* Nav bar space */
+            color: #1f2d1f;
+            padding-bottom: calc(var(--nav-height) + 8px);
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* ---------- top bar (dark green + yellow strip, as the unit app) ---------- */
         .agent-header {
-            background: #fff;
+            background: var(--primary-color);
             height: var(--header-height);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 16px;
+            padding: 0 12px;
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            border-top: 4px solid var(--accent-yellow);
+            border-bottom: 3px solid var(--accent-yellow);
+            box-shadow: 0 2px 8px rgba(5, 66, 28, 0.25);
         }
 
-        .agent-header h1 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin: 0;
-            color: var(--primary-dark);
+        .agent-brand {
             display: flex;
             align-items: center;
+            min-width: 0;
+            text-decoration: none !important;
         }
 
+        .agent-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-right: 10px;
+            box-shadow: 0 0 0 2px var(--accent-yellow);
+            overflow: hidden;
+        }
+
+        .agent-logo img {
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+        }
+
+        .agent-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .agent-offline-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 11px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(252, 238, 33, 0.55);
+            color: #fff !important;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none !important;
+        }
+
+        .agent-offline-pill i { color: var(--accent-yellow); }
+        .agent-offline-pill:active { background: rgba(255, 255, 255, 0.25); }
+
+        .agent-icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 0;
+            background: transparent;
+            color: #fff;
+            font-size: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .agent-icon-btn:hover, .agent-icon-btn:focus { color: var(--accent-yellow); outline: none; }
+
+        /* ---------- bottom navigation (selected = yellow, as the unit app) ---------- */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             background: #fff;
-            height: var(--nav-height);
+            min-height: var(--nav-height);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.05);
+            gap: 6px;
+            padding: 6px 8px;
+            padding-bottom: max(6px, env(safe-area-inset-bottom));
+            border-top: 2px solid var(--primary-color);
+            box-shadow: 0 -2px 10px rgba(5, 66, 28, 0.08);
             z-index: 1000;
-            border-top: 1px solid #f1f5f9;
         }
 
         .nav-item {
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            text-decoration: none;
-            color: #94a3b8;
-            font-size: 11px;
-            font-weight: 600;
-            transition: all 0.25s ease;
-            width: 20%;
+            justify-content: center;
+            gap: 3px;
+            padding: 6px 0 5px;
+            border-radius: 12px;
+            text-decoration: none !important;
+            color: #5f6f63;
+            font-size: 11.5px;
+            font-weight: 700;
+            white-space: nowrap;
             position: relative;
+            transition: background 0.2s ease;
         }
 
         .nav-item i {
             font-size: 20px;
-            margin-bottom: 4px;
-            transition: transform 0.2s ease;
-        }
-
-        .nav-item.active {
-            color: var(--primary-color) !important;
-            font-weight: 700;
-        }
-
-        .nav-item.active i {
-            transform: translateY(-2px);
             color: var(--primary-color);
         }
 
-        .nav-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -6px;
-            width: 20px;
-            height: 3.5px;
+        .nav-item.active {
             background: var(--accent-yellow);
-            border-radius: 3px;
+            color: var(--primary-color) !important;
+            box-shadow: inset 0 0 0 1px #e2d514;
         }
+
+        .nav-item:active { background: #fff8b0; }
 
         .main-content {
-            padding: 18px;
+            padding: 14px;
         }
 
+        /* ---------- cards & buttons ---------- */
         .app-card {
             background: #fff;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 16px;
             box-shadow: var(--card-shadow);
-            border: 1px solid rgba(226, 232, 240, 0.7);
+            border: 1px solid #dfe8da;
         }
 
         .btn-app {
-            background: linear-gradient(135deg, #26A744 0%, #1a8733 100%);
+            background: var(--primary-color);
             color: #fff;
             border-radius: 12px;
             padding: 12px 20px;
             font-weight: 700;
             border: none;
             width: 100%;
-            box-shadow: 0 4px 12px rgba(38, 167, 68, 0.25);
-            transition: all 0.25s ease;
+            box-shadow: 0 3px 10px rgba(5, 66, 28, 0.25);
+            transition: all 0.2s ease;
         }
 
         .btn-app:hover, .btn-app:focus {
-            background: linear-gradient(135deg, #1a8733 0%, #136626 100%);
-            color: #fff;
-            box-shadow: 0 6px 16px rgba(38, 167, 68, 0.35);
+            background: #0b6b31;
+            color: var(--accent-yellow);
         }
 
         .btn-app:active {
             transform: scale(0.98);
-        }
-
-        /* SnapKid Global Bootstrap Overrides */
-        .btn-primary {
-            background: linear-gradient(135deg, #26A744 0%, #1a8733 100%) !important;
-            border-color: #1a8733 !important;
-            color: #fff !important;
-            box-shadow: 0 3px 10px rgba(38, 167, 68, 0.25);
-        }
-
-        .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
-            background: linear-gradient(135deg, #1a8733 0%, #136626 100%) !important;
-            border-color: #136626 !important;
-            color: #fff !important;
-            box-shadow: 0 4px 14px rgba(38, 167, 68, 0.35);
-        }
-
-        .text-primary {
-            color: #26A744 !important;
-        }
-
-        .bg-primary {
-            background: linear-gradient(135deg, #26A744 0%, #1a8733 100%) !important;
-            color: #fff !important;
-        }
-
-        .badge-primary {
-            background-color: #fef08a !important;
-            color: #854d0e !important;
-            border: 1px solid #fde047;
-            font-weight: 700;
-        }
-
-        .border-primary {
-            border-color: #26A744 !important;
-        }
-
-        .custom-control-input:checked ~ .custom-control-label::before {
-            background-color: #26A744 !important;
-            border-color: #26A744 !important;
-        }
-
-        .form-control:focus {
-            border-color: #26A744 !important;
-            box-shadow: 0 0 0 0.2rem rgba(38, 167, 68, 0.2) !important;
-        }
-
-        .select2-container--bootstrap4 .select2-results__option--highlighted[aria-selected] {
-            background-color: #26A744 !important;
-            color: #fff !important;
-        }
-
-        .select2-container--bootstrap4.select2-container--focus .select2-selection {
-            border-color: #26A744 !important;
-            box-shadow: 0 0 0 0.2rem rgba(38, 167, 68, 0.2) !important;
         }
 
         /* Specific Mobile Tweaks */
@@ -213,25 +222,31 @@
                 padding: 0;
             }
         }
+
+        @media (max-width: 360px) {
+            .agent-offline-pill span { display: none; }
+        }
     </style>
     @stack('styles')
+    {{-- brand theme (same colours as admin and the unit app); loaded last so it wins over page styles --}}
+    <link rel="stylesheet" href="{{ asset('agent_assets/agent-theme.css') }}?v={{ @filemtime(public_path('agent_assets/agent-theme.css')) }}">
 </head>
 
-<body>
+<body class="agent-app">
 
     @auth('sales_agent')
         <div class="agent-header">
-            <h1 class="d-flex align-items-center">
-                <img src="{{ asset('images/snapkid_logo.png') }}" alt="SnapKid" style="height: 36px; width: auto; object-fit: contain;" class="mr-2">
-                <span>{{ $title ?? 'SnapKid Agent' }}</span>
-            </h1>
-            <div class="header-actions d-flex align-items-center">
-                <a href="{{ route('agent.offline.index') }}" class="btn btn-sm btn-light rounded-pill px-2 py-1 mr-2 border shadow-xs" title="Without Internet Mode" style="font-size: 11px;">
-                    <i class="fas fa-wifi-slash text-danger mr-1"></i> <span>Offline Mode</span>
+            <a href="{{ route('agent.dashboard') }}" class="agent-brand">
+                <span class="agent-logo"><img src="{{ admin_logo_url() }}" alt="SnapKid"></span>
+                <h1 class="agent-title">{{ $title ?? 'SnapKid Agent' }}</h1>
+            </a>
+            <div class="header-actions">
+                <a href="{{ route('agent.offline.index') }}" class="agent-offline-pill" title="Without Internet Mode">
+                    <i class="fas fa-plane"></i> <span>Offline</span>
                 </a>
-                <form action="{{ route('agent.logout') }}" method="POST" id="logout-form">
+                <form action="{{ route('agent.logout') }}" method="POST" id="logout-form" class="m-0">
                     @csrf
-                    <button type="submit" class="btn btn-link text-muted p-0" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+                    <button type="submit" class="agent-icon-btn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
                 </form>
             </div>
         </div>
@@ -282,7 +297,7 @@
 
             <a href="{{ route('agent.offline.index') }}"
                 class="nav-item position-relative {{ request()->routeIs('agent.offline.*') ? 'active' : '' }}">
-                <i class="fas fa-wifi-slash"></i>
+                <i class="fas fa-plane"></i>
                 <span>Offline</span>
                 <span id="navOfflineBadge" class="badge badge-danger rounded-pill position-absolute" style="top: 0; right: 18%; font-size: 9px; display: none;">0</span>
             </a>
@@ -388,6 +403,25 @@
                 });
             });
         }
+
+        // Price of one piece in the app's price style (same as sales_agent/partials/price.blade.php)
+        window.skMoney = function (v) {
+            v = Number(v) || 0;
+            return '₹' + v.toLocaleString('en-IN', { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 });
+        };
+        window.skPriceHtml = function (price, mrp) {
+            price = Number(price) || 0;
+            mrp = Number(mrp) || 0;
+            let html = '<span class="sk-price-now">' + skMoney(price) + '</span>';
+            if (mrp > price) {
+                const off = Math.round((mrp - price) / mrp * 100);
+                html += '<span class="sk-price-mrp">' + skMoney(mrp) + '</span>';
+                if (off > 0) html += '<span class="sk-price-off">' + off + '% OFF</span>';
+            } else if (mrp > 0) {
+                html += '<span class="sk-price-tag">MRP</span>';
+            }
+            return html;
+        };
 
         // Global offline badge update
         $(function() {

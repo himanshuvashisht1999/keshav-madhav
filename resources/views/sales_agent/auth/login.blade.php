@@ -6,7 +6,7 @@
             <div class="col-12 col-md-5 col-lg-4">
                 <div class="text-center mb-4">
                     <div class="snapkid-logo-wrap d-inline-flex align-items-center justify-content-center p-3 rounded-circle bg-white shadow-sm mb-3">
-                        <img src="{{ asset('images/snapkid_logo.png') }}" alt="SnapKid Logo" class="img-fluid" style="max-height: 95px; width: auto; object-fit: contain;">
+                        <img src="{{ admin_logo_url() }}" alt="SnapKid Logo" class="img-fluid" style="max-height: 95px; width: auto; object-fit: contain;">
                     </div>
                     <h3 class="font-weight-bold text-dark mb-1">Agent Portal</h3>
                     <p class="text-muted small">Sign in to manage shops, catalog & orders</p>
@@ -14,7 +14,7 @@
 
                 <div class="app-card border-0 shadow-lg position-relative overflow-hidden" style="border-radius: 20px; background: #ffffff;">
                     <!-- SnapKid Brand Top Accent Bar -->
-                    <div style="height: 5px; background: linear-gradient(90deg, #ffd600 0%, #22c55e 100%); width: 100%; position: absolute; top: 0; left: 0;"></div>
+                    <div style="height: 5px; background: linear-gradient(90deg, #fcee21 0%, #36b54a 100%); width: 100%; position: absolute; top: 0; left: 0;"></div>
 
                     <form action="{{ route('agent.login') }}" method="POST" class="pt-2">
                         @csrf
@@ -83,7 +83,7 @@
         .snapkid-logo-wrap {
             width: 120px;
             height: 120px;
-            border: 3px solid #fef08a;
+            border: 3px solid #fff59d;
             transition: transform 0.3s ease;
         }
         .snapkid-logo-wrap:hover {
@@ -95,8 +95,8 @@
         }
 
         .input-group:focus-within {
-            border-color: #26A744 !important;
-            box-shadow: 0 0 0 3px rgba(38, 167, 68, 0.2) !important;
+            border-color: #05421c !important;
+            box-shadow: 0 0 0 3px rgba(5, 66, 28, 0.2) !important;
             background: #ffffff !important;
         }
 
@@ -105,20 +105,20 @@
         }
 
         .btn-snapkid-login {
-            background: linear-gradient(135deg, #26A744 0%, #1a8733 100%);
+            background: linear-gradient(135deg, #05421c 0%, #0b6b31 100%);
             color: #ffffff;
             font-weight: 700;
             border-radius: 12px;
             border: none;
             letter-spacing: 0.5px;
-            box-shadow: 0 4px 14px rgba(38, 167, 68, 0.35);
+            box-shadow: 0 4px 14px rgba(5, 66, 28, 0.35);
             transition: all 0.25s ease;
         }
 
         .btn-snapkid-login:hover {
-            background: linear-gradient(135deg, #1a8733 0%, #136626 100%);
+            background: linear-gradient(135deg, #0b6b31 0%, #032b12 100%);
             color: #ffffff;
-            box-shadow: 0 6px 18px rgba(38, 167, 68, 0.45);
+            box-shadow: 0 6px 18px rgba(5, 66, 28, 0.45);
             transform: translateY(-1px);
         }
 
@@ -127,8 +127,8 @@
         }
 
         .custom-control-input:checked ~ .custom-control-label::before {
-            background-color: #26A744;
-            border-color: #26A744;
+            background-color: #05421c;
+            border-color: #05421c;
         }
     </style>
 @endpush

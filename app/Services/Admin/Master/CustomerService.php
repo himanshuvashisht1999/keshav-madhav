@@ -458,6 +458,10 @@ class CustomerService
         $save_data->status = $request->status ?? 1;
         $save_data->type = $type;
         $save_data->payment_term_days = $request->payment_term_days ?? 120;
+        // "Show pricing info" (only when the form sends it; otherwise the default stays)
+        if ($request->has('see_price')) {
+            $save_data->see_price = $request->see_price ? 1 : 0;
+        }
 
         if ($type == 'domestic') {
             $save_data->subtype = $subtype;
@@ -522,6 +526,10 @@ class CustomerService
         $update_data->type = $type;
         $update_data->subtype = ($type == 'domestic') ? $subtype : null;
         $update_data->payment_term_days = $request->payment_term_days ?? $update_data->payment_term_days;
+        // "Show pricing info" (only when the form sends it, so other screens never switch it off)
+        if ($request->has('see_price')) {
+            $update_data->see_price = $request->see_price ? 1 : 0;
+        }
 
         // Editing the opening balance moves the running balance by the difference only,
         // so sales, returns and payments already applied to this customer are never wiped out.

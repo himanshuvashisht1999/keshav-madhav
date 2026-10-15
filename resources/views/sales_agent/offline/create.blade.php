@@ -69,14 +69,14 @@
         position: sticky;
         left: 0;
         z-index: 5;
-        background-color: #fefce8;
+        background-color: #fffde0;
         box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
     }
     .matrix-table thead th:first-child {
         z-index: 15;
-        background: linear-gradient(135deg, #ffd600 0%, #f59e0b 100%) !important;
-        background-color: #ffd600 !important;
-        color: #78350f !important;
+        background: linear-gradient(135deg, #fcee21 0%, #e2d514 100%) !important;
+        background-color: #fcee21 !important;
+        color: #05421c !important;
         text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
     }
     .matrix-row-deselected {
@@ -105,7 +105,7 @@
         border-color: #ffffff !important;
     }
     .matrix-col-header .custom-control-input:checked ~ .custom-control-label::after {
-        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%2316a34a' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3E%3C/svg%3E") !important;
+        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill='%2305421c' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3E%3C/svg%3E") !important;
     }
     .btn-xs {
         padding: 1px 5px;
@@ -121,7 +121,7 @@
 
     <!-- TOP BAR -->
     <div class="d-flex justify-content-between align-items-center mb-2 px-1">
-        <a href="{{ route('agent.offline.index') }}" class="btn btn-sm btn-light border rounded-pill px-3">
+        <a href="{{ route('agent.offline.index') }}" class="btn btn-sm btn-light border rounded-pill px-3 text-nowrap">
             <i class="fas fa-arrow-left mr-1"></i> Hub
         </a>
         <div class="text-center">
@@ -133,10 +133,10 @@
             <button type="button" class="btn btn-sm btn-light border rounded-circle mr-1 shadow-sm" id="btnToggleFilters" style="width: 32px; height: 32px;" title="Filters">
                 <i class="fas fa-filter text-primary"></i>
             </button>
-            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2 mr-1 shadow-sm" id="btnSyncCatalogInline" title="Sync / Download Latest Data">
+            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2 mr-1 shadow-sm text-nowrap" id="btnSyncCatalogInline" title="Sync / Download Latest Data">
                 <i class="fas fa-sync-alt mr-1" id="inlineSyncIcon"></i><span class="small font-weight-bold">Sync</span>
             </button>
-            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm" id="btnOpenScanner">
+            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm text-nowrap" id="btnOpenScanner">
                 <i class="fas fa-qrcode mr-1"></i> Scan Tag
             </button>
         </div>
@@ -162,7 +162,6 @@
         <div id="shopDetailsBox" class="mt-2 p-2 bg-light rounded small" style="display: none;">
             <div class="d-flex justify-content-between">
                 <span class="text-muted"><i class="fas fa-phone mr-1"></i> <span id="shopPhoneText">-</span></span>
-                <span class="font-weight-bold text-success"><i class="fas fa-wallet mr-1"></i> ₹<span id="shopBalanceText">0</span></span>
             </div>
             <div class="text-muted mt-1 text-truncate"><i class="fas fa-map-marker-alt mr-1"></i> <span id="shopAddressText">-</span></div>
         </div>
@@ -278,7 +277,7 @@
                     <div class="quantity-control-app d-inline-flex align-items-center p-0 bg-white border shadow-xs" style="border-radius: 8px; height: 32px;">
                         <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-modal-minus" style="border:0; height: 30px;"><i class="fas fa-minus"></i></button>
                         <input type="number" id="modalQtyInput" class="form-control form-control-sm text-center font-weight-bold p-0 border-0" style="width: 45px; height: 30px; background: transparent;" value="0" min="0">
-                        <button type="button" class="btn btn-sm btn-primary py-0 px-2 btn-modal-plus" style="border:0; height: 30px; background: #26a744;"><i class="fas fa-plus"></i></button>
+                        <button type="button" class="btn btn-sm btn-primary py-0 px-2 btn-modal-plus" style="border:0; height: 30px; background: #05421c;"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
                 <button type="button" class="btn btn-primary btn-sm rounded-pill px-4 font-weight-bold" data-dismiss="modal">Done</button>
@@ -447,13 +446,12 @@ $(document).ready(function () {
     const scanItems = new Map(); // cart items that come from fair/sample scan payloads
 
     // Check sales agent rate viewing permission
+    // "Show pricing info" from admin: the page's value, or the last catalogue download when that is newer
     const agentSeePrice = {{ (isset($agent) && $agent->see_price) ? 'true' : 'false' }};
+    const pageRenderedAt = {{ (int) round(microtime(true) * 1000) }};
+    let seePriceAllowed = agentSeePrice;
     function canSeePrice() {
-        if (!agentSeePrice) return false;
-        if (metaInfo && typeof metaInfo.see_price !== 'undefined') {
-            return (metaInfo.see_price === true || metaInfo.see_price === 1 || metaInfo.see_price === '1');
-        }
-        return agentSeePrice;
+        return seePriceAllowed;
     }
 
     if ($.fn.select2) {
@@ -484,6 +482,7 @@ $(document).ready(function () {
     // 1. Initialize Offline Catalog & Shops
     async function initOfflineCatalog() {
         try {
+            seePriceAllowed = await SnapKidOfflineDB.resolveSeePrice(agentSeePrice, pageRenderedAt);
             metaInfo = await SnapKidOfflineDB.getMeta();
             populateSalesMen();
             const shops = await SnapKidOfflineDB.getShops();
@@ -572,7 +571,6 @@ $(document).ready(function () {
         if (selected) {
             localStorage.setItem('last_offline_shop_id', selected.id);
             $('#shopPhoneText').text(selected.phone || 'N/A');
-            $('#shopBalanceText').text(selected.balance || '0');
             $('#shopAddressText').text(selected.address || 'N/A');
             $('#shopDetailsBox').slideDown();
         } else {
@@ -714,23 +712,13 @@ $(document).ready(function () {
                                     <span class="text-muted ml-auto">${prod.pcs_per_box} pcs</span>
                                 </div>
 
-                                <!-- Available Stock & Price Box -->
-                                <div class="bg-light rounded p-2 mb-2 d-flex justify-content-between align-items-center">
-                                    ${showStock ? `
-                                        <div>
-                                            <small class="text-muted d-block uppercase font-weight-bold" style="font-size: 0.6rem; letter-spacing: 0.5px;">AVAILABLE</small>
-                                            <span class="font-weight-bold text-dark" style="font-size: 11.5px;">${prod.is_advance_sample ? 'No limit' : prod.available_boxes + ' Box'}</span>
-                                        </div>
-                                    ` : `<div></div>`}
-
-                                    ${seePrice ? `
-                                        <div class="text-right">
-                                            <small class="text-muted d-block uppercase font-weight-bold" style="font-size: 0.6rem; letter-spacing: 0.5px;">PRICE</small>
-                                            <span class="text-primary font-weight-bold" style="font-size: 12px;">₹${Number(prod.unit_price).toLocaleString()}</span>
-                                            ${prod.mrp > 0 ? `<small class="text-muted d-block" style="font-size: 9.5px; line-height: 1;">MRP: ₹${Number(prod.mrp).toLocaleString()}</small>` : ''}
-                                        </div>
-                                    ` : `<div></div>`}
+                                <!-- Price & Stock -->
+                                ${(seePrice || showStock) ? `
+                                <div class="sk-pricebar sk-pricebar-sm">
+                                    ${seePrice ? `<div class="sk-price sk-price-sm">${skPriceHtml(prod.unit_price, prod.mrp)}</div>` : ''}
+                                    ${showStock ? `<span class="sk-stock"><i class="fas fa-box"></i> ${prod.is_advance_sample ? 'No limit' : prod.available_boxes + (Number(prod.available_boxes) === 1 ? ' Box' : ' Boxes')}</span>` : ''}
                                 </div>
+                                ` : ''}
                             </div>
 
                             <!-- Bottom Row: Specs & Stepper -->
@@ -746,7 +734,7 @@ $(document).ready(function () {
                                         style="height: 26px; width: 36px; background: transparent;" 
                                         data-key="${prod.key}" 
                                         value="${inCartQty}" min="0" ${prod.is_advance_sample ? '' : `max="${prod.available_boxes}"`}>
-                                    <button type="button" class="btn btn-sm btn-primary py-0 px-2 btn-plus" data-key="${prod.key}" style="border:0; height: 26px; background: #26a744;">
+                                    <button type="button" class="btn btn-sm btn-primary py-0 px-2 btn-plus" data-key="${prod.key}" style="border:0; height: 26px; background: #05421c;">
                                         <i class="fas fa-plus" style="font-size: 9px;"></i>
                                     </button>
                                 </div>
@@ -1294,16 +1282,16 @@ $(document).ready(function () {
 
         // 3. Master Global Apply Bar
         html += `
-            <div class="card border-0 mb-3 shadow-sm" style="background: linear-gradient(90deg, #fefce8 0%, #f0fdf4 100%); border: 1.5px solid #facc15 !important; border-radius: 12px;">
+            <div class="card border-0 mb-3 shadow-sm" style="background: linear-gradient(90deg, #fffde0 0%, #f0f8e7 100%); border: 1.5px solid #e2d514 !important; border-radius: 12px;">
                 <div class="card-body p-2 d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
                     <div>
-                        <span class="font-weight-bold" style="color: #854d0e;"><i class="fas fa-bolt mr-1" style="color: #eab308;"></i> Apply Quantity to All</span>
+                        <span class="font-weight-bold" style="color: #05421c;"><i class="fas fa-bolt mr-1" style="color: #05421c;"></i> Apply Quantity to All</span>
                         <div class="small text-muted">Set quantity for all size sets and colors</div>
                     </div>
-                    <div class="quantity-control-app d-flex align-items-center p-1 bg-white shadow-xs" style="border-radius: 8px; border: 1.5px solid #facc15;">
-                        <button type="button" class="btn-q btn-minus-master font-weight-bold" style="color: #854d0e;">-</button>
-                        <input type="number" id="masterQtyInput" class="font-weight-bold" min="0" value="0" style="color: #854d0e; width: 45px; text-align: center; border: 0; background: transparent;">
-                        <button type="button" class="btn-q btn-plus-master font-weight-bold" style="color: #854d0e;">+</button>
+                    <div class="quantity-control-app d-flex align-items-center p-1 bg-white shadow-xs" style="border-radius: 8px; border: 1.5px solid #e2d514;">
+                        <button type="button" class="btn-q btn-minus-master font-weight-bold" style="color: #05421c;">-</button>
+                        <input type="number" id="masterQtyInput" class="font-weight-bold" min="0" value="0" style="color: #05421c; width: 45px; text-align: center; border: 0; background: transparent;">
+                        <button type="button" class="btn-q btn-plus-master font-weight-bold" style="color: #05421c;">+</button>
                     </div>
                 </div>
             </div>
@@ -1315,7 +1303,7 @@ $(document).ready(function () {
                 <table class="table table-bordered table-sm mb-0 matrix-table text-center align-middle" style="font-size: 13px;">
                     <thead>
                         <tr>
-                            <th class="align-middle text-center font-weight-bold px-2 py-2" style="min-width: 140px; width: 140px; background: linear-gradient(135deg, #ffd600 0%, #f59e0b 100%); background-color: #ffd600; color: #78350f !important; text-shadow: 0 1px 0 rgba(255,255,255,0.3);">
+                            <th class="align-middle text-center font-weight-bold px-2 py-2" style="min-width: 140px; width: 140px; background: linear-gradient(135deg, #fcee21 0%, #e2d514 100%); background-color: #fcee21; color: #05421c !important; text-shadow: 0 1px 0 rgba(255,255,255,0.3);">
                                 SIZE SET
                             </th>
                             ${Array.from({ length: maxColors }).map((_, idx) => {
@@ -1329,7 +1317,7 @@ $(document).ready(function () {
                                 const colName = colColorObj ? (colColorObj.name ? `${colColorObj.name}` : `COLOR ${colColorObj.id}`) : `COL ${idx + 1}`;
 
                                 return `
-                                    <th class="align-middle text-center font-weight-bold text-white p-2 matrix-col-header matrix-col-${idx}" data-col-index="${idx}" style="min-width: 145px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); background-color: #16a34a; color: #fff;">
+                                    <th class="align-middle text-center font-weight-bold text-white p-2 matrix-col-header matrix-col-${idx}" data-col-index="${idx}" style="min-width: 145px; background: linear-gradient(135deg, #36b54a 0%, #05421c 100%); background-color: #05421c; color: #fff;">
                                         <div class="custom-control custom-checkbox d-inline-block text-left" style="max-width: 100%;">
                                             <input type="checkbox" class="custom-control-input toggle-col-checkbox" id="toggle_col_${idx}" data-col-index="${idx}" checked>
                                             <label class="custom-control-label font-weight-bold text-white" for="toggle_col_${idx}" style="font-size: 13px; cursor: pointer; user-select: none; line-height: 1.5;" title="${colName}">
@@ -1354,18 +1342,19 @@ $(document).ready(function () {
         data.size_sets.forEach(ss => {
             html += `
                 <tr class="matrix-row-${ss.size_set_id}">
-                    <td class="align-middle p-2 text-center matrix-ss-header-cell" style="min-width: 140px; width: 140px; background-color: #fefce8; border-right: 2px solid #fef08a;">
+                    <td class="align-middle p-2 text-center matrix-ss-header-cell" style="min-width: 140px; width: 140px; background-color: #fffde0; border-right: 2px solid #fff59d;">
                         <div class="custom-control custom-checkbox d-inline-block mb-1">
                             <input type="checkbox" class="custom-control-input toggle-ss-checkbox" id="toggle_ss_${ss.size_set_id}" data-size-set="${ss.size_set_id}" checked>
-                            <label class="custom-control-label font-weight-bold" for="toggle_ss_${ss.size_set_id}" style="color: #854d0e; font-size: 14px; cursor: pointer; user-select: none;">
+                            <label class="custom-control-label font-weight-bold" for="toggle_ss_${ss.size_set_id}" style="color: #05421c; font-size: 14px; cursor: pointer; user-select: none;">
                                 ${ss.size_set_name}
                             </label>
                         </div>
+                        ${canSeePrice() ? `<div class="sk-price sk-price-xs mb-1">${skPriceHtml(ss.unit_price, ss.mrp)}</div>` : ''}
                         <div>
-                            <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px; border-color: #fde047 !important;">
-                                <button type="button" class="btn-q btn-minus-ss px-2 py-0 font-weight-bold" data-size-set="${ss.size_set_id}" style="color: #854d0e; line-height: 1;">-</button>
-                                <input type="number" class="ss-batch-qty-input font-weight-bold text-center" data-size-set="${ss.size_set_id}" min="0" value="0" style="color: #854d0e; width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
-                                <button type="button" class="btn-q btn-plus-ss px-2 py-0 font-weight-bold" data-size-set="${ss.size_set_id}" style="color: #854d0e; line-height: 1;">+</button>
+                            <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px; border-color: #e2d514 !important;">
+                                <button type="button" class="btn-q btn-minus-ss px-2 py-0 font-weight-bold" data-size-set="${ss.size_set_id}" style="color: #05421c; line-height: 1;">-</button>
+                                <input type="number" class="ss-batch-qty-input font-weight-bold text-center" data-size-set="${ss.size_set_id}" min="0" value="0" style="color: #05421c; width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
+                                <button type="button" class="btn-q btn-plus-ss px-2 py-0 font-weight-bold" data-size-set="${ss.size_set_id}" style="color: #05421c; line-height: 1;">+</button>
                             </div>
                         </div>
                     </td>
@@ -1705,7 +1694,7 @@ $(document).ready(function () {
                 title: 'Order Saved Offline!',
                 text: orderDesc,
                 confirmButtonText: 'Go to Offline Hub',
-                confirmButtonColor: '#16a34a'
+                confirmButtonColor: '#05421c'
             }).then(() => {
                 window.location.href = "{{ route('agent.offline.index') }}";
             });

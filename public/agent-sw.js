@@ -1,10 +1,10 @@
-const CACHE_NAME = 'snapkid-agent-v7';
+const CACHE_NAME = 'snapkid-agent-v10';
 const IMAGE_CACHE_NAME = 'snapkid-product-images';
 
 const STATIC_ASSETS = [
     '/agent/offline',
     '/agent/offline/create',
-    'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap',
+    'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
     'https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css',
     'https://code.jquery.com/jquery-3.6.0.min.js',
@@ -14,7 +14,8 @@ const STATIC_ASSETS = [
     'https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css',
     'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js',
     '/assets/js/html5-qrcode.min.js',
-    '/assets/js/offline-db.js'
+    '/assets/js/offline-db.js',
+    '/agent_assets/agent-theme.css'
 ];
 
 self.addEventListener('install', event => {

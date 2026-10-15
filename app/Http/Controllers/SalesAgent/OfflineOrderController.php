@@ -62,8 +62,9 @@ class OfflineOrderController extends Controller
             if (!$agent->is_master_agent) {
                 $shopsQuery->where('sales_agent_id', $agent_id);
             }
+            // the shop's balance is not sent to the phone (agents do not see party balances)
             $shops = $shopsQuery->orderBy('name')->get([
-                'id', 'name', 'phone', 'address', 'gst_number', 'balance'
+                'id', 'name', 'phone', 'address', 'gst_number'
             ]);
 
             // Each shop's own per-brand discounts (the app prices orders with the selected shop's discount)

@@ -1,24 +1,14 @@
-@extends('sales_agent.layouts.app')
+@extends('sales_agent.layouts.app', ['title' => 'New Order'])
 
 @section('content')
 <div class="content-wrapper">
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0 text-dark">Create Order (Master View)</h1>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <section class="content">
-        <div class="container-fluid">
+        <div class="container-fluid px-0">
             <div class="row justify-content-center">
                 <div class="col-md-8 col-lg-6">
                     <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
                         <div class="card-header bg-primary text-white text-center py-3">
-                            <h4 class="mb-0 font-weight-bold"><i class="fas fa-shopping-cart mr-2"></i> Select Order Details</h4>
+                            <h5 class="mb-0 font-weight-bold"><i class="fas fa-shopping-cart mr-2"></i> Who is this order for?</h5>
                         </div>
                         <div class="card-body p-4 bg-light">
                             <form method="GET" action="{{ route('agent.orders.create') }}">
@@ -57,11 +47,11 @@
                                     </select>
                                 </div>
 
-                                <div class="border-top pt-4 d-flex justify-content-between">
-                                    <a href="{{ route('agent.dashboard') }}" class="btn btn-outline-secondary px-4" style="border-radius: 8px;">
+                                <div class="border-top pt-4 d-flex justify-content-between" style="gap: 10px;">
+                                    <a href="{{ route('agent.dashboard') }}" class="btn btn-outline-secondary px-3 text-nowrap" style="border-radius: 10px;">
                                         <i class="fas fa-times mr-2"></i> Cancel
                                     </a>
-                                    <button type="submit" class="btn btn-primary px-5 shadow-sm" style="border-radius: 8px;">
+                                    <button type="submit" class="btn btn-primary flex-grow-1 shadow-sm text-nowrap" style="border-radius: 10px;">
                                         Proceed <i class="fas fa-arrow-right ml-2"></i>
                                     </button>
                                 </div>

@@ -259,6 +259,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::get('/balance-fix', [\App\Http\Controllers\Admin\BalanceFixController::class, 'show'])->name('balance-fix.show');
         Route::post('/balance-fix', [\App\Http\Controllers\Admin\BalanceFixController::class, 'run'])->name('balance-fix.run');
         Route::get('/balance-issues', [\App\Http\Controllers\Admin\BalanceFixController::class, 'issues'])->name('balance-issues');
+        Route::get('/balance-issues/corrected-excel', [\App\Http\Controllers\Admin\BalanceFixController::class, 'correctedExcel'])->name('balance-issues.corrected-excel');
 
         // Digitized slips: one-time repair of old production data (preview + one button)
         Route::get('/production-fix', [\App\Http\Controllers\Admin\ProductionFixController::class, 'show'])->name('production-fix.show');

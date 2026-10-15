@@ -157,6 +157,7 @@
                         <input type="password" name="password" class="form-control erp-filter-input" placeholder="Enter password">
                     </div>
                     <div class="form-group custom-control custom-checkbox mb-3">
+                        <input type="hidden" name="see_price" value="0">
                         <input class="custom-control-input" type="checkbox" id="see_price" name="see_price" value="1" checked>
                         <label for="see_price" class="custom-control-label">Show pricing info</label>
                     </div>

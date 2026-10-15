@@ -1,0 +1,290 @@
+/* =========================================================================
+   Snapkid sales agent app theme - brand colours (the same 4 colours as the
+   admin panel and the unit worker app). Loaded after every page's own styles
+   (sales_agent/layouts/app.blade.php), so it wins. Scoped to body.agent-app.
+   ========================================================================= */
+:root {
+    --sk-green: #05421c;        /* brand dark green: text, headers, primary buttons */
+    --sk-green-2: #0b6b31;      /* hover / gradient */
+    --sk-green-3: #032b12;
+    --sk-word: #36b54a;         /* wordmark green: success, confirmations */
+    --sk-lime: #8bc63e;         /* light (mascot) green: borders, highlights */
+    --sk-yellow: #fcee21;       /* sun yellow: accents, badges, selected */
+    --sk-yellow-2: #e2d514;     /* yellow border */
+    --sk-yellow-soft: #fffde0;
+    --sk-green-soft: #eaf4e2;
+    --sk-green-softer: #f0f8e7;
+    --sk-bg: #f3f6f1;
+    --sk-line: #dfe8da;
+    --sk-text: #1f2d1f;
+    --sk-muted: #5f6f63;
+}
+
+body.agent-app { background: var(--sk-bg); color: var(--sk-text); }
+body.agent-app a { color: var(--sk-green); }
+body.agent-app .text-dark { color: var(--sk-text) !important; }
+body.agent-app .text-muted { color: var(--sk-muted) !important; }
+body.agent-app .text-primary,
+body.agent-app .text-success,
+body.agent-app .text-info { color: var(--sk-green) !important; }
+body.agent-app .text-warning { color: var(--sk-green) !important; }
+
+/* ---------- backgrounds ---------- */
+body.agent-app .bg-primary,
+body.agent-app .bg-success { background: linear-gradient(135deg, var(--sk-green-2) 0%, var(--sk-green) 100%) !important; color: #fff !important; }
+body.agent-app .bg-dark { background: var(--sk-green) !important; color: #fff !important; }
+body.agent-app .bg-warning { background: var(--sk-yellow) !important; color: var(--sk-green) !important; }
+body.agent-app .bg-light { background-color: #f6f9f3 !important; }
+body.agent-app .bg-primary-soft { background-color: var(--sk-green-soft) !important; }
+body.agent-app .border-primary,
+body.agent-app .border-success { border-color: var(--sk-lime) !important; }
+body.agent-app .border-warning { border-color: var(--sk-yellow-2) !important; }
+
+/* ---------- buttons ---------- */
+body.agent-app .btn { font-weight: 600; }
+body.agent-app .btn-primary,
+body.agent-app .btn-success,
+body.agent-app .btn-info {
+    background: linear-gradient(135deg, var(--sk-green-2) 0%, var(--sk-green) 100%) !important;
+    border-color: var(--sk-green) !important;
+    color: #fff !important;
+    box-shadow: 0 2px 8px rgba(5, 66, 28, 0.22);
+}
+body.agent-app .btn-primary:hover, body.agent-app .btn-primary:focus,
+body.agent-app .btn-success:hover, body.agent-app .btn-success:focus,
+body.agent-app .btn-info:hover, body.agent-app .btn-info:focus {
+    background: var(--sk-green) !important;
+    border-color: var(--sk-green-3) !important;
+    color: var(--sk-yellow) !important;
+}
+body.agent-app .btn-primary:disabled, body.agent-app .btn-success:disabled { opacity: 0.6; }
+body.agent-app .btn-warning { background: var(--sk-yellow) !important; border-color: var(--sk-yellow-2) !important; color: var(--sk-green) !important; }
+body.agent-app .btn-outline-primary,
+body.agent-app .btn-outline-success,
+body.agent-app .btn-outline-info { color: var(--sk-green) !important; border-color: var(--sk-green) !important; background: #fff; }
+body.agent-app .btn-outline-primary:hover,
+body.agent-app .btn-outline-success:hover,
+body.agent-app .btn-outline-info:hover { background: var(--sk-green) !important; color: #fff !important; }
+body.agent-app .btn-outline-secondary { color: var(--sk-green); border-color: #c5d3bd; background: #fff; }
+body.agent-app .btn-outline-secondary:hover { background: var(--sk-green-soft); color: var(--sk-green); border-color: var(--sk-lime); }
+body.agent-app .btn-light { background: #fff; border: 1px solid var(--sk-line); color: var(--sk-green); }
+body.agent-app .btn-light:hover, body.agent-app .btn-light:focus { background: var(--sk-green-soft); border-color: var(--sk-lime); color: var(--sk-green); }
+body.agent-app .btn-link { color: var(--sk-green); }
+body.agent-app .btn:focus { box-shadow: 0 0 0 3px rgba(139, 198, 62, 0.35) !important; }
+
+/* ---------- badges ---------- */
+body.agent-app .badge-primary {
+    background: var(--sk-yellow) !important;
+    color: var(--sk-green) !important;
+    border: 1px solid var(--sk-yellow-2);
+    font-weight: 700;
+}
+body.agent-app .badge-warning { background: #fff59d !important; color: var(--sk-green) !important; border: 1px solid var(--sk-yellow-2); }
+body.agent-app .badge-success { background: var(--sk-word) !important; color: #fff !important; }
+body.agent-app .badge-info { background: var(--sk-green-soft) !important; color: var(--sk-green) !important; border: 1px solid var(--sk-lime); }
+body.agent-app .badge-light { background: #fff !important; color: var(--sk-green) !important; }
+
+/* ---------- alerts ---------- */
+body.agent-app .alert { border-radius: 12px; border: 0; border-left: 4px solid; }
+body.agent-app .alert-success { background: var(--sk-green-softer); color: var(--sk-green); border-left-color: var(--sk-word); }
+body.agent-app .alert-warning { background: var(--sk-yellow-soft); color: var(--sk-green); border-left-color: var(--sk-yellow-2); }
+body.agent-app .alert-info { background: var(--sk-green-soft); color: var(--sk-green); border-left-color: var(--sk-lime); }
+body.agent-app .alert-danger { border-left-color: #dc2626; }
+
+/* ---------- form controls ---------- */
+body.agent-app .form-control { border-color: #cfdcc8; color: var(--sk-text); }
+body.agent-app .form-control:focus,
+body.agent-app input:focus,
+body.agent-app select:focus,
+body.agent-app textarea:focus {
+    border-color: var(--sk-lime) !important;
+    box-shadow: 0 0 0 3px rgba(139, 198, 62, 0.25) !important;
+    outline: none;
+}
+body.agent-app .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: var(--sk-green) !important;
+    border-color: var(--sk-green) !important;
+}
+body.agent-app .custom-control-input:focus ~ .custom-control-label::before { box-shadow: 0 0 0 3px rgba(139, 198, 62, 0.3); }
+body.agent-app .custom-switch .custom-control-input:checked ~ .custom-control-label::after { background-color: var(--sk-yellow); }
+/* a switch inside a bordered box: keep the switch inside the box */
+body.agent-app .custom-control.custom-switch.p-1 { padding-left: 2.9rem !important; min-height: 38px; }
+body.agent-app .custom-control.custom-switch.p-1 .custom-control-label { margin-left: 0 !important; }
+body.agent-app .custom-control.custom-switch.p-1 .custom-control-label::before { left: -2.4rem; }
+body.agent-app .custom-control.custom-switch.p-1 .custom-control-label::after { left: calc(-2.4rem + 2px); }
+
+/* select2 dropdowns */
+body.agent-app .select2-container--bootstrap4 .select2-results__option--highlighted[aria-selected],
+body.agent-app .select2-container--bootstrap4 .select2-results__option--highlighted.select2-results__option[aria-selected=true] {
+    background-color: var(--sk-green) !important;
+    color: #fff !important;
+}
+body.agent-app .select2-container--bootstrap4.select2-container--focus .select2-selection,
+body.agent-app .select2-container--bootstrap4.select2-container--open .select2-selection {
+    border-color: var(--sk-lime) !important;
+    box-shadow: 0 0 0 3px rgba(139, 198, 62, 0.25) !important;
+}
+
+/* ---------- cards ---------- */
+body.agent-app .card { border-color: var(--sk-line); border-radius: 14px; }
+body.agent-app .app-card { border-color: var(--sk-line); }
+body.agent-app .shadow-sm { box-shadow: 0 1px 3px rgba(5, 66, 28, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04) !important; }
+
+/* ---------- pop-ups ---------- */
+body.agent-app .modal-content { border-radius: 16px; border: 0; }
+body.agent-app .modal-header.bg-primary,
+body.agent-app .modal-header.bg-dark { border-bottom: 3px solid var(--sk-yellow) !important; }
+body.agent-app .modal-header.bg-primary .close,
+body.agent-app .modal-header.bg-dark .close { color: #fff; opacity: 0.9; }
+
+/* SweetAlert: default buttons in brand colours (a colour set by the page still wins) */
+body.agent-app .swal2-styled.swal2-confirm { background-color: var(--sk-green); }
+body.agent-app .swal2-styled.swal2-confirm:focus { box-shadow: 0 0 0 3px rgba(139, 198, 62, 0.45) !important; }
+body.agent-app .swal2-styled.swal2-cancel { background-color: #fff; color: var(--sk-green); border: 1px solid #c5d3bd; }
+body.agent-app .swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(54, 181, 74, 0.35) !important; }
+body.agent-app .swal2-icon.swal2-success [class^='swal2-success-line'] { background-color: var(--sk-word) !important; }
+body.agent-app .swal2-timer-progress-bar { background: var(--sk-lime); }
+
+/* ---------- order screens ---------- */
+/* product cards */
+body.agent-app .variation-card { border: 1px solid var(--sk-line) !important; border-radius: 14px; background: #fff; }
+body.agent-app .variation-card.has-qty {
+    border-color: var(--sk-lime) !important;
+    background-color: var(--sk-green-softer) !important;
+    box-shadow: 0 0 0 2px rgba(139, 198, 62, 0.35) !important;
+}
+/* +/- box steppers */
+body.agent-app .quantity-control-app { background: #f6f9f3; border-radius: 10px; }
+body.agent-app .quantity-control-app .btn-q {
+    color: var(--sk-green) !important;
+    border-color: #cfdcc8 !important;
+    font-weight: 700;
+}
+body.agent-app .quantity-control-app .btn-q:active { background: var(--sk-yellow) !important; }
+
+/* scan pop-up grid: dark green colour headers, yellow size column */
+body.agent-app .matrix-table thead th.matrix-col-header {
+    background: linear-gradient(135deg, var(--sk-green-2) 0%, var(--sk-green) 100%) !important;
+    border-color: var(--sk-green-3) !important;
+}
+body.agent-app .matrix-table thead th:first-child { color: var(--sk-green) !important; text-shadow: none !important; }
+/* tick boxes on the dark green colour headers: white box, green tick */
+body.agent-app .matrix-col-header .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #fff !important;
+    border-color: #fff !important;
+}
+body.agent-app .matrix-table td.matrix-ss-header-cell { background-color: var(--sk-yellow-soft) !important; border-right-color: var(--sk-yellow-2) !important; }
+body.agent-app .matrix-table td { border-color: var(--sk-line) !important; }
+
+/* filter chips */
+body.agent-app .size-filter-pill.active,
+body.agent-app .color-filter-pill.active { background: var(--sk-green) !important; color: #fff !important; border-color: var(--sk-green) !important; }
+
+/* page bar under the header on the order screens */
+body.agent-app .content-wrapper > .sticky-top { border-bottom: 1px solid var(--sk-line); }
+
+/* summary bar above the bottom navigation */
+body.agent-app #summaryBar { border-top: 3px solid var(--sk-yellow) !important; }
+
+/* pagination */
+body.agent-app .page-item.active .page-link { background: var(--sk-green); border-color: var(--sk-green); color: #fff; }
+body.agent-app .page-link { color: var(--sk-green); }
+
+/* WhatsApp buttons keep WhatsApp green */
+body.agent-app .btn-whatsapp { background: #25d366 !important; border-color: #25d366 !important; color: #fff !important; }
+body.agent-app .btn-whatsapp:hover, body.agent-app .btn-whatsapp:focus { background: #1ebe5b !important; color: #fff !important; }
+
+/* offline order screen: keep the top buttons on one line on phones */
+@media (max-width: 420px) {
+    body.agent-app #offlineModeIndicator { display: none; }
+}
+
+/* order summary bars sit right on top of the bottom navigation (navigation stays visible) */
+body.agent-app #summaryBar,
+body.agent-app #offlineSummaryBar { bottom: var(--nav-height, 64px) !important; z-index: 999 !important; }
+
+/* ---------- price & stock (product cards, scan pop-ups) ---------- */
+body.agent-app .sk-pricebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding: 8px 10px;
+    margin-bottom: 12px;
+    background: #f6f9f3;
+    border: 1px solid var(--sk-line);
+    border-radius: 10px;
+}
+body.agent-app .sk-pricebar-sm { padding: 6px 8px; margin-bottom: 8px; }
+body.agent-app .variation-card.has-qty .sk-pricebar { background: #fff; }
+body.agent-app .sk-price {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+    min-width: 0;
+    line-height: 1.15;
+}
+body.agent-app .sk-price-now { font-size: 19px; font-weight: 800; color: var(--sk-green); letter-spacing: -0.2px; }
+body.agent-app .sk-price-mrp { font-size: 12.5px; color: var(--sk-muted); text-decoration: line-through; }
+body.agent-app .sk-price-off,
+body.agent-app .sk-price-tag {
+    align-self: center;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+body.agent-app .sk-price-off { background: var(--sk-yellow); color: var(--sk-green); border: 1px solid var(--sk-yellow-2); }
+body.agent-app .sk-price-tag { background: var(--sk-green-soft); color: var(--sk-green); }
+/* smaller cards (offline grid, cards added by a scan) */
+body.agent-app .sk-price-sm .sk-price-now { font-size: 16px; }
+body.agent-app .sk-price-sm .sk-price-mrp { font-size: 11.5px; }
+body.agent-app .sk-price-sm .sk-price-off { font-size: 9.5px; padding: 1px 5px; }
+/* size rows of the scan pop-up: stacked and centred */
+body.agent-app .sk-price-xs { flex-direction: column; align-items: center; gap: 1px; }
+body.agent-app .sk-price-xs .sk-price-now { font-size: 14px; }
+body.agent-app .sk-price-xs .sk-price-mrp { font-size: 10.5px; }
+body.agent-app .sk-price-xs .sk-price-off { font-size: 9px; padding: 1px 5px; }
+body.agent-app .sk-stock {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: #fff;
+    border: 1px solid var(--sk-line);
+    color: var(--sk-green);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+body.agent-app .sk-stock i { color: var(--sk-lime); font-size: 11px; }
+
+/* order screens: the shop bar sticks just below the green header (never over it) */
+body.agent-app .content-wrapper > .sticky-top {
+    top: var(--header-height, 60px);
+    z-index: 990 !important;
+}
+
+/* floating close button of the scan pop-up: white round button, readable over the grid */
+body.agent-app .modal-content > button.close.position-absolute {
+    width: 34px;
+    height: 34px;
+    top: 8px !important;
+    right: 10px !important;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--sk-green);
+    opacity: 1 !important;
+    font-size: 24px !important;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    text-shadow: none;
+}

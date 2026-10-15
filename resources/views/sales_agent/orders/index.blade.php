@@ -8,9 +8,9 @@
             @forelse($orders as $order)
                 <a href="{{ route('agent.orders.show', $order->id) }}" class="text-decoration-none">
                     <div class="app-card p-3 mb-3 shadow-sm border-0 d-flex align-items-center position-relative overflow-hidden">
-                        <div style="height: 3px; background: {{ $order->status == 'pending' ? '#ffd600' : '#22c55e' }}; width: 100%; position: absolute; top: 0; left: 0;"></div>
-                        <div class="p-3 rounded-lg mr-3" style="background: #fef9c3;">
-                            <i class="fas fa-receipt" style="color: #ca8a04;"></i>
+                        <div style="height: 3px; background: {{ $order->status == 'pending' ? '#fcee21' : '#36b54a' }}; width: 100%; position: absolute; top: 0; left: 0;"></div>
+                        <div class="p-3 rounded-lg mr-3" style="background: #fffde0;">
+                            <i class="fas fa-receipt" style="color: #05421c;"></i>
                         </div>
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between mb-1 align-items-center">
@@ -45,7 +45,7 @@
                             </div>
                             <hr class="my-2 border-dashed">
                             <div class="d-flex justify-content-between">
-                                <span class="badge px-2 py-1 font-weight-bold" style="background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; border-radius: 6px;">ORD-{{ $order->id }} · {{ $order->total_qty }} Pcs</span>
+                                <span class="badge px-2 py-1 font-weight-bold" style="background-color: #fff59d; color: #05421c; border: 1px solid #e2d514; border-radius: 6px;">ORD-{{ $order->id }} · {{ $order->total_qty }} Pcs</span>
                             </div>
                         </div>
                     </div>
@@ -79,13 +79,13 @@
 @push('styles')
     <style>
         .badge-warning {
-            background-color: #fef3c7;
-            color: #92400e;
+            background-color: #fffde0;
+            color: #05421c;
         }
 
         .badge-success {
-            background-color: #dcfce7;
-            color: #166534;
+            background-color: #eaf4e2;
+            color: #05421c;
         }
 
         .badge-info {

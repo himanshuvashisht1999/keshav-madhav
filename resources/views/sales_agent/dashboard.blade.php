@@ -17,9 +17,9 @@
         <div class="row">
             <div class="col-6">
                 <div class="app-card text-center py-4 position-relative overflow-hidden">
-                    <div style="height: 3px; background: #ffd600; width: 100%; position: absolute; top: 0; left: 0;"></div>
+                    <div style="height: 3px; background: #fcee21; width: 100%; position: absolute; top: 0; left: 0;"></div>
                     <div class="bg-yellow-soft p-3 rounded-circle d-inline-block mb-2">
-                        <i class="fas fa-shopping-bag text-warning" style="color: #ca8a04 !important;"></i>
+                        <i class="fas fa-shopping-bag text-warning" style="color: #05421c !important;"></i>
                     </div>
                     <h3 class="h2 font-weight-bold mb-0">{{ $stats['total_orders'] }}</h3>
                     <p class="text-muted small mb-0 font-weight-bold">Total Orders</p>
@@ -27,7 +27,7 @@
             </div>
             <div class="col-6">
                 <div class="app-card text-center py-4 position-relative overflow-hidden">
-                    <div style="height: 3px; background: #22c55e; width: 100%; position: absolute; top: 0; left: 0;"></div>
+                    <div style="height: 3px; background: #36b54a; width: 100%; position: absolute; top: 0; left: 0;"></div>
                     <div class="bg-green-soft p-3 rounded-circle d-inline-block mb-2">
                         <i class="fas fa-store text-success"></i>
                     </div>
@@ -46,7 +46,7 @@
                 @else
                 <a href="{{ route('agent.shops.index') }}" class="text-decoration-none">
                 @endif
-                    <div class="app-card mb-0 shadow-sm border text-center p-3 quick-card" style="background: #f0fdf4; border-color: #bbf7d0 !important;">
+                    <div class="app-card mb-0 shadow-sm border text-center p-3 quick-card" style="background: #f0f8e7; border-color: #d6ebc4 !important;">
                         <i class="fas fa-plus-circle fa-lg text-success mb-2"></i>
                         <p class="small font-weight-bold text-dark mb-0">New Order</p>
                     </div>
@@ -55,8 +55,8 @@
             @if(!Auth::guard('sales_agent')->user()->is_master_agent)
             <div class="col-6">
                 <a href="{{ route('agent.shops.create') }}" class="text-decoration-none">
-                    <div class="app-card mb-0 shadow-sm border text-center p-3 quick-card" style="background: #fefce8; border-color: #fef08a !important;">
-                        <i class="fas fa-user-plus fa-lg mb-2" style="color: #ca8a04;"></i>
+                    <div class="app-card mb-0 shadow-sm border text-center p-3 quick-card" style="background: #fffde0; border-color: #fff59d !important;">
+                        <i class="fas fa-user-plus fa-lg mb-2" style="color: #05421c;"></i>
                         <p class="small font-weight-bold text-dark mb-0">Add Shop</p>
                     </div>
                 </a>
@@ -64,8 +64,8 @@
             @else
             <div class="col-6">
                 <a href="{{ route('agent.orders.index') }}" class="text-decoration-none">
-                    <div class="app-card mb-0 shadow-sm border text-center p-3 quick-card" style="background: #fefce8; border-color: #fef08a !important;">
-                        <i class="fas fa-history fa-lg mb-2" style="color: #ca8a04;"></i>
+                    <div class="app-card mb-0 shadow-sm border text-center p-3 quick-card" style="background: #fffde0; border-color: #fff59d !important;">
+                        <i class="fas fa-history fa-lg mb-2" style="color: #05421c;"></i>
                         <p class="small font-weight-bold text-dark mb-0">View Orders</p>
                     </div>
                 </a>
@@ -74,10 +74,10 @@
 
             <div class="col-12 mt-3">
                 <a href="{{ route('agent.offline.index') }}" class="text-decoration-none">
-                    <div class="app-card mb-0 shadow-sm border p-3 quick-card d-flex align-items-center justify-content-between" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-color: #cbd5e1 !important; border-radius: 14px;">
+                    <div class="app-card mb-0 shadow-sm border p-3 quick-card d-flex align-items-center justify-content-between" style="background: linear-gradient(135deg, #ffffff 0%, #f0f8e7 100%); border-color: #8bc63e !important; border-radius: 14px;">
                         <div class="d-flex align-items-center">
                             <div class="bg-dark text-white p-2 rounded-circle mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                <i class="fas fa-wifi-slash"></i>
+                                <i class="fas fa-plane"></i>
                             </div>
                             <div>
                                 <h6 class="font-weight-bold text-dark mb-0">Without Internet Orders</h6>
@@ -96,16 +96,16 @@
 @push('styles')
     <style>
         .snapkid-bell {
-            background-color: #f0fdf4;
-            border: 1px solid #dcfce7;
+            background-color: #f0f8e7;
+            border: 1px solid #eaf4e2;
         }
 
         .bg-yellow-soft {
-            background-color: #fef9c3;
+            background-color: #fffde0;
         }
 
         .bg-green-soft {
-            background-color: #dcfce7;
+            background-color: #eaf4e2;
         }
 
         .quick-card {
@@ -118,13 +118,13 @@
         }
 
         .badge-warning {
-            background-color: #fef3c7;
-            color: #92400e;
+            background-color: #fffde0;
+            color: #05421c;
         }
 
         .badge-success {
-            background-color: #dcfce7;
-            color: #166534;
+            background-color: #eaf4e2;
+            color: #05421c;
         }
     </style>
 @endpush

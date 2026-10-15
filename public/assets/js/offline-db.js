@@ -210,7 +210,9 @@ const SnapKidOfflineDB = (function () {
                 products_count: data.products ? data.products.length : 0,
                 settings: data.settings || {},
                 sales_men: data.sales_men || [],
-                see_price: (data.see_price === true || data.see_price === 1)
+                see_price: (data.see_price === true || data.see_price === 1),
+                // server time of this download: tells whether this price permission is newer than a page's
+                server_time: data.timestamp || null
             });
             metaTx.oncomplete = () => resolve();
             metaTx.onerror = (e) => reject(e.target.error);
@@ -286,6 +288,36 @@ const SnapKidOfflineDB = (function () {
             req.onsuccess = () => resolve(req.result || null);
             req.onerror = () => resolve(null);
         });
+    }
+
+    /**
+     * "Show pricing info" (sales agent setting in admin): the newest word wins - the page the server just sent
+     * (pageTime = server time in ms when it made the page) or the last catalogue download. A newer page value is
+     * saved on the phone, so pages opened later without internet agree with it.
+     */
+    async function resolveSeePrice(pageValue, pageTime) {
+        pageValue = !!pageValue;
+        let meta = null;
+        try { meta = await getMeta(); } catch (e) {}
+        if (!meta) return pageValue;
+        const metaTime = meta.server_time ? Date.parse(meta.server_time) : 0;
+        if (typeof meta.see_price !== 'undefined' && metaTime > pageTime) {
+            return meta.see_price === true || meta.see_price === 1 || meta.see_price === '1';
+        }
+        if (meta.see_price !== pageValue || !meta.server_time) {
+            try {
+                const db = await openDB();
+                await new Promise((resolve) => {
+                    const tx = db.transaction('meta', 'readwrite');
+                    meta.see_price = pageValue;
+                    meta.server_time = new Date(pageTime).toISOString();
+                    tx.objectStore('meta').put(meta);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => resolve();
+                });
+            } catch (e) {}
+        }
+        return pageValue;
     }
 
     async function getBarcodeMap() {
@@ -606,6 +638,7 @@ const SnapKidOfflineDB = (function () {
         openDB,
         saveCatalogData,
         getMeta,
+        resolveSeePrice,
         getBarcodeMap,
         getScanPayloads,
         getShops,
