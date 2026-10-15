@@ -1442,7 +1442,8 @@ class UnitAuthController extends Controller
                 if (!empty($orderProductSet->size_measurement?->size_group)) $sizes = array_map('trim', explode(',', $orderProductSet->size_measurement->size_group));
                 elseif (!empty($orderProductSet->set_size)) $sizes = [$orderProductSet->set_size];
             }
-            $isRework = ($transaction && isset($transaction->type) && $transaction->type === 'rework');
+            // pieces sent back from Packing for rework are stored with type 0
+            $isRework = ($type === 'stage' && $transaction && (int) $transaction->type === 0 && (int) $transaction->from_stage_id === 11);
             $sizeSetRange = $orderProductSet->size_measurement?->name ?? (count($sizes) > 0 ? min($sizes) . '*' . max($sizes) : '-');
             $totalPcsInSet = $orderProductSet->size_measurement->no_of_pcs ?? count($sizes);
             $header = [
@@ -1732,7 +1733,8 @@ class UnitAuthController extends Controller
     /**
      * Lot-wise balance for a receiving unit (shared by My Work, Late and the lot page).
      * Rules (unchanged): when a lot came from Cutting AND from Embroidery/Godam, only the Cutting
-     * rows are counted (same pieces, no double count); Packing subtracts pieces already packed.
+     * rows are counted (same pieces, no double count); Packing counts from its own records
+     * (received - packed - dead/sampling/debit/rework at this unit).
      * Finished lots are skipped before any per-lot lookup, and lookups are done in one query each.
      */
     private function pendingLots(\App\Models\StageMasterUnit $unit, array $filters = [])
@@ -1770,7 +1772,7 @@ class UnitAuthController extends Controller
             $cuttingItems = $items->where('source', 'cutting');
             $itemsToSum = $cuttingItems->count() > 0 ? $cuttingItems : $items;
             $rawPending = $itemsToSum->sum('remaining_quantity');
-            if (!$includeDone && $rawPending <= 0) continue;
+            if (!$includeDone && !$isPacking && $rawPending <= 0) continue;
             $groups[$lot_no] = ['items' => $items, 'counted' => $itemsToSum, 'raw_pending' => $rawPending];
         }
 
@@ -1779,16 +1781,18 @@ class UnitAuthController extends Controller
         $lotNos = array_map('strval', array_keys($groups));
         $norm = fn($v) => mb_strtolower(rtrim((string) $v));
 
-        $timings = \App\Models\OrderLotStageTiming::whereIn('lot_no', $lotNos)->where('master_stage_id', $masterStageId)->orderBy('id')->get();
-
-        $packedQuantities = [];
+        // Packing: pieces left = received by this unit - packed - dead/sampling/debit/rework (same figure as the packing screen)
+        $packingStock = [];
         if ($isPacking) {
-            $packedQuantities = \App\Models\PackingItem::whereIn('lot_no', $lotNos)
-                ->selectRaw('lot_no, SUM(quantity) as total_packed')
-                ->groupBy('lot_no')
-                ->pluck('total_packed', 'lot_no')
-                ->toArray();
+            $packingStock = app(\App\Services\Admin\PackingService::class)->unitLotStock($lotNos, $unitId);
+            if (!$includeDone) {
+                $groups = array_filter($groups, fn($g, $l) => ($packingStock[(string) $l]['pending'] ?? 0) > 0, ARRAY_FILTER_USE_BOTH);
+                if (empty($groups)) return collect();
+                $lotNos = array_map('strval', array_keys($groups));
+            }
         }
+
+        $timings = \App\Models\OrderLotStageTiming::whereIn('lot_no', $lotNos)->where('master_stage_id', $masterStageId)->orderBy('id')->get();
 
         // 2) One query each for lot info and cutting pieces (was one query per lot).
         $orderLots = \App\Models\OrderLot::with(['orderProductSet.size_measurement'])
@@ -1824,7 +1828,7 @@ class UnitAuthController extends Controller
             $orderLot = $orderLots->get($norm($lot_no));
             $totalPending = $g['raw_pending'];
             if ($isPacking) {
-                $totalPending = max(0, $totalPending - ($packedQuantities[$lot_no] ?? 0));
+                $totalPending = $packingStock[(string) $lot_no]['pending'] ?? 0;
             }
 
             $row = [

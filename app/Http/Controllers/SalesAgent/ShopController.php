@@ -9,9 +9,28 @@ use Illuminate\Support\Facades\Auth;
 
 class ShopController extends Controller
 {
+    /** The agent's own shops; deleted shops (status 3) are never shown or changed here. */
+    private function myShops()
+    {
+        return MasterCustomer::where('sales_agent_id', Auth::guard('sales_agent')->id())->where('status', '!=', 3);
+    }
+
+    /** Shop details an agent may enter. The balance is not one of them: it comes from the office's ledger. */
+    private function rules(): array
+    {
+        return [
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'address' => 'nullable|string',
+            'email' => 'nullable|email|max:255',
+            'contact_person' => 'nullable|string|max:255',
+            'gst_number' => 'nullable|string|max:50',
+        ];
+    }
+
     public function index(Request $request)
     {
-        $query = MasterCustomer::where('sales_agent_id', Auth::guard('sales_agent')->id());
+        $query = $this->myShops();
 
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
@@ -29,31 +48,15 @@ class ShopController extends Controller
     {
         return view('sales_agent.shops.create');
     }
+
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'address' => 'nullable|string',
-            'email' => 'nullable|email|max:255',
-            'contact_person' => 'nullable|string|max:255',
-            'gst_number' => 'nullable|string|max:50',
-            'balance' => 'nullable|numeric',
-            'balance_type' => 'nullable|in:Credit,Debit',
-        ]);
-        
-        $balance = $validated['balance'] ?? 0;
-        $balance_type = $validated['balance_type'] ?? 'Credit';
-        if ($balance_type == 'Debit') {
-            $balance = -abs($balance);
-        } else {
-            $balance = abs($balance);
-        }
-        $validated['balance'] = $balance;
+        $validated = $request->validate($this->rules());
 
         $validated['sales_agent_id'] = Auth::guard('sales_agent')->id();
         $validated['status'] = 1;
         $validated['type'] = 'domestic';
+        $validated['balance'] = 0;
 
         MasterCustomer::create($validated);
 
@@ -62,52 +65,25 @@ class ShopController extends Controller
 
     public function edit($id)
     {
-        $shop = MasterCustomer::where('id', $id)
-            ->where('sales_agent_id', Auth::guard('sales_agent')->id())
-            ->firstOrFail();
+        $shop = $this->myShops()->where('id', $id)->firstOrFail();
         return view('sales_agent.shops.edit', compact('shop'));
     }
 
     public function update(Request $request, $id)
     {
-        $shop = MasterCustomer::where('id', $id)
-            ->where('sales_agent_id', Auth::guard('sales_agent')->id())
-            ->firstOrFail();
+        $shop = $this->myShops()->where('id', $id)->firstOrFail();
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'address' => 'nullable|string',
-            'email' => 'nullable|email|max:255',
-            'contact_person' => 'nullable|string|max:255',
-            'gst_number' => 'nullable|string|max:50',
-            'balance' => 'nullable|numeric',
-            'balance_type' => 'nullable|in:Credit,Debit',
-        ]);
-        
-        if ($request->has('balance')) {
-            $balance = $validated['balance'] ?? 0;
-            $balance_type = $validated['balance_type'] ?? 'Credit';
-            if ($balance_type == 'Debit') {
-                $balance = -abs($balance);
-            } else {
-                $balance = abs($balance);
-            }
-            $validated['balance'] = $balance;
-        }
-
-        $shop->update($validated);
+        $shop->update($request->validate($this->rules()));
 
         return redirect()->route('agent.shops.index')->with('success', 'Shop updated successfully');
     }
 
     public function toggleStatus($id)
     {
-        $shop = MasterCustomer::where('id', $id)
-            ->where('sales_agent_id', Auth::guard('sales_agent')->id())
-            ->firstOrFail();
+        $shop = $this->myShops()->where('id', $id)->firstOrFail();
 
-        $shop->status = !$shop->status;
+        // active <-> inactive only
+        $shop->status = (int) $shop->status === 1 ? 0 : 1;
         $shop->save();
 
         $statusMsg = $shop->status ? 'activated' : 'deactivated';

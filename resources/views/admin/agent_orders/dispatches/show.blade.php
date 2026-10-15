@@ -64,9 +64,10 @@
                     <i class="fas fa-trash-alt mr-1"></i> Delete
                 </button>
                 @else
-                <a href="{{ route('admin.agent-orders.dispatches.destroy', $dispatch->id) }}" class="btn-erp btn-erp-danger" onclick="return confirm('Are you sure you want to PERMANENTLY delete this dispatch? This will reverse stock and customer balance.')" title="Delete Dispatch">
+                <a href="#" class="btn-erp btn-erp-danger" onclick="if (confirm('Are you sure you want to PERMANENTLY delete this dispatch? This will reverse stock and customer balance.')) { this.nextElementSibling.submit(); } return false;" title="Delete Dispatch">
                     <i class="fas fa-trash-alt mr-1"></i> Delete
                 </a>
+                <form method="POST" action="{{ route('admin.agent-orders.dispatches.destroy', $dispatch->id) }}" style="display:none">@csrf</form>
                 @endif
 
                 @if(!$isFabric)

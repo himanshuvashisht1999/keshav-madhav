@@ -201,7 +201,7 @@ Route::prefix('agent')->group(function () {
     Route::post('login', [App\Http\Controllers\SalesAgent\AuthController::class, 'login']);
     Route::post('logout', [App\Http\Controllers\SalesAgent\AuthController::class, 'logout'])->name('agent.logout');
 
-    Route::middleware('auth:sales_agent')->group(function () {
+    Route::middleware(['auth:sales_agent', 'agent.active'])->group(function () {
         Route::get('dashboard', [App\Http\Controllers\SalesAgent\DashboardController::class, 'index'])->name('agent.dashboard');
 
         // Customer Management (Master Agent)
@@ -263,6 +263,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         // Digitized slips: one-time repair of old production data (preview + one button)
         Route::get('/production-fix', [\App\Http\Controllers\Admin\ProductionFixController::class, 'show'])->name('production-fix.show');
         Route::post('/production-fix', [\App\Http\Controllers\Admin\ProductionFixController::class, 'run'])->name('production-fix.run');
+
+        // Inventory: one-time repair of old stock data (preview + one button)
+        Route::get('/inventory-fix', [\App\Http\Controllers\Admin\InventoryFixController::class, 'show'])->name('inventory-fix.show');
+        Route::post('/inventory-fix', [\App\Http\Controllers\Admin\InventoryFixController::class, 'run'])->name('inventory-fix.run');
 
         Route::prefix('/purchase-order')->name('purchase_order.')->group(function () {
             Route::get('/index', [AdminPurchaseOrderController::class, 'index'])->name('index');
@@ -609,7 +613,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/get-shops', [AdminAgentOrderController::class, 'getShops'])->name('get-shops');
             Route::get('/get-fabric-rolls/{id}', [AdminAgentOrderController::class, 'getFabricRolls'])->name('get-fabric-rolls');
             Route::get('/{id}/show', [AdminAgentOrderController::class, 'show'])->name('show');
-            Route::get('/{id}/delete', [AdminAgentOrderController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/delete', [AdminAgentOrderController::class, 'destroy'])->name('destroy');
             Route::get('/{id}/edit', [AdminAgentOrderController::class, 'edit'])->name('edit');
             Route::put('/{id}/update', [AdminAgentOrderController::class, 'update'])->name('update');
             Route::get('/{id}/download-invoice', [AdminAgentOrderController::class, 'downloadInvoice'])->name('download-invoice');
@@ -642,7 +646,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/dispatches/{id}/send-whatsapp-packing-slip', [AdminAgentOrderController::class, 'sendWhatsappDispatchPackingSlip'])->name('dispatches.send-whatsapp-packing-slip');
             Route::post('/dispatches/{id}/update-invoice', [AdminAgentOrderController::class, 'updateDispatchInvoice'])->name('dispatches.update-invoice');
             Route::post('/dispatches/{id}/update-items', [AdminAgentOrderController::class, 'updateDispatchItems'])->name('dispatches.update-items');
-            Route::get('/dispatches/{id}/delete', [AdminAgentOrderController::class, 'destroyDispatch'])->name('dispatches.destroy');
+            Route::post('/dispatches/{id}/delete', [AdminAgentOrderController::class, 'destroyDispatch'])->name('dispatches.destroy');
             Route::post('/dispatch-selected', [AdminAgentOrderController::class, 'dispatchSelected'])->name('dispatch-selected');
 
             // Returns
@@ -826,9 +830,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/consume', [AdminInventoryController::class, 'consume'])->name('consume');
             Route::get('/purchase', [AdminInventoryController::class, 'purchase'])->name('purchase');
             Route::get('/get-po-items/{id}', [AdminInventoryController::class, 'getProductionPOItems'])->name('get_po_items');
-            Route::get('/purchase-list', [AdminInventoryController::class, 'purchaseList'])->name('purchase_list');
-            Route::get('/purchase-list/data', [AdminInventoryController::class, 'purchaseListData'])->name('purchase_list.data');
-            Route::delete('/purchase/{id}', [AdminInventoryController::class, 'destroyPurchase'])->name('purchase.destroy');
 
             // Warehouse Stock Routes
             Route::get('/warehouse-stock', [\App\Http\Controllers\Admin\WarehouseInventoryController::class, 'index'])->name('warehouse_stock');
@@ -891,7 +892,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/barcode-generator/generate-by-location-tspl', [\App\Http\Controllers\Admin\Inventory\BarcodeGeneratorController::class, 'generateByLocationTspl'])->name('barcode-generator.generate-by-location-tspl');
 
             Route::get('/get-products-by-series', [AdminInventoryController::class, 'getProductsBySeries'])->name('get_products_by_series');
-            Route::get('/get-product-details', [AdminInventoryController::class, 'getProductDetails'])->name('get_product_details');
             Route::get('/get-size-sets-by-product/{product_id}', [AdminInventoryController::class, 'getSizeSetsByProduct'])->name('get_size_sets_by_product');
             Route::get('/get-colors-by-product-size/{product_id}/{size_set_id}', [AdminInventoryController::class, 'getColorsByProductSize'])->name('get_colors_by_product_size');
 
@@ -978,12 +978,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
 
 
-        Route::prefix('/inventory-prices')->name('inventory-prices.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\InventoryPriceController::class, 'index'])->name('index');
-            Route::get('/create', [\App\Http\Controllers\Admin\InventoryPriceController::class, 'create'])->name('create');
-            Route::post('/store', [\App\Http\Controllers\Admin\InventoryPriceController::class, 'store'])->name('store');
-            Route::post('/update-price', [\App\Http\Controllers\Admin\InventoryPriceController::class, 'updatePrice'])->name('update-price');
-        });
 
         Route::prefix('master/size')->name('master.size.')->group(function () {
             Route::get('/index', [AdminSizeController::class, 'index'])->name('index');
@@ -1870,8 +1864,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::delete('/process-new/{slip_id}/api/delete-domestic/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'apiDeleteDomestic'])->name('apiDeleteDomestic');
             
             Route::get('/view/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'view'])->name('view');
-            Route::get('/print/{main}', [\App\Http\Controllers\Admin\PackingController::class, 'print'])->name('print');
-            Route::post('/store', [\App\Http\Controllers\Admin\PackingController::class, 'store'])->name('store');
             Route::post('/{slip_id}/reset-slip', [\App\Http\Controllers\Admin\PackingController::class, 'resetSlip'])->name('reset_slip');
             Route::post('/delete-session/{id}', [\App\Http\Controllers\Admin\PackingController::class, 'deleteSession'])->name('deleteSession');
             Route::post('/save-carton', [\App\Http\Controllers\Admin\PackingController::class, 'saveCarton'])->name('saveCarton');

@@ -117,7 +117,7 @@
                                                         @if($group['warehouse_name'] && $group['warehouse_name'] !== 'N/A')
                                                             <span class="ds-chip ds-chip-wh"><i class="fas fa-warehouse"></i>{{ $group['warehouse_name'] }} / {{ $group['rack_name'] }}@if($group['rack_id']) ({{ $group['rack_id'] }})@endif</span>
                                                         @else
-                                                            <span class="ds-chip ds-chip-warn"><i class="fas fa-exclamation-triangle"></i>Advance Sample / Depleted</span>
+                                                            <span class="ds-chip ds-chip-warn"><i class="fas fa-exclamation-triangle"></i>Stock not available yet</span>
                                                         @endif
                                                     </td>
                                                     <td><span class="ds-chip ds-chip-code">{{ $group['barcode'] }}</span></td>

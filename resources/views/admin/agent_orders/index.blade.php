@@ -354,12 +354,13 @@
                                                 class="erp-action-btn erp-btn-edit" title="Edit Order">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="{{ route('admin.agent-orders.destroy', $order->id) }}"
+                                            <a href="#"
                                                 class="erp-action-btn erp-btn-delete"
-                                                onclick="return confirm('Are you sure you want to delete this order? This will revert any reserved stock.');"
+                                                onclick="if (confirm('Are you sure you want to delete this order? This will revert any reserved stock.')) { this.nextElementSibling.submit(); } return false;"
                                                 title="Delete Order">
                                                 <i class="fas fa-trash"></i>
                                             </a>
+                                            <form method="POST" action="{{ route('admin.agent-orders.destroy', $order->id) }}" style="display:none">@csrf</form>
                                             @elseif(in_array($order->status, ['pending', 'delayed', 'partially_dispatched']))
                                             <a href="{{ route('admin.agent-orders.edit', $order->id) }}"
                                                 class="erp-action-btn erp-btn-edit" title="Edit Order">

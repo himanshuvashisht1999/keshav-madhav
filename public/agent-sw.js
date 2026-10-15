@@ -1,4 +1,4 @@
-const CACHE_NAME = 'snapkid-agent-v6';
+const CACHE_NAME = 'snapkid-agent-v7';
 const IMAGE_CACHE_NAME = 'snapkid-product-images';
 
 const STATIC_ASSETS = [

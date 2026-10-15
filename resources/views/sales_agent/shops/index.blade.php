@@ -40,7 +40,11 @@
                                 <i class="fas fa-store" style="color: #ca8a04;"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <h6 class="font-weight-bold mb-1">{{ $shop->name }}</h6>
+                                <h6 class="font-weight-bold mb-1">{{ $shop->name }}
+                                    @if((int) $shop->status !== 1)
+                                        <span class="badge badge-secondary ml-1" style="font-size: 10px;">Inactive</span>
+                                    @endif
+                                </h6>
                                 <p class="text-muted small mb-2"><i class="fas fa-phone-alt mr-1"></i> {{ $shop->phone }}</p>
                                 <p class="text-secondary small mb-2"><i class="fas fa-map-marker-alt mr-1"></i>
                                     {{ Str::limit($shop->address, 50) }}</p>
@@ -49,10 +53,14 @@
                         </div>
                         <hr class="my-3">
                         <div class="d-flex justify-content-between align-items-center flex-wrap">
-                            <a href="{{ route('agent.orders.create', ['shop_id' => $shop->id]) }}"
-                                class="btn btn-primary btn-sm rounded-lg px-3 mb-2 mb-sm-0">
-                                <i class="fas fa-shopping-cart mr-1"></i> Place Order
-                            </a>
+                            @if((int) $shop->status === 1)
+                                <a href="{{ route('agent.orders.create', ['shop_id' => $shop->id]) }}"
+                                    class="btn btn-primary btn-sm rounded-lg px-3 mb-2 mb-sm-0">
+                                    <i class="fas fa-shopping-cart mr-1"></i> Place Order
+                                </a>
+                            @else
+                                <span class="small text-muted mb-2 mb-sm-0">Activate the shop to place orders</span>
+                            @endif
 
                             <div class="d-flex">
                                 <a href="{{ route('agent.shops.edit', $shop->id) }}"
@@ -64,9 +72,9 @@
                                     class="d-inline">
                                     @csrf
                                     <button type="submit"
-                                        class="btn btn-sm {{ $shop->status ? 'btn-outline-danger' : 'btn-outline-success' }}"
-                                        onclick="return confirm('Are you sure you want to {{ $shop->status ? 'deactivate' : 'activate' }} this shop?')">
-                                        <i class="fas {{ $shop->status ? 'fa-ban' : 'fa-check' }}"></i>
+                                        class="btn btn-sm {{ (int) $shop->status === 1 ? 'btn-outline-danger' : 'btn-outline-success' }}"
+                                        onclick="return confirm('Are you sure you want to {{ (int) $shop->status === 1 ? 'deactivate' : 'activate' }} this shop?')">
+                                        <i class="fas {{ (int) $shop->status === 1 ? 'fa-ban' : 'fa-check' }}"></i>
                                     </button>
                                 </form>
                             </div>

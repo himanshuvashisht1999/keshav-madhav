@@ -277,14 +277,18 @@ class OutflowInventoryController extends Controller
 
         \Illuminate\Support\Facades\DB::beginTransaction();
         try {
-            // 1. Verify items still exist in NEW attributes
+            // 1. Verify items still exist in NEW attributes (the row of that item in that rack holding the boxes)
+            $stock = app(\App\Services\Admin\InventoryStockService::class);
             $current_inventory = \App\Models\DomesticInventory::where('product_id', $history->new_product_id)
                 ->where('size_set_id', $history->new_size_set_id)
                 ->where('color_id', $history->new_color_id)
                 ->where('rack_id', $history->new_rack_id)
-                ->first();
+                ->where('total_boxes', '>=', (int) $history->box_quantity)
+                ->orderByRaw('CASE WHEN quantity = ? THEN 0 ELSE 1 END', [(int) $history->pieces_per_box])
+                ->orderBy('id')->lockForUpdate()->first();
 
-            if (!$current_inventory || $current_inventory->total_boxes < $history->box_quantity) {
+            if (!$current_inventory) {
+                \Illuminate\Support\Facades\DB::rollBack();
                 return response()->json(['success' => false, 'message' => 'Cannot edit this record because the items have already been dispatched or moved.']);
             }
 
@@ -303,38 +307,14 @@ class OutflowInventoryController extends Controller
             );
 
             if ($isSameAttributes) {
+                \Illuminate\Support\Facades\DB::rollBack();
                 return response()->json(['success' => true, 'message' => 'No changes made.']);
             }
 
-            // 2. Add boxes to the newly requested attributes
-            $new_item = \App\Models\DomesticInventory::where('product_id', $request->new_product_id)
-                ->where('size_set_id', $request->new_size_set_id)
-                ->where('color_id', $request->new_color_id)
-                ->where('rack_id', $request->new_rack_id)
-                ->first();
-
-            if ($new_item) {
-                $new_item->total_boxes += $take;
-                $new_item->save();
-            } else {
-                $new_item = $current_inventory->replicate();
-                $new_item->product_id = $request->new_product_id;
-                $new_item->size_set_id = $request->new_size_set_id;
-                $new_item->color_id = $request->new_color_id;
-                $new_item->rack_id = $request->new_rack_id;
-                $new_item->total_boxes = $take;
-                $new_item->barcode = $new_barcode;
-                $new_item->qrcode = $new_barcode;
-                $new_item->save();
-            }
-
-            // 3. Remove boxes from the current inventory (the "old" new attributes)
-            $current_inventory->total_boxes -= $take;
-            if ($current_inventory->total_boxes <= 0) {
-                $current_inventory->delete();
-            } else {
-                $current_inventory->save();
-            }
+            // 2. Move the boxes to the requested item / rack (same pieces per box); the old row stays (may become 0)
+            $new_item = $stock->rowAt($request->new_product_id, $request->new_color_id, $request->new_size_set_id, $request->new_rack_id, $current_inventory->quantity);
+            $stock->take($current_inventory, (int) $take);
+            $stock->add($new_item, (int) $take);
 
 
             // 5. Update the History Record

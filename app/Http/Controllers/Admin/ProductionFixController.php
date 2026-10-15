@@ -7,7 +7,7 @@ use App\Services\Admin\ProductionDataFixService;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * /admin/production-fix : shows exactly what the one-time repair of old Digitized Slips data will change,
+ * /admin/production-fix : shows exactly what the one-time repair of old Digitized Slips and Packing data will change,
  * and one button applies it (old values are saved to storage/app/production-fix/).
  */
 class ProductionFixController extends Controller
@@ -38,6 +38,10 @@ class ProductionFixController extends Controller
             'completed' => count($result['completed']),
             'timings_done' => count($result['timings_done']),
             'timings_reopened' => count($result['timings_reopened']),
+            'packing_balances' => count($result['packing']['balances']),
+            'packing_dates_done' => count($result['packing']['dates_done']),
+            'packing_dates_reopened' => count($result['packing']['dates_reopened']),
+            'domestic_boxes' => array_sum(array_column($result['packing']['domestic_boxes'], 'boxes')),
             'log_file' => $result['log_file'],
         ]);
     }

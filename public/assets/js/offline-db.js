@@ -505,6 +505,7 @@ const SnapKidOfflineDB = (function () {
                 name: item.color_name || `Color ${item.color_id}`,
                 key: item.key,
                 available_boxes: item.available_boxes || 0,
+                is_advance_sample: !!item.is_advance_sample,
                 pcs_per_box: item.pcs_per_box || 1,
                 image: item.image_url || null
             });

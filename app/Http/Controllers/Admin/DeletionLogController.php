@@ -159,6 +159,11 @@ class DeletionLogController extends Controller
 
                     // Re-deduct from fabric_receipt_details because deleting incremented remaining_quantity
                     if (!empty($fItem['fabric_receipt_detail_id']) && !empty($fItem['meter'])) {
+                        // the roll must still have those meters (they may have been sold since)
+                        $roll = FabricReceiptDetail::lockForUpdate()->find($fItem['fabric_receipt_detail_id']);
+                        if ($roll && (float) $roll->remaining_quantity + 0.0001 < (float) $fItem['meter']) {
+                            throw new \Exception("Roll {$roll->roll_number} has only {$roll->remaining_quantity} m left, the order needs {$fItem['meter']} m.");
+                        }
                         FabricReceiptDetail::where('id', $fItem['fabric_receipt_detail_id'])
                             ->decrement('remaining_quantity', (float) $fItem['meter']);
                     }

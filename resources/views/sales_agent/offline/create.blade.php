@@ -469,6 +469,11 @@ $(document).ready(function () {
         return !!(metaInfo && metaInfo.settings && parseInt(metaInfo.settings.agent_app_allow_over_stock) === 1);
     }
 
+    // Setting "show stock in the agent app" (stock is hidden everywhere when it is off)
+    function stockVisible() {
+        return !metaInfo || !metaInfo.settings || parseInt(metaInfo.settings.agent_app_show_stock) !== 0;
+    }
+
     function populateSalesMen() {
         const sel = $('#offlineSalesMan');
         ((metaInfo && metaInfo.sales_men) || []).forEach(sm => {
@@ -637,7 +642,7 @@ $(document).ready(function () {
             return;
         }
 
-        const showStock = !metaInfo || !metaInfo.settings || metaInfo.settings.agent_app_show_stock !== 0;
+        const showStock = stockVisible();
         const seePrice = canSeePrice();
 
         let html = '';
@@ -714,7 +719,7 @@ $(document).ready(function () {
                                     ${showStock ? `
                                         <div>
                                             <small class="text-muted d-block uppercase font-weight-bold" style="font-size: 0.6rem; letter-spacing: 0.5px;">AVAILABLE</small>
-                                            <span class="font-weight-bold text-dark" style="font-size: 11.5px;">${prod.available_boxes} Box</span>
+                                            <span class="font-weight-bold text-dark" style="font-size: 11.5px;">${prod.is_advance_sample ? 'No limit' : prod.available_boxes + ' Box'}</span>
                                         </div>
                                     ` : `<div></div>`}
 
@@ -740,7 +745,7 @@ $(document).ready(function () {
                                     <input type="number" class="form-control form-control-sm text-center font-weight-bold p-0 border-0 qty-input" 
                                         style="height: 26px; width: 36px; background: transparent;" 
                                         data-key="${prod.key}" 
-                                        value="${inCartQty}" min="0" max="${prod.available_boxes}">
+                                        value="${inCartQty}" min="0" ${prod.is_advance_sample ? '' : `max="${prod.available_boxes}"`}>
                                     <button type="button" class="btn btn-sm btn-primary py-0 px-2 btn-plus" data-key="${prod.key}" style="border:0; height: 26px; background: #26a744;">
                                         <i class="fas fa-plus" style="font-size: 9px;"></i>
                                     </button>
@@ -787,7 +792,7 @@ $(document).ready(function () {
         const prod = allProducts.find(p => p.key === key) || scanItems.get(key);
         if (!prod) return;
 
-        if (!allowOverStock() && qty > (prod.available_boxes || 0)) {
+        if (!allowOverStock() && !prod.is_advance_sample && qty > (prod.available_boxes || 0)) {
             qty = prod.available_boxes || 0;
         }
 
@@ -908,10 +913,10 @@ $(document).ready(function () {
                             <td class="bg-light font-weight-bold text-muted">Pattern</td>
                             <td>${prod.pattern_name || '-'}</td>
                         </tr>
-                        <tr>
+                        ${stockVisible() ? `<tr>
                             <td class="bg-light font-weight-bold text-muted">Available Stock</td>
-                            <td class="font-weight-bold text-success">${prod.available_boxes} Boxes</td>
-                        </tr>
+                            <td class="font-weight-bold text-success">${prod.is_advance_sample ? 'No limit' : prod.available_boxes + ' Boxes'}</td>
+                        </tr>` : ''}
                         ${canSeePrice() ? `
                         <tr>
                             <td class="bg-light font-weight-bold text-muted">Unit Price</td>
@@ -1396,13 +1401,13 @@ $(document).ready(function () {
                                         data-size-set="${ss.size_set_id}"
                                         data-col-index="${c}"
                                         min="0"
-                                        max="${colorObj.available_boxes}"
+                                        ${colorObj.is_advance_sample ? '' : `max="${colorObj.available_boxes}"`}
                                         value="${currentQty}"
                                         style="width: 38px; border: 0; background: transparent; text-align: center; font-size: 13px;">
                                     <button type="button" class="btn-q btn-plus-scan px-2 py-1" data-key="${vKey}">+</button>
                                 </div>
                             </div>
-                            <div class="text-muted text-center mt-1" style="font-size: 10px; line-height: 1;">${colorObj.available_boxes} avl</div>
+                            ${stockVisible() && !colorObj.is_advance_sample ? `<div class="text-muted text-center mt-1" style="font-size: 10px; line-height: 1;">${colorObj.available_boxes} avl</div>` : ''}
                         </td>
                     `;
                 }
@@ -1530,7 +1535,7 @@ $(document).ready(function () {
         const key = $(this).data('key');
         let val = parseInt(input.val()) || 0;
         const max = parseInt(input.attr('max'));
-        if (!isNaN(max) && val >= max) return;
+        if (!allowOverStock() && !isNaN(max) && val >= max) return;
         input.val(val + 1);
         updateCartItem(key, val + 1);
     });

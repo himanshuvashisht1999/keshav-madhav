@@ -143,13 +143,9 @@ class PurchaseOrderService
             return back()->with('error', 'No phone number available for this vendor.');
         }
 
-        $dir = public_path('whatsapp_pdfs');
-        if (!file_exists($dir)) {
-            mkdir($dir, 0777, true);
-        }
-
-        $pdf->save($dir . '/' . $fileName);
-        $physicalPath = $dir . '/' . $fileName;
+        // saved in private storage (not the public folder), only to be sent
+        $physicalPath = whatsapp_pdf_path($fileName);
+        $pdf->save($physicalPath);
 
         $msg = "Dear {$data->vendor->name},\n\nYour Purchase Order #{$data->sku} has been generated.\nPlease find it attached.\n\nThank you!";
         $status = send_whatsapp_attachment($phone, $msg, $physicalPath, $fileName);

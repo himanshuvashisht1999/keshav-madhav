@@ -248,6 +248,13 @@
                 {{ session('error') }}
             </div>
         @endif
+        @if(isset($errors) && $errors->any() && !request()->routeIs('agent.login'))
+            <div class="alert alert-danger border-0 shadow-sm rounded-lg mb-4">
+                @foreach($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
 
         @yield('content')
     </div>

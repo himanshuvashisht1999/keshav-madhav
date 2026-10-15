@@ -102,13 +102,20 @@ class StockTransferController extends Controller
             $inventoryIds = $request->inventory_ids;
             $transferQtys = $request->transfer_qty;
 
-            foreach ($inventoryIds as $id) {
-                $inventory = DomesticInventory::findOrFail($id);
-                $transferQty = (int) $transferQtys[$id];
+            $stock = app(\App\Services\Admin\InventoryStockService::class);
+            foreach (array_unique($inventoryIds) as $id) {
+                $inventory = $stock->lockRow($id);
+                if (!$inventory) {
+                    throw new \Exception("Stock row #{$id} was not found.");
+                }
+                $transferQty = (int) ($transferQtys[$id] ?? 0);
 
                 if ($transferQty <= 0) continue;
                 if ($transferQty > $inventory->total_boxes) {
                     throw new \Exception("Transfer quantity exceeds available stock for Design: " . $inventory->design_number);
+                }
+                if ((int) $inventory->rack_id === (int) $toRack->id) {
+                    throw new \Exception("Design " . $inventory->design_number . " is already in this rack. Please choose another rack.");
                 }
 
                 // Log History
@@ -128,43 +135,10 @@ class StockTransferController extends Controller
                     'type' => 'transfer'
                 ]);
 
-                // Merge criteria
-                $matchCriteria = [
-                    'product_id' => $inventory->product_id,
-                    'color_id' => $inventory->color_id,
-                    'size_set_id' => $inventory->size_set_id,
-
-                    'rack_id' => $toRack->id,
-                    'quantity' => $inventory->quantity,
-                ];
-
-                if ($transferQty == $inventory->total_boxes) {
-                    // Full transfer
-                    $target = DomesticInventory::where($matchCriteria)
-                        ->where('id', '!=', $inventory->id)
-                        ->first();
-
-                    if ($target) {
-                        $target->increment('total_boxes', $transferQty);
-                        $inventory->delete();
-                    } else {
-                        $inventory->rack_id = $toRack->id;
-                        $inventory->save();
-                    }
-                } else {
-                    // Partial transfer
-                    $inventory->decrement('total_boxes', $transferQty);
-                    
-                    $target = DomesticInventory::where($matchCriteria)->first();
-                    if ($target) {
-                        $target->increment('total_boxes', $transferQty);
-                    } else {
-                        $newInventory = $inventory->replicate();
-                        $newInventory->total_boxes = $transferQty;
-                        $newInventory->rack_id = $toRack->id;
-                        $newInventory->save();
-                    }
-                }
+                // The boxes go to this item's row in the target rack (same pieces per box); the old row stays (may become 0)
+                $target = $stock->rowAt($inventory->product_id, $inventory->color_id, $inventory->size_set_id, $toRack->id, $inventory->quantity);
+                $stock->take($inventory, $transferQty);
+                $stock->add($target, $transferQty);
             }
 
             DB::commit();

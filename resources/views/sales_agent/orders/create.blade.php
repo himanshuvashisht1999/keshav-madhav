@@ -844,7 +844,8 @@
                             const vKey = data.product.id + '_' + colorObj.id + '_' + ss.size_set_id;
                             const item = cart.get(vKey);
                             const currentQty = item ? item.qty : 0;
-                            const isAdv = data.is_advance_sample;
+                            // "no stock limit" is per colour + size set (falls back to the old whole-design flag)
+                            const isAdv = (colorObj.is_advance_sample !== undefined) ? !!colorObj.is_advance_sample : !!data.is_advance_sample;
                             const maxAttr = (isAdv || allowOverStock) ? '' : `max="${colorObj.available_boxes}"`;
                             const cImg = colorObj.image || ss.image || '';
 
@@ -1563,6 +1564,14 @@
                                     Swal.fire('Error', response.message, 'error');
                                     btn.prop('disabled', false).html('Confirm Order <i class="fas fa-arrow-right ml-2"></i>');
                                 }
+                            },
+                            error: function (xhr) {
+                                // refused by the server (stock, shop, validation...) or no connection: say why
+                                const r = xhr.responseJSON || {};
+                                const msg = r.errors ? Object.values(r.errors).flat().join('\n')
+                                    : (r.message || (xhr.status === 0 ? 'No internet connection. Please try again.' : 'Could not save the order. Please try again.'));
+                                Swal.fire('Order not saved', msg, 'error');
+                                btn.prop('disabled', false).html('Confirm Order <i class="fas fa-arrow-right ml-2"></i>');
                             }
                         });
                     }

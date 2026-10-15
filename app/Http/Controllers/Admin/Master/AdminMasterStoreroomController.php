@@ -18,7 +18,7 @@ class AdminMasterStoreroomController extends Controller
     public function indexList(Request $request)
     {
         if ($request->ajax()) {
-            $data = Storeroom::where('status', '!=', 3)->select('id', 'name', 'description', 'status', 'created_at');
+            $data = Storeroom::where('status', '!=', 3)->select('*');
             return Datatables::of($data)
                 ->addIndexColumn()
                 ->editColumn('status', function ($row) {
@@ -26,6 +26,11 @@ class AdminMasterStoreroomController extends Controller
                     return ($status == 1) 
                         ? '<span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 8px;">Active</span>' 
                         : '<span class="badge badge-secondary" style="font-size: 11px; padding: 3px 8px;">Inactive</span>';
+                })
+                ->addColumn('order_more_than_stock', function ($row) {
+                    return ($row->order_more_than_stock ?? 'No') === 'Yes'
+                        ? '<span class="badge badge-warning text-dark" style="font-size: 11px; padding: 3px 8px;">Yes</span>'
+                        : '<span class="text-muted" style="font-size: 12px;">No</span>';
                 })
                 ->addColumn('action', function($row){
                     $parameter = $row->id;
@@ -37,7 +42,7 @@ class AdminMasterStoreroomController extends Controller
                     </div>
                     ';
                 })
-                ->rawColumns(['action', 'status'])
+                ->rawColumns(['action', 'status', 'order_more_than_stock'])
                 ->make(true);
         }
     }
@@ -55,7 +60,7 @@ class AdminMasterStoreroomController extends Controller
             'order_priority' => $request->order_priority,
             'order_dispatch' => $request->order_dispatch ?? 'Yes',
             'status' => 1
-        ]);
+        ] + (Storeroom::hasOverStockSetting() ? ['order_more_than_stock' => $request->order_more_than_stock === 'Yes' ? 'Yes' : 'No'] : []));
 
         return redirect()->route('admin.master.storeroom.index')->with('success', 'The storeroom has been successfully created.');
     }
@@ -88,7 +93,8 @@ class AdminMasterStoreroomController extends Controller
             'order_taken' => $request->order_taken ?? 'No',
             'order_priority' => $request->order_priority,
             'order_dispatch' => $request->order_dispatch ?? 'Yes'
-        ]);
+        ] + (Storeroom::hasOverStockSetting() && $request->has('order_more_than_stock')
+            ? ['order_more_than_stock' => $request->order_more_than_stock === 'Yes' ? 'Yes' : 'No'] : []));
 
         return redirect()->route('admin.master.storeroom.index')->with('success', 'The storeroom has been successfully updated.');
     }

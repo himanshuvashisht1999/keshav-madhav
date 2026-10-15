@@ -78,6 +78,17 @@
                     </div>
                 </div>
 
+                <div class="col-md-6">
+                    <div class="form-group mb-3">
+                        <label class="form-label">Order more than stock</label>
+                        <select name="order_more_than_stock" id="order_more_than_stock_edit" class="form-control select2 erp-filter-select" style="width: 100%;">
+                            <option value="No" {{ ($storeroom->order_more_than_stock ?? 'No') == 'No' ? 'selected' : '' }}>No</option>
+                            <option value="Yes" {{ ($storeroom->order_more_than_stock ?? 'No') == 'Yes' ? 'selected' : '' }}>Yes</option>
+                        </select>
+                        <small class="text-muted">Yes = items kept here can be ordered beyond the boxes in stock (e.g. ADVANCE SAMPLE).</small>
+                    </div>
+                </div>
+
                 <div class="col-md-12">
                     <div class="form-group mb-3">
                         <label class="form-label">Description</label>

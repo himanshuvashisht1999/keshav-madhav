@@ -265,8 +265,8 @@ class StockDisposalController extends Controller
                 }
 
                 foreach ($items as $item) {
-                    $qty_to_dispose = $item['quantity'];
-                    
+                    $qty_to_dispose = $this->wholeBoxes($item['quantity'] ?? 0);
+
                     $inventories = DomesticInventory::where('product_id', $item['product_id'])
                         ->where('size_set_id', $item['size_set_id'])
                         ->where('color_id', $item['color_id'])
@@ -274,6 +274,7 @@ class StockDisposalController extends Controller
                             $q->where('storeroom_id', $item['warehouse_id']);
                         })
                         ->where('total_boxes', '>', 0)
+                        ->orderBy('id')->lockForUpdate()
                         ->get();
 
                     if ($inventories->sum('total_boxes') < $qty_to_dispose) {
@@ -304,8 +305,8 @@ class StockDisposalController extends Controller
                             'old_rack_id' => $inventory->rack_id,
                             'old_warehouse_id' => $inventory->rack ? $inventory->rack->storeroom_id : null,
                             'box_quantity' => $take,
-                            'mrp' => $inventory->mrp,
-                            'pieces_per_box' => $inventory->pieces_per_box,
+                            'mrp' => \App\Models\ProductionGoodVariant::where('production_goods_id', $inventory->product_id)->where('master_size_measurement_id', $inventory->size_set_id)->value('mrp') ?? 0,
+                            'pieces_per_box' => $inventory->quantity,
                             'type' => 'Disposal',
                             'remarks' => "Disposed (No: {$disposal_no}). Reason: {$request->reason}. " . $request->remarks
                         ]);
@@ -362,18 +363,11 @@ class StockDisposalController extends Controller
                         ]);
                     }
                 } else {
-                    $inventory = DomesticInventory::find($item->item_id);
-                    if ($inventory) {
-                        $inventory->total_boxes += $item->quantity;
-                        $inventory->save();
-
-                        DomesticInventoryHistory::create([
-                            'user_id' => auth()->id(),
-                            'domestic_inventory_id' => $inventory->id,
-                            'type' => 'Edit (Restored)',
-                            'remarks' => "Restored due to Edit (No: {$disposal_no})"
-                        ]);
-                    }
+                    $inventory = $this->disposedRow($item, $main);
+                    app(\App\Services\Admin\InventoryStockService::class)->add($inventory, (int) round($item->quantity));
+                    app(\App\Services\Admin\InventoryStockService::class)->history('Edit (Restored)', $inventory, (int) round($item->quantity), [
+                        'remarks' => "Restored due to Edit (No: {$disposal_no})"
+                    ]);
                 }
             }
 
@@ -420,8 +414,8 @@ class StockDisposalController extends Controller
                 }
 
                 foreach ($items as $item) {
-                    $qty_to_dispose = $item['quantity'];
-                    
+                    $qty_to_dispose = $this->wholeBoxes($item['quantity'] ?? 0);
+
                     $inventories = DomesticInventory::where('product_id', $item['product_id'])
                         ->where('size_set_id', $item['size_set_id'])
                         ->where('color_id', $item['color_id'])
@@ -429,6 +423,7 @@ class StockDisposalController extends Controller
                             $q->where('storeroom_id', $item['warehouse_id']);
                         })
                         ->where('total_boxes', '>', 0)
+                        ->orderBy('id')->lockForUpdate()
                         ->get();
 
                     if ($inventories->sum('total_boxes') < $qty_to_dispose) {
@@ -450,10 +445,7 @@ class StockDisposalController extends Controller
                         $inventory->total_boxes -= $take;
                         $inventory->save();
 
-                        DomesticInventoryHistory::create([
-                            'user_id' => auth()->id(),
-                            'domestic_inventory_id' => $inventory->id,
-                            'type' => 'Disposal (Updated)',
+                        app(\App\Services\Admin\InventoryStockService::class)->history('Disposal (Updated)', $inventory, (int) $take, [
                             'remarks' => "Updated Disposal (No: {$disposal_no}). Reason: {$request->reason}"
                         ]);
 
@@ -474,6 +466,39 @@ class StockDisposalController extends Controller
             DB::rollBack();
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
+    }
+
+    /** Boxes to dispose: a whole number of 1 or more. */
+    private function wholeBoxes($qty): int
+    {
+        if (!is_numeric($qty) || floor((float) $qty) != (float) $qty || (int) $qty < 1) {
+            throw new \Exception('Boxes to dispose must be a whole number of 1 or more.');
+        }
+        return (int) $qty;
+    }
+
+    /**
+     * The stock row a disposal line took its boxes from. If that row no longer exists (older data, when empty rows
+     * were deleted) it is made again for the same item, rack and pieces per box, so the boxes can come back.
+     */
+    private function disposedRow($item, $main): DomesticInventory
+    {
+        $row = DomesticInventory::lockForUpdate()->find($item->item_id);
+        if ($row) {
+            return $row;
+        }
+        if (!preg_match('/^D(\d+)S(\d+)C(\d+)$/', (string) $item->barcode, $m)) {
+            throw new \Exception("The stock row of disposal line #{$item->id} no longer exists, so its boxes cannot be put back.");
+        }
+        [, $productId, $sizeSetId, $colorId] = $m;
+        $hist = DomesticInventoryHistory::where('remarks', 'like', '%' . $main->disposal_no . '%')
+            ->where('old_product_id', $productId)->where('old_size_set_id', $sizeSetId)->where('old_color_id', $colorId)
+            ->whereNotNull('old_rack_id')->orderBy('id')->first();
+        $other = DomesticInventory::where('barcode', $item->barcode)->orderByDesc('total_boxes')->first();
+        $rackId = $hist->old_rack_id ?? ($other->rack_id ?? null);
+        $pcs = ($hist && $hist->pieces_per_box) ? $hist->pieces_per_box
+            : ($other->quantity ?? (\App\Models\MasterSizeMeasurement::where('id', $sizeSetId)->value('no_of_pcs') ?? 0));
+        return app(\App\Services\Admin\InventoryStockService::class)->rowAt($productId, $colorId, $sizeSetId, $rackId, $pcs);
     }
 
     public function destroy($id)
@@ -509,21 +534,11 @@ class StockDisposalController extends Controller
                         ]);
                     }
                 } else {
-                    $inventory = DomesticInventory::find($item->item_id);
-                    if ($inventory) {
-                        $old_boxes = $inventory->total_boxes;
-                        $inventory->total_boxes += $item->quantity;
-                        $inventory->save();
-
-                        DomesticInventoryHistory::create([
-                            'user_id' => auth()->id(),
-                            'domestic_inventory_id' => $inventory->id,
-                            'old_total_boxes' => $old_boxes,
-                            'new_total_boxes' => $inventory->total_boxes,
-                            'type' => 'Restoration',
-                            'remarks' => "Restored from Deleted Disposal (No: {$disposal_no})"
-                        ]);
-                    }
+                    $inventory = $this->disposedRow($item, $main);
+                    app(\App\Services\Admin\InventoryStockService::class)->add($inventory, (int) round($item->quantity));
+                    app(\App\Services\Admin\InventoryStockService::class)->history('Restoration', $inventory, (int) round($item->quantity), [
+                        'remarks' => "Restored from Deleted Disposal (No: {$disposal_no})"
+                    ]);
                 }
             }
 

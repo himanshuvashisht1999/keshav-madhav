@@ -17,9 +17,9 @@ class AutoAssignStockController extends Controller
         try {
             DB::beginTransaction();
 
-            // 1. Get Non-Dispatchable storerooms (order_dispatch = 'No' or ADVANCE SAMPLE)
+            // 1. Get Non-Dispatchable storerooms (order_dispatch = 'No' or "Order more than stock" = Yes)
             $nonDispatchStorerooms = Storeroom::where('order_dispatch', 'No')
-                ->orWhere('name', 'ADVANCE SAMPLE')
+                ->orWhereRaw(Storeroom::overStockSql())
                 ->with('racks')
                 ->get();
             $nonDispatchRackIds = $nonDispatchStorerooms->flatMap->racks->pluck('id')->toArray();
@@ -48,7 +48,7 @@ class AutoAssignStockController extends Controller
             if ($pendingOrderItems->isEmpty()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'No pending order items requiring reassignment from Advance Sample / Non-Dispatch rooms.',
+                    'message' => 'No pending order items need moving from "Order more than stock" or non-dispatch storerooms.',
                     'reassigned_count' => 0
                 ]);
             }
@@ -99,7 +99,8 @@ class AutoAssignStockController extends Controller
                             ->where('product_id', $item->product_id)
                             ->where('size_set_id', $item->size_set_id)
                             ->where('color_id', $item->color_id)
-                            ->sum('box_qty');
+                            ->whereNull('dispatched_at')
+                            ->sum(DB::raw('GREATEST(box_qty - scanned_box_qty, 0)'));
                         
                         $available = $inv->actual_total_boxes - $allocated;
                         if ($available > 0) {
@@ -161,7 +162,7 @@ class AutoAssignStockController extends Controller
                     $reassignedCount++;
                 }
 
-                // If we couldn't fulfill everything, we need to create a record for the remaining in ADVANCE SAMPLE
+                // If we couldn't fulfill everything, the remaining stays on its original (order-more-than-stock) rack
                 if ($remainingQty > 0 && $originalItemUpdated) {
                      $newItem = $item->replicate();
                      $newItem->rack_id = $item->getOriginal('rack_id'); // Original advance sample rack
@@ -175,7 +176,7 @@ class AutoAssignStockController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Successfully reassigned $reassignedCount order item splits from ADVANCE SAMPLE.",
+                'message' => "Successfully reassigned $reassignedCount order item splits to available stock.",
                 'reassigned_count' => $reassignedCount
             ]);
 

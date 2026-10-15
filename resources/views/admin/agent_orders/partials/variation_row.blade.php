@@ -49,7 +49,7 @@
     <td class="text-center font-weight-bold">{{ number_format($variation->pcs_per_box, 0) }}</td>
     <td class="text-center">
         @if(isset($variation->is_advance_sample) && $variation->is_advance_sample)
-            <span class="badge-erp-status badge-erp-primary">Advance Sample</span>
+            <span class="badge-erp-status badge-erp-primary" title="This item is kept in a storeroom set to Order more than stock">No stock limit</span>
         @else
             @if($availBoxes > 0)
                 <span class="badge-erp-status badge-erp-info font-weight-bold" title="{{ $physBoxes }} physical in warehouse, {{ (int)($variation->allocated_boxes ?? 0) }} allocated to other orders">{{ $availBoxes }} Available</span>

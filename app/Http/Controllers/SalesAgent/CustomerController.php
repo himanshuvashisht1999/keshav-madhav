@@ -10,6 +10,8 @@ use App\Models\Brand;
 use App\Models\CustomerBrandDiscount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
@@ -37,99 +39,76 @@ class CustomerController extends Controller
 
         $request->validate([
             'subtype' => 'required|in:direct,agent',
-            'name' => 'required_if:subtype,direct|max:255',
-            'phone' => 'required_if:subtype,direct|max:20',
-            'shop_name' => 'required_if:subtype,agent|max:255',
-            'shop_phone' => 'required_if:subtype,agent|max:20',
-            'sales_agent_id' => 'required_if:subtype,agent',
+            'name' => 'required_if:subtype,direct|nullable|string|max:255',
+            'phone' => 'required_if:subtype,direct|nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
+            'shop_name' => 'required_if:subtype,agent|nullable|string|max:255',
+            'shop_phone' => 'required_if:subtype,agent|nullable|string|max:20',
+            'shop_email' => 'nullable|email|max:255',
+            'sales_agent_id' => ['required_if:subtype,agent', 'nullable', Rule::exists('sales_agents', 'id')->where('status', 1)],
+            'balance' => 'nullable|numeric|min:0',
+            'balance_type' => 'nullable|in:Credit,Debit',
+            'payment_term_days' => 'nullable|integer|min:0|max:3650',
+            'brand_discounts' => 'nullable|array',
+            'brand_discounts.*' => 'nullable|numeric|min:0|max:100',
+        ], [
+            'brand_discounts.*.max' => 'A brand discount cannot be more than 100%.',
+            'brand_discounts.*.min' => 'A brand discount cannot be less than 0%.',
+            'sales_agent_id.exists' => 'Please choose an active sales agent.',
         ]);
 
-        $type = 'domestic';
-        $subtype = $request->subtype;
+        $isShop = $request->subtype === 'agent';
 
-        // If Agent subtype is selected, we are creating a SHOP under an existing Agent
-        if ($subtype == 'agent') {
-            $shop = new MasterCustomer;
-            $shop->name = $request->shop_name;
-            $shop->phone = $request->shop_phone;
-            $shop->email = $request->shop_email;
-            $shop->gst_number = $request->shop_gst_number;
-            $shop->address = $request->shop_address;
-            $shop->type = 'domestic';
-            $shop->subtype = 'agent';
-            $shop->parent_id = $request->sales_agent_id; // For hierarchy
-            $shop->sales_agent_id = $request->sales_agent_id; // For compatibility/tracking
-            $balance = $request->balance ?? 0;
-            if ($request->balance_type == 'Debit') {
-                $balance = -abs($balance);
+        DB::beginTransaction();
+        try {
+            $customer = new MasterCustomer;
+            $customer->type = 'domestic';
+            $customer->subtype = $request->subtype;
+            $customer->status = 1;
+            $customer->payment_term_days = $request->payment_term_days ?? 120;
+            $customer->balance = 0;
+            if ($isShop) {
+                // a SHOP under an existing agent
+                $customer->name = $request->shop_name;
+                $customer->phone = $request->shop_phone;
+                $customer->email = $request->shop_email;
+                $customer->gst_number = $request->shop_gst_number;
+                $customer->address = $request->shop_address;
+                $customer->parent_id = $request->sales_agent_id; // For hierarchy
+                $customer->sales_agent_id = $request->sales_agent_id; // For compatibility/tracking
             } else {
-                $balance = abs($balance);
+                $customer->name = $request->name;
+                $customer->phone = $request->phone;
+                $customer->email = $request->email;
+                $customer->gst_number = $request->gst_number;
+                $customer->address = $request->address;
             }
-            $shop->balance = $balance;
-            $shop->status = 1;
-            $shop->payment_term_days = $request->payment_term_days ?? 120;
-            $shop->save();
+            $customer->save();
 
-            MasterOpeningBalance::updateOrCreate(
-                [
-                    'master_type' => 'customer',
-                    'master_id' => $shop->id,
-                    'financial_year' => MasterOpeningBalance::openingKey(),
-                ],
-                [
-                    'amount' => abs($request->balance ?? 0),
-                    'balance_type' => $request->balance_type ?? 'Credit',
-                ]
-            );
+            // the one opening balance row; the running balance starts from it
+            MasterOpeningBalance::applyOpeningChange($customer, 'customer', $request->balance ?? 0, $request->balance_type ?? 'Credit');
+            $customer->save();
 
-            return redirect()->route('agent.dashboard')->with('success', 'Customer (Shop) created successfully!');
-        }
-
-        // Standard logic for Domestic Direct
-        $save_data = new MasterCustomer;
-        $save_data->name = $request->name;
-        $save_data->phone = $request->phone;
-        $save_data->email = $request->email;
-        $save_data->gst_number = $request->gst_number;
-        $save_data->address = $request->address;
-        $balance = $request->balance ?? 0;
-        if ($request->balance_type == 'Debit') {
-            $balance = -abs($balance);
-        } else {
-            $balance = abs($balance);
-        }
-        $save_data->balance = $balance;
-        $save_data->status = $request->status ?? 1;
-        $save_data->type = $type;
-        $save_data->subtype = $subtype;
-        $save_data->payment_term_days = $request->payment_term_days ?? 120;
-
-        $save_data->save();
-
-        MasterOpeningBalance::updateOrCreate(
-            [
-                'master_type' => 'customer',
-                'master_id' => $save_data->id,
-                'financial_year' => MasterOpeningBalance::openingKey(),
-            ],
-            [
-                'amount' => abs($request->balance ?? 0),
-                'balance_type' => $request->balance_type ?? 'Credit',
-            ]
-        );
-
-        if ($request->has('brand_discounts')) {
-            foreach ($request->brand_discounts as $brand_id => $discount) {
-                if ($discount !== null && $discount !== '') {
-                    CustomerBrandDiscount::create([
-                        'customer_id' => $save_data->id,
-                        'brand_id' => $brand_id,
-                        'discount_percentage' => $discount,
-                    ]);
+            if (!$isShop && is_array($request->brand_discounts)) {
+                foreach ($request->brand_discounts as $brand_id => $discount) {
+                    if ($discount !== null && $discount !== '' && Brand::where('id', $brand_id)->exists()) {
+                        CustomerBrandDiscount::create([
+                            'customer_id' => $customer->id,
+                            'brand_id' => $brand_id,
+                            'discount_percentage' => $discount,
+                        ]);
+                    }
                 }
             }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->with('error', 'Could not save the customer: ' . $e->getMessage());
         }
 
-        return redirect()->route('agent.dashboard')->with('success', 'Customer (Direct) created successfully!');
+        return redirect()->route('agent.dashboard')->with('success', $isShop
+            ? 'Customer (Shop) created successfully!'
+            : 'Customer (Direct) created successfully!');
     }
 }

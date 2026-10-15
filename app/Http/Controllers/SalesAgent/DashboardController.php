@@ -18,7 +18,8 @@ class DashboardController extends Controller
             $stats = [
                 'total_orders' => \DB::table('agent_orders')->where('master_agent_id', $agent_id)->count(),
                 'pending_orders' => \DB::table('agent_orders')->where('master_agent_id', $agent_id)->where('status', 'pending')->count(),
-                'total_shops' => MasterCustomer::count(),
+                // master agents order for every active customer
+                'total_shops' => MasterCustomer::where('status', 1)->count(),
             ];
 
             $recent_orders = \DB::table('agent_orders')
@@ -33,7 +34,8 @@ class DashboardController extends Controller
             $stats = [
                 'total_orders' => \DB::table('agent_orders')->where('sales_agent_id', $agent_id)->count(),
                 'pending_orders' => \DB::table('agent_orders')->where('sales_agent_id', $agent_id)->where('status', 'pending')->count(),
-                'total_shops' => MasterCustomer::where('sales_agent_id', $agent_id)->count(),
+                // the shops listed in "My Shops" (deleted shops are not counted)
+                'total_shops' => MasterCustomer::where('sales_agent_id', $agent_id)->where('status', '!=', 3)->count(),
             ];
 
             $recent_orders = \DB::table('agent_orders')

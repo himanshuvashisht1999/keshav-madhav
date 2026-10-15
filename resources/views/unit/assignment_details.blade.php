@@ -183,7 +183,7 @@
         <form action="{{ route('unit.submit') }}" method="POST" id="uploadForm">
             @csrf
             <input type="hidden" name="stage_master_unit_id" value="{{ $encrypted_unit_id }}">
-            <input type="hidden" name="type" value="{{ $isRework ? 'rework' : ($type === 'cutting' ? '1' : '2') }}">
+            <input type="hidden" name="type" value="{{ $type === 'cutting' ? '1' : '2' }}">
             <input type="hidden" name="order_product_set_id" value="{{ $header['id'] ?? '' }}">
             <input type="hidden" name="transaction_id" value="{{ $transaction->id ?? '' }}">
             <input type="hidden" name="transaction_type" value="{{ $type }}">

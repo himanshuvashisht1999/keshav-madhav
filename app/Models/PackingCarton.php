@@ -19,7 +19,8 @@ class PackingCarton extends Model
         'barcode',
         'weight',
         'dimensions',
-        'note'
+        'note',
+        'status'
     ];
 
     public function main()

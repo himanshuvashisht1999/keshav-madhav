@@ -101,11 +101,12 @@
                         <i class="fas fa-edit"></i> Edit
                     </a>
                     @if($order->dispatches->count() == 0)
-                        <a href="{{ route('admin.agent-orders.destroy', $order->id) }}"
-                            onclick="return confirm('Are you sure you want to delete this order? This will restore any deducted inventory.')"
+                        <a href="#"
+                            onclick="if (confirm('Are you sure you want to delete this order? This will restore any deducted inventory.')) { this.nextElementSibling.submit(); } return false;"
                             class="btn-erp btn-erp-danger">
                             <i class="fas fa-trash"></i> Delete
                         </a>
+                        <form method="POST" action="{{ route('admin.agent-orders.destroy', $order->id) }}" style="display:none">@csrf</form>
                     @endif
                 @endif
                 <a href="{{ route('admin.agent-orders.index') }}" class="btn-erp btn-erp-outline">
@@ -364,7 +365,7 @@
                                                                 @if(($item->order_dispatch ?? 'Yes') === 'Yes' && $item->warehouse_name !== 'N/A')
                                                                     <span class="badge badge-success mt-1" style="font-size: 10px;"><i class="fas fa-check mr-1"></i>Dispatch Ready</span>
                                                                 @elseif($item->warehouse_name !== 'N/A')
-                                                                    <span class="badge badge-warning text-dark mt-1" style="font-size: 10px;"><i class="fas fa-exclamation-triangle mr-1"></i>Advance Sample (No Dispatch)</span>
+                                                                    <span class="badge badge-warning text-dark mt-1" style="font-size: 10px;"><i class="fas fa-exclamation-triangle mr-1"></i>Storeroom not for dispatch</span>
                                                                 @else
                                                                     <span class="badge badge-secondary mt-1" style="font-size: 10px;">Unassigned</span>
                                                                 @endif
@@ -375,7 +376,7 @@
                                                                     <div class="text-muted mb-1"><i class="fas fa-warehouse text-secondary mr-1"></i>{{ $item->warehouse_name }}</div>
                                                                     <div class="text-muted small"><i class="fas fa-layer-group text-secondary mr-1"></i>{{ $item->rack_name }} (0 Box)</div>
                                                                 @endif
-                                                                <span class="badge badge-warning text-dark mt-1" style="font-size: 10px;"><i class="fas fa-exclamation-triangle mr-1"></i>Advance Sample / Stock Depleted</span>
+                                                                <span class="badge badge-warning text-dark mt-1" style="font-size: 10px;"><i class="fas fa-exclamation-triangle mr-1"></i>Stock not available yet</span>
                                                             </div>
                                                         @endif
                                                     </td>

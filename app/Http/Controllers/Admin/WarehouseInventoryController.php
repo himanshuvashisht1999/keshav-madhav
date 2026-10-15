@@ -14,6 +14,7 @@ use App\Models\WarehouseTransferItem;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\Admin\InventoryStockService;
 
 class WarehouseInventoryController extends Controller
 {
@@ -116,22 +117,15 @@ class WarehouseInventoryController extends Controller
             $query->havingRaw('SUM(domestic_inventories.total_boxes) - MAX(COALESCE(order_totals.total_ordered_boxes, 0)) <= ?', [$request->max_boxes]);
         }
 
-        $query->leftJoin(DB::raw('(
-            SELECT aoi.product_id, 
-                   aoi.size_set_id, 
-                   aoi.rack_id,
-                   SUM(aoi.box_qty) as total_ordered_boxes
-            FROM agent_order_items aoi
-            JOIN agent_orders ao ON aoi.agent_order_id = ao.id
-            WHERE ao.status != "dispatched"
-            GROUP BY aoi.product_id, aoi.size_set_id, aoi.rack_id
-        ) as order_totals'), function ($join) {
+        // Boxes open orders still have to take (picked boxes have already left the stock, dispatched lines are done)
+        $query->leftJoin(DB::raw(InventoryStockService::openOrderBoxesSql(['product_id', 'size_set_id', 'rack_id'], 'total_ordered_boxes') . ' as order_totals'), function ($join) {
             $join->on('domestic_inventories.product_id', '=', 'order_totals.product_id')
                  ->on('domestic_inventories.size_set_id', '=', 'order_totals.size_set_id')
                  ->on('domestic_inventories.rack_id', '=', 'order_totals.rack_id');
         });
 
         $query->leftJoin('production_goods_variants as variants', function ($join) {
+            InventoryStockService::skipDuplicateVariants($join);
             $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                  ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
         });
@@ -284,18 +278,17 @@ class WarehouseInventoryController extends Controller
             $query->whereNull('domestic_inventories.rack_id');
         }
 
-        $query->leftJoin(DB::raw('(
-            SELECT aoi.barcode, aoi.rack_id, SUM(aoi.box_qty) as color_total_ordered
-            FROM agent_order_items aoi
-            JOIN agent_orders ao ON aoi.agent_order_id = ao.id
-            WHERE ao.status != "dispatched"
-            GROUP BY aoi.barcode, aoi.rack_id
-        ) as order_totals'), function ($join) {
+        $query->leftJoin(DB::raw(InventoryStockService::openOrderBoxesSql(['barcode', 'rack_id'], 'color_total_ordered') . ' as order_totals'), function ($join) {
             $join->on('domestic_inventories.barcode', '=', 'order_totals.barcode')
                  ->on('domestic_inventories.rack_id', '=', 'order_totals.rack_id');
         });
+        // empty rows (0 boxes, nothing ordered) are not shown
+        $query->where(function ($q) {
+            $q->where('domestic_inventories.total_boxes', '>', 0)->orWhere('order_totals.color_total_ordered', '>', 0);
+        });
 
         $query->leftJoin('production_goods_variants as variants', function ($join) {
+            InventoryStockService::skipDuplicateVariants($join);
             $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                  ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
         });
@@ -338,7 +331,8 @@ class WarehouseInventoryController extends Controller
 
         DB::beginTransaction();
         try {
-            $inventory = DomesticInventory::findOrFail($request->id);
+            $stock = app(InventoryStockService::class);
+            $inventory = $stock->lockRow($request->id);
             $transferQty = (int) $request->transfer_qty;
 
             if ($transferQty > $inventory->total_boxes) {
@@ -346,61 +340,22 @@ class WarehouseInventoryController extends Controller
             }
 
             $toRack = Rack::findOrFail($request->rack_id);
+            if ((int) $toRack->id === (int) $inventory->rack_id) {
+                throw new \Exception("The boxes are already in this rack. Please choose another rack.");
+            }
 
-            // Log in domestic_inventory_histories as requested EXCLUSIVELY
-            \App\Models\DomesticInventoryHistory::create([
-                'user_id' => auth()->id(),
-                'old_product_id' => $inventory->product_id,
-                'old_size_set_id' => $inventory->size_set_id,
-                'old_color_id' => $inventory->color_id,
+            // The boxes go to THIS item's row in the chosen rack (same pieces per box); the old row stays (it may become 0)
+            $target = $stock->rowAt($inventory->product_id, $inventory->color_id, $inventory->size_set_id, $toRack->id, $inventory->quantity);
+            $stock->take($inventory, $transferQty);
+            $stock->add($target, $transferQty);
 
+            $stock->history('transfer', $inventory, $transferQty, [
                 'new_product_id' => $inventory->product_id,
                 'new_size_set_id' => $inventory->size_set_id,
                 'new_color_id' => $inventory->color_id,
-
-                'box_quantity' => $transferQty,
-                'type' => 'transfer'
+                'new_rack_id' => $toRack->id,
+                'new_warehouse_id' => $toRack->storeroom_id,
             ]);
-
-            // Merge search criteria (Matches unique configuration at destination)
-            $matchCriteria = [
-                'product_id' => $inventory->product_id,
-                'color_id' => $inventory->color_id,
-                'size_set_id' => $inventory->size_set_id,
-
-                'quantity' => $inventory->quantity, // Pieces per box must match
-            ];
-
-            // If transferring all boxes
-            if ($transferQty == $inventory->total_boxes) {
-                // Check if target configuration already exists at destination
-                $target = DomesticInventory::where($matchCriteria)
-                    ->where('id', '!=', $inventory->id)
-                    ->first();
-
-                if ($target) {
-                    $target->increment('total_boxes', $transferQty);
-                    $inventory->delete();
-                } else {
-                    $inventory->rack_id = $toRack->id;
-                    $inventory->save();
-                }
-            } else {
-                // Partial Transfer
-                $inventory->decrement('total_boxes', $transferQty);
-
-                // Check for existing record at destination
-                $target = DomesticInventory::where($matchCriteria)->first();
-
-                if ($target) {
-                    $target->increment('total_boxes', $transferQty);
-                } else {
-                    $newInventory = $inventory->replicate();
-                    $newInventory->total_boxes = $transferQty;
-                    $newInventory->rack_id = $toRack->id;
-                    $newInventory->save();
-                }
-            }
 
             DB::commit();
             return response()->json(['status' => 'success', 'message' => 'Inventory transferred successfully.']);
@@ -424,36 +379,22 @@ class WarehouseInventoryController extends Controller
             $toRack = Rack::findOrFail($request->rack_id);
             $items = DomesticInventory::whereIn('packing_carton_id', $request->carton_ids)->get();
 
+            $stock = app(InventoryStockService::class);
             foreach ($items as $item) {
-                \App\Models\DomesticInventoryHistory::create([
-                    'user_id' => auth()->id(),
-                    'old_product_id' => $item->product_id,
-                    'old_rack_id' => $item->rack_id,
+                $item = $stock->lockRow($item->id);
+                $boxes = (int) $item->total_boxes;
+                if ($boxes <= 0 || (int) $item->rack_id === (int) $toRack->id) continue;
+
+                $target = $stock->rowAt($item->product_id, $item->color_id, $item->size_set_id, $toRack->id, $item->quantity);
+                $stock->take($item, $boxes);
+                $stock->add($target, $boxes);
+                $stock->history('transfer', $item, $boxes, [
                     'new_product_id' => $item->product_id,
+                    'new_size_set_id' => $item->size_set_id,
+                    'new_color_id' => $item->color_id,
                     'new_rack_id' => $toRack->id,
-                    'box_quantity' => $item->total_boxes,
-                    'type' => 'transfer'
+                    'new_warehouse_id' => $toRack->storeroom_id,
                 ]);
-
-                $matchCriteria = [
-                    'product_id' => $item->product_id,
-                    'color_id' => $item->color_id,
-                    'size_set_id' => $item->size_set_id,
-
-                    'quantity' => $item->quantity,
-                ];
-
-                $target = DomesticInventory::where($matchCriteria)
-                    ->where('id', '!=', $item->id)
-                    ->first();
-
-                if ($target) {
-                    $target->increment('total_boxes', $item->total_boxes);
-                    $item->delete();
-                } else {
-                    $item->rack_id = $toRack->id;
-                    $item->save();
-                }
             }
 
             DB::commit();
@@ -548,133 +489,31 @@ class WarehouseInventoryController extends Controller
 
         DB::beginTransaction();
         try {
-            $inventory = DomesticInventory::findOrFail($request->id);
+            $stock = app(InventoryStockService::class);
+            $inventory = $stock->lockRow($request->id);
             $updateQty = (int) $request->update_qty;
 
             if ($updateQty > $inventory->total_boxes) {
                 throw new \Exception("Cannot update more boxes than available.");
             }
 
+            $same = $inventory->product_id == $request->product_id && $inventory->color_id == $request->color_id && $inventory->size_set_id == $request->size_set_id;
+            if ($same) {
+                throw new \Exception("Nothing to change: the product, colour and size set are the same.");
+            }
 
-            \App\Models\DomesticInventoryHistory::create([
-                'user_id' => auth()->id(),
-                'old_product_id' => $inventory->product_id,
-                'old_size_set_id' => $inventory->size_set_id,
-                'old_color_id' => $inventory->color_id,
+            // The boxes become the new item in the SAME rack (same pieces per box); the old row stays (it may become 0)
+            $target = $stock->rowAt($request->product_id, $request->color_id, $request->size_set_id, $inventory->rack_id, $inventory->quantity);
+            $stock->take($inventory, $updateQty);
+            $stock->add($target, $updateQty);
 
+            $stock->history('attribute_change', $inventory, $updateQty, [
                 'new_product_id' => $request->product_id,
                 'new_size_set_id' => $request->size_set_id,
                 'new_color_id' => $request->color_id,
-
-                'box_quantity' => $updateQty,
-                'type' => 'attribute_change'
+                'new_rack_id' => $inventory->rack_id,
+                'new_warehouse_id' => $inventory->rack ? $inventory->rack->storeroom_id : null,
             ]);
-
-            // Construct new barcode
-            $newBarcode = 'D' . $request->product_id . 'S' . $request->size_set_id . 'C' . $request->color_id;
-
-            // Match criteria for merging at SAME rack
-            $matchCriteria = [
-                'product_id' => $request->product_id,
-                'color_id' => $request->color_id,
-                'size_set_id' => $request->size_set_id,
-
-                'quantity' => $inventory->quantity, // Pieces per box should ideally remain same
-            ];
-
-            if ($updateQty == $inventory->total_boxes) {
-                // Changing entire row
-                $target = DomesticInventory::where($matchCriteria)
-                    ->where('id', '!=', $inventory->id)
-                    ->first();
-
-                if ($target) {
-                    $target->increment('total_boxes', $updateQty);
-
-                    // Update individual boxes before deleting
-                    // We filter by rack_id to ensure we only update boxes in the correct location
-                    $boxesToUpdateIds = DB::table('packing_boxes')
-                        ->join('packing_cartons', 'packing_boxes.packing_carton_id', '=', 'packing_cartons.id')
-                        ->where('packing_boxes.barcode', $inventory->barcode)
-                        ->where('packing_cartons.rack_id', $inventory->rack_id)
-                        ->select('packing_boxes.id')
-                        ->pluck('id');
-
-                    if ($boxesToUpdateIds->isNotEmpty()) {
-                        DB::table('packing_boxes')
-                            ->whereIn('id', $boxesToUpdateIds)
-                            ->update(['barcode' => $newBarcode]);
-                    }
-
-                    $inventory->delete();
-                } else {
-                    $oldBarcode = $inventory->barcode;
-                    $inventory->product_id = $request->product_id;
-                    $inventory->color_id = $request->color_id;
-                    $inventory->size_set_id = $request->size_set_id;
-
-                    $inventory->save();
-
-                    $boxesToUpdateIds = DB::table('packing_boxes')
-                        ->join('packing_cartons', 'packing_boxes.packing_carton_id', '=', 'packing_cartons.id')
-                        ->where('packing_boxes.barcode', $oldBarcode)
-                        ->where('packing_cartons.rack_id', $inventory->rack_id)
-                        ->select('packing_boxes.id')
-                        ->pluck('id');
-
-                    if ($boxesToUpdateIds->isNotEmpty()) {
-                        DB::table('packing_boxes')
-                            ->whereIn('id', $boxesToUpdateIds)
-                            ->update(['barcode' => $newBarcode]);
-                    }
-                }
-            } else {
-                // Partial Change
-                $oldBarcode = $inventory->barcode;
-                $inventory->decrement('total_boxes', $updateQty);
-
-                $target = DomesticInventory::where($matchCriteria)->first();
-                if ($target) {
-                    $target->increment('total_boxes', $updateQty);
-
-                    // Assign boxes to the target
-                    $boxesToUpdateIds = DB::table('packing_boxes')
-                        ->join('packing_cartons', 'packing_boxes.packing_carton_id', '=', 'packing_cartons.id')
-                        ->where('packing_boxes.barcode', $oldBarcode)
-                        ->where('packing_cartons.rack_id', $inventory->rack_id)
-                        ->limit($updateQty)
-                        ->select('packing_boxes.id')
-                        ->pluck('id');
-
-                    if ($boxesToUpdateIds->isNotEmpty()) {
-                        DB::table('packing_boxes')
-                            ->whereIn('id', $boxesToUpdateIds)
-                            ->update(['barcode' => $newBarcode]);
-                    }
-                } else {
-                    $newInventory = $inventory->replicate();
-                    $newInventory->product_id = $request->product_id;
-                    $newInventory->color_id = $request->color_id;
-                    $newInventory->size_set_id = $request->size_set_id;
-
-                    $newInventory->barcode = $newBarcode;
-                    $newInventory->save();
-
-                    $boxesToUpdateIds = DB::table('packing_boxes')
-                        ->join('packing_cartons', 'packing_boxes.packing_carton_id', '=', 'packing_cartons.id')
-                        ->where('packing_boxes.barcode', $oldBarcode)
-                        ->where('packing_cartons.rack_id', $inventory->rack_id)
-                        ->limit($updateQty)
-                        ->select('packing_boxes.id')
-                        ->pluck('id');
-
-                    if ($boxesToUpdateIds->isNotEmpty()) {
-                        DB::table('packing_boxes')
-                            ->whereIn('id', $boxesToUpdateIds)
-                            ->update(['barcode' => $newBarcode]);
-                    }
-                }
-            }
 
             DB::commit();
             return response()->json(['status' => 'success', 'message' => 'Attributes updated successfully.']);
@@ -684,6 +523,7 @@ class WarehouseInventoryController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Update failed: ' . $e->getMessage()]);
         }
     }
+
     public function deleteBoxes(Request $request)
     {
         $request->validate([
@@ -691,61 +531,35 @@ class WarehouseInventoryController extends Controller
             'delete_qty' => 'required|integer|min:1'
         ]);
 
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
+            $stock = app(InventoryStockService::class);
+            $inventory = $stock->lockRow($request->id);
+            $deleteQty = (int) $request->delete_qty;
 
-            $inventory = DomesticInventory::findOrFail($request->id);
-
-            if ($inventory->total_boxes < $request->delete_qty) {
+            if ($inventory->total_boxes < $deleteQty) {
+                DB::rollBack();
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Only ' . $inventory->total_boxes . ' boxes available to delete.'
                 ]);
             }
 
-            // Log History
-            \App\Models\DomesticInventoryHistory::create([
-                'user_id' => auth()->id(),
-                'old_product_id' => $inventory->product_id,
-                'old_size_set_id' => $inventory->size_set_id,
-                'old_color_id' => $inventory->color_id,
-
-                'box_quantity' => $request->delete_qty,
-                'type' => 'deletion'
-            ]);
-
-            // Find individual boxes to delete
-            $boxesToDeleteIds = DB::table('packing_boxes')
-                ->join('packing_cartons', 'packing_boxes.packing_carton_id', '=', 'packing_cartons.id')
-                ->where('packing_boxes.barcode', $inventory->barcode)
-                ->where('packing_cartons.rack_id', $inventory->rack_id)
-                ->limit($request->delete_qty)
-                ->select('packing_boxes.id')
-                ->pluck('id');
-
             log_deletion('Warehouse Inventory', $inventory->id, [
                 'inventory'         => $inventory->toArray(),
-                'deleted_boxes_qty' => $request->delete_qty,
+                'deleted_boxes_qty' => $deleteQty,
                 'rack_id'           => $inventory->rack_id,
                 'barcode'           => $inventory->barcode,
             ]);
 
-            if ($boxesToDeleteIds->isNotEmpty()) {
-                DB::table('packing_boxes')->whereIn('id', $boxesToDeleteIds)->delete();
-            }
-
-            $inventory->total_boxes -= $request->delete_qty;
-            if ($inventory->total_boxes <= 0) {
-                $inventory->delete();
-            } else {
-                $inventory->save();
-            }
+            $stock->take($inventory, $deleteQty); // the row stays, possibly with 0 boxes
+            $stock->history('deletion', $inventory, $deleteQty);
 
             DB::commit();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Successfully deleted ' . $request->delete_qty . ' boxes.'
+                'message' => 'Successfully deleted ' . $deleteQty . ' boxes.'
             ]);
 
         } catch (\Exception $e) {

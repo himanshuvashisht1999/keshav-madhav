@@ -319,17 +319,56 @@ class FairProductController extends Controller
 
         $productIds = $products->pluck('id')->toArray();
         $allocatedBoxes = collect();
+        // Stock of all these products in a few queries (it was several queries per product)
+        $colorStockByProduct = collect();
+        $sizeRowsByProduct = collect();
         if (!empty($productIds)) {
+            // Boxes pending orders still have to take (picked boxes have already left the stock)
             $allocatedBoxes = \DB::table('agent_order_items')
                 ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
                 ->where('agent_orders.status', 'pending')
+                ->whereNull('agent_order_items.dispatched_at')
                 ->whereIn('product_id', $productIds)
-                ->select('product_id', 'color_id', 'size_set_id', \DB::raw('SUM(box_qty) as total_allocated'))
+                ->select('product_id', 'color_id', 'size_set_id', \DB::raw('SUM(GREATEST(box_qty - scanned_box_qty, 0)) as total_allocated'))
                 ->groupBy('product_id', 'color_id', 'size_set_id')
                 ->get();
+
+            $stockFilter = function ($q) use ($request, $productIds) {
+                $q->whereIn('product_id', $productIds)->where('quantity', '>', 0);
+                if ($request->size_set_id) {
+                    $q->where('size_set_id', $request->size_set_id);
+                }
+                if ($request->storeroom_id) {
+                    $q->whereHas('rack', function($r) use ($request) {
+                        $r->where('storeroom_id', $request->storeroom_id);
+                    });
+                }
+            };
+
+            $colorStockByProduct = DomesticInventory::where($stockFilter)
+                ->select('product_id', 'color_id', \DB::raw('SUM(total_boxes) as total_boxes'))
+                ->with('color')
+                ->groupBy('product_id', 'color_id')
+                ->orderBy('product_id')->orderBy('color_id')
+                ->get()
+                ->groupBy('product_id');
+
+            $sizeRowsByProduct = DomesticInventory::where($stockFilter)
+                ->with(['sizeSet', 'color'])
+                ->orderBy('id')
+                ->get()
+                ->groupBy('product_id');
         }
 
-        $products = $products->filter(function($product) use ($request, $allocatedBoxes) {
+        $sampleRackIds = \App\Models\Storeroom::whereRaw(\App\Models\Storeroom::overStockSql())->with('racks')->get()->pluck('racks')->flatten()->pluck('id')->toArray();
+
+        // reserved boxes by product|size set|colour
+        $allocBySize = [];
+        foreach ($allocatedBoxes as $a) {
+            $allocBySize[$a->product_id . '|' . $a->size_set_id . '|' . $a->color_id] ??= $a->total_allocated;
+        }
+
+        $products = $products->filter(function($product) use ($request, $allocBySize, $colorStockByProduct, $sizeRowsByProduct, $sampleRackIds) {
             // Find specific variant for requested size set if provided
             $specificVariant = null;
             if ($request->size_set_id) {
@@ -377,57 +416,28 @@ class FairProductController extends Controller
 
             $product->display_image = $displayImage;
 
-            $stockQuery = DomesticInventory::where('product_id', $product->id)->where('quantity', '>', 0);
-            if ($request->size_set_id) {
-                $stockQuery->where('size_set_id', $request->size_set_id);
-            }
-            if ($request->storeroom_id) {
-                $stockQuery->whereHas('rack', function($q) use ($request) {
-                    $q->where('storeroom_id', $request->storeroom_id);
-                });
-            }
+            $product->color_stock = $colorStockByProduct->get($product->id, collect())
+                ->map(function ($s) { $s = clone $s; $s->makeHidden('product_id'); return $s; })
+                ->values();
 
-            $product->color_stock = $stockQuery->select('color_id', \DB::raw('SUM(total_boxes) as total_boxes'))
-                ->with('color')
-                ->groupBy('color_id')
-                ->get();
-
-            $sampleRackIds = \App\Models\Storeroom::where('name', 'ADVANCE SAMPLE')->with('racks')->get()->pluck('racks')->flatten()->pluck('id')->toArray();
-
-            $sizeQuery = DomesticInventory::where('product_id', $product->id)->where('quantity', '>', 0);
-            if ($request->size_set_id) {
-                $sizeQuery->where('size_set_id', $request->size_set_id);
-            }
-            if ($request->storeroom_id) {
-                $sizeQuery->whereHas('rack', function($q) use ($request) {
-                    $q->where('storeroom_id', $request->storeroom_id);
-                });
-            }
-
-            $product->available_sizes = $sizeQuery->with(['sizeSet', 'color'])
-                ->get()
+            $product->available_sizes = $sizeRowsByProduct->get($product->id, collect())
                 ->groupBy('size_set_id')
-                ->map(function($inventories, $sizeSetId) use ($product, $allocatedBoxes, $sampleRackIds) {
+                ->map(function($inventories, $sizeSetId) use ($product, $allocBySize, $sampleRackIds) {
                     $firstInv = $inventories->first();
-                    $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $product->id)
-                        ->where('master_size_measurement_id', $sizeSetId)
-                        ->first();
-                    
-                    $colors = $inventories->groupBy('color_id')->map(function($colorInvs) use ($product, $sizeSetId, $allocatedBoxes, $sampleRackIds) {
+                    $variant = $product->variants->firstWhere('master_size_measurement_id', $sizeSetId);
+
+                    $colors = $inventories->groupBy('color_id')->map(function($colorInvs) use ($product, $sizeSetId, $allocBySize, $sampleRackIds) {
                         $firstColorInv = $colorInvs->first();
                         if (!$firstColorInv->color) return null;
-                        
+
                         $isSample = $colorInvs->whereIn('rack_id', $sampleRackIds)->isNotEmpty();
                         $totalBoxes = $colorInvs->sum('total_boxes');
-                        
-                        $allocated = $allocatedBoxes->where('product_id', $product->id)
-                                                    ->where('size_set_id', $sizeSetId)
-                                                    ->where('color_id', $firstColorInv->color->id)
-                                                    ->first();
-                        if ($allocated) {
-                            $totalBoxes -= $allocated->total_allocated;
+
+                        $allocated = $allocBySize[$product->id . '|' . $sizeSetId . '|' . $firstColorInv->color->id] ?? null;
+                        if ($allocated !== null) {
+                            $totalBoxes -= $allocated;
                         }
-                        
+
                         // If not in sample warehouse, strictly enforce stock > 0
                         if ($totalBoxes <= 0 && !$isSample) return null;
 
@@ -449,7 +459,7 @@ class FairProductController extends Controller
                 })
                 ->filter()
                 ->values();
-            
+
             return $product->available_sizes->count() > 0;
         })->values();
 

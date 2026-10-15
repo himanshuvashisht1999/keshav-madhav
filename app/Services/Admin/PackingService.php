@@ -152,6 +152,259 @@ class PackingService
         return ProductionSlipDigitization::findOrFail($id);
     }
 
+    public static function sizeKey($size): string
+    {
+        return trim(strtoupper((string) $size));
+    }
+
+    /**
+     * What a packing unit still holds of each lot, worked out from the records
+     * (received at this unit - packed - dead/sampling/debit/rework outflows - old rework moves), in total and per size.
+     * Everything is counted for THIS unit only, so a lot split between two packing units is not mixed up.
+     * $exceptMainId / $exceptSlipId leave out one packing session (to show "pending when this session started").
+     *
+     * @return array [lot_no => ['received','packed','outflow','rework','pending','sizes' => [SIZE => pending]]]
+     */
+    public function unitLotStock(array $lotNos, $unitId, $exceptMainId = null, $exceptSlipId = null): array
+    {
+        $lotNos = array_values(array_unique(array_filter(array_map('strval', $lotNos), fn($l) => $l !== '')));
+        if (empty($lotNos) || !$unitId) {
+            return [];
+        }
+        $k = fn($l) => mb_strtolower(rtrim((string) $l));
+        $stock = [];
+        foreach ($lotNos as $l) {
+            $stock[$k($l)] = ['lot_no' => $l, 'received' => 0, 'packed' => 0, 'outflow' => 0, 'rework' => 0, 'in_sizes' => [], 'out_sizes' => []];
+        }
+        $add = function ($lot, $field, $qty, $size = null) use (&$stock, $k) {
+            $key = $k($lot);
+            if (!isset($stock[$key])) return;
+            $stock[$key][$field] += (int) $qty;
+            if ($size !== null) {
+                $bucket = $field === 'received' ? 'in_sizes' : 'out_sizes';
+                $sz = self::sizeKey($size);
+                $stock[$key][$bucket][$sz] = ($stock[$key][$bucket][$sz] ?? 0) + (int) $qty;
+            }
+        };
+
+        // Received at this unit (with sizes)
+        $received = DB::table('order_stage_transactions as t')
+            ->leftJoin('order_stage_transaction_details as d', 'd.order_stage_transaction_id', '=', 't.id')
+            ->where('t.to_stage_id', 11)->where('t.sub_stage_id_to', $unitId)->whereIn('t.lot_no', $lotNos)
+            ->select('t.id', 't.lot_no', 't.quantity', 'd.size', 'd.quantity as size_qty')->get();
+        $seenTx = [];
+        foreach ($received as $r) {
+            $key = $k($r->lot_no);
+            if (!isset($stock[$key])) continue;
+            if (!isset($seenTx[$r->id])) {
+                $seenTx[$r->id] = true;
+                $stock[$key]['received'] += (int) $r->quantity;
+            }
+            if ($r->size !== null) {
+                $sz = self::sizeKey($r->size);
+                $stock[$key]['in_sizes'][$sz] = ($stock[$key]['in_sizes'][$sz] ?? 0) + (int) $r->size_qty;
+            }
+        }
+
+        // Packed by this unit (all its sessions, except the excluded one)
+        DB::table('packing_items as i')
+            ->join('packing_mains as m', 'm.id', '=', 'i.packing_main_id')
+            ->join('production_slip_digitization as s', 's.id', '=', 'm.slip_id')
+            ->leftJoin('order_products_set_details as d', 'd.id', '=', 'i.size_id')
+            ->where('s.stage_master_unit_id', $unitId)->whereIn('i.lot_no', $lotNos)
+            ->when($exceptMainId, fn($q) => $q->where('m.id', '!=', $exceptMainId))
+            ->select('i.lot_no', 'i.quantity', 'd.size')->get()
+            ->each(fn($r) => $add($r->lot_no, 'packed', $r->quantity, $r->size));
+
+        // Dead / sampling / debit / rework recorded on this unit's packing slips
+        DB::table('production_outflow_inventories as o')
+            ->join('production_slip_digitization as s', 's.id', '=', 'o.slip_id')
+            ->leftJoin('order_products_set_details as d', 'd.id', '=', 'o.size_id')
+            ->where('s.stage_master_unit_id', $unitId)->whereIn('o.lot_no', $lotNos)
+            ->whereNotIn('o.type', ['packing', 'packing_divert'])
+            ->when($exceptSlipId, fn($q) => $q->where('o.slip_id', '!=', $exceptSlipId))
+            ->select('o.lot_no', 'o.quantity', 'd.size')->get()
+            ->each(fn($r) => $add($r->lot_no, 'outflow', $r->quantity, $r->size));
+
+        // Old-style rework moves sent straight from this packing unit (not the ones created from a rework record)
+        $assigned = DB::table('production_outflow_inventories')->whereNotNull('assigned_transaction_id')->pluck('assigned_transaction_id')->all();
+        DB::table('order_stage_transactions as t')
+            ->leftJoin('order_stage_transaction_details as d', 'd.order_stage_transaction_id', '=', 't.id')
+            ->where('t.from_stage_id', 11)->where('t.sub_stage_id', $unitId)->where('t.type', 0)
+            ->whereIn('t.lot_no', $lotNos)
+            ->when(!empty($assigned), fn($q) => $q->whereNotIn('t.id', $assigned))
+            ->when($exceptSlipId, fn($q) => $q->where('t.production_slip_digitization_id', '!=', $exceptSlipId))
+            ->select('t.id', 't.lot_no', 't.quantity')->distinct()->get()
+            ->each(fn($r) => $add($r->lot_no, 'rework', $r->quantity));
+        // (their sizes)
+        DB::table('order_stage_transactions as t')
+            ->join('order_stage_transaction_details as d', 'd.order_stage_transaction_id', '=', 't.id')
+            ->where('t.from_stage_id', 11)->where('t.sub_stage_id', $unitId)->where('t.type', 0)
+            ->whereIn('t.lot_no', $lotNos)
+            ->when(!empty($assigned), fn($q) => $q->whereNotIn('t.id', $assigned))
+            ->when($exceptSlipId, fn($q) => $q->where('t.production_slip_digitization_id', '!=', $exceptSlipId))
+            ->select('t.lot_no', 'd.size', 'd.quantity')->get()
+            ->each(function ($r) use (&$stock, $k) {
+                $key = $k($r->lot_no);
+                if (!isset($stock[$key])) return;
+                $sz = self::sizeKey($r->size);
+                $stock[$key]['out_sizes'][$sz] = ($stock[$key]['out_sizes'][$sz] ?? 0) + (int) $r->quantity;
+            });
+
+        $result = [];
+        foreach ($stock as $s) {
+            $sizes = [];
+            foreach ($s['in_sizes'] as $sz => $q) {
+                $sizes[$sz] = max(0, $q - ($s['out_sizes'][$sz] ?? 0));
+            }
+            $pending = max(0, $s['received'] - $s['packed'] - $s['outflow'] - $s['rework']);
+            // per-size figures can never add up to more than the lot's pending total
+            $excess = array_sum($sizes) - $pending;
+            if ($excess > 0) {
+                foreach ($sizes as $sz => $q) {
+                    if ($excess <= 0) break;
+                    $cut = min($q, $excess);
+                    $sizes[$sz] -= $cut;
+                    $excess -= $cut;
+                }
+            }
+            $result[$s['lot_no']] = [
+                'received' => $s['received'], 'packed' => $s['packed'], 'outflow' => $s['outflow'], 'rework' => $s['rework'],
+                'pending' => $pending, 'sizes' => $sizes,
+            ];
+        }
+        return $result;
+    }
+
+    /**
+     * Take $qty pieces of a lot off this packing unit's own incoming balance (oldest first).
+     * Never touches another unit's stock.
+     */
+    public function deductUnitBalance($lotNo, $unitId, int $qty): void
+    {
+        if ($qty <= 0) return;
+        $rows = OrderStageTransaction::where('to_stage_id', 11)->where('sub_stage_id_to', $unitId)
+            ->where('lot_no', $lotNo)->where('remaining_quantity', '>', 0)
+            ->orderBy('id')->lockForUpdate()->get();
+        foreach ($rows as $row) {
+            if ($qty <= 0) break;
+            $take = min($row->remaining_quantity, $qty);
+            $row->remaining_quantity -= $take;
+            $row->status = $row->remaining_quantity <= 0 ? 2 : 1;
+            $row->is_closed_for_unit = $row->remaining_quantity <= 0 ? 1 : 0;
+            $row->save();
+            $qty -= $take;
+        }
+    }
+
+    /**
+     * Give $qty pieces of a lot back to this packing unit's own incoming balance (newest first),
+     * never more than each row originally received.
+     */
+    public function restoreUnitBalance($lotNo, $unitId, int $qty): void
+    {
+        if ($qty <= 0) return;
+        $rows = OrderStageTransaction::where('to_stage_id', 11)->where('sub_stage_id_to', $unitId)
+            ->where('lot_no', $lotNo)->orderByDesc('id')->lockForUpdate()->get();
+        foreach ($rows as $row) {
+            if ($qty <= 0) break;
+            $space = max(0, $row->quantity - $row->remaining_quantity);
+            if ($space <= 0) continue;
+            $add = min($space, $qty);
+            $row->remaining_quantity += $add;
+            $row->status = 1;
+            $row->is_closed_for_unit = 0;
+            $row->save();
+            $qty -= $add;
+        }
+    }
+
+    /**
+     * Nothing can be added to a packing session that is already finalized.
+     */
+    public function assertSessionOpen($slipId): void
+    {
+        if (PackingMain::where('slip_id', $slipId)->where('status', 1)->exists()) {
+            throw new \Exception('This packing session is finalized.');
+        }
+    }
+
+    /**
+     * Does any packing unit still hold pieces of this lot (received - packed - outflows - rework > 0)?
+     */
+    public function packingStillHoldsLot($lotNo): bool
+    {
+        $units = DB::table('order_stage_transactions')->where('to_stage_id', 11)->where('lot_no', $lotNo)
+            ->whereNotNull('sub_stage_id_to')->distinct()->pluck('sub_stage_id_to');
+        foreach ($units as $unitId) {
+            $s = $this->unitLotStock([$lotNo], $unitId)[(string) $lotNo] ?? null;
+            if ($s && $s['pending'] > 0) return true;
+        }
+        return false;
+    }
+
+    /**
+     * [{detail_id, qty, lot_no}] -> [lot_no => [SIZE => qty]] (quantities must be whole numbers of 1 or more)
+     */
+    public function neededFromItems(array $items): array
+    {
+        $need = [];
+        foreach ($items as $item) {
+            $qty = $item['qty'] ?? null;
+            if ($qty === null || $qty === '' || (int) $qty === 0) continue;
+            if (!is_numeric($qty) || (int) $qty != $qty || (int) $qty < 1) {
+                throw new \Exception('Quantity must be a whole number of 1 or more.');
+            }
+            $detail = \App\Models\OrderProductSetDetail::find($item['detail_id'] ?? 0);
+            if (!$detail) throw new \Exception('Size not found.');
+            $lot = (string) ($item['lot_no'] ?? '');
+            if ($lot === '') throw new \Exception('Lot number is missing.');
+            $need[$lot][$detail->size] = ($need[$lot][$detail->size] ?? 0) + (int) $qty;
+        }
+        if (empty($need)) throw new \Exception('Please enter a quantity.');
+        return $need;
+    }
+
+    /**
+     * A carton can be deleted only while its session is open and it has not been dispatched.
+     */
+    public function assertCartonDeletable(PackingCarton $carton): void
+    {
+        $main = $carton->main ?? PackingMain::find($carton->packing_main_id);
+        if ($main && $main->status == 1) {
+            throw new \Exception("Carton {$carton->carton_no} belongs to a finalized packing session.");
+        }
+        if ($carton->status == 2 || \App\Models\OrderDispatchDetails::where('carton_packing_id', $carton->id)->exists()) {
+            throw new \Exception("Carton {$carton->carton_no} is already dispatched and cannot be deleted.");
+        }
+    }
+
+    /**
+     * Refuse when the unit does not hold enough. $need = [lot_no => [SIZE => qty]].
+     */
+    public function assertUnitHolds(array $need, $unitId, $exceptMainId = null): void
+    {
+        $stock = $this->unitLotStock(array_keys($need), $unitId);
+        foreach ($need as $lot => $sizes) {
+            $s = $stock[(string) $lot] ?? null;
+            if (!$s || $s['received'] <= 0) {
+                throw new \Exception("Lot {$lot} was not received by this packing unit.");
+            }
+            $total = array_sum($sizes);
+            if ($total > $s['pending']) {
+                throw new \Exception("Lot {$lot}: only {$s['pending']} pcs left at this unit, you entered {$total}.");
+            }
+            if (!empty($s['sizes'])) {
+                foreach ($sizes as $size => $qty) {
+                    $have = $s['sizes'][self::sizeKey($size)] ?? 0;
+                    if ($qty > $have) {
+                        throw new \Exception("Lot {$lot}, size {$size}: only {$have} pcs left at this unit, you entered {$qty}.");
+                    }
+                }
+            }
+        }
+    }
+
     public function getOrderDetails($sku)
     {
         return OrderMain::where('sku', $sku)
@@ -968,50 +1221,27 @@ class PackingService
             // Mark Packing Main as Finalized (1)
             $packing_main->update(['status' => 1]);
 
-            // Update Stage Timing for all lots in this slip
-            if ($completion_date) {
-                $completion_datetime = date('Y-m-d H:i:s', strtotime($completion_date));
-                
-                // Robust lot identification
-                $lotNumbers = \App\Models\OrderLot::where('production_slip_digitization_id', $packing_main->slip_id)
-                    ->pluck('lot_no')
-                    ->toArray();
+            // Packing end date: only for the lots of THIS session, and only when no packing unit
+            // still holds any piece of the lot (a lot is complete when it has been fully packed / sent out)
+            $completion_datetime = $completion_date ? date('Y-m-d H:i:s', strtotime($completion_date)) : now()->toDateTimeString();
+            $sessionLots = PackingItem::where('packing_main_id', $packing_main->id)->whereNotNull('lot_no')->pluck('lot_no')
+                ->merge(\App\Models\ProductionOutflowInventory::where('slip_id', $packing_main->slip_id)->pluck('lot_no'))
+                ->merge(\App\Models\PackingSelectedLot::where('slip_id', $packing_main->slip_id)->pluck('lot_no'))
+                ->filter()->unique()->values()->all();
 
-                // Fallback 1: Use the lot_no directly from the slip record
-                $slip = \App\Models\ProductionSlipDigitization::find($packing_main->slip_id);
-                if ($slip && $slip->lot_no) {
-                    $slipLots = explode(',', $slip->lot_no);
-                    $lotNumbers = array_unique(array_merge($lotNumbers, array_map('trim', $slipLots)));
+            foreach ($sessionLots as $lotNo) {
+                if ($this->packingStillHoldsLot($lotNo)) {
+                    continue;
                 }
-
-                // Fallback 2: If still empty, check all lots for the order
-                if (empty($lotNumbers) && $packing_main->order_main_id) {
-                    $lotNumbers = \App\Models\OrderLot::where('order_main_id', $packing_main->order_main_id)
-                        ->pluck('lot_no')
-                        ->toArray();
+                $timing = \App\Models\OrderLotStageTiming::where('lot_no', $lotNo)->where('master_stage_id', 11)->first();
+                $timingData = ['complete_date' => $completion_datetime, 'status' => 2];
+                if (!$timing || !$timing->start_date) {
+                    $timingData['start_date'] = $completion_datetime;
                 }
-
-                foreach ($lotNumbers as $lotNo) {
-                    if (empty($lotNo)) continue;
-                    
-                    // We update complete_date. If start/end date are missing, we set them to now as well.
-                    $timing = \App\Models\OrderLotStageTiming::where('lot_no', $lotNo)
-                        ->where('master_stage_id', 11) // Packing
-                        ->first();
-                    
-                    $timingData = ['complete_date' => $completion_datetime];
-                    if ($timing && !$timing->start_date) {
-                        $timingData['start_date'] = $completion_datetime;
-                    }
-                    if ($timing && !$timing->end_date) {
-                        $timingData['end_date'] = $completion_datetime;
-                    }
-
-                    \App\Models\OrderLotStageTiming::updateOrCreate(
-                        ['lot_no' => $lotNo, 'master_stage_id' => 11],
-                        $timingData
-                    );
+                if (!$timing || !$timing->end_date) {
+                    $timingData['end_date'] = $completion_datetime;
                 }
+                \App\Models\OrderLotStageTiming::updateOrCreate(['lot_no' => $lotNo, 'master_stage_id' => 11], $timingData);
             }
 
             // Update non-dispatched cartons in this session (NEVER reset already dispatched cartons)
@@ -1108,97 +1338,18 @@ class PackingService
         try {
             $carton = \App\Models\PackingCarton::with(['items', 'main'])->findOrFail($carton_id);
 
-            // Safety Check: Cannot delete finalized cartons
-            if ($carton->main && $carton->main->status == 1) {
-                throw new \Exception("Cannot delete carton from a finalized session.");
-            }
+            // Safety: never delete a carton of a finalized session or one that is already dispatched
+            $this->assertCartonDeletable($carton);
 
-            // Reverse Stock Deductions EXACTLY back to the original lots
-            $slip_id = $carton->main->slip_id;
-            $order_id = $carton->main->order_main_id;
-            $slip_details = \App\Models\ProductionSlipDigitization::find($slip_id);
-
+            $slip_details = \App\Models\ProductionSlipDigitization::find($carton->main->slip_id);
             if (!$slip_details) {
                 throw new \Exception("Production slip details not found.");
             }
 
-            $carton_items = \App\Models\PackingItem::where('packing_carton_id', $carton->id)->get();
-            
-            foreach ($carton_items as $item) {
-                if ($item->quantity <= 0) continue;
-                
-                if ($item->lot_no) {
-                    $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-                        ->where('lot_no', $item->lot_no)
-                        ->when($slip_details && $slip_details->stage_master_unit_id, function($q) use ($slip_details) {
-                            $q->where(function($sq) use ($slip_details) {
-                                $sq->where('sub_stage_id_to', $slip_details->stage_master_unit_id)
-                                  ->orWhereNull('sub_stage_id_to');
-                            });
-                        })
-                        ->orderBy('id', 'desc')
-                        ->get();
-
-                    if ($transactions->isEmpty()) {
-                        $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-                            ->where('lot_no', $item->lot_no)
-                            ->orderBy('id', 'desc')
-                            ->get();
-                    }
-
-                    $remaining_to_return = $item->quantity;
-                    foreach ($transactions as $transaction) {
-                        if ($remaining_to_return <= 0) break;
-                        $space_available = max(0, $transaction->quantity - $transaction->remaining_quantity);
-                        if ($space_available > 0) {
-                            $to_add = min($remaining_to_return, $space_available);
-                            $transaction->remaining_quantity += $to_add;
-                            $transaction->is_closed_for_unit = $transaction->remaining_quantity <= 0 ? 1 : 0;
-                            $transaction->status = $transaction->remaining_quantity <= 0 ? 2 : 1;
-                            $transaction->save();
-                            $remaining_to_return -= $to_add;
-                        }
-                    }
-
-                    if ($remaining_to_return > 0 && $transactions->isNotEmpty()) {
-                        $first = $transactions->first();
-                        $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $remaining_to_return);
-                        $first->is_closed_for_unit = $first->remaining_quantity <= 0 ? 1 : 0;
-                        $first->status = $first->remaining_quantity <= 0 ? 2 : 1;
-                        $first->save();
-                    }
-                } else {
-                    // Fallback to legacy behavior if lot_no is missing
-                    $detail = \App\Models\OrderProductSetDetail::find($item->size_id);
-                    $lotsToReturn = \App\Models\OrderLot::where('order_products_set_id', $detail->order_products_set_id ?? 0)->pluck('lot_no')->toArray();
-                    if (empty($lotsToReturn)) {
-                        $lotsToReturn = \App\Models\OrderLot::where('order_main_id', $order_id)->pluck('lot_no')->toArray();
-                    }
-                    $transactions = \App\Models\OrderStageTransaction::where('to_stage_id', 11)
-                        ->whereIn('lot_no', $lotsToReturn)
-                        ->orderBy('id', 'desc')
-                        ->get();
-                    $remaining_to_return = $item->quantity;
-                    foreach ($transactions as $transaction) {
-                        if ($remaining_to_return <= 0) break;
-                        $space_available = max(0, $transaction->quantity - $transaction->remaining_quantity);
-                        if ($space_available > 0) {
-                            $to_add = min($remaining_to_return, $space_available);
-                            $transaction->remaining_quantity += $to_add;
-                            $transaction->is_closed_for_unit = $transaction->remaining_quantity <= 0 ? 1 : 0;
-                            $transaction->status = $transaction->remaining_quantity <= 0 ? 2 : 1;
-                            $transaction->save();
-                            $remaining_to_return -= $to_add;
-                        }
-                    }
-
-                    if ($remaining_to_return > 0 && $transactions->isNotEmpty()) {
-                        $first = $transactions->first();
-                        $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $remaining_to_return);
-                        $first->is_closed_for_unit = $first->remaining_quantity <= 0 ? 1 : 0;
-                        $first->status = $first->remaining_quantity <= 0 ? 2 : 1;
-                        $first->save();
-                    }
+            // Give the pieces back to THIS packing unit's own balance (never another unit's, never above received)
+            foreach (\App\Models\PackingItem::where('packing_carton_id', $carton->id)->get() as $item) {
+                if ($item->quantity > 0 && $item->lot_no) {
+                    $this->restoreUnitBalance((string) $item->lot_no, $slip_details->stage_master_unit_id, (int) $item->quantity);
                 }
             }
             
@@ -1225,6 +1376,10 @@ class PackingService
             $items = $data['items']; // [{detail_id, qty, lot_no}]
             $remarks = $data['remarks'] ?? 'Defect stored in rack for rework';
             $slipMain = \App\Models\ProductionSlipDigitization::findOrFail($slipId);
+
+            $this->assertSessionOpen($slipId);
+            // Only pieces this packing unit really holds can be sent to rework
+            $this->assertUnitHolds($this->neededFromItems($items), $slipMain->stage_master_unit_id);
 
             $totalStoredPcs = 0;
 
@@ -1253,33 +1408,8 @@ class PackingService
                     'status' => 'stored'
                 ]);
 
-                // 2. DEDUCT from current unit's availability in Packing (Stage 11)
-                $incomingTxs = OrderStageTransaction::where('to_stage_id', 11)
-                    ->where(function($q) use ($slipMain) {
-                        $q->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
-                          ->orWhereNull('sub_stage_id_to');
-                    })
-                    ->where('lot_no', $lotNo)
-                    ->orderBy('id', 'asc') // FIFO
-                    ->get();
-
-                if ($incomingTxs->isEmpty()) {
-                    $incomingTxs = OrderStageTransaction::where('to_stage_id', 11)
-                        ->where('lot_no', $lotNo)
-                        ->orderBy('id', 'asc')
-                        ->get();
-                }
-
-                $rem = $qty;
-                foreach ($incomingTxs as $itx) {
-                    if ($rem <= 0) break;
-                    if ($itx->remaining_quantity <= 0) continue;
-
-                    $deduct = min($itx->remaining_quantity, $rem);
-                    $itx->remaining_quantity -= $deduct;
-                    $itx->save();
-                    $rem -= $deduct;
-                }
+                // 2. DEDUCT from this packing unit's own balance only
+                $this->deductUnitBalance($lotNo, $slipMain->stage_master_unit_id, $qty);
 
                 $totalStoredPcs += $qty;
             }
@@ -1480,6 +1610,10 @@ class PackingService
 
             $slipMain = \App\Models\ProductionSlipDigitization::findOrFail($slipId);
 
+            $this->assertSessionOpen($slipId);
+            // Only pieces this packing unit really holds can be recorded as dead / sampling / debit
+            $this->assertUnitHolds($this->neededFromItems($items), $slipMain->stage_master_unit_id);
+
             foreach ($items as $item) {
                 $qty = (int) $item['qty'];
                 $lotNo = $item['lot_no'];
@@ -1536,26 +1670,8 @@ class PackingService
                     'remarks' => $remarks
                 ]);
 
-                // 3. Deduct from Available
-                $incomingTxs = OrderStageTransaction::where('to_stage_id', 11)
-                    ->where(function($q) use ($slipMain) {
-                        $q->where('sub_stage_id_to', $slipMain->stage_master_unit_id)
-                          ->orWhereNull('sub_stage_id_to');
-                    })
-                    ->where('lot_no', $lotNo)
-                    ->orderBy('id', 'asc') // FIFO
-                    ->get();
-
-                $rem = $qty;
-                foreach ($incomingTxs as $itx) {
-                    if ($rem <= 0) break;
-                    if ($itx->remaining_quantity <= 0) continue;
-
-                    $deduct = min($itx->remaining_quantity, $rem);
-                    $itx->remaining_quantity -= $deduct;
-                    $itx->save();
-                    $rem -= $deduct;
-                }
+                // 3. Deduct from this packing unit's own balance only
+                $this->deductUnitBalance($lotNo, $slipMain->stage_master_unit_id, $qty);
             }
 
             DB::commit();
@@ -1571,20 +1687,18 @@ class PackingService
         DB::beginTransaction();
         try {
             $outflow = \App\Models\ProductionOutflowInventory::with('orderMain')->findOrFail($id);
+            if ($outflow->type === 'rework') {
+                // rework records have their own delete (it also removes the rework move sent to a unit)
+                DB::rollBack();
+                return $this->deleteRework($outflow->id);
+            }
             $slip = \App\Models\ProductionSlipDigitization::find($outflow->slip_id);
-            $unitId = $outflow->responsible_unit_id ?: $slip->stage_master_unit_id;
 
-            // 1. MIRROR REMOVAL (Linked by Barcode for precise size-wise restoration)
-            $mirror = \App\Models\OrderStageTransaction::where('remarks', 'LIKE', "%[MirrorLink:" . $outflow->barcode . "]%")->first();
-
-            if (!$mirror) {
-                // Fallback for older records or failed links
-                $mirrorType = ($outflow->type == 'dead' ? 'damage' : $outflow->type);
-                $mirror = \App\Models\OrderStageTransaction::where('sku', $outflow->orderMain->sku)
-                    ->where('sub_stage_id', $unitId)
-                    ->where('type', $mirrorType)
-                    ->where('quantity', '>=', $outflow->quantity)
-                    ->orderBy('id', 'desc')->first();
+            // 1. MIRROR REMOVAL - only an exact barcode link. (The old "guess by sku/type" fallback is gone:
+            //    the type column is numeric, so it could match and delete an unrelated rework move.)
+            $mirror = null;
+            if (!empty($outflow->barcode)) {
+                $mirror = \App\Models\OrderStageTransaction::where('remarks', 'LIKE', "%[MirrorLink:" . $outflow->barcode . "]%")->first();
             }
 
             if ($mirror) {
@@ -1602,47 +1716,10 @@ class PackingService
                 }
             }
 
-            // 2. Revert Deduction from available transactions (for backend validation pool)
+            // 2. Give the pieces back to this packing unit's own balance (never another unit's)
             $packingUnitId = $slip ? $slip->stage_master_unit_id : null;
-            $receivedTxs = \App\Models\OrderStageTransaction::where('lot_no', $outflow->lot_no)
-                ->where('to_stage_id', 11) // In Packing
-                ->when($packingUnitId, function($q) use ($packingUnitId) {
-                    $q->where(function($sq) use ($packingUnitId) {
-                        $sq->where('sub_stage_id_to', $packingUnitId)
-                          ->orWhereNull('sub_stage_id_to');
-                    });
-                })
-                ->orderBy('id', 'desc')
-                ->get();
-
-            if ($receivedTxs->isEmpty()) {
-                $receivedTxs = \App\Models\OrderStageTransaction::where('lot_no', $outflow->lot_no)
-                    ->where('to_stage_id', 11)
-                    ->orderBy('id', 'desc')
-                    ->get();
-            }
-
-            $rem = $outflow->quantity;
-            foreach ($receivedTxs as $tx) {
-                if ($rem <= 0) break;
-                
-                $space_available = max(0, $tx->quantity - $tx->remaining_quantity);
-                if ($space_available > 0) {
-                    $to_add = min($rem, $space_available);
-                    $tx->remaining_quantity += $to_add;
-                    $tx->is_closed_for_unit = $tx->remaining_quantity <= 0 ? 1 : 0;
-                    $tx->status = $tx->remaining_quantity <= 0 ? 2 : 1;
-                    $tx->save();
-                    $rem -= $to_add;
-                }
-            }
-
-            if ($rem > 0 && $receivedTxs->isNotEmpty()) {
-                $first = $receivedTxs->first();
-                $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $rem);
-                $first->is_closed_for_unit = $first->remaining_quantity <= 0 ? 1 : 0;
-                $first->status = $first->remaining_quantity <= 0 ? 2 : 1;
-                $first->save();
+            if ($packingUnitId && $outflow->lot_no) {
+                $this->restoreUnitBalance((string) $outflow->lot_no, $packingUnitId, (int) $outflow->quantity);
             }
 
             $outflow->delete();
@@ -1654,126 +1731,81 @@ class PackingService
         }
     }
 
+    /**
+     * Delete a rework record (ProductionOutflowInventory id - what the pack screen and the Rework List send).
+     * If it was already assigned to a unit and that unit has started on it, it cannot be deleted.
+     */
     public function deleteRework($id)
     {
         DB::beginTransaction();
         try {
-            // 1. Check if ID is in ProductionOutflowInventory (new stored in rack rework)
             $outflow = \App\Models\ProductionOutflowInventory::find($id);
-            if ($outflow && $outflow->type === 'rework') {
-                if ($outflow->assigned_transaction_id) {
-                    $assignedTx = \App\Models\OrderStageTransaction::find($outflow->assigned_transaction_id);
-                    if ($assignedTx) {
-                        $assignedTx->details()->delete();
-                        $assignedTx->delete();
-                    }
-                }
-
-                // Restore stock back to stage 11
-                $slip = \App\Models\ProductionSlipDigitization::find($outflow->slip_id);
-                $packingUnitId = $slip ? $slip->stage_master_unit_id : null;
-                $receivedTxs = \App\Models\OrderStageTransaction::where('lot_no', $outflow->lot_no)
-                    ->where('to_stage_id', 11)
-                    ->when($packingUnitId, function($q) use ($packingUnitId) {
-                        $q->where(function($sq) use ($packingUnitId) {
-                            $sq->where('sub_stage_id_to', $packingUnitId)->orWhereNull('sub_stage_id_to');
-                        });
-                    })
-                    ->orderBy('id', 'desc')
-                    ->get();
-
-                if ($receivedTxs->isEmpty()) {
-                    $receivedTxs = \App\Models\OrderStageTransaction::where('lot_no', $outflow->lot_no)
-                        ->where('to_stage_id', 11)
-                        ->orderBy('id', 'desc')
-                        ->get();
-                }
-
-                $rem = $outflow->quantity;
-                foreach ($receivedTxs as $tx) {
-                    if ($rem <= 0) break;
-                    $space_available = max(0, $tx->quantity - $tx->remaining_quantity);
-                    if ($space_available > 0) {
-                        $to_add = min($rem, $space_available);
-                        $tx->remaining_quantity += $to_add;
-                        $tx->is_closed_for_unit = $tx->remaining_quantity <= 0 ? 1 : 0;
-                        $tx->status = $tx->remaining_quantity <= 0 ? 2 : 1;
-                        $tx->save();
-                        $rem -= $to_add;
-                    }
-                }
-
-                if ($rem > 0 && $receivedTxs->isNotEmpty()) {
-                    $first = $receivedTxs->first();
-                    $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $rem);
-                    $first->is_closed_for_unit = $first->remaining_quantity <= 0 ? 1 : 0;
-                    $first->status = $first->remaining_quantity <= 0 ? 2 : 1;
-                    $first->save();
-                }
-
-                $outflow->delete();
-                DB::commit();
-                return ['status' => 'success', 'message' => 'Defect/Rework record deleted and stock restored to packing.'];
+            if (!$outflow || $outflow->type !== 'rework') {
+                throw new \Exception("Rework record not found.");
             }
 
-            // 2. Fallback for legacy OrderStageTransaction rework records
-            $rework = \App\Models\OrderStageTransaction::find($id);
-            if ($rework) {
-                if ($rework->type !== 'rework' && (int)$rework->type !== 0) {
-                    throw new \Exception("Only rework movement records can be deleted from here.");
+            if ($outflow->assigned_transaction_id) {
+                $assignedTx = \App\Models\OrderStageTransaction::find($outflow->assigned_transaction_id);
+                if ($assignedTx) {
+                    $this->assertReworkNotStarted($assignedTx);
+                    $assignedTx->details()->delete();
+                    $assignedTx->delete();
                 }
-
-                $sourceTxs = \App\Models\OrderStageTransaction::where('lot_no', $rework->lot_no)
-                    ->where('to_stage_id', 11)
-                    ->when($rework->sub_stage_id, function($q) use ($rework) {
-                        $q->where(function($sq) use ($rework) {
-                            $sq->where('sub_stage_id_to', $rework->sub_stage_id)
-                              ->orWhereNull('sub_stage_id_to');
-                        });
-                    })
-                    ->orderBy('id', 'desc')
-                    ->get();
-
-                if ($sourceTxs->isEmpty()) {
-                    $sourceTxs = \App\Models\OrderStageTransaction::where('lot_no', $rework->lot_no)
-                        ->where('to_stage_id', 11)
-                        ->orderBy('id', 'desc')
-                        ->get();
-                }
-
-                $rem = $rework->quantity;
-                foreach ($sourceTxs as $tx) {
-                    if ($rem <= 0) break;
-                    $space_available = max(0, $tx->quantity - $tx->remaining_quantity);
-                    if ($space_available > 0) {
-                        $to_add = min($rem, $space_available);
-                        $tx->remaining_quantity += $to_add;
-                        $tx->is_closed_for_unit = $tx->remaining_quantity <= 0 ? 1 : 0;
-                        $tx->status = $tx->remaining_quantity <= 0 ? 2 : 1;
-                        $tx->save();
-                        $rem -= $to_add;
-                    }
-                }
-
-                if ($rem > 0 && $sourceTxs->isNotEmpty()) {
-                    $first = $sourceTxs->first();
-                    $first->remaining_quantity = min($first->quantity, $first->remaining_quantity + $rem);
-                    $first->is_closed_for_unit = $first->remaining_quantity <= 0 ? 1 : 0;
-                    $first->status = $first->remaining_quantity <= 0 ? 2 : 1;
-                    $first->save();
-                }
-
-                $rework->details()->delete();
-                $rework->delete();
-
-                DB::commit();
-                return ['status' => 'success', 'message' => 'Rework deleted and pieces reverted to stock.'];
             }
 
-            throw new \Exception("Record not found.");
+            // Give the pieces back to this packing unit's own balance
+            $slip = \App\Models\ProductionSlipDigitization::find($outflow->slip_id);
+            if ($slip && $outflow->lot_no) {
+                $this->restoreUnitBalance((string) $outflow->lot_no, $slip->stage_master_unit_id, (int) $outflow->quantity);
+            }
+
+            $outflow->delete();
+            DB::commit();
+            return ['status' => 'success', 'message' => 'Defect/Rework record deleted and stock restored to packing.'];
         } catch (\Exception $e) {
             DB::rollBack();
             return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Delete an old-style rework move (OrderStageTransaction from Packing) - used when a packing session is reset.
+     */
+    public function deleteLegacyRework($txId)
+    {
+        DB::beginTransaction();
+        try {
+            $rework = \App\Models\OrderStageTransaction::find($txId);
+            if (!$rework || $rework->from_stage_id != 11 || (int) $rework->type !== 0) {
+                throw new \Exception("Rework move not found.");
+            }
+            $this->assertReworkNotStarted($rework);
+
+            if ($rework->sub_stage_id && $rework->lot_no) {
+                $this->restoreUnitBalance((string) $rework->lot_no, $rework->sub_stage_id, (int) $rework->quantity);
+            }
+            $rework->details()->delete();
+            $rework->delete();
+
+            DB::commit();
+            return ['status' => 'success', 'message' => 'Rework deleted and pieces reverted to stock.'];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * A rework move that the receiving unit has already started on (sent some on, or closed) must not be deleted.
+     */
+    private function assertReworkNotStarted(\App\Models\OrderStageTransaction $tx): void
+    {
+        $started = $tx->remaining_quantity < $tx->quantity || !empty($tx->image) || $tx->is_closed_for_unit == 1
+            || \App\Models\OrderStageTransaction::where('lot_no', $tx->lot_no)->where('from_stage_id', $tx->to_stage_id)
+                ->where('sub_stage_id', $tx->sub_stage_id_to)->where('id', '>', $tx->id)->exists();
+        if ($started) {
+            $unit = \App\Models\StageMasterUnit::find($tx->sub_stage_id_to);
+            throw new \Exception("Lot {$tx->lot_no}: the rework was already started by " . ($unit->name ?? 'the unit') . ", so it cannot be deleted.");
         }
     }
 
@@ -1805,22 +1837,34 @@ class PackingService
                 $is_domestic = true;
             }
 
-            // 1. Revert All Outflows (Dead/Sampling/Debit)
+            // Lots this session worked on (only their packing end date is cleared below)
+            $sessionLots = PackingItem::where('packing_main_id', $main->id)->whereNotNull('lot_no')->pluck('lot_no')
+                ->merge(\App\Models\ProductionOutflowInventory::where('slip_id', $main->slip_id)->pluck('lot_no'))
+                ->merge(\App\Models\PackingSelectedLot::where('slip_id', $main->slip_id)->pluck('lot_no'))
+                ->filter()->unique()->values()->all();
+
+            // Every step must succeed - otherwise nothing is reset
+            $must = function ($result, $what) {
+                if (($result['status'] ?? 'error') !== 'success') {
+                    throw new \Exception("Reset stopped while undoing {$what}: " . ($result['message'] ?? 'unknown error') . ' Nothing was changed.');
+                }
+            };
+
+            // 1. Undo this slip's dead / sampling / debit / rework records
             $outflows = \App\Models\ProductionOutflowInventory::where('slip_id', $main->slip_id)->get();
             foreach ($outflows as $outflow) {
-                $this->deleteOutflow($outflow->id);
+                $must($outflow->type === 'rework' ? $this->deleteRework($outflow->id) : $this->deleteOutflow($outflow->id), "{$outflow->type} record #{$outflow->id}");
             }
 
-            // 2. Revert Reworks (though usually reworks are from StageTransaction, but sometimes linked to slip)
-            $orderLots = \App\Models\OrderLot::where('order_main_id', $main->order_main_id)->pluck('lot_no')->toArray();
-            $reworks = \App\Models\OrderStageTransaction::whereIn('lot_no', $orderLots)
+            // 2. Undo old-style rework moves made on THIS slip only (never other slips of the same order)
+            $assigned = \App\Models\ProductionOutflowInventory::whereNotNull('assigned_transaction_id')->pluck('assigned_transaction_id')->all();
+            $reworks = \App\Models\OrderStageTransaction::where('production_slip_digitization_id', $main->slip_id)
                 ->where('from_stage_id', 11)
-                ->where(function($q) {
-                    $q->where('type', 'rework')->orWhere('type', 0);
-                })
+                ->where('type', 0)
+                ->when(!empty($assigned), fn($q) => $q->whereNotIn('id', $assigned))
                 ->get();
             foreach ($reworks as $rework) {
-                $this->deleteRework($rework->id);
+                $must($this->deleteLegacyRework($rework->id), "rework move #{$rework->id}");
             }
 
             // 3. Delete All Cartons (This will restore OrderStageTransaction stock)
@@ -1841,14 +1885,14 @@ class PackingService
                     }
                 }
 
-                $this->deleteCarton($carton->id);
+                $must($this->deleteCarton($carton->id), "carton {$carton->carton_no}");
             }
 
-            // 4. Clear Timing
-            foreach ($orderLots as $lotNo) {
-                \App\Models\OrderLotStageTiming::where('lot_no', $lotNo)
+            // 4. Clear the packing end date of this session's lots only
+            if (!empty($sessionLots)) {
+                \App\Models\OrderLotStageTiming::whereIn('lot_no', $sessionLots)
                     ->where('master_stage_id', 11)
-                    ->update(['complete_date' => null]);
+                    ->update(['complete_date' => null, 'status' => 1]);
             }
 
             // 5. Delete Domestic Inventory, Selected Lots, and Main Record

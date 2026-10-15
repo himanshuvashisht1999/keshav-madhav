@@ -58,7 +58,7 @@
         </li>
         -->
         <li class="nav-item">
-            <a class="nav-link text-info" href="#" id="global_auto_assign_stock" title="Auto Assign Stock for ADVANCE SAMPLE">
+            <a class="nav-link text-info" href="#" id="global_auto_assign_stock" title="Auto Assign Stock for orders waiting in Order-more-than-stock storerooms">
                 <i class="fas fa-magic"></i>
             </a>
         </li>

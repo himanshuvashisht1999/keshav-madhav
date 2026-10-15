@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             Swal.fire({
                 title: 'Auto Assign Stock?',
-                text: "This will find all pending orders mapped to the ADVANCE SAMPLE warehouse and automatically reassign them to available stock in other warehouses.",
+                text: "This will find all pending orders mapped to storerooms set to Order more than stock (or with dispatch off) and automatically reassign them to available stock in other warehouses.",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#17a2b8',

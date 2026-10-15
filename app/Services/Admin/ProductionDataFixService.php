@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
  *    Once a lot has completely left Stitching, nothing of it can still be pending at any stitching unit.
  *  - Embroidery parts waiting in Godam move to Stitching automatically when Cutting sends the lot.
  *  - A stage is finished for a lot when no unit of that stage still holds any of it.
+ *  - Packing: what a packing unit holds is worked out from its own records (received - packed -
+ *    dead/sampling/debit/rework), the same figure the packing screen uses.
  *
  * run(false) = preview (everything is done inside a transaction and rolled back),
  * run(true)  = apply (committed, and every old value is saved to storage/app/production-fix/).
@@ -30,7 +32,7 @@ class ProductionDataFixService
 
         // The preview relies on rolling the transaction back: every table touched must support that (InnoDB)
         $tables = ['order_stage_transactions', 'order_printing_stage_transactions', 'order_printing_to_stiching_transactions',
-            'order_godam_stage_transactions', 'order_godam_stage_transaction_details', 'order_lot_stage_timings'];
+            'order_godam_stage_transactions', 'order_godam_stage_transaction_details', 'order_lot_stage_timings', 'packing_cartons'];
         $notSafe = DB::table('information_schema.TABLES')->where('TABLE_SCHEMA', DB::getDatabaseName())
             ->whereIn('TABLE_NAME', $tables)->where('ENGINE', '!=', 'InnoDB')->pluck('TABLE_NAME');
         if ($notSafe->isNotEmpty()) {
@@ -44,6 +46,8 @@ class ProductionDataFixService
             $outgoing = $this->outgoingIndex();
             $undo = [];
 
+            // Packing first: it settles packing balances before finished entries are marked below
+            $packing = $this->fixPacking($units, $undo);
             $stitching = $this->closeStitching($units, $outgoing, $undo);
             $godam = $this->closeGodamParts($units, $undo);
             $completed = $this->markFinishedEntries($units, $stages, $outgoing, $undo);
@@ -55,6 +59,7 @@ class ProductionDataFixService
                 'completed' => $completed,
                 'timings_done' => $timings['done'],
                 'timings_reopened' => $timings['reopened'],
+                'packing' => $packing,
                 'log_file' => null,
             ];
 
@@ -272,5 +277,191 @@ class ProductionDataFixService
         usort($doneRows, fn($a, $b) => [$a['stage'], $a['lot_no']] <=> [$b['stage'], $b['lot_no']]);
         usort($reopenRows, fn($a, $b) => [$a['stage'], $a['lot_no']] <=> [$b['stage'], $b['lot_no']]);
         return ['done' => $doneRows, 'reopened' => $reopenRows];
+    }
+
+    /**
+     * Packing (stage 11).
+     *  - balances: a unit's stored balance of a lot is LOWERED to what its records say it still holds
+     *    (pieces were packed / sent out without the balance being reduced). It is never raised: a balance
+     *    lower than the records is only listed.
+     *  - end dates: filled when no packing unit holds any piece of the lot, cleared when one still does
+     *    (old "Finalize" stamped every lot of the order).
+     *  - things a person must look at (already dispatched, packed without a lot number...) are only listed.
+     */
+    private function fixPacking($units, array &$undo): array
+    {
+        $service = app(PackingService::class);
+        $out = [
+            'balances' => [], 'dates_done' => [], 'dates_reopened' => [], 'domestic_boxes' => [],
+            'over_packed' => [], 'balance_low' => [], 'packed_not_received' => [], 'lotless_hold' => [], 'duplicate_cartons' => [],
+        ];
+
+        // order|unit pairs with cartons saved without a lot number: the lot figures of that order at that unit are incomplete
+        $lotless = DB::table('packing_items as i')
+            ->join('packing_mains as m', 'm.id', '=', 'i.packing_main_id')
+            ->join('production_slip_digitization as s', 's.id', '=', 'm.slip_id')
+            ->whereNull('i.lot_no')->select('m.order_main_id', 's.stage_master_unit_id')->distinct()->get()
+            ->mapWithKeys(fn($r) => [$r->order_main_id . '|' . $r->stage_master_unit_id => true]);
+        $lotOrder = DB::table('order_lots')->pluck('order_main_id', 'lot_no')->mapWithKeys(fn($o, $l) => [$this->key($l) => $o]);
+
+        // 1) balances per lot and packing unit
+        $received = DB::table('order_stage_transactions')->where('to_stage_id', 11)->whereNotNull('sub_stage_id_to')
+            ->orderBy('id')->get(['id', 'lot_no', 'sub_stage_id_to', 'quantity', 'remaining_quantity', 'status', 'is_closed_for_unit']);
+        $entered = [];      // lot => true
+        $receivedAt = [];   // unit|lot => true
+        $holds = [];        // lot => ['UNIT pcs', ...]
+        $lotlessLots = [];  // lot => true
+        foreach ($received->groupBy('sub_stage_id_to') as $unitId => $unitRows) {
+            $unitName = $units[$unitId] ?? ('#' . $unitId);
+            $stock = [];
+            foreach ($service->unitLotStock($unitRows->pluck('lot_no')->unique()->all(), $unitId) as $l => $st) {
+                $stock[$this->key($l)] = $st;
+            }
+            foreach ($unitRows->groupBy(fn($r) => $this->key($r->lot_no)) as $lk => $lotRows) {
+                $st = $stock[$lk] ?? null;
+                if (!$st) continue;
+                $lotNo = $lotRows->first()->lot_no;
+                $entered[$lk] = true;
+                $receivedAt[$unitId . '|' . $lk] = true;
+                if ($st['pending'] > 0) {
+                    $holds[$lk][] = $unitName . ' ' . $st['pending'];
+                    if (isset($lotless[($lotOrder[$lk] ?? 0) . '|' . $unitId])) $lotlessLots[$lk] = true;
+                }
+                $used = $st['packed'] + $st['outflow'] + $st['rework'];
+                if ($used > $st['received']) {
+                    $out['over_packed'][] = ['lot_no' => $lotNo, 'unit' => $unitName, 'received' => $st['received'], 'used' => $used];
+                }
+
+                $stored = (int) $lotRows->sum('remaining_quantity');
+                if ($stored > $st['pending']) {
+                    // take the extra off the oldest entries first, the same way packing does
+                    $excess = $stored - $st['pending'];
+                    foreach ($lotRows as $r) {
+                        if ($excess <= 0) break;
+                        if ($r->remaining_quantity <= 0) continue;
+                        $take = min((int) $r->remaining_quantity, $excess);
+                        $new = (int) $r->remaining_quantity - $take;
+                        $undo[] = ['table' => 'order_stage_transactions', 'id' => $r->id, 'remaining_quantity' => $r->remaining_quantity, 'status' => $r->status, 'is_closed_for_unit' => $r->is_closed_for_unit];
+                        DB::table('order_stage_transactions')->where('id', $r->id)->update([
+                            'remaining_quantity' => $new, 'status' => $new <= 0 ? 2 : 1, 'is_closed_for_unit' => $new <= 0 ? 1 : 0,
+                        ]);
+                        $excess -= $take;
+                    }
+                    $out['balances'][] = ['lot_no' => $lotNo, 'unit' => $unitName, 'received' => $st['received'], 'used' => min($used, $st['received']), 'was' => $stored, 'now' => $st['pending']];
+                } elseif ($stored < $st['pending']) {
+                    $out['balance_low'][] = ['lot_no' => $lotNo, 'unit' => $unitName, 'stored' => $stored, 'records' => $st['pending']];
+                }
+            }
+        }
+
+        // 2) packed or sent out by a unit that never received the lot (only listed) + last packing activity per lot
+        $lastActivity = [];
+        $packedAnywhere = [];
+        $note = function ($lot, $date) use (&$lastActivity) {
+            $lk = $this->key($lot);
+            if ($date && (!isset($lastActivity[$lk]) || $date > $lastActivity[$lk])) $lastActivity[$lk] = $date;
+        };
+        $byUnit = DB::table('packing_items as i')
+            ->join('packing_mains as m', 'm.id', '=', 'i.packing_main_id')
+            ->join('production_slip_digitization as s', 's.id', '=', 'm.slip_id')
+            ->whereNotNull('i.lot_no')
+            ->select('i.lot_no', 's.stage_master_unit_id as unit', DB::raw('SUM(i.quantity) q'), DB::raw('MAX(i.created_at) d'))
+            ->groupBy('i.lot_no', 's.stage_master_unit_id')->get()
+            ->concat(DB::table('production_outflow_inventories as o')
+                ->join('production_slip_digitization as s', 's.id', '=', 'o.slip_id')
+                ->whereNotNull('o.lot_no')->whereNotIn('o.type', ['packing', 'packing_divert'])
+                ->select('o.lot_no', 's.stage_master_unit_id as unit', DB::raw('SUM(o.quantity) q'), DB::raw('MAX(o.created_at) d'))
+                ->groupBy('o.lot_no', 's.stage_master_unit_id')->get());
+        $notReceived = [];
+        foreach ($byUnit as $r) {
+            $lk = $this->key($r->lot_no);
+            $packedAnywhere[$lk] = true;
+            $note($r->lot_no, $r->d);
+            $k = $r->unit . '|' . $lk;
+            if (!isset($receivedAt[$k])) {
+                $notReceived[$k] = ['lot_no' => $r->lot_no, 'unit' => $units[$r->unit] ?? ('#' . $r->unit), 'pcs' => ($notReceived[$k]['pcs'] ?? 0) + (int) $r->q];
+            }
+        }
+        $out['packed_not_received'] = array_values($notReceived);
+        foreach (DB::table('order_stage_transactions')->where('from_stage_id', 11)->select('lot_no', DB::raw('MAX(created_at) d'))->groupBy('lot_no')->get() as $r) {
+            $note($r->lot_no, $r->d);
+        }
+
+        // 3) packing end dates
+        foreach (DB::table('order_lot_stage_timings')->where('master_stage_id', 11)->get() as $t) {
+            $lk = $this->key($t->lot_no);
+            if (!isset($entered[$lk])) {
+                // never reached packing and nothing of it was packed: an end date here is wrong
+                if (!empty($t->complete_date) && !isset($packedAnywhere[$lk])) {
+                    $undo[] = ['table' => 'order_lot_stage_timings', 'id' => $t->id, 'complete_date' => $t->complete_date, 'status' => $t->status];
+                    DB::table('order_lot_stage_timings')->where('id', $t->id)->update(['complete_date' => null, 'status' => 1]);
+                    $out['dates_reopened'][] = ['lot_no' => $t->lot_no, 'was' => $t->complete_date, 'why' => 'Lot never reached packing'];
+                }
+                continue;
+            }
+            if (isset($holds[$lk]) && !empty($t->complete_date)) {
+                if (isset($lotlessLots[$lk])) {
+                    $out['lotless_hold'][] = ['lot_no' => $t->lot_no, 'held' => implode(', ', $holds[$lk]), 'date' => $t->complete_date];
+                    continue;
+                }
+                $undo[] = ['table' => 'order_lot_stage_timings', 'id' => $t->id, 'complete_date' => $t->complete_date, 'status' => $t->status];
+                DB::table('order_lot_stage_timings')->where('id', $t->id)->update(['complete_date' => null, 'status' => 1]);
+                $out['dates_reopened'][] = ['lot_no' => $t->lot_no, 'was' => $t->complete_date, 'why' => 'Still to pack: ' . implode(', ', $holds[$lk]) . ' pcs'];
+            } elseif (!isset($holds[$lk]) && empty($t->complete_date)) {
+                $date = $lastActivity[$lk] ?? $t->updated_at;
+                $undo[] = ['table' => 'order_lot_stage_timings', 'id' => $t->id, 'complete_date' => $t->complete_date, 'status' => $t->status];
+                DB::table('order_lot_stage_timings')->where('id', $t->id)->update(['complete_date' => $date, 'status' => 2]);
+                $out['dates_done'][] = ['lot_no' => $t->lot_no, 'date' => $date];
+            }
+        }
+
+        // 4) domestic boxes saved as normal cartons (status 1) instead of domestic stock (3), never dispatched
+        $boxes = DB::table('packing_cartons as c')
+            ->join('packing_mains as m', 'm.id', '=', 'c.packing_main_id')
+            ->leftJoin('order_main as o', 'o.id', '=', 'm.order_main_id')
+            ->where('c.status', 1)->where('c.barcode', 'like', 'D%')
+            ->whereExists(function ($q) {
+                $q->select(DB::raw(1))->from('domestic_inventories as d')
+                    ->whereColumn('d.packing_main_id', 'c.packing_main_id')->whereColumn('d.barcode', 'c.barcode');
+            })
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))->from('order_dispatch_details as x')->whereColumn('x.carton_packing_id', 'c.id');
+            })
+            ->get(['c.id', 'c.packing_main_id', 'c.carton_no', 'c.status', 'o.sku']);
+        foreach ($boxes->groupBy('packing_main_id') as $mainId => $list) {
+            foreach ($list as $c) {
+                $undo[] = ['table' => 'packing_cartons', 'id' => $c->id, 'status' => $c->status];
+            }
+            DB::table('packing_cartons')->whereIn('id', $list->pluck('id')->all())->update(['status' => 3]);
+            $out['domestic_boxes'][] = ['session' => $mainId, 'order' => $list->first()->sku ?? '-', 'boxes' => $list->count()];
+        }
+
+        // 5) the same carton number used twice in one packing session (only listed: most are dispatched)
+        $dups = DB::table('packing_cartons')->whereNotNull('carton_no')->where('carton_no', '!=', '')
+            ->select('packing_main_id', 'carton_no', DB::raw('COUNT(*) n'), DB::raw('SUM(status = 2) dispatched'))
+            ->groupBy('packing_main_id', 'carton_no')->havingRaw('COUNT(*) > 1')->get()->groupBy('packing_main_id');
+        if ($dups->isNotEmpty()) {
+            $mains = DB::table('packing_mains as m')
+                ->leftJoin('production_slip_digitization as s', 's.id', '=', 'm.slip_id')
+                ->leftJoin('order_main as o', 'o.id', '=', 'm.order_main_id')
+                ->whereIn('m.id', $dups->keys()->all())->get(['m.id', 'm.slip_id', 's.stage_master_unit_id', 'o.sku'])->keyBy('id');
+            foreach ($dups as $mainId => $list) {
+                $m = $mains[$mainId] ?? null;
+                $out['duplicate_cartons'][] = [
+                    'session' => $mainId, 'slip' => $m->slip_id ?? '-', 'order' => $m->sku ?? '-',
+                    'unit' => $m ? ($units[$m->stage_master_unit_id] ?? '-') : '-',
+                    'cartons' => $list->pluck('carton_no')->implode(', '),
+                    'dispatched' => (int) $list->sum('dispatched'),
+                ];
+            }
+        }
+
+        foreach (['balances', 'over_packed', 'balance_low', 'packed_not_received'] as $k) {
+            usort($out[$k], fn($a, $b) => [$a['unit'], (string) $a['lot_no']] <=> [$b['unit'], (string) $b['lot_no']]);
+        }
+        foreach (['dates_done', 'dates_reopened', 'lotless_hold'] as $k) {
+            usort($out[$k], fn($a, $b) => (string) $a['lot_no'] <=> (string) $b['lot_no']);
+        }
+        return $out;
     }
 }

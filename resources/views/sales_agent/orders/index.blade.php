@@ -23,9 +23,13 @@
                                             DELAYED
                                         </span>
                                     @endif
+                                    @php
+                                        $statusLabel = ['pending' => 'Pending', 'partially_dispatched' => 'Part Dispatched', 'dispatched' => 'Dispatched', 'delayed' => 'Delayed'][$order->status] ?? ucfirst(str_replace('_', ' ', $order->status));
+                                        $statusClass = $order->status == 'dispatched' ? 'badge-success' : ($order->status == 'partially_dispatched' ? 'badge-info' : 'badge-warning');
+                                    @endphp
                                     <span
-                                        class="badge {{ $order->status == 'pending' ? 'badge-warning' : 'badge-success' }} small rounded-pill px-3 py-1 font-weight-bold">
-                                        {{ ucfirst($order->status) }}
+                                        class="badge {{ $statusClass }} small rounded-pill px-3 py-1 font-weight-bold">
+                                        {{ $statusLabel }}
                                     </span>
                                 </div>
                             </div>
@@ -41,7 +45,7 @@
                             </div>
                             <hr class="my-2 border-dashed">
                             <div class="d-flex justify-content-between">
-                                <span class="badge px-2 py-1 font-weight-bold" style="background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; border-radius: 6px;">{{ $order->total_qty }} Items</span>
+                                <span class="badge px-2 py-1 font-weight-bold" style="background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; border-radius: 6px;">ORD-{{ $order->id }} · {{ $order->total_qty }} Pcs</span>
                             </div>
                         </div>
                     </div>
@@ -53,6 +57,22 @@
                 </div>
             @endforelse
         </div>
+
+        @if($orders->hasPages())
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                @if($orders->onFirstPage())
+                    <span class="btn btn-light btn-sm rounded-pill px-3 disabled">&laquo; Newer</span>
+                @else
+                    <a href="{{ $orders->previousPageUrl() }}" class="btn btn-light btn-sm rounded-pill px-3">&laquo; Newer</a>
+                @endif
+                <span class="small text-muted">Page {{ $orders->currentPage() }} of {{ $orders->lastPage() }}</span>
+                @if($orders->hasMorePages())
+                    <a href="{{ $orders->nextPageUrl() }}" class="btn btn-light btn-sm rounded-pill px-3">Older &raquo;</a>
+                @else
+                    <span class="btn btn-light btn-sm rounded-pill px-3 disabled">Older &raquo;</span>
+                @endif
+            </div>
+        @endif
     </div>
 @endsection
 
@@ -66,6 +86,11 @@
         .badge-success {
             background-color: #dcfce7;
             color: #166534;
+        }
+
+        .badge-info {
+            background-color: #dbeafe;
+            color: #1e40af;
         }
 
         .border-dashed {

@@ -129,6 +129,7 @@ class WarehouseStockActualController extends Controller
         }
 
         $query->leftJoin('production_goods_variants as variants', function ($join) {
+            \App\Services\Admin\InventoryStockService::skipDuplicateVariants($join);
             $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                  ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
         });
@@ -235,6 +236,7 @@ class WarehouseStockActualController extends Controller
         }
 
         $query->leftJoin('production_goods_variants as variants', function ($join) {
+            \App\Services\Admin\InventoryStockService::skipDuplicateVariants($join);
             $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                  ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
         });
@@ -423,6 +425,7 @@ class WarehouseStockActualController extends Controller
         }
 
         $query->leftJoin('production_goods_variants as variants', function ($join) {
+            \App\Services\Admin\InventoryStockService::skipDuplicateVariants($join);
             $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                  ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
         });

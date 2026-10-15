@@ -15,6 +15,7 @@ use App\Models\Fabric;
 use App\Models\FabricReceiptDetail;
 use App\Models\AgentOrderReturn;
 use App\Models\AgentOrderReturnItem;
+use App\Services\Admin\InventoryStockService;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -23,6 +24,11 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class AgentOrderController extends Controller
 {
+    private function stock(): InventoryStockService
+    {
+        return app(InventoryStockService::class);
+    }
+
     /**
      * Brand discount % for an order's party: the customer's own per-brand discount (vendors get none).
      */
@@ -242,7 +248,7 @@ class AgentOrderController extends Controller
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
-                DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample')
+                DB::raw('MAX(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) as is_advance_sample')
             );
 
         $query = $query->groupBy(
@@ -260,7 +266,7 @@ class AgentOrderController extends Controller
 
             DB::raw($discount_col)
         )
-            ->havingRaw('((SUM(domestic_inventories.total_boxes) > MAX(COALESCE(alloc.total_allocated, 0))) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0))');
+            ->havingRaw('((SUM(domestic_inventories.total_boxes) > MAX(COALESCE(alloc.total_allocated, 0))) OR (MAX(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) > 0))');
 
         if ($request->filled('min_boxes')) {
             $query->havingRaw('(SUM(domestic_inventories.total_boxes) - MAX(COALESCE(alloc.total_allocated, 0))) >= ?', [(int) $request->min_boxes]);
@@ -372,12 +378,21 @@ class AgentOrderController extends Controller
         if ($sale_type === 'fabric') {
             $request->validate([
                 'rolls' => 'required|array|min:1',
+                'rolls.*.roll_id' => 'required|integer',
+                'rolls.*.meter' => 'required|numeric|gt:0',
+                'rolls.*.price' => 'required|numeric|min:0',
                 'discount_percentage' => 'nullable|numeric|min:0|max:100',
-            ]);
+            ], ['rolls.*.meter.gt' => 'Meters must be more than 0.']);
         } else {
             $request->validate([
                 'variations' => 'required|array|min:1',
+                'variations.*.qty' => 'required|integer|min:1',
+                'variations.*.pcs_per_box' => 'nullable|numeric|min:0',
+                'variations.*.unit_price' => 'nullable|numeric|min:0',
                 'discount_percentage' => 'nullable|numeric|min:0|max:100',
+            ], [
+                'variations.*.qty.integer' => 'Box quantity must be a whole number.',
+                'variations.*.qty.min' => 'Box quantity must be at least 1.',
             ]);
         }
 
@@ -399,6 +414,20 @@ class AgentOrderController extends Controller
         $fabric_items_to_create = [];
 
         if ($sale_type === 'fabric') {
+            // A roll can only give the meters it still has
+            $metersPerRoll = [];
+            foreach ($request->rolls as $r) {
+                $metersPerRoll[$r['roll_id']] = ($metersPerRoll[$r['roll_id']] ?? 0) + (float) $r['meter'];
+            }
+            foreach ($metersPerRoll as $rollId => $meters) {
+                $roll = FabricReceiptDetail::find($rollId);
+                if (!$roll) {
+                    return response()->json(['success' => false, 'message' => "Fabric roll #{$rollId} was not found."], 422);
+                }
+                if ($meters > (float) $roll->remaining_quantity + 0.0001) {
+                    return response()->json(['success' => false, 'message' => "Roll {$roll->roll_number} has only {$roll->remaining_quantity} m left, {$meters} m entered."], 422);
+                }
+            }
             foreach ($request->rolls as $r) {
                 $roll = FabricReceiptDetail::find($r['roll_id']);
                 if (!$roll)
@@ -454,7 +483,7 @@ class AgentOrderController extends Controller
                         ->avg('quantity') ?? 0;
                 }
                 if ($pcs_per_box <= 0) {
-                    $pcs_per_box = (float) ($sizeSet->total_pieces ?? 0);
+                    $pcs_per_box = (float) ($sizeSet->no_of_pcs ?? 0);
                 }
 
                 $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'];
@@ -487,6 +516,10 @@ class AgentOrderController extends Controller
                 $total_qty += $total_pcs;
                 $total_amount += ($total_pcs * $selling_price);
             }
+        }
+
+        if ($sale_type === 'fabric' ? empty($fabric_items_to_create) : empty($items_to_create)) {
+            return response()->json(['success' => false, 'message' => 'None of the selected products / rolls were found. Nothing was saved.'], 422);
         }
 
         $total_amount = ceil($total_amount);
@@ -588,45 +621,26 @@ class AgentOrderController extends Controller
                     if ($dispatch) {
                         $item['agent_order_dispatch_id'] = $dispatch->id;
                     }
-                    AgentOrderItem::create($item);
+                    $line = AgentOrderItem::create($item);
 
                     if ($order_type === 'direct') {
-                        // Find inventory to deduct
-                        $inventories = DomesticInventory::select('domestic_inventories.*')
-                            ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                            ->where('domestic_inventories.barcode', $item['barcode'])
-                            ->where('domestic_inventories.total_boxes', '>', 0)
-                            ->where(function ($q) {
-                                $q->whereNull('storerooms.id')
-                                  ->orWhere('storerooms.order_taken', '=', 'Yes');
-                            })
-                            ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
-                            ->orderBy('domestic_inventories.total_boxes', 'desc')
-                            ->get();
-
-                        $remainingToDeduct = $item['box_qty'];
-                        foreach ($inventories as $inv) {
-                            if ($remainingToDeduct <= 0)
-                                break;
-                            $deduct = min($inv->total_boxes, $remainingToDeduct);
-
-                            \App\Models\DomesticInventoryHistory::create([
-                                'domestic_inventory_id' => $inv->id,
-                                'user_id' => Auth::id(),
-                                'type' => 'stock_consume',
-                                'old_product_id' => $inv->product_id,
-                                'old_color_id' => $inv->color_id,
-                                'old_size_set_id' => $inv->size_set_id,
-
-                                'old_rack_id' => $inv->warehouse_rack_id,
-                                'box_quantity' => $deduct,
-                            ]);
-
-                            $inv->decrement('total_boxes', $deduct);
-                            if ($inv->total_boxes <= 0)
-                                $inv->delete();
-                            $remainingToDeduct -= $deduct;
+                        // Direct sale: every box must really be in stock (storerooms that take orders).
+                        // Where each box came from is remembered, so deleting the dispatch puts it back there.
+                        $firstPick = $this->stock()->picksEnabled() ? (int) DB::table('agent_order_item_picks')->max('id') : 0;
+                        [$taken, , $lastRow] = $this->stock()->pickForLine($line, (int) $item['box_qty'], 'sale');
+                        if ($taken < (int) $item['box_qty']) {
+                            throw new \Exception("Only {$taken} box(es) of {$item['design_number']} / {$item['color_name']} / {$item['size_set_name']} are in stock in storerooms that take orders, {$item['box_qty']} needed.");
+                        }
+                        if ($lastRow) {
+                            $line->update(['rack_id' => $lastRow->rack_id]);
+                        }
+                        if ($this->stock()->picksEnabled()) {
+                            foreach (DB::table('agent_order_item_picks')->where('agent_order_item_id', $line->id)->where('id', '>', $firstPick)->get() as $pick) {
+                                $row = DomesticInventory::find($pick->domestic_inventory_id);
+                                if ($row) {
+                                    $this->stock()->history('stock_consume', $row, (int) $pick->boxes, ['remarks' => "Direct sale order #{$order->id}"]);
+                                }
+                            }
                         }
                     }
                 }
@@ -1157,7 +1171,8 @@ class AgentOrderController extends Controller
                     ->where('agent_order_items.product_id', $item->product_id)
                     ->where('agent_order_items.color_id', $item->color_id)
                     ->where('agent_order_items.size_set_id', $item->size_set_id)
-                    ->sum('agent_order_items.box_qty') ?? 0;
+                    ->whereNull('agent_order_items.dispatched_at')
+                    ->sum(DB::raw('GREATEST(agent_order_items.box_qty - agent_order_items.scanned_box_qty, 0)')) ?? 0;
 
                 $allLocations = DB::table('domestic_inventories')
                     ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
@@ -1524,7 +1539,7 @@ class AgentOrderController extends Controller
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
-                DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample'),
+                DB::raw('MAX(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) as is_advance_sample'),
                 DB::raw('MAX(COALESCE(current_items.current_order_qty, 0)) as current_order_qty')
             )
             ->groupBy(
@@ -1542,7 +1557,7 @@ class AgentOrderController extends Controller
         $queryForSelected = $query->clone();
 
         $query = $query
-            ->havingRaw('((SUM(domestic_inventories.total_boxes) > 0 OR MAX(COALESCE(current_items.current_order_qty, 0)) > 0) OR (MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0))');
+            ->havingRaw('((SUM(domestic_inventories.total_boxes) > 0 OR MAX(COALESCE(current_items.current_order_qty, 0)) > 0) OR (MAX(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) > 0))');
 
         if ($request->filled('min_boxes')) {
             $query->havingRaw('(SUM(domestic_inventories.total_boxes) - MAX(COALESCE(alloc.total_allocated, 0))) >= ?', [(int) $request->min_boxes]);
@@ -1701,14 +1716,19 @@ class AgentOrderController extends Controller
         if ($sale_type === 'fabric') {
             $request->validate([
                 'rolls' => 'required|array|min:1',
+                'rolls.*.meter' => 'required|numeric|gt:0',
+                'rolls.*.price' => 'required|numeric|min:0',
                 'discount_percentage' => 'nullable|numeric|min:0|max:100',
-            ]);
+            ], ['rolls.*.meter.gt' => 'Meters must be more than 0.']);
         } else {
             $request->validate([
                 'variations' => 'required|array|min:1',
+                'variations.*.qty' => 'required|integer|min:0',
+                'variations.*.pcs_per_box' => 'nullable|numeric|min:0',
+                'variations.*.unit_price' => 'nullable|numeric|min:0',
                 'discount_percentage' => 'nullable|numeric|min:0|max:100',
                 'gst_percentage' => 'nullable|numeric|min:0|max:100',
-            ]);
+            ], ['variations.*.qty.integer' => 'Box quantity must be a whole number.']);
         }
 
         $total_qty = 0;
@@ -1842,11 +1862,23 @@ class AgentOrderController extends Controller
                     $fitting = $product->master_product_fitting_id ? \App\Models\MasterProductFitting::find($product->master_product_fitting_id) : null;
                     $pattern = $product->master_pattern_id ? \App\Models\MasterDesignPattern::find($product->master_pattern_id) : null;
 
-                    // PCS per Box (Source of Truth: Front-end > Current Inventory > Master Config)
-                    $pcs_per_box = (float) DomesticInventory::where('status', 1)->where('product_id', $var['product_id'])
-                        ->where('color_id', $var['color_id'])
-                        ->where('size_set_id', $var['size_set_id'])
-                        ->avg('quantity') ?? ($sizeSet->total_pieces ?? 0);
+                    // PCS per Box (Source of Truth: Front-end > the order's open line > Current Inventory > Master Config)
+                    $pcs_per_box = (float) ($var['pcs_per_box'] ?? 0);
+                    if ($pcs_per_box <= 0) {
+                        $openLine = AgentOrderItem::where('agent_order_id', $order->id)->whereNull('dispatched_at')
+                            ->where('product_id', $var['product_id'])->where('color_id', $var['color_id'])->where('size_set_id', $var['size_set_id'])
+                            ->where('box_qty', '>', 0)->first();
+                        $pcs_per_box = $openLine ? (float) ($openLine->quantity / $openLine->box_qty) : 0;
+                    }
+                    if ($pcs_per_box <= 0) {
+                        $pcs_per_box = (float) (DomesticInventory::where('status', 1)->where('product_id', $var['product_id'])
+                            ->where('color_id', $var['color_id'])
+                            ->where('size_set_id', $var['size_set_id'])
+                            ->avg('quantity') ?? 0);
+                    }
+                    if ($pcs_per_box <= 0) {
+                        $pcs_per_box = (float) ($sizeSet->no_of_pcs ?? 0);
+                    }
 
                     $total_pcs = $remaining_boxes * $pcs_per_box;
 
@@ -1960,17 +1992,65 @@ class AgentOrderController extends Controller
 
                 AgentOrderFabricItem::where('agent_order_id', $order->id)->whereNull('dispatched_at')->delete();
 
+                // A roll can only give the meters it still has
+                $metersPerRoll = [];
+                foreach ($fabric_items_to_create as $item) {
+                    $metersPerRoll[$item['fabric_receipt_detail_id']] = ($metersPerRoll[$item['fabric_receipt_detail_id']] ?? 0) + $item['meter'];
+                }
+                foreach ($metersPerRoll as $rollId => $meters) {
+                    $roll = FabricReceiptDetail::lockForUpdate()->find($rollId);
+                    if ($roll && $meters > (float) $roll->remaining_quantity + 0.0001) {
+                        throw new \Exception("Roll {$roll->roll_number} has only {$roll->remaining_quantity} m left, {$meters} m entered.");
+                    }
+                }
+
                 foreach ($fabric_items_to_create as $item) {
                     AgentOrderFabricItem::create($item);
                     // Deduct new inventory
                     FabricReceiptDetail::where('id', $item['fabric_receipt_detail_id'])->decrement('remaining_quantity', $item['meter']);
                 }
             } else {
-                // Delete ONLY undispatched items so dispatched history is preserved
-                AgentOrderItem::where('agent_order_id', $order->id)->whereNull('dispatched_at')->delete();
+                // Open (not dispatched) lines are updated in place, so boxes already picked for them stay picked
+                // (deleting and re-creating them lost those boxes). Dispatched lines are never touched.
+                $open = AgentOrderItem::where('agent_order_id', $order->id)->whereNull('dispatched_at')->orderBy('id')->get()
+                    ->groupBy(fn($i) => $i->product_id . '_' . $i->color_id . '_' . $i->size_set_id);
+                $submittedKeys = [];
                 foreach ($items_to_create as $item) {
+                    $vKey = $item['product_id'] . '_' . $item['color_id'] . '_' . $item['size_set_id'];
+                    $submittedKeys[$vKey] = true;
+                    $lines = $open->get($vKey, collect());
+                    $picked = (int) $lines->sum('scanned_box_qty');
+                    if ($picked > (int) $item['box_qty']) {
+                        throw new \Exception("{$item['design_number']} / {$item['color_name']} / {$item['size_set_name']}: {$picked} box(es) are already picked, so the order cannot have fewer. Un-pick them first.");
+                    }
+                    unset($item['created_at']);
                     $item['agent_order_id'] = $order->id;
-                    AgentOrderItem::create($item);
+                    if ($lines->isEmpty()) {
+                        AgentOrderItem::create($item);
+                        continue;
+                    }
+                    $line = $lines->first();
+                    foreach ($lines->slice(1) as $extra) { // several open lines of the same item become one
+                        $this->stock()->movePicks($extra->id, $line->id);
+                        $extra->delete();
+                    }
+                    $item['scanned_box_qty'] = $picked;
+                    $item['scanned_quantity'] = (float) $lines->sum('scanned_quantity');
+                    if ($picked > 0) {
+                        $item['rack_id'] = $line->rack_id;
+                        $item['box_no'] = $line->box_no;
+                    }
+                    $line->update($item);
+                }
+                // Items taken off the order
+                foreach ($open as $vKey => $lines) {
+                    if (isset($submittedKeys[$vKey])) continue;
+                    $picked = (int) $lines->sum('scanned_box_qty');
+                    if ($picked > 0) {
+                        $l = $lines->first();
+                        throw new \Exception("{$l->design_number} / {$l->color_name} / {$l->size_set_name}: {$picked} box(es) are already picked. Un-pick them before removing it from the order.");
+                    }
+                    AgentOrderItem::whereIn('id', $lines->pluck('id'))->delete();
                 }
             }
 
@@ -2012,7 +2092,8 @@ class AgentOrderController extends Controller
 
         $query = DB::table('agent_order_items')
             ->join('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
-
+            ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
+            ->leftJoin('master_product_fittings', 'production_goods.master_product_fitting_id', '=', 'master_product_fittings.id')
             ->where('agent_order_id', $id);
 
         if ($brandId) {
@@ -2345,13 +2426,9 @@ class AgentOrderController extends Controller
             $fileName = "Order_Sheet_ORD_{$order->id}.pdf";
         }
 
-        $dir = public_path('whatsapp_pdfs');
-        if (!file_exists($dir)) {
-            mkdir($dir, 0777, true);
-        }
-
-        $pdf->save($dir . '/' . $fileName);
-        $physicalPath = $dir . '/' . $fileName;
+        // saved in private storage (not the public folder), only to be sent
+        $physicalPath = whatsapp_pdf_path($fileName);
+        $pdf->save($physicalPath);
 
         $msg = "Dear {$order->shop_name},\n\nYour Order #ORD-{$order->id} has been generated.\nPlease find your order sheet attached.\n\nThank you!";
         $status = send_whatsapp_attachment($whatsappPhone, $msg, $physicalPath, $fileName);
@@ -2450,127 +2527,14 @@ class AgentOrderController extends Controller
         return $pdf->download('PackingSlip-ORD-' . $id . '.pdf');
     }
 
+    /**
+     * Old one-click dispatch (by box number). It deleted whole stock rows, so it is closed:
+     * orders are dispatched from the scan page (pick boxes, then Dispatch Selected).
+     */
     public function dispatchOrder($id)
     {
-        DB::beginTransaction();
-        try {
-            $order = DB::table('agent_orders')->where('id', $id)->first();
-            if ($order->status == 'dispatched') {
-                return redirect()->back()->with('error', 'Order already fully dispatched');
-            }
-
-            // Get items that are scanned but not yet dispatched
-            $itemsToDispatch = DB::table('agent_order_items')
-                ->where('agent_order_id', $id)
-                ->whereNotNull('box_no')
-                ->whereNull('dispatched_at')
-                ->get();
-
-            if ($itemsToDispatch->isEmpty()) {
-                return redirect()->back()->with('error', 'No scanned items available for dispatch.');
-            }
-
-            $box_nos = $itemsToDispatch->pluck('box_no');
-
-            // 1. Calculate Dispatch Amount & Apply Latest Brand Discount (including GST)
-            $dispatchSubtotal = 0;
-            foreach ($itemsToDispatch as $item) {
-                $product = DB::table('production_goods')->where('id', $item->product_id)->first();
-                if ($product) {
-                    $discount_percentage = $this->customerBrandDiscount($order, $product->brand_id);
-
-                    $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $item->product_id)
-                        ->where('master_size_measurement_id', $item->size_set_id)
-                        ->first();
-
-                    $mrp = $variant->mrp ?? $item->mrp;
-                    $new_selling_price = ceil($mrp - ($mrp * $discount_percentage / 100));
-
-                    if ($new_selling_price != $item->selling_price || $mrp != $item->mrp) {
-                        DB::table('agent_order_items')->where('id', $item->id)->update([
-                            'mrp' => $mrp,
-                            'selling_price' => $new_selling_price
-                        ]);
-                        $item->mrp = $mrp;
-                        $item->selling_price = $new_selling_price; // update object for calculation below
-                    }
-                }
-
-                $dispatchSubtotal += ($item->quantity * $item->selling_price);
-            }
-            $dispatchSubtotal = ceil($dispatchSubtotal);
-            $gstPercentage = $order->gst_percentage ?? 0;
-            $dispatchGst = ceil($dispatchSubtotal * ($gstPercentage / 100));
-            $dispatchTotal = ceil($dispatchSubtotal + $dispatchGst);
-
-            // 2. Update Party Balance (Decrease because they now owe this amount)
-            if ($order->party_type === 'vendor') {
-                $vendor = \App\Models\Vendor::find($order->master_vendor_id);
-                if ($vendor) {
-                    $vendor->balance -= $dispatchTotal;
-                    $vendor->save();
-                }
-            } else {
-                $customer = \App\Models\MasterCustomer::find($order->master_customer_id);
-                if ($customer) {
-                    $customer->balance -= $dispatchTotal;
-                    $customer->save();
-                }
-            }
-
-            // 3. Delete boxes from DomesticInventory (remove from stock)
-            DB::table('domestic_inventories')->whereIn('box_no', $box_nos)->delete();
-
-            // Create Dispatch Log Entry
-            $dispatch = \App\Models\AgentOrderDispatch::create([
-                'party_type' => $order->party_type ?? 'customer',
-                'master_customer_id' => $order->master_customer_id,
-                'master_vendor_id' => $order->master_vendor_id,
-                'sales_agent_id' => $order->sales_agent_id,
-                'status' => 'dispatched',
-                'created_by' => Auth::id(),
-                'dispatch_date' => now(),
-                'total_amount' => $dispatchSubtotal,
-                'gst_amount' => $dispatchGst,
-                'gst_percentage' => $gstPercentage,
-                'grand_total' => $dispatchTotal,
-                'remark' => request()->remark,
-            ]);
-
-            // 4. Mark items as dispatched and link to this dispatch session
-            DB::table('agent_order_items')
-                ->whereIn('id', $itemsToDispatch->pluck('id'))
-                ->update([
-                    'dispatched_at' => now(),
-                    'agent_order_dispatch_id' => $dispatch->id
-                ]);
-
-            // 5. Update order status
-            $remainingItems = DB::table('agent_order_items')
-                ->where('agent_order_id', $id)
-                ->whereNull('dispatched_at')
-                ->count();
-
-            $newStatus = ($remainingItems > 0) ? 'partially_dispatched' : 'dispatched';
-
-            DB::table('agent_orders')->where('id', $id)->update([
-                'status' => $newStatus,
-                'updated_at' => now()
-            ]);
-
-            \App\Models\AgentOrderDispatchItem::create([
-                'agent_order_dispatch_id' => $dispatch->id,
-                'agent_order_id' => $order->id,
-            ]);
-
-            DB::commit();
-            $msg = ($newStatus == 'dispatched') ? 'Order fully dispatched.' : 'Partial dispatch successful.';
-            return redirect()->route('admin.agent-orders.dispatches.show', $dispatch->id)->with('success', $msg . ' Inventory updated and dispatch record created.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Dispatch failed: ' . $e->getMessage());
-        }
+        return redirect()->route('admin.agent-orders.dispatch-scan', $id)
+            ->with('error', 'Please pick the boxes on this page and use Dispatch.');
     }
 
     public function dispatchScan($id)
@@ -2623,6 +2587,10 @@ class AgentOrderController extends Controller
             ->get();
 
         foreach ($items as $item) {
+            // The price saved on the order is kept; MRP - brand discount is only used for a line that has no price
+            if ((float) $item->selling_price > 0) {
+                continue;
+            }
             $brand_discount = $this->customerBrandDiscount($order, $item->brand_id);
 
             $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $item->product_id)
@@ -2812,8 +2780,13 @@ class AgentOrderController extends Controller
 
         DB::beginTransaction();
         try {
-            // Direct decrement in inventory
-            DB::table('domestic_inventories')->where('id', $inventory->id)->decrement('total_boxes', 1);
+            // Take the box from that row (locked, so two scanners cannot take the same last box) and remember where it came from
+            $row = $this->stock()->lockRow($inventory->id);
+            if (!$row || (int) $row->total_boxes < 1) {
+                throw new \Exception('That box was just taken by another scan. Please scan again.');
+            }
+            $this->stock()->take($row, 1);
+            $this->stock()->recordPick($item->id, $row, 1);
 
             // Directly update the aggregate order item with the scanned rack and counts
             DB::table('agent_order_items')->where('id', $item->id)->update([
@@ -2881,38 +2854,20 @@ class AgentOrderController extends Controller
             return response()->json(['success' => false, 'message' => 'No active scan found for this barcode in this order.']);
         }
 
-        // 2. Find the summary inventory record for this barcode (matching item rack if available)
-        $invQuery = DB::table('domestic_inventories')
-            ->where('product_id', $item->product_id)
-            ->where('size_set_id', $item->size_set_id)
-            ->where('color_id', $item->color_id)
-            ->where('order_main_id', 0);
-
-        if (!empty($item->rack_id)) {
-            $inventory = (clone $invQuery)->where('rack_id', $item->rack_id)->first();
-        }
-        if (empty($inventory)) {
-            $inventory = $invQuery->first();
-        }
-
-        if (!$inventory) {
-            return response()->json(['success' => false, 'message' => 'Inventory record for this box not found.']);
-        }
-
         DB::beginTransaction();
         try {
-            // Direct increment back to inventory
-            DB::table('domestic_inventories')->where('id', $inventory->id)->increment('total_boxes', 1);
+            // 2. Put the last picked box back exactly where it came from
+            $pcsBack = $this->stock()->unpickLine($item, 1);
 
             // Decrement the aggregate order item counts
             DB::table('agent_order_items')->where('id', $item->id)->update([
                 'scanned_box_qty' => $item->scanned_box_qty - 1,
-                'scanned_quantity' => $item->scanned_quantity - $inventory->quantity,
+                'scanned_quantity' => $item->scanned_box_qty - 1 > 0 ? max(0, $item->scanned_quantity - $pcsBack) : 0,
                 'updated_at' => now()
             ]);
 
             // Sync other pending orders' rack allocation
-            $this->syncPendingOrderRacks($inventory->product_id, $inventory->color_id, $inventory->size_set_id, $id);
+            $this->syncPendingOrderRacks($item->product_id, $item->color_id, $item->size_set_id, $id);
 
             DB::commit();
 
@@ -2957,100 +2912,54 @@ class AgentOrderController extends Controller
                     $sizeSetId = $matches[2];
                     $colorId = $matches[3];
                 } else {
+                    DB::rollBack();
                     return response()->json(['success' => false, 'message' => 'Invalid barcode format.']);
                 }
 
-                $item = DB::table('agent_order_items')
+                $lines = DB::table('agent_order_items')
                     ->where('agent_order_id', $id)
                     ->where('product_id', $productId)
                     ->where('color_id', $colorId)
                     ->where('size_set_id', $sizeSetId)
                     ->whereNull('dispatched_at')
-                    ->first();
+                    ->orderBy('id')
+                    ->get();
 
-                if (!$item) {
+                if ($lines->isEmpty()) {
+                    DB::rollBack();
                     return response()->json(['success' => false, 'message' => 'Order item not found.']);
                 }
 
-                $inventory = DB::table('domestic_inventories')
-                    ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                    ->where('domestic_inventories.product_id', $productId)
-                    ->where('domestic_inventories.size_set_id', $sizeSetId)
-                    ->where('domestic_inventories.color_id', $colorId)
-                    ->where('domestic_inventories.total_boxes', '>', 0)
-                    ->where(function($q) {
-                        $q->whereNull('storerooms.id')
-                          ->orWhere('storerooms.order_dispatch', '!=', 'No');
-                    })
-                    ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
-                    ->orderBy('domestic_inventories.total_boxes', 'desc')
-                    ->select('domestic_inventories.*')
-                    ->first();
-
-                $pcsPerBox = $inventory && $inventory->quantity > 0 ? $inventory->quantity : ($item->box_qty > 0 ? ($item->quantity / $item->box_qty) : 1);
-
                 if ($checked) {
-                    $neededBoxes = $item->box_qty - $item->scanned_box_qty;
+                    $neededBoxes = (int) $lines->sum(fn($l) => max(0, $l->box_qty - $l->scanned_box_qty));
                     if ($neededBoxes <= 0) {
                         DB::rollBack();
                         return response()->json(['success' => true, 'message' => 'Already fully scanned.', 'already_done' => true]);
                     }
 
-                    $availableBoxes = $inventory ? max(0, (int)$inventory->total_boxes) : 0;
+                    $availableBoxes = $this->stock()->pickableBoxes($productId, $colorId, $sizeSetId);
                     if ($availableBoxes <= 0) {
                         DB::rollBack();
                         return response()->json(['success' => false, 'message' => 'No dispatchable stock available in inventory for this item.']);
                     }
 
-                    $boxesToScan = min($neededBoxes, $availableBoxes);
-
-                    DB::table('domestic_inventories')->where('id', $inventory->id)->decrement('total_boxes', $boxesToScan);
-
-                    $newScannedBoxes = $item->scanned_box_qty + $boxesToScan;
-                    $newScannedQty = $item->scanned_quantity + ($boxesToScan * $pcsPerBox);
-
-                    DB::table('agent_order_items')->where('id', $item->id)->update([
-                        'rack_id' => $inventory->rack_id,
-                        'scanned_box_qty' => $newScannedBoxes,
-                        'scanned_quantity' => $newScannedQty,
-                        'box_no' => $inventory->box_no ?? $item->box_no,
-                        'updated_at' => now()
-                    ]);
+                    // Take the boxes from the best racks (several racks if one is not enough) and remember each one
+                    $boxesToScan = 0;
+                    foreach ($lines as $line) {
+                        $boxesToScan += $this->pickLineBoxes($line, max(0, $line->box_qty - $line->scanned_box_qty));
+                    }
 
                     $this->syncPendingOrderRacks($productId, $colorId, $sizeSetId, $id);
 
-                    $message = $boxesToScan < $neededBoxes 
+                    $message = $boxesToScan < $neededBoxes
                         ? "Scanned {$boxesToScan} boxes (limited by available stock: {$availableBoxes})."
                         : "All {$boxesToScan} boxes selected successfully!";
                 } else {
-                    $scannedBoxes = (int)$item->scanned_box_qty;
-                    if ($scannedBoxes > 0) {
-                        $restoreInvQuery = DB::table('domestic_inventories')
-                            ->where('product_id', $productId)
-                            ->where('size_set_id', $sizeSetId)
-                            ->where('color_id', $colorId)
-                            ->where('order_main_id', 0);
-
-                        if (!empty($item->rack_id)) {
-                            $restoreInv = (clone $restoreInvQuery)->where('rack_id', $item->rack_id)->first();
-                        }
-                        if (empty($restoreInv)) {
-                            $restoreInv = $restoreInvQuery->first();
-                        }
-
-                        if ($restoreInv) {
-                            DB::table('domestic_inventories')->where('id', $restoreInv->id)->increment('total_boxes', $scannedBoxes);
-                        }
-
-                        DB::table('agent_order_items')->where('id', $item->id)->update([
-                            'scanned_box_qty' => 0,
-                            'scanned_quantity' => 0,
-                            'updated_at' => now()
-                        ]);
-
-                        $this->syncPendingOrderRacks($productId, $colorId, $sizeSetId, $id);
+                    // Every picked box goes back to the rack it came from
+                    foreach ($lines as $line) {
+                        $this->unpickLineBoxes($line);
                     }
+                    $this->syncPendingOrderRacks($productId, $colorId, $sizeSetId, $id);
                     $message = "Selection cleared for this item.";
                 }
 
@@ -3059,6 +2968,7 @@ class AgentOrderController extends Controller
                     ->where('agent_order_id', $id)
                     ->whereNull('dispatched_at')
                     ->whereRaw('scanned_box_qty < box_qty')
+                    ->orderBy('id')
                     ->get();
 
                 $totalFulfilled = 0;
@@ -3068,42 +2978,10 @@ class AgentOrderController extends Controller
                     $neededBoxes = $item->box_qty - $item->scanned_box_qty;
                     if ($neededBoxes <= 0) continue;
 
-                    $inventory = DB::table('domestic_inventories')
-                        ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                        ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                        ->where('domestic_inventories.product_id', $item->product_id)
-                        ->where('domestic_inventories.size_set_id', $item->size_set_id)
-                        ->where('domestic_inventories.color_id', $item->color_id)
-                        ->where('domestic_inventories.total_boxes', '>', 0)
-                        ->where(function($q) {
-                            $q->whereNull('storerooms.id')
-                              ->orWhere('storerooms.order_dispatch', '!=', 'No');
-                        })
-                        ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
-                        ->orderBy('domestic_inventories.total_boxes', 'desc')
-                        ->select('domestic_inventories.*')
-                        ->first();
-
-                    $availableBoxes = $inventory ? max(0, (int)$inventory->total_boxes) : 0;
-                    if ($availableBoxes <= 0) {
-                        $shortageCount++;
-                        continue;
+                    $boxesToScan = $this->pickLineBoxes($item, $neededBoxes);
+                    if ($boxesToScan > 0) {
+                        $this->syncPendingOrderRacks($item->product_id, $item->color_id, $item->size_set_id, $id);
                     }
-
-                    $boxesToScan = min($neededBoxes, $availableBoxes);
-                    $pcsPerBox = $inventory && $inventory->quantity > 0 ? $inventory->quantity : ($item->box_qty > 0 ? ($item->quantity / $item->box_qty) : 1);
-
-                    DB::table('domestic_inventories')->where('id', $inventory->id)->decrement('total_boxes', $boxesToScan);
-
-                    DB::table('agent_order_items')->where('id', $item->id)->update([
-                        'rack_id' => $inventory->rack_id,
-                        'scanned_box_qty' => $item->scanned_box_qty + $boxesToScan,
-                        'scanned_quantity' => $item->scanned_quantity + ($boxesToScan * $pcsPerBox),
-                        'box_no' => $inventory->box_no ?? $item->box_no,
-                        'updated_at' => now()
-                    ]);
-
-                    $this->syncPendingOrderRacks($item->product_id, $item->color_id, $item->size_set_id, $id);
 
                     $totalFulfilled += $boxesToScan;
                     if ($boxesToScan < $neededBoxes) {
@@ -3111,8 +2989,8 @@ class AgentOrderController extends Controller
                     }
                 }
 
-                $message = $shortageCount > 0 
-                    ? "Selected available boxes ({$totalFulfilled} added). Some items had stock shortage." 
+                $message = $shortageCount > 0
+                    ? "Selected available boxes ({$totalFulfilled} added). Some items had stock shortage."
                     : "All required items selected successfully ({$totalFulfilled} boxes added)!";
 
             } elseif ($mode === 'unselect_all') {
@@ -3123,33 +3001,8 @@ class AgentOrderController extends Controller
                     ->get();
 
                 foreach ($items as $item) {
-                    $scannedBoxes = (int)$item->scanned_box_qty;
-                    if ($scannedBoxes > 0) {
-                        $restoreInvQuery = DB::table('domestic_inventories')
-                            ->where('product_id', $item->product_id)
-                            ->where('size_set_id', $item->size_set_id)
-                            ->where('color_id', $item->color_id)
-                            ->where('order_main_id', 0);
-
-                        if (!empty($item->rack_id)) {
-                            $inventory = (clone $restoreInvQuery)->where('rack_id', $item->rack_id)->first();
-                        }
-                        if (empty($inventory)) {
-                            $inventory = $restoreInvQuery->first();
-                        }
-
-                        if ($inventory) {
-                            DB::table('domestic_inventories')->where('id', $inventory->id)->increment('total_boxes', $scannedBoxes);
-                        }
-
-                        DB::table('agent_order_items')->where('id', $item->id)->update([
-                            'scanned_box_qty' => 0,
-                            'scanned_quantity' => 0,
-                            'updated_at' => now()
-                        ]);
-
-                        $this->syncPendingOrderRacks($item->product_id, $item->color_id, $item->size_set_id, $id);
-                    }
+                    $this->unpickLineBoxes($item);
+                    $this->syncPendingOrderRacks($item->product_id, $item->color_id, $item->size_set_id, $id);
                 }
 
                 $message = "All selections have been cleared.";
@@ -3197,6 +3050,35 @@ class AgentOrderController extends Controller
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
         }
+    }
+
+    /** Pick up to $boxes boxes for an open order line (best racks first, remembered per rack). Returns boxes picked. */
+    private function pickLineBoxes($line, int $boxes): int
+    {
+        if ($boxes <= 0) return 0;
+        [$taken, $pcs, $lastRow] = $this->stock()->pickForLine($line, $boxes);
+        if ($taken > 0) {
+            DB::table('agent_order_items')->where('id', $line->id)->update([
+                'rack_id' => $lastRow->rack_id,
+                'scanned_box_qty' => $line->scanned_box_qty + $taken,
+                'scanned_quantity' => $line->scanned_quantity + $pcs,
+                'box_no' => $lastRow->box_no ?? $line->box_no,
+                'updated_at' => now()
+            ]);
+        }
+        return $taken;
+    }
+
+    /** Put every picked box of an open order line back where it came from. */
+    private function unpickLineBoxes($line): void
+    {
+        if ((int) $line->scanned_box_qty <= 0) return;
+        $this->stock()->unpickLine($line, (int) $line->scanned_box_qty);
+        DB::table('agent_order_items')->where('id', $line->id)->update([
+            'scanned_box_qty' => 0,
+            'scanned_quantity' => 0,
+            'updated_at' => now()
+        ]);
     }
 
     /**
@@ -3948,7 +3830,8 @@ class AgentOrderController extends Controller
                 // 1. Calculate Dispatch Amount & Handle Split Lines
                 $subtotal = 0;
                 foreach ($itemsToDispatch as $item) {
-                    $product = DB::table('production_goods')->where('id', $item->product_id)->first();
+                    // The price saved on the order goes on the bill; MRP - brand discount only for a line without a price
+                    $product = (float) $item->selling_price > 0 ? null : DB::table('production_goods')->where('id', $item->product_id)->first();
                     if ($product) {
                         $discount_percentage = $this->customerBrandDiscount($order, $product->brand_id);
 
@@ -3975,20 +3858,32 @@ class AgentOrderController extends Controller
                     // If partially scanned, split the row so the remainder stays pending
                     if ($item->scanned_box_qty < $item->box_qty) {
                         $sizeSetName = !empty($item->size_set_name) ? $item->size_set_name : (DB::table('master_size_measurements')->where('id', $item->size_set_id)->value('name') ?? null);
-                        // Create remaining pending item
+                        // Create remaining pending item (same details as the original line; nothing picked yet)
+                        $remainBoxes = $item->box_qty - $item->scanned_box_qty;
+                        $pcsPerBox = $item->box_qty > 0 ? ($item->quantity / $item->box_qty) : 0;
                         DB::table('agent_order_items')->insert([
                             'agent_order_id' => $item->agent_order_id,
+                            'rack_id' => $item->rack_id,
                             'product_id' => $item->product_id,
                             'design_number' => $item->design_number,
                             'product_name' => $item->product_name ?? null,
                             'color_id' => $item->color_id,
                             'color_name' => $item->color_name ?? null,
+                            'size_id' => $item->size_id,
+                            'size_name' => $item->size_name,
                             'size_set_id' => $item->size_set_id,
                             'size_set_name' => $sizeSetName,
-                            'box_qty' => $item->box_qty - $item->scanned_box_qty,
-                            'quantity' => $item->quantity - $scannedPcs, // remaining pcs
+                            'fitting_id' => $item->fitting_id,
+                            'fitting_name' => $item->fitting_name,
+                            'pattern_id' => $item->pattern_id,
+                            'pattern_name' => $item->pattern_name,
+                            'box_qty' => $remainBoxes,
+                            'quantity' => max(0, round($remainBoxes * $pcsPerBox)), // remaining pcs
+                            'mrp' => $item->mrp,
                             'selling_price' => $item->selling_price,
                             'barcode' => $item->barcode,
+                            'qrcode' => $item->qrcode,
+                            'remark' => $item->remark,
                             'scanned_box_qty' => 0,
                             'scanned_quantity' => 0,
                             'created_at' => now(),
@@ -4370,6 +4265,11 @@ class AgentOrderController extends Controller
     {
         $dispatch = \App\Models\AgentOrderDispatch::findOrFail($id);
         $items = $request->input('items', []);
+        foreach ($items as $itemData) {
+            if (isset($itemData['selling_price']) && (!is_numeric($itemData['selling_price']) || (float) $itemData['selling_price'] < 0)) {
+                return response()->json(['status' => 'error', 'message' => 'Price must be a number of 0 or more.']);
+            }
+        }
 
         DB::beginTransaction();
         try {
@@ -4668,13 +4568,9 @@ class AgentOrderController extends Controller
             $fileName = "Dispatch_Invoice_{$dispatch->id}.pdf";
         }
 
-        $dir = public_path('whatsapp_pdfs');
-        if (!file_exists($dir)) {
-            mkdir($dir, 0777, true);
-        }
-
-        $pdf->save($dir . '/' . $fileName);
-        $physicalPath = $dir . '/' . $fileName;
+        // saved in private storage (not the public folder), only to be sent
+        $physicalPath = whatsapp_pdf_path($fileName);
+        $pdf->save($physicalPath);
 
         $msg = "Dear {$party->name},\n\nYour Dispatch Invoice #{$dispatch->id} has been generated.\nPlease find it attached.\n\nThank you!";
         $status = send_whatsapp_attachment($phone, $msg, $physicalPath, $fileName);
@@ -4775,13 +4671,9 @@ class AgentOrderController extends Controller
             $fileName = "Packing_Slip_{$dispatch->id}.pdf";
         }
 
-        $dir = public_path('whatsapp_pdfs');
-        if (!file_exists($dir)) {
-            mkdir($dir, 0777, true);
-        }
-
-        $pdf->save($dir . '/' . $fileName);
-        $physicalPath = $dir . '/' . $fileName;
+        // saved in private storage (not the public folder), only to be sent
+        $physicalPath = whatsapp_pdf_path($fileName);
+        $pdf->save($physicalPath);
 
         $msg = "Dear {$party->name},\n\nYour Dispatch Packing Slip #{$dispatch->id} has been generated.\nPlease find it attached.\n\nThank you!";
         $status = send_whatsapp_attachment($phone, $msg, $physicalPath, $fileName);
@@ -4852,82 +4744,7 @@ class AgentOrderController extends Controller
 
         DB::beginTransaction();
         try {
-            $total_amount = 0;
-            $items_to_save = [];
-
-            foreach ($returns_data as $data) {
-                $qty = (float) $data['quantity'];
-                if ($qty <= 0)
-                    continue;
-
-                if ($data['item_type'] === 'standard') {
-                    $item = AgentOrderItem::findOrFail($data['item_id']);
-                    $max_qty = $item->scanned_box_qty;
-                } else {
-                    $item = AgentOrderFabricItem::findOrFail($data['item_id']);
-                    $max_qty = $item->meter;
-                }
-
-                // Check already returned
-                $alreadyReturned = DB::table('agent_order_return_items')
-                    ->join('agent_order_returns', 'agent_order_return_items.agent_order_return_id', '=', 'agent_order_returns.id')
-                    ->where('agent_order_returns.agent_order_dispatch_id', $id)
-                    ->where('item_type', $data['item_type'])
-                    ->where('item_id', $data['item_id'])
-                    ->sum('quantity');
-
-                if (($qty + $alreadyReturned) > $max_qty) {
-                    throw new \Exception("Return quantity exceeds dispatched quantity for one or more items.");
-                }
-
-                $price = (float) ($data['price'] ?? $item->selling_price);
-
-                // For standard items, we need to calculate PCS if quantity is boxes
-                $row_pcs = $qty;
-                if ($data['item_type'] === 'standard') {
-                    $pcs_per_box = $item->scanned_quantity / ($item->scanned_box_qty ?: 1);
-                    $row_pcs = $qty * $pcs_per_box;
-                }
-
-                $subtotal = $row_pcs * $price;
-                $total_amount += $subtotal;
-
-                $items_to_save[] = [
-                    'item_type' => $data['item_type'],
-                    'item_id' => $data['item_id'],
-                    'quantity' => $qty,
-                    'price' => $price,
-                    'subtotal' => $subtotal,
-                    'tax_amount' => 0, // We will calculate tax at header level or distributed
-                    'total' => $subtotal, // Placeholder, will update if needed
-                ];
-
-                // Restore Inventory
-                if ($data['item_type'] === 'standard') {
-                    $inv = DomesticInventory::where('barcode', $item->barcode)->first();
-                    if ($inv) {
-                        $inv->increment('total_boxes', $qty);
-                    } else {
-                        DomesticInventory::create([
-                            'product_id' => $item->product_id,
-                            'color_id' => $item->color_id,
-                            'size_set_id' => $item->size_set_id,
-
-                            'quantity' => ($item->scanned_quantity / ($item->scanned_box_qty ?: 1)),
-                            'total_boxes' => $qty,
-                            'barcode' => $item->barcode,
-                            'box_no' => $item->box_no,
-                            'carton_no' => $item->carton_no,
-                            'status' => 'available'
-                        ]);
-                    }
-                } else {
-                    $roll = FabricReceiptDetail::find($item->fabric_receipt_detail_id);
-                    if ($roll) {
-                        $roll->increment('remaining_quantity', $qty);
-                    }
-                }
-            }
+            [$items_to_save, $total_amount] = $this->applyReturnLines($dispatch, $returns_data, null);
 
             if (empty($items_to_save)) {
                 throw new \Exception("Please enter valid return quantities.");
@@ -4976,6 +4793,148 @@ class AgentOrderController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Check the returned lines and put the returned stock back.
+     * Only lines of THIS dispatch, whole boxes, never more than dispatched (counting other returns).
+     * Returned boxes go back to the rack the line was picked from, and that place is saved on the return line.
+     * @return array [lines to save, total amount]
+     */
+    private function applyReturnLines($dispatch, array $returns_data, $exceptReturnId): array
+    {
+        $total_amount = 0;
+        $items_to_save = [];
+        $seen = [];
+
+        foreach ($returns_data as $data) {
+            $qty = (float) ($data['quantity'] ?? 0);
+            if ($qty <= 0)
+                continue;
+
+            $type = ($data['item_type'] ?? '') === 'standard' ? 'standard' : 'fabric';
+            $key = $type . ':' . $data['item_id'];
+            if (isset($seen[$key])) {
+                throw new \Exception("The same line is entered twice.");
+            }
+            $seen[$key] = true;
+
+            if ($type === 'standard') {
+                $item = AgentOrderItem::findOrFail($data['item_id']);
+                $max_qty = $item->scanned_box_qty;
+                if (floor($qty) != $qty) {
+                    throw new \Exception("{$item->design_number}: boxes can only be returned as whole boxes.");
+                }
+            } else {
+                $item = AgentOrderFabricItem::findOrFail($data['item_id']);
+                $max_qty = $item->meter;
+            }
+            if ((int) $item->agent_order_dispatch_id !== (int) $dispatch->id) {
+                throw new \Exception("A selected line does not belong to this dispatch.");
+            }
+
+            // Check already returned (other returns of this dispatch)
+            $alreadyReturned = DB::table('agent_order_return_items')
+                ->join('agent_order_returns', 'agent_order_return_items.agent_order_return_id', '=', 'agent_order_returns.id')
+                ->where('agent_order_returns.agent_order_dispatch_id', $dispatch->id)
+                ->when($exceptReturnId, fn($q) => $q->where('agent_order_returns.id', '!=', $exceptReturnId))
+                ->where('item_type', $data['item_type'])
+                ->where('item_id', $data['item_id'])
+                ->sum('quantity');
+
+            if (($qty + $alreadyReturned) > $max_qty + 0.0001) {
+                throw new \Exception("Return quantity exceeds dispatched quantity for one or more items.");
+            }
+
+            $price = (float) ($data['price'] ?? $item->selling_price);
+
+            // For standard items, we need to calculate PCS if quantity is boxes
+            $row_pcs = $qty;
+            if ($type === 'standard') {
+                $pcs_per_box = $item->scanned_quantity / ($item->scanned_box_qty ?: 1);
+                $row_pcs = $qty * $pcs_per_box;
+            }
+
+            $subtotal = $row_pcs * $price;
+            $total_amount += $subtotal;
+
+            $line = [
+                'item_type' => $data['item_type'],
+                'item_id' => $data['item_id'],
+                'quantity' => $qty,
+                'price' => $price,
+                'subtotal' => $subtotal,
+                'tax_amount' => 0, // We will calculate tax at header level or distributed
+                'total' => $subtotal, // Placeholder, will update if needed
+            ];
+
+            // Restore Inventory
+            if ($type === 'standard') {
+                $row = $this->returnTargetRow($item);
+                $this->stock()->add($row, (int) $qty);
+                $line['domestic_inventory_id'] = $row->id;
+                $line['rack_id'] = $row->rack_id;
+            } else {
+                $roll = FabricReceiptDetail::find($item->fabric_receipt_detail_id);
+                if ($roll) {
+                    $roll->increment('remaining_quantity', $qty);
+                }
+            }
+            $items_to_save[] = $line;
+        }
+
+        return [$items_to_save, $total_amount];
+    }
+
+    /** Stock row returned boxes of a dispatched line go back to: where it was picked from (last pick), else the line's rack. */
+    private function returnTargetRow($item): DomesticInventory
+    {
+        $pcs = $this->stock()->linePcsPerBox($item);
+        if ($this->stock()->picksEnabled()) {
+            $pick = DB::table('agent_order_item_picks')->where('agent_order_item_id', $item->id)->orderByDesc('id')->first();
+            if ($pick) {
+                return $this->stock()->lockRow($pick->domestic_inventory_id)
+                    ?: $this->stock()->rowAt($item->product_id, $item->color_id, $item->size_set_id, $pick->rack_id, $pick->pcs_per_box);
+            }
+        }
+        $rackId = $item->rack_id;
+        if (!$rackId) {
+            $rackId = DomesticInventory::where('product_id', $item->product_id)->where('color_id', $item->color_id)->where('size_set_id', $item->size_set_id)
+                ->whereNotNull('rack_id')->orderByDesc('total_boxes')->value('rack_id');
+        }
+        return $this->stock()->rowAt($item->product_id, $item->color_id, $item->size_set_id, $rackId, $pcs);
+    }
+
+    /**
+     * Take back the stock a return line added (when the return is edited / deleted).
+     * Refused when those boxes / meters are no longer there (already sold, moved or disposed).
+     */
+    private function reverseReturnLine($retItem): void
+    {
+        if ($retItem->item_type === 'standard') {
+            $original = AgentOrderItem::find($retItem->item_id);
+            $qty = (int) round($retItem->quantity);
+            $row = $this->stock()->lockRow($retItem->domestic_inventory_id ?? null);
+            if (!$row && $original) {
+                // returns saved before the place was recorded: the stock row of that item that still has the boxes
+                $row = DomesticInventory::where('barcode', $original->barcode)->where('total_boxes', '>=', $qty)
+                    ->orderBy('id')->lockForUpdate()->first();
+            }
+            $label = $original ? "{$original->design_number} / {$original->color_name} / {$original->size_set_name}" : "line #{$retItem->item_id}";
+            if (!$row || (int) $row->total_boxes < $qty) {
+                throw new \Exception("{$label}: the {$qty} returned box(es) are no longer in stock (already sold, moved or disposed), so this return cannot be changed or deleted.");
+            }
+            $this->stock()->take($row, $qty);
+        } else {
+            $original = AgentOrderFabricItem::find($retItem->item_id);
+            $roll = $original ? FabricReceiptDetail::lockForUpdate()->find($original->fabric_receipt_detail_id) : null;
+            if ($roll) {
+                if ((float) $roll->remaining_quantity + 0.0001 < (float) $retItem->quantity) {
+                    throw new \Exception("Roll {$roll->roll_number}: the returned {$retItem->quantity} m are no longer in stock, so this return cannot be changed or deleted.");
+                }
+                $roll->decrement('remaining_quantity', $retItem->quantity);
+            }
         }
     }
 
@@ -5099,13 +5058,9 @@ class AgentOrderController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.returns.return-pdf', compact('return', 'settings'));
         $fileName = 'Sales_Return_SR_' . $return->id . '.pdf';
 
-        $dir = public_path('whatsapp_pdfs');
-        if (!file_exists($dir)) {
-            mkdir($dir, 0777, true);
-        }
-
-        $pdf->save($dir . '/' . $fileName);
-        $physicalPath = $dir . '/' . $fileName;
+        // saved in private storage (not the public folder), only to be sent
+        $physicalPath = whatsapp_pdf_path($fileName);
+        $pdf->save($physicalPath);
 
         $msg = "Dear {$party->name},\n\nYour Sales Return #SR-{$return->id} has been generated.\nPlease find it attached.\n\nThank you!";
         $status = send_whatsapp_attachment($phone, $msg, $physicalPath, $fileName);
@@ -5129,25 +5084,9 @@ class AgentOrderController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Reverse the current return's inventory and balance impact
+            // 1. Reverse the current return's inventory and balance impact (refused if the boxes are gone)
             foreach ($return->items as $item) {
-                if ($item->item_type === 'standard') {
-                    $original = AgentOrderItem::find($item->item_id);
-                    if ($original) {
-                        $inv = DomesticInventory::where('barcode', $original->barcode)->first();
-                        if ($inv) {
-                            $inv->decrement('total_boxes', $item->quantity);
-                        }
-                    }
-                } else {
-                    $original = AgentOrderFabricItem::find($item->item_id);
-                    if ($original) {
-                        $roll = FabricReceiptDetail::find($original->fabric_receipt_detail_id);
-                        if ($roll) {
-                            $roll->decrement('remaining_quantity', $item->quantity);
-                        }
-                    }
-                }
+                $this->reverseReturnLine($item);
             }
 
             $party = $dispatch->party();
@@ -5160,84 +5099,13 @@ class AgentOrderController extends Controller
             $return->items()->delete();
 
             // 3. Process new return data
-            $total_amount = 0;
-            $items_to_save = [];
-
-            foreach ($returns_data as $data) {
-                $qty = (float) $data['quantity'];
-                if ($qty <= 0)
-                    continue;
-
-                if ($data['item_type'] === 'standard') {
-                    $item = AgentOrderItem::findOrFail($data['item_id']);
-                    $max_qty = $item->scanned_box_qty;
-                } else {
-                    $item = AgentOrderFabricItem::findOrFail($data['item_id']);
-                    $max_qty = $item->meter;
-                }
-
-                $alreadyReturned = DB::table('agent_order_return_items')
-                    ->join('agent_order_returns', 'agent_order_return_items.agent_order_return_id', '=', 'agent_order_returns.id')
-                    ->where('agent_order_returns.agent_order_dispatch_id', $dispatch->id)
-                    ->where('agent_order_returns.id', '!=', $id)
-                    ->where('item_type', $data['item_type'])
-                    ->where('item_id', $data['item_id'])
-                    ->sum('quantity');
-
-                if (($qty + $alreadyReturned) > $max_qty) {
-                    throw new \Exception("Return quantity exceeds dispatched quantity for one or more items.");
-                }
-
-                $price = (float) ($data['price'] ?? $item->selling_price);
-                $row_pcs = $qty;
-                if ($data['item_type'] === 'standard') {
-                    $pcs_per_box = $item->scanned_quantity / ($item->scanned_box_qty ?: 1);
-                    $row_pcs = $qty * $pcs_per_box;
-                }
-
-                $subtotal = $row_pcs * $price;
-                $total_amount += $subtotal;
-
-                $items_to_save[] = [
-                    'agent_order_return_id' => $return->id,
-                    'item_type' => $data['item_type'],
-                    'item_id' => $data['item_id'],
-                    'quantity' => $qty,
-                    'price' => $price,
-                    'subtotal' => $subtotal,
-                    'tax_amount' => 0,
-                    'total' => $subtotal,
-                ];
-
-                // Restore Inventory
-                if ($data['item_type'] === 'standard') {
-                    $inv = DomesticInventory::where('barcode', $item->barcode)->first();
-                    if ($inv) {
-                        $inv->increment('total_boxes', $qty);
-                    } else {
-                        DomesticInventory::create([
-                            'product_id' => $item->product_id,
-                            'color_id' => $item->color_id,
-                            'size_set_id' => $item->size_set_id,
-
-                            'quantity' => ($item->scanned_quantity / ($item->scanned_box_qty ?: 1)),
-                            'total_boxes' => $qty,
-                            'barcode' => $item->barcode,
-                            'box_no' => $item->box_no,
-                            'carton_no' => $item->carton_no,
-                            'status' => 'available'
-                        ]);
-                    }
-                } else {
-                    $roll = FabricReceiptDetail::find($item->fabric_receipt_detail_id);
-                    if ($roll) {
-                        $roll->increment('remaining_quantity', $qty);
-                    }
-                }
+            [$items_to_save, $total_amount] = $this->applyReturnLines($dispatch, $returns_data, $return->id);
+            if (empty($items_to_save)) {
+                throw new \Exception("Please enter valid return quantities.");
             }
 
             // 4. Update return header
-            $gst_percentage = (float) ($request->gst_percentage ?? 5.00);
+            $gst_percentage = (float) ($request->gst_percentage ?? ($return->gst_percentage ?? ($dispatch->gst_percentage ?? 5.00)));
             $discount_percentage = (float) ($request->discount_percentage ?? 0);
             $other_charges = ceil((float) ($request->other_charges ?? 0));
 
@@ -5260,6 +5128,7 @@ class AgentOrderController extends Controller
             ]);
 
             foreach ($items_to_save as $item_data) {
+                $item_data['agent_order_return_id'] = $return->id;
                 AgentOrderReturnItem::create($item_data);
             }
 
@@ -5284,25 +5153,9 @@ class AgentOrderController extends Controller
             $return = AgentOrderReturn::with('items')->findOrFail($id);
             $dispatch = \App\Models\AgentOrderDispatch::find($return->agent_order_dispatch_id);
 
+            // Reverse Inventory (refused if the returned boxes / meters are no longer there)
             foreach ($return->items as $item) {
-                // Reverse Inventory
-                if ($item->item_type === 'standard') {
-                    $original = AgentOrderItem::find($item->item_id);
-                    if ($original) {
-                        $inv = DomesticInventory::where('barcode', $original->barcode)->first();
-                        if ($inv) {
-                            $inv->decrement('total_boxes', $item->quantity);
-                        }
-                    }
-                } else {
-                    $original = AgentOrderFabricItem::find($item->item_id);
-                    if ($original) {
-                        $roll = FabricReceiptDetail::find($original->fabric_receipt_detail_id);
-                        if ($roll) {
-                            $roll->decrement('remaining_quantity', $item->quantity);
-                        }
-                    }
-                }
+                $this->reverseReturnLine($item);
             }
 
             // Reverse Party Balance
@@ -5342,66 +5195,45 @@ class AgentOrderController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Restore Item Inventory
+            // 1. Put every dispatched box back exactly where it was picked from, and un-pick the lines
+            //    (the order goes back to "to be picked"; boxes are in stock again - never both).
             $items = DB::table('agent_order_items')->where('agent_order_dispatch_id', $id)->get();
             foreach ($items as $item) {
-                // Find inventory record to restore in the specific rack it came from
-                $inventory = null;
-                if (!empty($item->rack_id)) {
-                    $inventory = \App\Models\DomesticInventory::where('barcode', $item->barcode)
-                        ->where('rack_id', $item->rack_id)
-                        ->first();
+                if ((int) $item->box_qty > 0) {
+                    $this->stock()->unpickLine($item, (int) $item->box_qty);
                 }
 
-                // If not found in assigned rack, search in dispatchable storerooms first
-                if (!$inventory) {
-                    $inventory = \App\Models\DomesticInventory::join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                        ->join('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                        ->where('domestic_inventories.barcode', $item->barcode)
-                        ->where('storerooms.order_dispatch', '!=', 'No')
-                        ->select('domestic_inventories.*')
-                        ->first();
-                }
-
-                // Fallback to any inventory record with this barcode
-                if (!$inventory) {
-                    $inventory = \App\Models\DomesticInventory::where('barcode', $item->barcode)->first();
-                }
-
-                if ($inventory) {
-                    $inventory->increment('total_boxes', $item->box_qty);
-                } else {
-                    // If deleted, recreate it in the item's rack
-                    \App\Models\DomesticInventory::create([
-                        'product_id' => $item->product_id,
-                        'color_id' => $item->color_id,
-                        'size_set_id' => $item->size_set_id,
-                        'rack_id' => $item->rack_id,
-                        'total_boxes' => $item->box_qty,
-                        'quantity' => ($item->box_qty > 0) ? ($item->quantity / $item->box_qty) : 0,
-                        'box_no' => $item->box_no,
-                        'carton_no' => $item->carton_no,
-                        'barcode' => $item->barcode,
-                        'status' => 1
-                    ]);
-                }
-
-                // Reset item to scanned but not dispatched
                 DB::table('agent_order_items')->where('id', $item->id)->update([
                     'dispatched_at' => null,
-                    'agent_order_dispatch_id' => null
+                    'agent_order_dispatch_id' => null,
+                    'scanned_box_qty' => 0,
+                    'scanned_quantity' => 0,
+                    'updated_at' => now(),
                 ]);
+
+                // A line split at dispatch time joins its pending remainder again
+                $twin = DB::table('agent_order_items')
+                    ->where('agent_order_id', $item->agent_order_id)
+                    ->where('id', '!=', $item->id)
+                    ->whereNull('dispatched_at')
+                    ->where('product_id', $item->product_id)->where('color_id', $item->color_id)->where('size_set_id', $item->size_set_id)
+                    ->where('selling_price', $item->selling_price)
+                    ->orderBy('id')->first();
+                if ($twin) {
+                    DB::table('agent_order_items')->where('id', $twin->id)->update([
+                        'box_qty' => $twin->box_qty + $item->box_qty,
+                        'quantity' => $twin->quantity + $item->quantity,
+                        'updated_at' => now(),
+                    ]);
+                    $this->stock()->movePicks($item->id, $twin->id);
+                    DB::table('agent_order_items')->where('id', $item->id)->delete();
+                }
             }
 
             // 2. Restore Fabric Inventory
             $fabricItems = DB::table('agent_order_fabric_items')->where('agent_order_dispatch_id', $id)->get();
             foreach ($fabricItems as $fItem) {
-                $roll = \App\Models\FabricReceiptDetail::find($fItem->fabric_receipt_detail_id);
-                if ($roll) {
-                    // DO NOT INCREMENT HERE! Pending orders should still reserve their stock.
-                    // $roll->increment('remaining_quantity', $fItem->meter);
-                }
-
+                // The meters stay taken from the roll: the order line is pending again and still reserves them
                 DB::table('agent_order_fabric_items')->where('id', $fItem->id)->update([
                     'status' => 'pending',
                     'dispatched_at' => null,
@@ -5470,7 +5302,9 @@ class AgentOrderController extends Controller
             $allocated_query->where('agent_orders.id', '!=', $exclude_order_id);
         }
         
-        $allocated_qty = $allocated_query->sum('agent_order_items.box_qty') ?? 0;
+        // boxes pending orders still have to take (picked boxes have already left the stock)
+        $allocated_qty = $allocated_query->whereNull('agent_order_items.dispatched_at')
+            ->sum(DB::raw('GREATEST(agent_order_items.box_qty - agent_order_items.scanned_box_qty, 0)')) ?? 0;
 
         $inventories = \App\Models\DomesticInventory::select('domestic_inventories.*', 'storerooms.name as storeroom_name', 'storerooms.order_priority')
             ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')

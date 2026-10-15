@@ -113,17 +113,57 @@ class SampleProductController extends Controller
 
         $productIds = $products->pluck('id')->toArray();
         $allocatedBoxes = collect();
+        // Stock of all these products in a few queries (it was several queries per product)
+        $colorStockByProduct = collect();
+        $sizeRowsByProduct = collect();
+        $sizeColorStock = collect();
         if (!empty($productIds)) {
+            // Boxes pending orders still have to take (picked boxes have already left the stock)
             $allocatedBoxes = \DB::table('agent_order_items')
                 ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
                 ->where('agent_orders.status', 'pending')
+                ->whereNull('agent_order_items.dispatched_at')
                 ->whereIn('product_id', $productIds)
-                ->select('product_id', 'color_id', 'size_set_id', \DB::raw('SUM(box_qty) as total_allocated'))
+                ->select('product_id', 'color_id', 'size_set_id', \DB::raw('SUM(GREATEST(box_qty - scanned_box_qty, 0)) as total_allocated'))
                 ->groupBy('product_id', 'color_id', 'size_set_id')
                 ->get();
+
+            $colorStockByProduct = DomesticInventory::whereIn('product_id', $productIds)->where('quantity', '>', 0)
+                ->when($request->size_set_id, fn($q) => $q->where('size_set_id', $request->size_set_id))
+                ->select('product_id', 'color_id', \DB::raw('SUM(total_boxes) as total_boxes'))
+                ->with('color')
+                ->groupBy('product_id', 'color_id')
+                ->orderBy('product_id')->orderBy('color_id')
+                ->get()
+                ->groupBy('product_id');
+
+            $sizeRowsByProduct = DomesticInventory::whereIn('product_id', $productIds)->where('quantity', '>', 0)
+                ->when($request->size_set_id, fn($q) => $q->where('size_set_id', $request->size_set_id))
+                ->select('id', 'product_id', 'size_set_id')
+                ->with('sizeSet')
+                ->orderBy('id')
+                ->get()
+                ->groupBy('product_id');
+
+            $sizeColorStock = DomesticInventory::whereIn('product_id', $productIds)->where('quantity', '>', 0)
+                ->select('product_id', 'size_set_id', 'color_id', DB::raw('SUM(total_boxes) as total_boxes'))
+                ->with('color')
+                ->groupBy('product_id', 'size_set_id', 'color_id')
+                ->orderBy('product_id')->orderBy('size_set_id')->orderBy('color_id')
+                ->get()
+                ->groupBy(fn($s) => $s->product_id . '_' . $s->size_set_id);
         }
 
-        $products = $products->filter(function($product) use ($request, $allocatedBoxes) {
+        // reserved boxes by product|colour (summed) and by product|size set|colour
+        $allocByColor = [];
+        $allocBySize = [];
+        foreach ($allocatedBoxes as $a) {
+            $pc = $a->product_id . '|' . $a->color_id;
+            $allocByColor[$pc][$a->size_set_id] = ($allocByColor[$pc][$a->size_set_id] ?? 0) + $a->total_allocated;
+            $allocBySize[$a->product_id . '|' . $a->size_set_id . '|' . $a->color_id] ??= $a->total_allocated;
+        }
+
+        $products = $products->filter(function($product) use ($request, $allocByColor, $allocBySize, $colorStockByProduct, $sizeRowsByProduct, $sizeColorStock) {
             // Find specific variant for requested size set if provided
             $specificVariant = null;
             if ($request->size_set_id) {
@@ -171,19 +211,15 @@ class SampleProductController extends Controller
 
             $product->display_image = $displayImage;
 
-            $stockQuery = DomesticInventory::where('product_id', $product->id)->where('quantity', '>', 0);
-            if ($request->size_set_id) {
-                $stockQuery->where('size_set_id', $request->size_set_id);
-            }
-
-            $product->color_stock = $stockQuery->select('color_id', \DB::raw('SUM(total_boxes) as total_boxes'))
-                ->with('color')
-                ->groupBy('color_id')
-                ->get()
-                ->map(function($stock) use ($product, $allocatedBoxes) {
-                    $allocs = $allocatedBoxes->where('product_id', $product->id)
-                                             ->where('color_id', $stock->color_id);
-                    $totalAllocated = $allocs->sum('total_allocated');
+            $product->color_stock = $colorStockByProduct->get($product->id, collect())
+                ->map(function($stock) use ($product, $allocByColor, $request) {
+                    $stock = clone $stock;
+                    $stock->makeHidden('product_id');
+                    $allocs = $allocByColor[$product->id . '|' . $stock->color_id] ?? [];
+                    if ($request->size_set_id) {
+                        $allocs = [$allocs[$request->size_set_id] ?? 0]; // only orders of the size set shown
+                    }
+                    $totalAllocated = array_sum($allocs);
                     $stock->total_boxes -= $totalAllocated;
                     return $stock;
                 })
@@ -194,18 +230,10 @@ class SampleProductController extends Controller
                     return true;
                 })->values();
 
-            $sizeQuery = DomesticInventory::where('product_id', $product->id)->where('quantity', '>', 0);
-            if ($request->size_set_id) {
-                $sizeQuery->where('size_set_id', $request->size_set_id);
-            }
-
-            $product->available_sizes = $sizeQuery->with('sizeSet')
-                ->get()
+            $product->available_sizes = $sizeRowsByProduct->get($product->id, collect())
                 ->map(function($inventory) use ($product) {
-                    $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $product->id)
-                        ->where('master_size_measurement_id', $inventory->size_set_id)
-                        ->first();
-                    
+                    $variant = $product->variants->firstWhere('master_size_measurement_id', $inventory->size_set_id);
+
                     return [
                         'id' => $inventory->sizeSet->id,
                         'name' => $inventory->sizeSet->name,
@@ -214,23 +242,15 @@ class SampleProductController extends Controller
                 })
                 ->unique('id')
                 ->values();
-            
+
             $allSizesColorStock = [];
             foreach ($product->available_sizes as $sz) {
-                $szStock = DomesticInventory::where('product_id', $product->id)
-                    ->where('size_set_id', $sz['id'])
-                    ->where('quantity', '>', 0)
-                    ->select('color_id', DB::raw('SUM(total_boxes) as total_boxes'))
-                    ->with('color')
-                    ->groupBy('color_id')
-                    ->get()
-                    ->map(function($s) use ($product, $sz, $allocatedBoxes) {
-                        $allocated = $allocatedBoxes->where('product_id', $product->id)
-                                                    ->where('size_set_id', $sz['id'])
-                                                    ->where('color_id', $s->color_id)
-                                                    ->first();
-                        if ($allocated) {
-                            $s->total_boxes -= $allocated->total_allocated;
+                $szStock = $sizeColorStock->get($product->id . '_' . $sz['id'], collect())
+                    ->map(function($s) use ($product, $sz, $allocBySize) {
+                        $s = clone $s;
+                        $allocated = $allocBySize[$product->id . '|' . $sz['id'] . '|' . $s->color_id] ?? null;
+                        if ($allocated !== null) {
+                            $s->total_boxes -= $allocated;
                         }
                         return $s;
                     })
@@ -262,25 +282,21 @@ class SampleProductController extends Controller
             'items' => 'required|array',
         ]);
 
-        $batch = \App\Models\SampleBatch::create([
-            'batch_no' => 'BAT-' . strtoupper(uniqid())
-        ]);
-
-        foreach ($request->items as $item) {
-            $productId = $item['product_id'];
-            $sizeSetId = $item['size_set_id'];
-            $discountPercent = $item['discount_percent'] ?? 0;
-            
-            $barcode = 'SMP-' . $productId . '-' . $sizeSetId . '-' . time() . rand(10, 99);
-            
-            SampleProduct::create([
-                'sample_batch_id' => $batch->id,
-                'product_id' => $productId,
-                'size_set_id' => $sizeSetId,
-                'barcode' => $barcode,
-                'discount_percent' => $discountPercent
+        DB::transaction(function () use ($request) {
+            $batch = \App\Models\SampleBatch::create([
+                'batch_no' => 'BAT-' . strtoupper(uniqid())
             ]);
-        }
+
+            foreach ($request->items as $item) {
+                SampleProduct::create([
+                    'sample_batch_id' => $batch->id,
+                    'product_id' => $item['product_id'],
+                    'size_set_id' => $item['size_set_id'],
+                    'barcode' => $this->newSampleBarcode($item['product_id'], $item['size_set_id']),
+                    'discount_percent' => $item['discount_percent'] ?? 0
+                ]);
+            }
+        });
 
         return redirect()->route('admin.inventory.sample-product.index')->with('success', 'Sample batch generated successfully');
     }
@@ -292,28 +308,46 @@ class SampleProductController extends Controller
         ]);
 
         $batch = \App\Models\SampleBatch::findOrFail($id);
-        
-        // Simple approach: delete existing products and recreate
-        // In a production app, we might want to sync instead
-        $batch->products()->delete();
 
-        foreach ($request->items as $item) {
-            $productId = $item['product_id'];
-            $sizeSetId = $item['size_set_id'];
-            $discountPercent = $item['discount_percent'] ?? 0;
-            
-            $barcode = 'SMP-' . $productId . '-' . $sizeSetId . '-' . time() . rand(10, 99);
-            
-            SampleProduct::create([
-                'sample_batch_id' => $batch->id,
-                'product_id' => $productId,
-                'size_set_id' => $sizeSetId,
-                'barcode' => $barcode,
-                'discount_percent' => $discountPercent
-            ]);
-        }
+        // Products already in the batch keep their barcode (labels already printed must keep working);
+        // only added products get a new barcode, removed ones are deleted.
+        DB::transaction(function () use ($request, $batch) {
+            $existing = $batch->products()->orderBy('id')->get()->groupBy(fn($p) => $p->product_id . '-' . $p->size_set_id);
+            $kept = [];
+
+            foreach ($request->items as $item) {
+                $key = $item['product_id'] . '-' . $item['size_set_id'];
+                $discountPercent = $item['discount_percent'] ?? 0;
+                $current = $existing->get($key, collect())->first(fn($p) => !in_array($p->id, $kept));
+
+                if ($current) {
+                    $current->update(['discount_percent' => $discountPercent]);
+                    $kept[] = $current->id;
+                } else {
+                    $new = SampleProduct::create([
+                        'sample_batch_id' => $batch->id,
+                        'product_id' => $item['product_id'],
+                        'size_set_id' => $item['size_set_id'],
+                        'barcode' => $this->newSampleBarcode($item['product_id'], $item['size_set_id']),
+                        'discount_percent' => $discountPercent
+                    ]);
+                    $kept[] = $new->id;
+                }
+            }
+
+            $batch->products()->whereNotIn('id', $kept)->delete();
+        });
 
         return redirect()->route('admin.inventory.sample-product.index')->with('success', 'Sample batch updated successfully');
+    }
+
+    /** A sample barcode that is not used yet. */
+    private function newSampleBarcode($productId, $sizeSetId): string
+    {
+        do {
+            $barcode = 'SMP-' . $productId . '-' . $sizeSetId . '-' . time() . rand(10, 99);
+        } while (SampleProduct::where('barcode', $barcode)->exists());
+        return $barcode;
     }
 
     public function generatePdfFromBatch(Request $request, $id)

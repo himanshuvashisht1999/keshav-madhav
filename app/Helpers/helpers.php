@@ -778,6 +778,20 @@ if (!function_exists('send_whatsapp_attachment')) {
         return $ret;
     }
 }
+if (!function_exists('whatsapp_pdf_path')) {
+    /**
+     * Where a PDF is saved before it is sent on WhatsApp: private storage (the sender reads the file itself,
+     * so it must not sit in the public folder where anyone could open it by its name).
+     */
+    function whatsapp_pdf_path($fileName)
+    {
+        $dir = storage_path('app/whatsapp_pdfs');
+        if (!file_exists($dir)) {
+            mkdir($dir, 0775, true);
+        }
+        return $dir . '/' . basename($fileName);
+    }
+}
 if (!function_exists('reopen_production_entry')) {
     /**
      * Pieces were given back to a unit's entry (an onward move was deleted): it is no longer complete,

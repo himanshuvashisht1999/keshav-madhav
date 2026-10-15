@@ -152,6 +152,7 @@ class SalesOrderController extends Controller
         $request->validate([
             'master_customer_id' => 'required|exists:master_customers,id',
             'variations' => 'required|array|min:1',
+            'variations.*.qty' => 'required|integer|min:1',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
         ]);
 
@@ -260,36 +261,25 @@ class SalesOrderController extends Controller
             foreach ($items_to_create as $item) {
                 $item['agent_order_id'] = $order->id;
                 $item['agent_order_dispatch_id'] = $dispatch->id;
-                AgentOrderItem::create($item);
+                $line = AgentOrderItem::create($item);
 
-                // Find inventory to deduct
-                $inventories = DomesticInventory::where('barcode', $item['barcode'])
-                    ->where('total_boxes', '>', 0)
-                    ->get();
-
-                $remainingToDeduct = $item['box_qty'];
-                foreach ($inventories as $inv) {
-                    if ($remainingToDeduct <= 0)
-                        break;
-                    $deduct = min($inv->total_boxes, $remainingToDeduct);
-
-                    // Log to History
-                    \App\Models\DomesticInventoryHistory::create([
-                        'domestic_inventory_id' => $inv->id,
-                        'user_id' => Auth::id(),
-                        'type' => 'stock_consume',
-                        'old_product_id' => $inv->product_id,
-                        'old_color_id' => $inv->color_id,
-                        'old_size_set_id' => $inv->size_set_id,
-
-                        'old_rack_id' => $inv->warehouse_rack_id,
-                        'box_quantity' => $deduct,
-                    ]);
-
-                    $inv->decrement('total_boxes', $deduct);
-                    if ($inv->total_boxes <= 0)
-                        $inv->delete();
-                    $remainingToDeduct -= $deduct;
+                // Every box must really be in stock (storerooms that take orders); where each one came from is remembered
+                $stock = app(\App\Services\Admin\InventoryStockService::class);
+                $firstPick = $stock->picksEnabled() ? (int) DB::table('agent_order_item_picks')->max('id') : 0;
+                [$taken, , $lastRow] = $stock->pickForLine($line, (int) $item['box_qty'], 'sale');
+                if ($taken < (int) $item['box_qty']) {
+                    throw new \Exception("Only {$taken} box(es) of {$item['design_number']} / {$item['color_name']} / {$item['size_set_name']} are in stock in storerooms that take orders, {$item['box_qty']} needed.");
+                }
+                if ($lastRow) {
+                    $line->update(['rack_id' => $lastRow->rack_id]);
+                }
+                if ($stock->picksEnabled()) {
+                    foreach (DB::table('agent_order_item_picks')->where('agent_order_item_id', $line->id)->where('id', '>', $firstPick)->get() as $pick) {
+                        $row = DomesticInventory::find($pick->domestic_inventory_id);
+                        if ($row) {
+                            $stock->history('stock_consume', $row, (int) $pick->boxes, ['remarks' => "Direct sale order #{$order->id}"]);
+                        }
+                    }
                 }
             }
 

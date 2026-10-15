@@ -101,6 +101,7 @@ class InventoryController extends Controller
             ->leftJoin('master_product_fittings as fittings', 'products.master_product_fitting_id', '=', 'fittings.id')
             ->leftJoin('master_design_patterns as patterns', 'products.master_pattern_id', '=', 'patterns.id')
             ->leftJoin('production_goods_variants as variants', function ($join) {
+                \App\Services\Admin\InventoryStockService::skipDuplicateVariants($join);
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
             })
@@ -108,18 +109,18 @@ class InventoryController extends Controller
                 SELECT aoi.product_id, 
                        aoi.size_set_id, 
                        aoi.color_id,
-                       SUM(aoi.box_qty) as total_qty
+                       SUM(GREATEST(aoi.box_qty - aoi.scanned_box_qty, 0)) as total_qty
                 FROM agent_order_items aoi
                 JOIN agent_orders ao ON aoi.agent_order_id = ao.id
-                WHERE ao.status != 'dispatched' $colorFilter
+                WHERE ao.status != 'dispatched' AND aoi.dispatched_at IS NULL $colorFilter
                 GROUP BY aoi.product_id, aoi.size_set_id, aoi.color_id
             ) as order_totals" : "(
                 SELECT aoi.product_id, 
                        aoi.size_set_id, 
-                       SUM(aoi.box_qty) as total_qty
+                       SUM(GREATEST(aoi.box_qty - aoi.scanned_box_qty, 0)) as total_qty
                 FROM agent_order_items aoi
                 JOIN agent_orders ao ON aoi.agent_order_id = ao.id
-                WHERE ao.status != 'dispatched' $colorFilter
+                WHERE ao.status != 'dispatched' AND aoi.dispatched_at IS NULL $colorFilter
                 GROUP BY aoi.product_id, aoi.size_set_id
             ) as order_totals"), function ($join) use ($reportType) {
                 $join->on('domestic_inventories.product_id', '=', 'order_totals.product_id')
@@ -242,6 +243,8 @@ class InventoryController extends Controller
             }
 
             $results = $query->paginate($perPage);
+            // the row's names come from these relations: load them for the whole page at once
+            $results->getCollection()->loadMissing(['product.series', 'product.fitting', 'product.pattern', 'sizeSet', 'color']);
 
             $html = '';
             $start = ($results->currentPage() - 1) * $perPage + 1;
@@ -331,6 +334,7 @@ class InventoryController extends Controller
             ->leftJoin('master_product_fittings as fittings', 'products.master_product_fitting_id', '=', 'fittings.id')
             ->leftJoin('master_design_patterns as patterns', 'products.master_pattern_id', '=', 'patterns.id')
             ->leftJoin('production_goods_variants as variants', function ($join) {
+                \App\Services\Admin\InventoryStockService::skipDuplicateVariants($join);
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
             })
@@ -338,18 +342,18 @@ class InventoryController extends Controller
                 SELECT aoi.design_number COLLATE utf8mb4_unicode_ci as design_number, 
                        aoi.size_set_id, 
                        aoi.color_id,
-                       SUM(aoi.box_qty) as total_qty
+                       SUM(GREATEST(aoi.box_qty - aoi.scanned_box_qty, 0)) as total_qty
                 FROM agent_order_items aoi
                 JOIN agent_orders ao ON aoi.agent_order_id = ao.id
-                WHERE ao.status != "dispatched"
+                WHERE ao.status != "dispatched" AND aoi.dispatched_at IS NULL
                 GROUP BY aoi.design_number, aoi.size_set_id, aoi.color_id
             ) as order_totals' : '(
                 SELECT aoi.design_number COLLATE utf8mb4_unicode_ci as design_number, 
                        aoi.size_set_id, 
-                       SUM(aoi.box_qty) as total_qty
+                       SUM(GREATEST(aoi.box_qty - aoi.scanned_box_qty, 0)) as total_qty
                 FROM agent_order_items aoi
                 JOIN agent_orders ao ON aoi.agent_order_id = ao.id
-                WHERE ao.status != "dispatched"
+                WHERE ao.status != "dispatched" AND aoi.dispatched_at IS NULL
                 GROUP BY aoi.design_number, aoi.size_set_id
             ) as order_totals'), function ($join) use ($reportType) {
                 $join->on('products.design_number', '=', 'order_totals.design_number')
@@ -476,6 +480,7 @@ class InventoryController extends Controller
             ->leftJoin('master_product_fittings as fittings', 'products.master_product_fitting_id', '=', 'fittings.id')
             ->leftJoin('master_design_patterns as patterns', 'products.master_pattern_id', '=', 'patterns.id')
             ->leftJoin('production_goods_variants as variants', function ($join) {
+                \App\Services\Admin\InventoryStockService::skipDuplicateVariants($join);
                 $join->on('domestic_inventories.product_id', '=', 'variants.production_goods_id')
                     ->on('domestic_inventories.size_set_id', '=', 'variants.master_size_measurement_id');
             })
@@ -484,10 +489,10 @@ class InventoryController extends Controller
                        aoi.size_set_id, 
                        aoi.color_id,
                        aoi.rack_id,
-                       SUM(aoi.box_qty) as color_total_order
+                       SUM(GREATEST(aoi.box_qty - aoi.scanned_box_qty, 0)) as color_total_order
                 FROM agent_order_items aoi
                 JOIN agent_orders ao ON aoi.agent_order_id = ao.id
-                WHERE ao.status != "dispatched"
+                WHERE ao.status != "dispatched" AND aoi.dispatched_at IS NULL
                 GROUP BY aoi.design_number, aoi.size_set_id, aoi.color_id, aoi.rack_id
             ) as color_order_totals'), function ($join) {
                 $join->on('products.design_number', '=', 'color_order_totals.design_number')
@@ -532,7 +537,8 @@ class InventoryController extends Controller
                 ->where('agent_orders.status', '!=', 'dispatched')
                 ->where('agent_order_items.design_number', $group_info->design_number)
                 ->where('agent_order_items.size_set_id', $request->size_set_id)
-                ->sum('agent_order_items.box_qty') ?? 0;
+                ->whereNull('agent_order_items.dispatched_at')
+                ->sum(DB::raw('GREATEST(agent_order_items.box_qty - agent_order_items.scanned_box_qty, 0)')) ?? 0;
         }
 
         return view('admin.inventory.show', compact('items', 'group_info', 'total_order'));
@@ -790,22 +796,18 @@ class InventoryController extends Controller
                 }
             }
 
-            // Deduct source boxes
+            // Deduct source boxes (rows are locked and kept even at 0 boxes)
+            $stock = app(\App\Services\Admin\InventoryStockService::class);
             foreach ($consumedSources as $sourceId => $data) {
-                $source = $data['model'];
+                $source = $data['model'] ? $stock->lockRow($data['model']->id) : null;
                 if ($source) {
-                    $boxesToDeduct = $data['boxes_to_deduct'];
-                    
+                    $boxesToDeduct = (int) $data['boxes_to_deduct'];
+
                     if ($source->total_boxes < $boxesToDeduct) {
                         throw new \Exception("Insufficient stock in source for Design: " . $source->barcode . " (Needed: $boxesToDeduct, Available: {$source->total_boxes})");
                     }
-                    
-                    $source->total_boxes -= $boxesToDeduct;
-                    if ($source->total_boxes <= 0) {
-                        $source->delete();
-                    } else {
-                        $source->save();
-                    }
+
+                    $stock->take($source, $boxesToDeduct);
                 }
             }
 
@@ -822,30 +824,9 @@ class InventoryController extends Controller
                 // Consistent Barcode Format: D{id}S{id}C{id}
                 $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'];
 
-                $inventory = DomesticInventory::where('barcode', $barcode)
-                    ->where('rack_id', $item['rack_id'] ?? null)
-                    ->where('order_main_id', 0) // Unassigned stock
-                    ->first();
-
-                if ($inventory) {
-                    $inventory->total_boxes += $item['total_boxes'];
-                    $inventory->save();
-                } else {
-                    $inventory = DomesticInventory::create([
-                        'product_id' => $item['product_id'],
-                        'color_id' => $item['color_id'],
-                        'size_set_id' => $item['size_set_id'],
-
-                        'quantity' => $item['pieces_per_box'],
-                        'total_boxes' => $item['total_boxes'],
-                        'barcode' => $barcode,
-                        'qrcode' => $barcode,
-                        'packing_main_id' => $packingMain->id,
-                        'rack_id' => $item['rack_id'] ?? null,
-                        'order_main_id' => 0,
-                        'status' => 1,
-                    ]);
-                }
+                // Boxes join the row of this item in this rack only when the pieces per box are the same
+                $inventory = $stock->rowAt($item['product_id'], $item['color_id'], $item['size_set_id'], $item['rack_id'] ?? null, $item['pieces_per_box'], ['packing_main_id' => $packingMain->id]);
+                $stock->add($inventory, (int) $item['total_boxes']);
 
                 // Log History for stock addition (creation, sample, or stock_consume)
                 \App\Models\DomesticInventoryHistory::create([
@@ -988,105 +969,42 @@ class InventoryController extends Controller
             'change_quantity' => 'required|integer|min:1'
         ]);
 
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-
-            $query = DomesticInventory::where('product_id', $request->old_product_id)
+            $stock = app(\App\Services\Admin\InventoryStockService::class);
+            $inventoryItems = DomesticInventory::where('product_id', $request->old_product_id)
                 ->where('size_set_id', $request->old_size_set_id)
                 ->where('color_id', $request->old_color_id)
-                ->where('rack_id', $request->old_rack_id);
+                ->where('rack_id', $request->old_rack_id)
+                ->where('total_boxes', '>', 0)
+                ->orderBy('id')->lockForUpdate()->get();
 
-
-
-            // Exclude items already assigned to active orders via order_main_id (NULL or 0 means unassigned)
-            // $query->where(function ($q) {
-            //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            // });
-
-            // Check if any loose inventory exists for this combination
-            $inventoryItems = $query->get();
-            if ($inventoryItems->isEmpty()) {
+            $total_available = $inventoryItems->sum('total_boxes');
+            if ($inventoryItems->isEmpty() || $total_available < $request->change_quantity) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'No available inventory found matching these attributes.'
+                    'message' => $inventoryItems->isEmpty() ? 'No available inventory found matching these attributes.' : 'Only ' . $total_available . ' boxes available to update.'
                 ]);
             }
 
-            $total_available = $inventoryItems->sum('total_boxes');
-            if ($total_available < $request->change_quantity) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Only ' . $total_available . ' boxes available to update.'
-                ]);
+            $same = $request->old_product_id == $request->new_product_id && $request->old_size_set_id == $request->new_size_set_id
+                && $request->old_color_id == $request->new_color_id && $request->old_rack_id == $request->new_rack_id;
+            if ($same) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'Nothing to change: the new values are the same as the old ones.']);
             }
 
             $to_change = (int) $request->change_quantity;
-
-
-            $new_rack_id = $request->new_rack_id;
-
-            // Consistent Barcode Format: D{id}S{id}C{id}
-            $new_barcode = 'D' . $request->new_product_id . 'S' . $request->new_size_set_id . 'C' . $request->new_color_id;            // Perform Update with Splitting Logic
             foreach ($inventoryItems as $item) {
                 if ($to_change <= 0)
                     break;
+                $take = min((int) $item->total_boxes, $to_change);
 
-                $take = min($item->total_boxes, $to_change);
-                $old_barcode = $item->barcode;
-
-                // Optimization: If nothing is changing (attributes AND rack are same), 
-                // and we are taking the WHOLE row, just update this row.
-                $isSameAttributes = (
-                    $item->product_id == $request->new_product_id &&
-                    $item->size_set_id == $request->new_size_set_id &&
-                    $item->color_id == $request->new_color_id &&
-                    $item->rack_id == $new_rack_id
-                );
-
-                if ($isSameAttributes && $take == $item->total_boxes) {
-                    $item->barcode = $new_barcode;
-                    $item->qrcode = $new_barcode;
-                    $item->save();
-                    $to_change -= $take;
-                    continue;
-                }
-
-                // 1. Update/Create NEW DomesticInventory row
-                $new_item = DomesticInventory::where('product_id', $request->new_product_id)
-                    ->where('size_set_id', $request->new_size_set_id)
-                    ->where('color_id', $request->new_color_id)
-                    ->where('rack_id', $new_rack_id)
-                    ->where('id', '!=', $item->id) // CRITICAL: Don't find yourself!
-                    // ->where(function ($q) {
-                    //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-                    // })
-                    ->first();
-
-                if ($new_item) {
-                    $new_item->total_boxes += $take;
-                    $new_item->save();
-                } else {
-                    // Replication
-                    $new_item = $item->replicate();
-                    $new_item->product_id = $request->new_product_id;
-                    $new_item->size_set_id = $request->new_size_set_id;
-                    $new_item->color_id = $request->new_color_id;
-
-                    $new_item->rack_id = $new_rack_id;
-                    $new_item->total_boxes = $take;
-                    $new_item->barcode = $new_barcode;
-                    $new_item->qrcode = $new_barcode;
-                    $new_item->save();
-                }
-
-                // 2. Decrement or Delete OLD DomesticInventory row
-                $item->total_boxes -= $take;
-                if ($item->total_boxes <= 0) {
-                    $item->delete();
-                } else {
-                    $item->save();
-                }
-
+                // Boxes go to the new item's row in the new rack with the SAME pieces per box; the old row stays (may become 0)
+                $target = $stock->rowAt($request->new_product_id, $request->new_color_id, $request->new_size_set_id, $request->new_rack_id, $item->quantity);
+                $stock->take($item, $take);
+                $stock->add($target, $take);
                 $to_change -= $take;
             }
 
@@ -1102,7 +1020,7 @@ class InventoryController extends Controller
                 'new_size_set_id' => $request->new_size_set_id,
                 'new_color_id' => $request->new_color_id,
 
-                'new_rack_id' => $new_rack_id,
+                'new_rack_id' => $request->new_rack_id,
                 'box_quantity' => $request->change_quantity,
                 'type' => 'attribute_change'
             ]);
@@ -1214,45 +1132,39 @@ class InventoryController extends Controller
             'delete_quantity' => 'required|integer|min:1'
         ]);
 
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-
-            $query = DomesticInventory::where('product_id', $request->modal_product_id)
+            $stock = app(\App\Services\Admin\InventoryStockService::class);
+            $inventoryItems = DomesticInventory::where('product_id', $request->modal_product_id)
                 ->where('size_set_id', $request->modal_size_set_id)
                 ->where('color_id', $request->modal_color_id)
-                ->where('rack_id', $request->modal_old_rack_id);
-
-
-
-            // Exclude items already assigned to orders
-            // $query->where(function ($q) {
-            //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            // });
-
-            $inventoryItems = $query->get();
+                ->where('rack_id', $request->modal_old_rack_id)
+                ->where('total_boxes', '>', 0)
+                ->orderBy('id')->lockForUpdate()->get();
 
             $total_available = $inventoryItems->sum('total_boxes');
             if ($total_available < $request->delete_quantity) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Only ' . $total_available . ' boxes available to delete.'
                 ]);
             }
 
+            log_deletion('Inventory Boxes', $inventoryItems->first()->id ?? 0, [
+                'rows' => $inventoryItems->toArray(),
+                'deleted_boxes_qty' => (int) $request->delete_quantity,
+                'rack_id' => $request->modal_old_rack_id,
+            ]);
+
             $to_delete = (int) $request->delete_quantity;
             foreach ($inventoryItems as $item) {
                 if ($to_delete <= 0)
                     break;
 
-                $take = min($item->total_boxes, $to_delete);
-
-                $item->total_boxes -= $take;
-                if ($item->total_boxes <= 0) {
-                    $item->delete();
-                } else {
-                    $item->save();
-                }
-
+                $take = min((int) $item->total_boxes, $to_delete);
+                $stock->take($item, $take); // the row stays, possibly with 0 boxes
+                $stock->history('deletion', $item, $take);
                 $to_delete -= $take;
             }
 
@@ -1576,17 +1488,27 @@ class InventoryController extends Controller
 
     public function purchaseHistoryUpdate(Request $request, $id)
     {
+        $purchase = \App\Models\DomesticInventoryPurchase::findOrFail($id);
+
+        $request->validate([
+            'bill_no' => 'nullable|string|max:100',
+            'purchase_date' => 'nullable|date',
+            'sub_total' => 'required|numeric|min:0',
+            'total_amount' => 'required|numeric|min:0',
+            'products' => 'required|array|min:1',
+            'products.*.product_id' => 'required',
+            'products.*.color_id' => 'required',
+            'products.*.size_set_id' => 'required',
+            'products.*.rack_id' => 'required|exists:racks,id',
+            'products.*.total_boxes' => 'required|integer|min:1',
+            'products.*.pieces_per_box' => 'required|integer|min:1',
+            'products.*.mrp' => 'nullable|numeric|min:0',
+            'products.*.purchase_rate' => 'nullable|numeric|min:0',
+        ]);
+
         DB::beginTransaction();
         try {
-            $purchase = \App\Models\DomesticInventoryPurchase::findOrFail($id);
-
-            $request->validate([
-                'bill_no' => 'nullable|string|max:100',
-                'purchase_date' => 'nullable|date',
-                'sub_total' => 'required|numeric|min:0',
-                'total_amount' => 'required|numeric|min:0',
-                'products' => 'required|array|min:1',
-            ]);
+            $stock = app(\App\Services\Admin\InventoryStockService::class);
 
             // Adjust Balance (Reverse Old)
             if ($purchase->vendor_id) {
@@ -1595,71 +1517,62 @@ class InventoryController extends Controller
                 \App\Models\MasterCustomer::find($purchase->customer_id)->decrement('balance', $purchase->total_amount);
             }
 
-            // 1. Revert Old Stock
-            $oldItems = \App\Models\DomesticInventoryHistory::where('purchase_id', $id)->get();
-            foreach ($oldItems as $oldItem) {
-                $barcode = 'D' . $oldItem->new_product_id . 'S' . $oldItem->new_size_set_id . 'C' . $oldItem->new_color_id;
-
-                $inventory = \App\Models\DomesticInventory::where('barcode', $barcode)
-                    ->where('rack_id', $oldItem->new_rack_id)
-                    ->where('order_main_id', 0)
-                    ->first();
-
-                if ($inventory) {
-                    $inventory->total_boxes -= $oldItem->box_quantity;
-                    if ($inventory->total_boxes <= 0) {
-                        $inventory->delete();
-                    } else {
-                        $inventory->save();
-                    }
+            // 1. Stock changes only by the DIFFERENCE between the old and the new lines
+            //    (an unchanged line does not touch stock, so boxes already sold are not brought back)
+            $oldItems = \App\Models\DomesticInventoryHistory::where('purchase_id', $id)->whereNotNull('new_product_id')->get();
+            $createdAt = $oldItems->min('created_at') ?? $purchase->created_at;
+            $delta = [];
+            $key = fn($p, $c, $s, $r, $pcs) => "{$p}|{$c}|{$s}|" . ((int) $r) . "|" . ((int) $pcs);
+            foreach ($oldItems as $old) {
+                $k = $key($old->new_product_id, $old->new_color_id, $old->new_size_set_id, $old->new_rack_id, $old->pieces_per_box);
+                $delta[$k] ??= ['p' => $old->new_product_id, 'c' => $old->new_color_id, 's' => $old->new_size_set_id, 'r' => $old->new_rack_id, 'pcs' => (int) $old->pieces_per_box, 'boxes' => 0];
+                $delta[$k]['boxes'] -= (int) $old->box_quantity;
+            }
+            foreach ($request->products as $item) {
+                $k = $key($item['product_id'], $item['color_id'], $item['size_set_id'], $item['rack_id'], $item['pieces_per_box']);
+                $delta[$k] ??= ['p' => $item['product_id'], 'c' => $item['color_id'], 's' => $item['size_set_id'], 'r' => $item['rack_id'], 'pcs' => (int) $item['pieces_per_box'], 'boxes' => 0];
+                $delta[$k]['boxes'] += (int) $item['total_boxes'];
+            }
+            foreach ($delta as $d) {
+                if ($d['boxes'] < 0) {
+                    $this->takePurchasedBoxes($stock, $d['p'], $d['c'], $d['s'], $d['r'], $d['pcs'], -$d['boxes']);
                 }
-                $oldItem->delete();
+            }
+            foreach ($delta as $d) {
+                if ($d['boxes'] > 0) {
+                    $stock->add($stock->rowAt($d['p'], $d['c'], $d['s'], $d['r'], $d['pcs']), $d['boxes']);
+                }
             }
 
-            // 2. Process New Items
+            // 2. Purchase lines (kept as 'creation' lines of the same entry, so Inbound History still shows them)
+            \App\Models\DomesticInventoryHistory::where('purchase_id', $id)->whereNotNull('new_product_id')->delete();
+            $vendorId = $request->source_type == 'vendor' ? $request->vendor_id : null;
+            $customerId = $request->source_type == 'customer' ? $request->customer_id : null;
             foreach ($request->products as $item) {
-                // Determine source fields
-                $vendorId = $request->source_type == 'vendor' ? $request->vendor_id : null;
-                $customerId = $request->source_type == 'customer' ? $request->customer_id : null;
-
-                // Create/Update Inventory
-                $barcode = 'D' . $item['product_id'] . 'S' . $item['size_set_id'] . 'C' . $item['color_id'];
-
-                $inventory = \App\Models\DomesticInventory::updateOrCreate([
-                    'barcode' => $barcode,
-                    'rack_id' => $item['rack_id'],
-                    // 'order_main_id' => 0, // Master stock
-                ], [
-                    'product_id' => $item['product_id'],
-                    'size_set_id' => $item['size_set_id'],
-                    'color_id' => $item['color_id'],
-
-                    'quantity' => $item['pieces_per_box'], // Usually quantity per box
-                ]);
-
-                $inventory->total_boxes += $item['total_boxes'];
-                $inventory->save();
-
-                // Create History Record
-                \App\Models\DomesticInventoryHistory::create([
+                $line = new \App\Models\DomesticInventoryHistory([
+                    'user_id' => $purchase->user_id ?: auth()->id(),
                     'purchase_id' => $purchase->id,
+                    'vendor_id' => $vendorId,
+                    'customer_id' => $customerId,
                     'new_product_id' => $item['product_id'],
                     'new_size_set_id' => $item['size_set_id'],
                     'new_color_id' => $item['color_id'],
-
-                    'new_warehouse_id' => $item['warehouse_id'],
+                    'new_warehouse_id' => $item['warehouse_id'] ?? \App\Models\Rack::where('id', $item['rack_id'])->value('storeroom_id'),
                     'new_rack_id' => $item['rack_id'],
                     'box_quantity' => $item['total_boxes'],
                     'pieces_per_box' => $item['pieces_per_box'],
-                    'mrp' => $item['mrp'],
-                    'purchase_rate' => $item['purchase_rate'],
+                    'mrp' => $item['mrp'] ?? 0,
+                    'purchase_rate' => $item['purchase_rate'] ?? 0,
+                    'type' => 'creation',
                 ]);
+                $line->created_at = $createdAt;
+                $line->save();
             }
 
             // 3. Update Purchase Header
             $purchase->update([
-                'vendor_id' => $request->source_type == 'vendor' ? $request->vendor_id : null,
-                'customer_id' => $request->source_type == 'customer' ? $request->customer_id : null,
+                'vendor_id' => $vendorId,
+                'customer_id' => $customerId,
                 'production_po_id' => $request->production_po_id,
                 'bill_no' => $request->bill_no,
                 'purchase_date' => $request->purchase_date ?? now()->toDateString(),
@@ -1688,33 +1601,51 @@ class InventoryController extends Controller
         }
     }
 
+    /**
+     * Take boxes that a purchase brought in back out of their rack (purchase reduced / deleted).
+     * Refused when they are no longer there (sold, moved or disposed).
+     */
+    private function takePurchasedBoxes($stock, $productId, $colorId, $sizeSetId, $rackId, $pcs, int $boxes): void
+    {
+        $rows = DomesticInventory::where('product_id', $productId)->where('color_id', $colorId)->where('size_set_id', $sizeSetId)
+            ->when($rackId, fn($q) => $q->where('rack_id', $rackId), fn($q) => $q->whereNull('rack_id'))
+            ->orderByRaw('CASE WHEN quantity = ? THEN 0 ELSE 1 END', [(int) $pcs])->orderBy('id')
+            ->lockForUpdate()->get();
+        $have = (int) $rows->sum('total_boxes');
+        if ($have < $boxes) {
+            $item = \App\Models\ProductionGoods::find($productId);
+            $rack = \App\Models\Rack::find($rackId);
+            throw new \Exception(($item->design_number ?? "Product #{$productId}") . ": {$boxes} box(es) of this purchase should be in rack " . ($rack->name ?? '-') . ", but only {$have} are there (sold, moved or disposed). Bring them back to that rack first.");
+        }
+        foreach ($rows as $row) {
+            if ($boxes <= 0) break;
+            $n = min((int) $row->total_boxes, $boxes);
+            $stock->take($row, $n);
+            $boxes -= $n;
+        }
+    }
+
     public function purchaseHistoryDestroy($id)
     {
         DB::beginTransaction();
         try {
+            $stock = app(\App\Services\Admin\InventoryStockService::class);
             $purchase = \App\Models\DomesticInventoryPurchase::findOrFail($id);
             $items = \App\Models\DomesticInventoryHistory::where('purchase_id', $id)->get();
 
+            log_deletion('Inventory Purchase', $id, [
+                'purchase' => $purchase->toArray(),
+                'lines' => $items->toArray(),
+            ]);
+
             foreach ($items as $item) {
-                // Reconstruct barcode (must match the logic in store)
-                $barcode = 'D' . $item->new_product_id . 'S' . $item->new_size_set_id . 'C' . $item->new_color_id;
-
-                $inventory = \App\Models\DomesticInventory::where('barcode', $barcode)
-                    ->where('rack_id', $item->new_rack_id)
-                    ->where('order_main_id', 0)
-                    ->first();
-
-                if ($inventory) {
-                    $inventory->total_boxes -= $item->box_quantity;
-                    if ($inventory->total_boxes <= 0) {
-                        $inventory->delete();
-                    } else {
-                        $inventory->save();
-                    }
+                if ($item->new_product_id && (int) $item->box_quantity > 0) {
+                    // the purchased boxes must still be in their rack (refused if sold / moved / disposed)
+                    $this->takePurchasedBoxes($stock, $item->new_product_id, $item->new_color_id, $item->new_size_set_id, $item->new_rack_id, $item->pieces_per_box, (int) $item->box_quantity);
                 }
                 $item->delete();
             }
-            
+
             // Adjust Party Balance (Reverse)
             if ($purchase->vendor_id) {
                 \App\Models\Vendor::find($purchase->vendor_id)->decrement('balance', $purchase->total_amount);

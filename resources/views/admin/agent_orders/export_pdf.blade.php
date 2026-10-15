@@ -172,8 +172,8 @@
                     $rowQty = $o->total_qty;
                     $rowAmt = $o->grand_total;
                     if ($o->status === 'partially_dispatched') {
-                        $base = ($o->total_amount > 0) ? $o->total_amount : (($o->dispatched_amount + $o->pending_amount) ?: 1);
-                        $dispAmt = ($base > 0) ? ($o->grand_total * ($o->dispatched_amount / $base)) : 0;
+                        $base = ($o->total_amount > 0) ? $o->total_amount : (($o->dispatched_subtotal + $o->pending_subtotal) ?: 1);
+                        $dispAmt = ($base > 0) ? ($o->grand_total * ($o->dispatched_subtotal / $base)) : 0;
                         $pendAmt = $o->grand_total - $dispAmt;
                         if ($isDispFilter) {
                             $rowQty = $o->dispatched_qty;

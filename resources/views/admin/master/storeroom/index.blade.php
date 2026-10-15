@@ -32,6 +32,7 @@
                         <th style="width: 50px;">#</th>
                         <th>Name</th>
                         <th>Description</th>
+                        <th style="width: 150px;" class="text-center">Order More Than Stock</th>
                         <th style="width: 100px;" class="text-center">Status</th>
                         <th style="width: 140px;" class="text-center">Action</th>
                     </tr>
@@ -76,6 +77,14 @@
                         </select>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label font-weight-bold">Order More Than Stock</label>
+                        <select name="order_more_than_stock" id="order_more_than_stock" class="form-control erp-filter-select">
+                            <option value="No" selected>No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                        <small class="text-muted">Yes = items kept here can be ordered beyond the boxes in stock (e.g. ADVANCE SAMPLE).</small>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label font-weight-bold">Description</label>
                         <textarea name="description" class="form-control erp-filter-input" rows="3"></textarea>
                     </div>
@@ -100,6 +109,7 @@
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'name', name: 'name'},
                 {data: 'description', name: 'description'},
+                {data: 'order_more_than_stock', name: 'order_more_than_stock', className: 'text-center'},
                 {data: 'status', name: 'status', className: 'text-center'},
                 {data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center'},
             ]

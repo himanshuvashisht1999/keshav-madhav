@@ -133,7 +133,11 @@ class PackingCartonService {
             'orderMain.customer',
             'orderMain.OrderProductSets.colors',
             'orderMain.OrderProductSets.sizeMeasurement'
-        ])->where('id',$request->id)->first()->toArray();
+        ])->where('id',$request->id)->first();
+        if (!$cartons_session) {
+            abort(404);
+        }
+        $cartons_session = $cartons_session->toArray();
         if($cartons_session){
             $cartons_session_data = [
                 'id' =>  $cartons_session['id'],
@@ -202,7 +206,7 @@ class PackingCartonService {
                 'id'                    => $val['id'],
                 'sku'                   => $val['sku'],
                 'master_customer_id'    => $val['master_customer_id'],
-                'corporate_order_file'  => $val['corporate_order_file'],
+                'corporate_order_file'  => $val['corporate_order_file'] ?? null,
                 'created_at'            => $val['created_at'],
             ];
         }
@@ -237,7 +241,7 @@ class PackingCartonService {
                 'remain_set_quantity'   => $val['remain_set_quantity'],
                 'remain_total_quantity' => $val['remain_total_quantity'],
                 'created_at'            => $val['created_at'],
-                'slip_file'             => $val['corporate_order_file'],
+                'slip_file'             => $val['corporate_order_file'] ?? null,
                 'master_customer_id'    => $val['order_main']['master_customer_id'] ?? '',
                 'order_id'              => $val['order_main']['id'] ?? '',
                 'order_name'            => $val['order_main']['sku'] ?? '',
@@ -274,7 +278,7 @@ class PackingCartonService {
                 'remain_set_quantity'   => $val['remain_set_quantity'],
                 'remain_total_quantity' => $val['remain_total_quantity'],
                 'created_at'            => $val['created_at'],
-                'slip_file'             => $val['corporate_order_file'],
+                'slip_file'             => $val['corporate_order_file'] ?? null,
                 'master_customer_id'    => $val['order_main']['master_customer_id'] ?? '',
                 'order_id'              => $val['order_main']['id'] ?? '',
                 'order_name'            => $val['order_main']['sku'] ?? '',

@@ -20,6 +20,12 @@
                 </div>
 
                 <div class="form-group mb-3">
+                    <label class="small font-weight-bold text-muted">Phone Number</label>
+                    <input type="tel" name="phone" class="form-control rounded-lg" value="{{ old('phone', $shop->phone) }}"
+                        placeholder="e.g. 9876543210" required>
+                </div>
+
+                <div class="form-group mb-3">
                     <label class="small font-weight-bold text-muted">Contact Person (Optional)</label>
                     <input type="text" name="contact_person" class="form-control rounded-lg" value="{{ old('contact_person', $shop->contact_person) }}" placeholder="e.g. John Doe">
                 </div>

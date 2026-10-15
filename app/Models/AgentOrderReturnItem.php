@@ -13,6 +13,8 @@ class AgentOrderReturnItem extends Model
         'agent_order_return_id',
         'item_type',
         'item_id',
+        'domestic_inventory_id',
+        'rack_id',
         'quantity',
         'price',
         'subtotal',

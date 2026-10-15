@@ -16,9 +16,68 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\FairProduct;
 use App\Models\ProductionGoods;
 use App\Models\MasterColor;
+use App\Services\Admin\InventoryStockService;
+use App\Services\SalesAgent\AgentOrderException;
+use App\Services\SalesAgent\AgentOrderRules;
 
 class OrderController extends Controller
 {
+    private function rules(): AgentOrderRules
+    {
+        return app(AgentOrderRules::class);
+    }
+
+    /** Orders this agent may see: their own, or for a master agent the ones they booked. */
+    private function agentOrders($agent)
+    {
+        return AgentOrder::query()->when(
+            $agent->is_master_agent,
+            fn($q) => $q->where('master_agent_id', $agent->id),
+            fn($q) => $q->where('sales_agent_id', $agent->id)
+        );
+    }
+
+    /** Boxes open orders still have to take from stock, per item ($exceptPickedOrderId: that order's picked boxes count as its own). */
+    private function openOrderBoxes($exceptPickedOrderId = null)
+    {
+        $own = $exceptPickedOrderId
+            ? 'CASE WHEN agent_orders.id = ' . (int) $exceptPickedOrderId . ' THEN -agent_order_items.scanned_box_qty ELSE GREATEST(agent_order_items.box_qty - agent_order_items.scanned_box_qty, 0) END'
+            : 'GREATEST(agent_order_items.box_qty - agent_order_items.scanned_box_qty, 0)';
+        return DB::table('agent_order_items')
+            ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+            ->where('agent_orders.status', '!=', 'dispatched')
+            ->whereNull('agent_order_items.dispatched_at')
+            ->select('agent_order_items.product_id', 'agent_order_items.color_id', 'agent_order_items.size_set_id', DB::raw("SUM($own) as total_allocated"))
+            ->groupBy('agent_order_items.product_id', 'agent_order_items.color_id', 'agent_order_items.size_set_id');
+    }
+
+    /** Group-by list of the order screens (the discount is only grouped when it comes from a table). */
+    private static function gridGroupBy(string $discountCol): array
+    {
+        $cols = [
+            'domestic_inventories.product_id',
+            'domestic_inventories.color_id',
+            'domestic_inventories.size_set_id',
+            'production_goods.design_number',
+            'production_goods.name_of_garment',
+            'master_series.name',
+            'master_colors.name',
+            'master_size_measurements.name',
+            'master_product_fittings.name',
+            'master_design_patterns.name',
+        ];
+        if (!is_numeric($discountCol)) {
+            $cols[] = DB::raw($discountCol);
+        }
+        return $cols;
+    }
+
+    /** Reply for a refused / failed save: JSON for the app (422 with the reason). */
+    private function refuse(string $message, int $status = 422)
+    {
+        return response()->json(['success' => false, 'message' => $message], $status);
+    }
+
     /**
      * Brand discount % from the customer's own per-brand discounts (vendors / unknown customer get none).
      */
@@ -51,13 +110,17 @@ class OrderController extends Controller
         }
 
         if ($party_type == 'vendor') {
-            $shop = \DB::table('vendors')->where('id', $shop_id)->first();
+            // only master agents order for vendors
+            $shop = $this->rules()->vendorFor($agent, $shop_id);
             if (!$shop) abort(404);
         } else {
-            if ($is_master) {
-                $shop = MasterCustomer::findOrFail($shop_id);
-            } else {
-                $shop = MasterCustomer::where('id', $shop_id)->where('sales_agent_id', $agent->id)->firstOrFail();
+            $party_type = 'customer';
+            $shop = MasterCustomer::where('id', $shop_id)->where('status', '!=', 3)
+                ->when(!$is_master, fn($q) => $q->where('sales_agent_id', $agent->id))
+                ->firstOrFail();
+            if ((int) $shop->status !== 1) {
+                return redirect()->route($is_master ? 'agent.orders.create' : 'agent.shops.index')
+                    ->with('error', "{$shop->name} is inactive. Activate the shop before placing an order.");
             }
         }
 
@@ -96,17 +159,8 @@ class OrderController extends Controller
             ->select('production_goods_id as product_id', 'master_size_measurement_id as size_set_id', DB::raw('MAX(mrp) as mrp'))
             ->groupBy('production_goods_id', 'master_size_measurement_id');
 
-        // Subquery for globally allocated boxes in PENDING agent orders
-        $allocated = DB::table('agent_order_items')
-            ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
-            ->where('agent_orders.status', 'pending')
-            ->select(
-                'product_id',
-                'color_id',
-                'size_set_id',
-                DB::raw('SUM(box_qty) as total_allocated')
-            )
-            ->groupBy('product_id', 'color_id', 'size_set_id');
+        // Boxes all open orders still have to take (picked boxes have already left the stock)
+        $allocated = $this->openOrderBoxes();
 
         $query = DomesticInventory::where('domestic_inventories.status', 1)
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
@@ -131,7 +185,7 @@ class OrderController extends Controller
             $base_discount_col = 'COALESCE(customer_brand_discounts.discount_percentage, 0)';
         }
 
-        // Join storerooms to check for advance sample and priority
+        // Join storerooms to check for storerooms that allow ordering more than stock and priority
         $query->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
             ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
             ->where(function ($q) {
@@ -143,15 +197,16 @@ class OrderController extends Controller
 
         if ($isSampleSet) {
             $agentBatches = DB::table('fair_batches')
+                ->where('status', 1)
                 ->whereJsonContains('sales_agent_ids', (string)$agent_id)
                 ->pluck('id')
                 ->toArray();
-                
+
             $fpSubquery = DB::table('fair_products')
                 ->select('product_id', 'size_set_id', DB::raw('MAX(discount_percent) as max_discount'))
                 ->whereIn('fair_batch_id', empty($agentBatches) ? [-1] : $agentBatches)
                 ->groupBy('product_id', 'size_set_id');
-                
+
             $query->leftJoinSub($fpSubquery, 'fp', function ($join) {
                 $join->on('production_goods.id', '=', 'fp.product_id')
                      ->on('domestic_inventories.size_set_id', '=', 'fp.size_set_id');
@@ -208,11 +263,11 @@ class OrderController extends Controller
                 'master_size_measurements.name as size_set_name',
                 'master_product_fittings.name as fitting_name',
                 'master_design_patterns.name as pattern_name',
-                DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
+                DB::raw('GREATEST(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0), 0) as available_boxes'),
                 DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
                 DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
                 DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
-                DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample')
+                DB::raw('MAX(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) as is_advance_sample')
             );
 
         if ($isSampleSet) {
@@ -249,20 +304,8 @@ class OrderController extends Controller
                     }
                 });
             }
-            $boxes = $query->groupBy(
-                'domestic_inventories.product_id',
-                'domestic_inventories.color_id',
-                'domestic_inventories.size_set_id',
-                'production_goods.design_number',
-                'production_goods.name_of_garment',
-                'master_series.name',
-                'master_colors.name',
-                'master_size_measurements.name',
-                'master_product_fittings.name',
-                'master_design_patterns.name',
-                DB::raw($discount_col)
-            );
-            
+            $boxes = $query->groupBy(...self::gridGroupBy($discount_col));
+
             if (!$request->has('cart_keys') || !is_array($request->cart_keys)) {
                 $boxes->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
             }
@@ -279,9 +322,9 @@ class OrderController extends Controller
             
             if (!$allowGlobal) {
                 if ($allowSample && $isSampleSet) {
-                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL) OR (SUM(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)');
+                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL) OR (SUM(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) > 0)');
                 } else {
-                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (SUM(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)');
+                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (SUM(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) > 0)');
                 }
             }
 
@@ -343,228 +386,106 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        $sale_type = 'item';
-        $order_type = 'normal';
-
         $request->validate([
+            'shop_id' => 'required|integer',
+            'party_type' => 'nullable|in:customer,vendor',
             'variations' => 'required|array|min:1',
+            'variations.*.product_id' => 'required|integer',
+            'variations.*.color_id' => 'required|integer',
+            'variations.*.size_set_id' => 'required|integer',
+            'variations.*.qty' => 'required|integer|min:1',
+            'variations.*.pcs_per_box' => 'nullable|numeric|min:0',
+            'variations.*.unit_price' => 'nullable|numeric|min:0',
+            'discount_amount' => 'nullable|numeric|min:0',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'other_charges' => 'nullable|numeric|min:0',
+            'expected_dispatch_date' => 'nullable|date',
+        ], [
+            'variations.*.qty.integer' => 'Box quantity must be a whole number.',
+            'variations.*.qty.min' => 'Box quantity must be at least 1.',
+            'discount_amount.min' => 'Discount cannot be less than 0.',
+            'other_charges.min' => 'Other charges cannot be less than 0.',
         ]);
 
         $agent = Auth::guard('sales_agent')->user();
-        $agent_id = $agent->id;
-        
-        $master_agent_id = null;
+        $rules = $this->rules();
 
-        $party_type = $request->party_type ?? 'customer';
-        if ($party_type == 'vendor') {
-            $customer = \DB::table('vendors')->where('id', $request->shop_id)->first();
-            if (!$customer) abort(404);
+        $party_type = $request->input('party_type', 'customer') === 'vendor' ? 'vendor' : 'customer';
+        if ($party_type === 'vendor') {
+            if (!$rules->vendorFor($agent, $request->shop_id)) {
+                return $this->refuse('Only master agents can order for vendors, and the vendor must be active.', 403);
+            }
             $actual_agent_id = 0;
-            if ($agent->is_master_agent) $master_agent_id = $agent_id;
+            $master_agent_id = $agent->id;
         } else {
-            $customer = \App\Models\MasterCustomer::findOrFail($request->shop_id);
+            $customer = $rules->customerFor($agent, $request->shop_id);
+            if (!$customer) {
+                return $this->refuse('This shop is inactive or is not one of your shops.', 403);
+            }
             if ($agent->is_master_agent) {
                 $actual_agent_id = $customer->sales_agent_id ?: 0;
-                $master_agent_id = $agent_id;
+                $master_agent_id = $agent->id;
             } else {
-                $actual_agent_id = $agent_id;
+                $actual_agent_id = $agent->id;
+                $master_agent_id = null;
             }
         }
-
-        $total_qty = 0;
-        $total_amount = 0;
-        $items_to_create = [];
-
-        foreach ($request->variations as $var) {
-            $product = \App\Models\ProductionGoods::with('series', 'brand')->find($var['product_id']);
-            $color = \App\Models\MasterColor::find($var['color_id']);
-            $sizeSet = \App\Models\MasterSizeMeasurement::find($var['size_set_id']);
-
-            if (!$product || !$color || !$sizeSet) continue;
-
-            // Fetch Brand-based Discount
-            $brand_discount = $this->customerBrandDiscount($party_type, $request->shop_id, $product->brand_id);
-
-            $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $var['product_id'])
-                ->where('master_size_measurement_id', $var['size_set_id'])
-                ->first();
-
-            $mrp = $variant->mrp ?? 0;
-
-            $selling_price = isset($var['unit_price']) ? (float) $var['unit_price'] : ($mrp - ($mrp * $brand_discount / 100));
-            $selling_price = ceil($selling_price);
-
-            $seriesName = ($product->series) ? $product->series->name : '';
-            $product_name = trim($seriesName . ' ' . $product->name_of_garment);
-
-            $fitting = $product->master_product_fitting_id ? \App\Models\MasterProductFitting::find($product->master_product_fitting_id) : null;
-            $pattern = $product->master_pattern_id ? \App\Models\MasterDesignPattern::find($product->master_pattern_id) : null;
-
-            $pcs_per_box = isset($var['pcs_per_box']) ? (float) $var['pcs_per_box'] : 0;
-            if ($pcs_per_box <= 0) {
-                $pcs_per_box = (float) DomesticInventory::where('product_id', $var['product_id'])
-                    ->where('color_id', $var['color_id'])
-                    ->where('size_set_id', $var['size_set_id'])
-                    ->avg('quantity') ?? 0;
-            }
-            if ($pcs_per_box <= 0) {
-                $pcs_per_box = (float) ($sizeSet->total_pieces ?? 0);
-            }
-
-            $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'];
-
-            $total_pcs = $var['qty'] * $pcs_per_box;
-
-            $rack_id = $this->determineRackId($var['product_id'], $var['color_id'], $var['size_set_id'], $barcode);
-
-            $items_to_create[] = [
-                'rack_id' => $rack_id,
-                'product_id' => $var['product_id'],
-                'color_id' => $var['color_id'],
-                'size_set_id' => $var['size_set_id'],
-                'product_name' => $product_name ?: 'N/A',
-                'design_number' => $product->design_number,
-                'color_name' => $color->name,
-                'size_set_name' => $sizeSet->name,
-                'fitting_name' => $fitting->name ?? null,
-                'pattern_name' => $pattern->name ?? null,
-                'quantity' => $total_pcs,
-                'box_qty' => $var['qty'],
-                'mrp' => $mrp,
-                'selling_price' => $selling_price,
-                'barcode' => $barcode,
-                'packing_box_id' => null,
-                'scanned_box_qty' => $order_type === 'direct' ? $var['qty'] : 0,
-                'scanned_quantity' => $order_type === 'direct' ? $total_pcs : 0,
-                'dispatched_at' => $order_type === 'direct' ? now() : null,
-                'remark' => $var['remark'] ?? null,
-            ];
-            $total_qty += $total_pcs;
-            $total_amount += ($total_pcs * $selling_price);
-        }
-
-        $total_amount = ceil($total_amount);
-        $other_charges = ceil($request->other_charges ?? 0);
-
-        if ($request->filled('discount_amount')) {
-            $discount_amount = ceil((float) $request->discount_amount);
-            $discount_percentage = ($total_amount > 0) ? ($discount_amount / $total_amount * 100) : 0;
-        } else {
-            $discount_percentage = $request->discount_percentage ?? 0;
-            $discount_amount = ceil($total_amount * $discount_percentage / 100);
-        }
-
-        $taxable_amount = $total_amount - $discount_amount;
-
-        if ($request->filled('gst_amount')) {
-            $gst_amount = ceil((float) $request->gst_amount);
-            $gst_percentage = ($taxable_amount > 0) ? ($gst_amount / $taxable_amount * 100) : 0;
-        } else {
-            $gst_percentage = $request->gst_percentage ?? 5.00;
-            $gst_amount = ceil($taxable_amount * ($gst_percentage / 100));
-        }
-
-        $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
-
-        $status = $order_type === 'direct' ? 'dispatched' : 'pending';
+        $isSampleSet = (int) $request->input('is_sample_set', 0) === 1;
+        $customerId = $party_type === 'customer' ? (int) $request->shop_id : null;
 
         DB::beginTransaction();
         try {
+            // price, pieces per box and rack are decided here; boxes only while stock is free
+            [$lines, $need] = $rules->newLines($agent, $party_type, $customerId, $request->variations);
+            if (empty($lines)) {
+                throw new AgentOrderException('The order has no items.');
+            }
+            $rules->checkStock($need, $isSampleSet);
+
+            $value = 0;
+            $total_qty = 0;
+            foreach ($lines as $line) {
+                $value += $line['quantity'] * $line['selling_price'];
+                $total_qty += $line['quantity'];
+            }
+            $discount = $request->filled('discount_amount')
+                ? (float) $request->discount_amount
+                : ceil(ceil($value) * (float) $request->input('discount_percentage', 0) / 100);
+            $totals = $rules->totals($value, $discount, $request->input('other_charges', 0));
+
             $order = AgentOrder::create([
                 'sales_agent_id' => $actual_agent_id,
                 'master_agent_id' => $master_agent_id,
-                'sales_man_id' => $request->sales_man_id,
+                'sales_man_id' => $rules->salesManId($request->sales_man_id),
                 'party_type' => $party_type,
                 'master_customer_id' => $party_type == 'customer' ? $request->shop_id : null,
                 'master_vendor_id' => $party_type == 'vendor' ? $request->shop_id : null,
                 'total_qty' => $total_qty,
-                'total_amount' => $total_amount,
-                'discount_percentage' => $discount_percentage,
-                'discount_amount' => $discount_amount,
-                'gst_percentage' => $gst_percentage,
-                'gst_amount' => $gst_amount,
-                'other_charges' => $other_charges,
-                'grand_total' => $grand_total,
+                'status' => 'pending',
+                'order_type' => 'normal',
+                'sale_type' => 'item',
+                'is_sample_set' => $isSampleSet ? 1 : 0,
                 'expected_dispatch_date' => $request->expected_dispatch_date,
-                'status' => $status,
-                'order_type' => $order_type,
-                'sale_type' => $sale_type,
-                'is_sample_set' => $request->input('is_sample_set', 0),
                 'order_date' => now(),
                 'created_by' => Auth::id() ?? 0,
                 'remark' => $request->remark,
                 'booking_station' => $request->booking_station,
                 'transport' => $request->transport,
-            ]);
+            ] + $totals);
 
-            $dispatch = null;
-            if ($order_type === 'direct') {
-                $dispatch = \App\Models\AgentOrderDispatch::create([
-                    'party_type' => 'customer',
-                    'master_customer_id' => $request->shop_id,
-                    'sales_agent_id' => $agent_id,
-                    'status' => 'dispatched',
-                    'created_by' => Auth::id() ?? 0,
-                    'dispatch_date' => now(),
-                    'total_amount' => $total_amount,
-                    'discount_amount' => $discount_amount,
-                    'gst_amount' => $gst_amount,
-                    'gst_percentage' => $gst_percentage,
-                    'grand_total' => $grand_total,
-                ]);
-
-                \App\Models\AgentOrderDispatchItem::create([
-                    'agent_order_dispatch_id' => $dispatch->id,
-                    'agent_order_id' => $order->id,
-                ]);
-            }
-
-            foreach ($items_to_create as $item) {
-                $item['agent_order_id'] = $order->id;
-                if ($dispatch) {
-                    $item['agent_order_dispatch_id'] = $dispatch->id;
-                }
-                AgentOrderItem::create($item);
-
-                if ($order_type === 'direct') {
-                    $inventories = DomesticInventory::where('barcode', $item['barcode'])
-                        ->where('total_boxes', '>', 0)
-                        ->get();
-
-                    $remainingToDeduct = $item['box_qty'];
-                    foreach ($inventories as $inv) {
-                        if ($remainingToDeduct <= 0) break;
-                        $deduct = min($inv->total_boxes, $remainingToDeduct);
-
-                        \App\Models\DomesticInventoryHistory::create([
-                            'domestic_inventory_id' => $inv->id,
-                            'user_id' => Auth::id() ?? 0,
-                            'type' => 'stock_consume',
-                            'old_product_id' => $inv->product_id,
-                            'old_color_id' => $inv->color_id,
-                            'old_size_set_id' => $inv->size_set_id,
-
-                            'old_rack_id' => $inv->warehouse_rack_id,
-                            'box_quantity' => $deduct,
-                        ]);
-
-                        $inv->decrement('total_boxes', $deduct);
-                        if ($inv->total_boxes <= 0) $inv->delete();
-                        $remainingToDeduct -= $deduct;
-                    }
-                }
-            }
-
-            if ($order_type === 'direct') {
-                $customer->decrement('balance', $grand_total);
+            foreach ($lines as $line) {
+                $line['agent_order_id'] = $order->id;
+                AgentOrderItem::create($line);
             }
 
             DB::commit();
             return response()->json(['success' => true, 'message' => 'Order created successfully!', 'redirect_url' => route('agent.orders.show', $order->id)]);
+        } catch (AgentOrderException $e) {
+            DB::rollBack();
+            return $this->refuse($e->getMessage());
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Failed to create order: ' . $e->getMessage()], 500);
+            return $this->refuse('Failed to create order: ' . $e->getMessage(), 500);
         }
     }
 
@@ -614,21 +535,11 @@ class OrderController extends Controller
             ->select('production_goods_id as product_id', 'master_size_measurement_id as size_set_id', DB::raw('MAX(mrp) as mrp'))
             ->groupBy('production_goods_id', 'master_size_measurement_id');
 
-        // Subquery for globally allocated boxes in PENDING agent orders
-        $allocated = DB::table('agent_order_items')
-            ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
-            ->where('agent_orders.status', 'pending')
-            ->where('agent_orders.id', '!=', $id) // EXCLUDE CURRENT ORDER
-            ->select(
-                'product_id', 'color_id', 'size_set_id', 
-                DB::raw('SUM(box_qty) as total_allocated')
-            )
-            ->groupBy('product_id', 'color_id', 'size_set_id');
+        // Boxes other open orders still have to take; boxes already picked for this order count as this order's own
+        $allocated = $this->openOrderBoxes($id);
 
+        // Same stock as Create Order (stock made in Packing included)
         $query = DomesticInventory::where('domestic_inventories.status', 1)
-            ->where(function ($q) {
-                $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
-            })
             ->join('production_goods', 'domestic_inventories.product_id', '=', 'production_goods.id')
             ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
@@ -651,9 +562,13 @@ class OrderController extends Controller
             $base_discount_col = 'COALESCE(customer_brand_discounts.discount_percentage, 0)';
         }
 
-        // Join storerooms to check for advance sample
+        // Join storerooms: only storerooms that take orders (as on Create Order), and the "order more than stock" setting
         $query->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id');
+            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+            ->where(function ($q) {
+                $q->whereNull('storerooms.id')
+                  ->orWhere('storerooms.order_taken', '=', 'Yes');
+            });
 
         if ($request->has('product_name')) {
             $isSampleSet = $request->input('sample_set') == '1';
@@ -664,6 +579,7 @@ class OrderController extends Controller
 
         if ($isSampleSet) {
             $agentBatches = DB::table('fair_batches')
+                ->where('status', 1)
                 ->whereJsonContains('sales_agent_ids', (string)$agent_id)
                 ->pluck('id')
                 ->toArray();
@@ -679,9 +595,6 @@ class OrderController extends Controller
             });
             $discount_col = 'COALESCE(fp.max_discount, ' . $base_discount_col . ')';
         }
-
-        // Clone query BEFORE filters to fetch all selected items from the DB
-        $unfilteredQuery = $query->clone();
 
         if ($request->filled('design_number')) {
             $query->where('production_goods.design_number', $request->design_number);
@@ -731,11 +644,11 @@ class OrderController extends Controller
             'master_size_measurements.name as size_set_name',
             'master_product_fittings.name as fitting_name',
             'master_design_patterns.name as pattern_name',
-            DB::raw('SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) as available_boxes'),
+            DB::raw('GREATEST(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0), 0) as available_boxes'),
             DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
             DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price'),
             DB::raw('MAX(COALESCE(ip.mrp, 0)) as mrp'),
-            DB::raw('MAX(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) as is_advance_sample')
+            DB::raw('MAX(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) as is_advance_sample')
         );
 
         if ($isSampleSet) {
@@ -773,19 +686,7 @@ class OrderController extends Controller
                     }
                 });
                 
-                $boxes = $query->groupBy(
-                    'domestic_inventories.product_id', 
-                    'domestic_inventories.color_id', 
-                    'domestic_inventories.size_set_id', 
-                    'production_goods.design_number', 
-                    'production_goods.name_of_garment',
-                    'master_series.name',
-                    'master_colors.name', 
-                    'master_size_measurements.name',
-                    'master_product_fittings.name',
-                    'master_design_patterns.name',
-                    DB::raw($discount_col)
-                )
+                $boxes = $query->groupBy(...self::gridGroupBy($discount_col))
                     ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
 
                 $settings = \DB::table('settings')->first();
@@ -794,9 +695,9 @@ class OrderController extends Controller
                 
                 if (!$allowGlobal) {
                     if ($allowSample && $isSampleSet) {
-                        $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL) OR (SUM(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)');
+                        $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL) OR (SUM(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) > 0)');
                     } else {
-                        $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (SUM(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)');
+                        $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (SUM(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) > 0)');
                     }
                 }
 
@@ -820,19 +721,7 @@ class OrderController extends Controller
                 });
             }
 
-            $boxes = $query->groupBy(
-                'domestic_inventories.product_id', 
-                'domestic_inventories.color_id', 
-                'domestic_inventories.size_set_id', 
-                'production_goods.design_number', 
-                'production_goods.name_of_garment',
-                'master_series.name',
-                'master_colors.name', 
-                'master_size_measurements.name',
-                'master_product_fittings.name',
-                'master_design_patterns.name',
-                DB::raw($discount_col)
-            )
+            $boxes = $query->groupBy(...self::gridGroupBy($discount_col))
                 ->havingRaw('MAX(COALESCE(ip.mrp, 0)) > 0');
 
             $settings = \DB::table('settings')->first();
@@ -845,9 +734,9 @@ class OrderController extends Controller
 
             if (!$allowGlobal) {
                 if ($allowSample && $isSampleSet) {
-                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL) OR (SUM(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)');
+                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (MAX(fp.product_id) IS NOT NULL) OR (SUM(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) > 0)');
                 } else {
-                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (SUM(CASE WHEN storerooms.name = \'ADVANCE SAMPLE\' THEN 1 ELSE 0 END) > 0)');
+                    $query->havingRaw('(SUM(domestic_inventories.total_boxes) - COALESCE(MAX(alloc.total_allocated), 0) > 0) OR (SUM(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) > 0)');
                 }
             }
 
@@ -903,53 +792,27 @@ class OrderController extends Controller
             ]);
         }
 
-        // Selected quantities for existing order with updated prices
-        $currentOrderItems = DB::table('agent_order_items')
-            ->where('agent_order_id', $order->id)
-            ->select(
-                'product_id',
-                'color_id',
-                'size_set_id',
-                DB::raw('SUM(box_qty) as current_order_qty')
-            )
-            ->groupBy('product_id', 'color_id', 'size_set_id');
-
-        $existing_items_with_prices = $unfilteredQuery->clone()
-            ->joinSub($currentOrderItems, 'current_items', function ($join) {
-                $join->on('domestic_inventories.product_id', '=', 'current_items.product_id')
-                    ->on('domestic_inventories.color_id', '=', 'current_items.color_id')
-                    ->on('domestic_inventories.size_set_id', '=', 'current_items.size_set_id');
-            })
-            ->select(
-                'domestic_inventories.product_id',
-                'domestic_inventories.color_id',
-                'domestic_inventories.size_set_id',
-                DB::raw('MAX(COALESCE(current_items.current_order_qty, 0)) as current_order_qty'),
-                DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
-                DB::raw('CEILING(MAX(COALESCE(ip.mrp, 0)) * (100 - ' . $discount_col . ') / 100) as unit_price')
-            )
-            ->groupBy(
-                'domestic_inventories.product_id',
-                'domestic_inventories.color_id',
-                'domestic_inventories.size_set_id',
-                DB::raw($discount_col)
-            )
-            ->havingRaw('MAX(COALESCE(current_items.current_order_qty, 0)) > 0')
-            ->get();
-
-        $selected_quantities = $existing_items_with_prices->keyBy(function ($item) {
-                return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id;
-            })
-            ->map(function ($item) {
+        // The order's own items (not dispatched), taken from the order itself so every item stays in the cart
+        // even when it has no stock row any more; prices are the ones saved on the order.
+        $selected_quantities = AgentOrderItem::where('agent_order_id', $order->id)
+            ->whereNull('dispatched_at')
+            ->orderBy('id')
+            ->get()
+            ->groupBy(fn($item) => $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id)
+            ->map(function ($lines) {
+                $first = $lines->first();
+                $boxes = (int) $lines->sum('box_qty');
                 return [
-                    'product_id' => $item->product_id,
-                    'color_id' => $item->color_id,
-                    'size_set_id' => $item->size_set_id,
-                    'qty' => (int) $item->current_order_qty,
-                    'pcs_per_box' => (float) $item->pcs_per_box,
-                    'unit_price' => (float) $item->unit_price
+                    'product_id' => (int) $first->product_id,
+                    'color_id' => (int) $first->color_id,
+                    'size_set_id' => (int) $first->size_set_id,
+                    'qty' => $boxes,
+                    'pcs_per_box' => $boxes > 0 ? round((float) $lines->sum('quantity') / $boxes, 4) : 0,
+                    'unit_price' => (float) $first->selling_price,
+                    'picked' => (int) $lines->sum('scanned_box_qty'),
                 ];
             })
+            ->filter(fn($i) => $i['qty'] > 0)
             ->toArray();
 
         // Fetch GST setting
@@ -966,193 +829,172 @@ class OrderController extends Controller
     {
         $request->validate([
             'variations' => 'required|array|min:1',
-            'variations.*.product_id' => 'required',
-            'variations.*.color_id' => 'required',
-            'variations.*.size_set_id' => 'required',
+            'variations.*.product_id' => 'required|integer',
+            'variations.*.color_id' => 'required|integer',
+            'variations.*.size_set_id' => 'required|integer',
             'variations.*.qty' => 'required|integer|min:1',
-            'expected_dispatch_date' => 'nullable|date|after_or_equal:today',
+            'variations.*.pcs_per_box' => 'nullable|numeric|min:0',
+            'variations.*.unit_price' => 'nullable|numeric|min:0',
+            'expected_dispatch_date' => 'nullable|date',
+        ], [
+            'variations.*.qty.integer' => 'Box quantity must be a whole number.',
+            'variations.*.qty.min' => 'Box quantity must be at least 1.',
         ]);
 
         $agent = Auth::guard('sales_agent')->user();
-        $query = AgentOrder::where('id', $id)->where('status', 'pending');
-        
-        if (!$agent->is_master_agent) {
-            $query->where('sales_agent_id', $agent->id);
-        } else {
-            $query->where('master_agent_id', $agent->id);
+        $order = $this->agentOrders($agent)->where('id', $id)->where('status', 'pending')->first();
+        if (!$order) {
+            return $this->refuse('This order can no longer be edited (it is not pending, or it is not your order).', 404);
         }
-        
-        $order = $query->firstOrFail();
 
-        $total_qty = 0;
-        $total_amount = 0;
-        $items_to_create = [];
+        // A new expected dispatch date cannot be in the past; the order's own date may stay as it is
+        $date = $request->filled('expected_dispatch_date') ? date('Y-m-d', strtotime($request->expected_dispatch_date)) : $order->expected_dispatch_date;
+        $oldDate = $order->expected_dispatch_date ? date('Y-m-d', strtotime($order->expected_dispatch_date)) : null;
+        if ($date && $date !== $oldDate && $date < date('Y-m-d')) {
+            return $this->refuse('Expected dispatch date cannot be in the past.');
+        }
 
+        $rules = $this->rules();
+        $stock = app(InventoryStockService::class);
+        $partyType = $order->party_type === 'vendor' ? 'vendor' : 'customer';
+        $customerId = $partyType === 'customer' ? $order->master_customer_id : null;
+        $isSampleSet = (int) $request->input('is_sample_set', $order->is_sample_set) === 1;
+
+        $wanted = [];
         foreach ($request->variations as $var) {
-            if ($var['qty'] <= 0) continue;
-
-            $product = \App\Models\ProductionGoods::with('series', 'brand')->find($var['product_id']);
-            $color = \App\Models\MasterColor::find($var['color_id']);
-            $sizeSet = \App\Models\MasterSizeMeasurement::find($var['size_set_id']);
-            
-            if (!$product || !$color || !$sizeSet) continue;
-
-            // Fetch Brand-based Discount
-            $brand_discount = $this->customerBrandDiscount($order->party_type, $order->master_customer_id, $product->brand_id);
-
-            $variant = \App\Models\ProductionGoodVariant::where('production_goods_id', $var['product_id'])
-                ->where('master_size_measurement_id', $var['size_set_id'])
-                ->first();
-
-            $mrp = $variant->mrp ?? 0;
-            
-            // Use unit_price from front-end if available, else calculate
-            $selling_price = isset($var['unit_price']) ? (float)$var['unit_price'] : ($mrp - ($mrp * $brand_discount / 100));
-            $selling_price = ceil($selling_price);
-            
-            $seriesName = ($product->series) ? $product->series->name : '';
-            $product_name = trim($seriesName . ' ' . $product->name_of_garment);
-
-            $fitting = $product->master_product_fitting_id ? \App\Models\MasterProductFitting::find($product->master_product_fitting_id) : null;
-            $pattern = $product->master_pattern_id ? \App\Models\MasterDesignPattern::find($product->master_pattern_id) : null;
-
-            // Determine PCS per Box (Source of Truth: Front-end > Current Inventory > Master Config)
-            $pcs_per_box = isset($var['pcs_per_box']) ? (float)$var['pcs_per_box'] : 0;
-            if ($pcs_per_box <= 0) {
-                // Check current status 1 (available) inventory
-                $pcs_per_box = (float) DomesticInventory::where('status', 1)->where('product_id', $var['product_id'])
-                    ->where('color_id', $var['color_id'])
-                    ->where('size_set_id', $var['size_set_id'])
-                    ->avg('quantity') ?? 0;
+            $key = (int) $var['product_id'] . '_' . (int) $var['color_id'] . '_' . (int) $var['size_set_id'];
+            if (isset($wanted[$key])) {
+                $wanted[$key]['qty'] += (int) $var['qty'];
+            } else {
+                $wanted[$key] = $var;
+                $wanted[$key]['qty'] = (int) $var['qty'];
             }
-            if ($pcs_per_box <= 0) {
-                // Fallback to ANY past inventory if available status is 0
-                $pcs_per_box = (float) DomesticInventory::where('product_id', $var['product_id'])
-                    ->where('color_id', $var['color_id'])
-                    ->where('size_set_id', $var['size_set_id'])
-                    ->avg('quantity') ?? 0;
-            }
-            if ($pcs_per_box <= 0) {
-                // Final fallback to size measurement master
-                $pcs_per_box = (float) ($sizeSet->total_pieces ?? 0);
-            }
-
-            $barcode = 'D' . $var['product_id'] . 'S' . $var['size_set_id'] . 'C' . $var['color_id'];
-            $total_pcs = $var['qty'] * $pcs_per_box;
-
-            $rack_id = $this->determineRackId($var['product_id'], $var['color_id'], $var['size_set_id'], $barcode, $order->id);
-
-            $items_to_create[] = [
-                'agent_order_id' => $order->id,
-                'rack_id' => $rack_id,
-                'product_id' => $var['product_id'],
-                'color_id' => $var['color_id'],
-                'size_set_id' => $var['size_set_id'],
-                'product_name' => $product_name ?: 'N/A',
-                'design_number' => $product->design_number,
-                'color_name' => $color->name,
-                'size_set_name' => $sizeSet->name,
-                'fitting_name' => $fitting->name ?? null,
-                'pattern_name' => $pattern->name ?? null,
-                'box_qty' => $var['qty'],
-                'quantity' => $total_pcs,
-                'mrp' => $mrp,
-                'selling_price' => $selling_price,
-                'barcode' => $barcode,
-                'packing_box_id' => null,
-                'remark' => $var['remark'] ?? null,
-            ];
-            $total_qty += $total_pcs;
-            $total_amount += ($total_pcs * $selling_price);
         }
-
-        $total_amount = ceil($total_amount);
-        $other_charges = ceil($request->other_charges ?? 0);
-
-        if ($request->filled('discount_amount')) {
-            $discount_amount = ceil((float) $request->discount_amount);
-            $discount_percentage = ($total_amount > 0) ? ($discount_amount / $total_amount * 100) : 0;
-        } else {
-            $discount_percentage = $request->discount_percentage ?? 0;
-            $discount_amount = ceil($total_amount * $discount_percentage / 100);
-        }
-
-        $taxable_amount = $total_amount - $discount_amount;
-
-        if ($request->filled('gst_amount')) {
-            $gst_amount = ceil((float) $request->gst_amount);
-            $gst_percentage = ($taxable_amount > 0) ? ($gst_amount / $taxable_amount * 100) : 0;
-        } else {
-            $gst_percentage = $request->gst_percentage ?? 5.00;
-            $gst_amount = ceil($taxable_amount * ($gst_percentage / 100));
-        }
-
-        $grand_total = ceil($taxable_amount + $gst_amount + $other_charges);
 
         DB::beginTransaction();
         try {
-            $order->update([
-                'sales_man_id' => $request->sales_man_id,
-                'total_qty' => $total_qty,
-                'total_amount' => $total_amount,
-                'discount_percentage' => $discount_percentage,
-                'discount_amount' => $discount_amount,
-                'gst_percentage' => $gst_percentage,
-                'gst_amount' => $gst_amount,
-                'other_charges' => $other_charges,
-                'grand_total' => $grand_total,
-                'expected_dispatch_date' => $request->expected_dispatch_date,
-                'is_sample_set' => $request->input('is_sample_set', 0),
-                'updated_at' => now(),
-                'remark' => $request->remark,
-                'booking_station' => $request->booking_station,
-                'transport' => $request->transport,
-            ]);
-            AgentOrderItem::where('agent_order_id', $order->id)->delete();
+            // Open lines are changed in place: boxes already picked stay picked, saved prices and remarks stay.
+            $open = AgentOrderItem::where('agent_order_id', $order->id)->whereNull('dispatched_at')
+                ->orderBy('id')->lockForUpdate()->get()
+                ->groupBy(fn($i) => $i->product_id . '_' . $i->color_id . '_' . $i->size_set_id);
 
-            foreach ($items_to_create as $item) {
-                AgentOrderItem::create($item);
+            // 1. Items taken off the order
+            foreach ($open as $key => $lines) {
+                if (isset($wanted[$key])) continue;
+                $picked = (int) $lines->sum('scanned_box_qty');
+                if ($picked > 0) {
+                    $l = $lines->first();
+                    throw new AgentOrderException(AgentOrderRules::itemLabel($l->design_number, $l->color_name, $l->size_set_name)
+                        . ": {$picked} box(es) are already picked by the warehouse, so it cannot be removed. Please ask the office.");
+                }
+                AgentOrderItem::whereIn('id', $lines->pluck('id'))->delete();
             }
+
+            // 2. Items kept, changed or added
+            $need = [];
+            foreach ($wanted as $key => $var) {
+                $qty = $var['qty'];
+                $lines = $open->get($key, collect());
+
+                if ($lines->isEmpty()) { // new item: priced like a new order
+                    $line = $rules->newLine($agent, $partyType, $customerId, $var, $qty, $order->id);
+                    $line['agent_order_id'] = $order->id;
+                    AgentOrderItem::create($line);
+                    $need[$key] = ['product_id' => $line['product_id'], 'color_id' => $line['color_id'], 'size_set_id' => $line['size_set_id'],
+                        'boxes' => $qty, 'label' => AgentOrderRules::itemLabel($line['design_number'], $line['color_name'], $line['size_set_name'])];
+                    continue;
+                }
+
+                $have = (int) $lines->sum('box_qty');
+                $picked = (int) $lines->sum('scanned_box_qty');
+                $first = $lines->first();
+                $label = AgentOrderRules::itemLabel($first->design_number, $first->color_name, $first->size_set_name);
+                if ($qty < $picked) {
+                    throw new AgentOrderException("{$label}: {$picked} box(es) are already picked by the warehouse, so the order cannot have fewer than {$picked}.");
+                }
+
+                if ($qty > $have) {
+                    // more boxes: added to the last line, at that line's price and pieces per box
+                    $last = $lines->last();
+                    $pcs = (int) $last->box_qty > 0 ? (float) $last->quantity / (int) $last->box_qty : 0;
+                    if ($pcs <= 0) {
+                        $pcs = $rules->piecesPerBox($last->product_id, $last->color_id, $last->size_set_id, null,
+                            \App\Models\MasterSizeMeasurement::find($last->size_set_id));
+                    }
+                    $add = $qty - $have;
+                    $last->box_qty = (int) $last->box_qty + $add;
+                    $last->quantity = (float) $last->quantity + $add * $pcs;
+                    $last->save();
+                    $need[$key] = ['product_id' => $first->product_id, 'color_id' => $first->color_id, 'size_set_id' => $first->size_set_id,
+                        'boxes' => $qty - $picked, 'label' => $label];
+                } elseif ($qty < $have) {
+                    // fewer boxes: only boxes not picked yet come off, last line first
+                    $remove = $have - $qty;
+                    foreach ($lines->reverse() as $line) {
+                        if ($remove <= 0) break;
+                        $n = min((int) $line->box_qty - (int) $line->scanned_box_qty, $remove);
+                        if ($n <= 0) continue;
+                        $pcs = (int) $line->box_qty > 0 ? (float) $line->quantity / (int) $line->box_qty : 0;
+                        if ((int) $line->box_qty - $n <= 0 && (int) $line->scanned_box_qty === 0) {
+                            $line->delete();
+                        } else {
+                            $line->box_qty = (int) $line->box_qty - $n;
+                            $line->quantity = max(0, (float) $line->quantity - $n * $pcs);
+                            $line->save();
+                        }
+                        $remove -= $n;
+                    }
+                }
+            }
+
+            // 3. Only boxes added beyond what was on the order need free stock
+            $rules->checkStock($need, $isSampleSet, $order->id);
+
+            // 4. Totals from the order's lines; discount and other charges stay as on the order (the app has no box for them)
+            $all = AgentOrderItem::where('agent_order_id', $order->id)->get();
+            $value = $all->sum(fn($l) => (float) $l->quantity * (float) $l->selling_price);
+            $totals = $rules->totals($value, min((float) $order->discount_amount, ceil(round($value, 4))), $order->other_charges);
+
+            $salesManId = (string) $request->input('sales_man_id', '') === (string) $order->sales_man_id
+                ? $order->sales_man_id
+                : $rules->salesManId($request->sales_man_id);
+
+            $order->update([
+                'sales_man_id' => $salesManId,
+                'total_qty' => $all->sum('quantity'),
+                'expected_dispatch_date' => $date,
+                'is_sample_set' => $isSampleSet ? 1 : 0,
+                'remark' => $request->has('remark') ? $request->remark : $order->remark,
+                'booking_station' => $request->has('booking_station') ? $request->booking_station : $order->booking_station,
+                'transport' => $request->has('transport') ? $request->transport : $order->transport,
+            ] + $totals);
 
             DB::commit();
             return response()->json(['success' => true, 'message' => 'Order updated successfully!', 'redirect_url' => route('agent.orders.show', $order->id)]);
+        } catch (AgentOrderException $e) {
+            DB::rollBack();
+            return $this->refuse($e->getMessage());
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Failed to update order: ' . $e->getMessage()], 500);
+            return $this->refuse('Failed to update order: ' . $e->getMessage(), 500);
         }
     }
 
     public function myOrders()
     {
+        // All of the agent's orders, newest first, 20 per page
         $agent = Auth::guard('sales_agent')->user();
-        if ($agent->is_master_agent) {
-            $orders = AgentOrder::where('master_agent_id', $agent->id)
-                ->whereDate('created_at', date('Y-m-d'))
-                ->with(['shop', 'vendor'])
-                ->latest()
-                ->paginate(10);
-        } else {
-            $orders = AgentOrder::where('sales_agent_id', $agent->id)
-                ->whereDate('created_at', date('Y-m-d'))
-                ->with(['shop', 'vendor'])
-                ->latest()
-                ->paginate(10);
-        }
+        $orders = $this->agentOrders($agent)
+            ->with(['shop', 'vendor'])
+            ->latest()
+            ->paginate(20);
         return view('sales_agent.orders.index', compact('orders'));
     }
 
     public function orderDetails($id)
     {
         $agent = Auth::guard('sales_agent')->user();
-        $query = AgentOrder::where('id', $id)->with(['shop', 'vendor', 'items', 'agent']);
-        
-        if (!$agent->is_master_agent) {
-            $query->where('sales_agent_id', $agent->id);
-        } else {
-            $query->where('master_agent_id', $agent->id);
-        }
-        
-        $order = $query->firstOrFail();
+        $order = $this->agentOrders($agent)->where('id', $id)->with(['shop', 'vendor', 'items', 'agent'])->firstOrFail();
 
         $items = $order->items;
         $groupedItems = $items->groupBy(function ($item) {
@@ -1180,62 +1022,18 @@ class OrderController extends Controller
         return view('sales_agent.orders.show', compact('order', 'groupedItems'));
     }
 
-    public function downloadInvoice($id)
+    /**
+     * Order sheet PDF of one of this agent's orders (other agents' orders are never given out).
+     * Prices: 0 = none, 1 = all, 2 = unit price only; an agent not allowed to see prices always gets 0.
+     * @return array|null [order row, pdf, file name]
+     */
+    private function orderSheet(Request $request, $id): ?array
     {
-        $order = AgentOrder::where('id', $id)
-            ->where('sales_agent_id', Auth::guard('sales_agent')->id())
-            ->firstOrFail();
+        $agent = Auth::guard('sales_agent')->user();
+        if (!$this->agentOrders($agent)->where('id', $id)->exists()) {
+            return null;
+        }
 
-        $orderData = (object) [
-            'id' => $order->id,
-            'order_date' => $order->order_date,
-            'status' => $order->status,
-            'total_qty' => $order->total_qty,
-            'total_amount' => $order->total_amount,
-            'discount_percentage' => $order->discount_percentage ?? 0,
-            'discount_amount' => $order->discount_amount ?? 0,
-            'gst_percentage' => $order->gst_percentage ?? 0,
-            'gst_amount' => $order->gst_amount ?? 0,
-            'grand_total' => $order->grand_total ?? $order->total_amount,
-            'agent_name' => $order->agent->name ?? 'Sales Agent',
-            'shop_name' => $order->shop->name ?? 'N/A',
-            'shop_email' => $order->shop->email ?? '',
-            'shop_phone' => $order->shop->phone ?? '',
-            'shop_address' => $order->shop->address ?? '',
-        ];
-
-        $items = $order->items->groupBy(function ($item) {
-            $status = $item->dispatched_at ? 'dispatched' : 'pending';
-            return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price . '_' . $status;
-        })->map(function ($group) {
-            $first = $group->first();
-            return (object) [
-                'product_name' => $first->product_name,
-                'design_number' => $first->design_number,
-                'color_name' => $first->color_name,
-                'size_set_name' => $first->size_set_name,
-                'fitting_name' => $first->fitting_name,
-                'pattern_name' => $first->pattern_name,
-                'mrp' => $first->mrp,
-                'selling_price' => $first->selling_price,
-                'total_qty' => $group->sum('quantity'),
-                'box_count' => $group->count(),
-                'status' => $first->dispatched_at ? 'Dispatched' : 'Pending'
-            ];
-        })->values();
-        $settings = DB::table('settings')->first();
-
-        $pdf = Pdf::loadView('admin.agent_orders.invoice-pdf', [
-            'order' => $orderData,
-            'items' => $items,
-            'settings' => $settings
-        ])->setPaper('a4', 'portrait');
-
-        return $pdf->download('Invoice-ORD-' . $id . '.pdf');
-    }
-
-    public function downloadOrder(Request $request, $id)
-    {
         $order = DB::table('agent_orders')
             ->leftJoin('sales_agents', 'agent_orders.sales_agent_id', '=', 'sales_agents.id')
             ->leftJoin('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
@@ -1253,13 +1051,17 @@ class OrderController extends Controller
                 'sales_men.name as sales_man_name'
             )
             ->first();
-
-        if (!$order)
-            abort(404);
-
-        if ($request->has('see_price')) {
-            $order->see_price = $request->see_price;
+        if (!$order) {
+            return null;
         }
+
+        if (!$agent->see_price) {
+            $order->see_price = 0;
+        } elseif ($request->has('see_price') && in_array((string) $request->see_price, ['0', '1', '2'], true)) {
+            $order->see_price = (int) $request->see_price;
+        }
+
+        $settings = DB::table('settings')->first();
 
         if ($order->sale_type === 'fabric') {
             $items = DB::table('agent_order_fabric_items')
@@ -1275,9 +1077,8 @@ class OrderController extends Controller
                 )
                 ->get();
 
-            $settings = DB::table('settings')->first();
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.order-pdf-fabric', compact('order', 'items', 'settings'));
-            return $pdf->download("Order_Sheet_Fabric_{$order->id}.pdf");
+            $pdf = Pdf::loadView('admin.agent_orders.order-pdf-fabric', compact('order', 'items', 'settings'));
+            return [$order, $pdf, "Order_Sheet_Fabric_{$order->id}.pdf"];
         }
 
         $itemsRaw = DB::table('agent_order_items')
@@ -1333,143 +1134,46 @@ class OrderController extends Controller
             ];
         })->values();
 
-        $settings = DB::table('settings')->first();
         $pdf = Pdf::loadView('admin.agent_orders.order-pdf', compact('order', 'items', 'settings'))
             ->setPaper('a4', 'portrait');
+        return [$order, $pdf, 'Order_Sheet_ORD_' . $order->id . '.pdf'];
+    }
 
-        return $pdf->download('Order_Sheet_ORD_' . $id . '.pdf');
+    public function downloadOrder(Request $request, $id)
+    {
+        $sheet = $this->orderSheet($request, $id);
+        if (!$sheet) {
+            abort(404);
+        }
+        [, $pdf, $fileName] = $sheet;
+        return $pdf->download($fileName);
     }
 
     public function sendWhatsappOrder(Request $request, $id)
     {
-        $order = DB::table('agent_orders')
-            ->leftJoin('sales_agents', 'agent_orders.sales_agent_id', '=', 'sales_agents.id')
-            ->leftJoin('master_customers', 'agent_orders.master_customer_id', '=', 'master_customers.id')
-            ->leftJoin('vendors', 'agent_orders.master_vendor_id', '=', 'vendors.id')
-            ->leftJoin('sales_men', 'agent_orders.sales_man_id', '=', 'sales_men.id')
-            ->where('agent_orders.id', $id)
-            ->select(
-                'agent_orders.*',
-                DB::raw('COALESCE(sales_agents.name, "Direct (No Agent)") as agent_name'),
-                DB::raw('COALESCE(master_customers.name, vendors.name) as shop_name'),
-                DB::raw('COALESCE(master_customers.email, vendors.email) as shop_email'),
-                DB::raw('COALESCE(master_customers.phone, vendors.phone) as shop_phone'),
-                DB::raw('COALESCE(master_customers.address, vendors.address) as shop_address'),
-                DB::raw('COALESCE(master_customers.see_price, 1) as see_price'),
-                'sales_men.name as sales_man_name'
-            )
-            ->first();
-
-        if (!$order) {
+        $sheet = $this->orderSheet($request, $id);
+        if (!$sheet) {
             return back()->with('error', 'Order not found.');
         }
+        [$order, $pdf, $fileName] = $sheet;
 
-        $whatsappPhone = $order->shop_phone;
-
-        if ($request->has('phone') && !empty($request->phone)) {
-            $whatsappPhone = $request->phone;
-        }
-
-        if (empty($whatsappPhone)) {
+        $whatsappPhone = $request->filled('phone') ? $request->phone : $order->shop_phone;
+        $digits = preg_replace('/[^0-9]/', '', (string) $whatsappPhone);
+        if (empty($digits)) {
             return back()->with('error', 'No phone number available for this party.');
         }
-
-        // Override see_price if provided in request
-        if ($request->has('see_price')) {
-            $order->see_price = $request->see_price;
+        if (strlen($digits) < 10 || strlen($digits) > 12) {
+            return back()->with('error', 'Please enter a valid 10-digit WhatsApp number.');
         }
 
-        $pdf = null;
-        $fileName = '';
-
-        if ($order->sale_type === 'fabric') {
-            $items = DB::table('agent_order_fabric_items')
-                ->join('fabrics', 'agent_order_fabric_items.fabric_id', '=', 'fabrics.id')
-                ->join('fabric_receipt_details', 'agent_order_fabric_items.fabric_receipt_detail_id', '=', 'fabric_receipt_details.id')
-                ->where('agent_order_id', $id)
-                ->select(
-                    'agent_order_fabric_items.*',
-                    'fabrics.name as fabric_name',
-                    'fabrics.sku as fabric_sku',
-                    'fabric_receipt_details.roll_number',
-                    'fabric_receipt_details.batch_no'
-                )
-                ->get();
-
-            $settings = DB::table('settings')->first();
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.order-pdf-fabric', compact('order', 'items', 'settings'));
-            $fileName = "Order_Sheet_Fabric_{$order->id}.pdf";
-        } else {
-            $itemsRaw = DB::table('agent_order_items')
-                ->leftJoin('production_goods', 'agent_order_items.product_id', '=', 'production_goods.id')
-                ->leftJoin('master_design_patterns', 'production_goods.master_pattern_id', '=', 'master_design_patterns.id')
-                ->leftJoin('master_product_fittings', 'production_goods.master_product_fitting_id', '=', 'master_product_fittings.id')
-                ->leftJoin('master_series', 'production_goods.master_series_id', '=', 'master_series.id')
-                ->where('agent_order_id', $id)
-                ->select(
-                    'agent_order_items.*',
-                    'master_design_patterns.name as db_pattern_name',
-                    'master_product_fittings.name as db_fitting_name',
-                    'production_goods.name_of_garment',
-                    'master_series.name as series_name'
-                )
-                ->get();
-
-            $items = $itemsRaw->groupBy(function ($item) {
-                return $item->product_id . '_' . $item->color_id . '_' . $item->size_set_id . '_' . $item->mrp . '_' . $item->selling_price;
-            })->map(function ($group) {
-                $first = $group->first();
-
-                $inventoryInfo = DB::table('domestic_inventories')
-                    ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                    ->where('domestic_inventories.product_id', $first->product_id)
-                    ->where('domestic_inventories.color_id', $first->color_id)
-                    ->where('domestic_inventories.size_set_id', $first->size_set_id)
-                    ->where('domestic_inventories.total_boxes', '>', 0)
-                    ->select('racks.name as rack_name', 'storerooms.name as warehouse_name')
-                    ->first();
-
-                $itemRemarks = $group->pluck('remark')->filter()->unique()->implode(', ');
-
-                return (object) [
-                    'product_name' => $first->product_name,
-                    'series_name' => $first->series_name ?? '',
-                    'name_of_garment' => $first->name_of_garment ?? '',
-                    'design_number' => $first->design_number,
-                    'color_name' => $first->color_name,
-                    'color_id' => $first->color_id,
-                    'size_set_name' => $first->size_set_name,
-                    'fitting_name' => $first->db_fitting_name ?? $first->fitting_name,
-                    'pattern_name' => $first->db_pattern_name ?? $first->pattern_name,
-                    'mrp' => $first->mrp,
-                    'selling_price' => $first->selling_price,
-                    'total_qty' => $group->sum('quantity'),
-                    'box_count' => $group->sum('box_qty'),
-                    'barcode' => $first->barcode,
-                    'warehouse_name' => $inventoryInfo->warehouse_name ?? 'N/A',
-                    'rack_name' => $inventoryInfo->rack_name ?? 'N/A',
-                    'remark' => $itemRemarks ?: ($first->remark ?? null),
-                ];
-            })->values();
-
-            $settings = DB::table('settings')->first();
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.agent_orders.order-pdf', compact('order', 'items', 'settings'))
-                ->setPaper('a4', 'portrait');
-            $fileName = "Order_Sheet_ORD_{$order->id}.pdf";
-        }
-
-        $dir = public_path('whatsapp_pdfs');
-        if (!file_exists($dir)) {
-            mkdir($dir, 0777, true);
-        }
-
-        $pdf->save($dir . '/' . $fileName);
-        $physicalPath = $dir . '/' . $fileName;
+        // saved in private storage only while it is sent
+        $physicalPath = whatsapp_pdf_path($fileName);
+        $pdf->save($physicalPath);
 
         $msg = "Dear {$order->shop_name},\n\nYour Order #ORD-{$order->id} has been generated.\nPlease find your order sheet attached.\n\nThank you!";
 
         $status = send_whatsapp_attachment($whatsappPhone, $msg, $physicalPath, $fileName);
+        @unlink($physicalPath);
 
         if ($status !== false) {
             return back()->with('success', 'WhatsApp message sent to ' . $whatsappPhone . ' successfully.');
@@ -1511,11 +1215,26 @@ class OrderController extends Controller
             $fairProduct = null;
             $agent_id = Auth::guard('sales_agent')->id();
             $agent = Auth::guard('sales_agent')->user();
+            // the order being edited (only one of the agent's own orders)
+            $ownOrder = $request->filled('order_id') ? $this->agentOrders($agent)->where('id', $request->order_id)->first() : null;
 
-            // 1. Format: BX-{{ boxNo }}
+            // A sample-set barcode only works while its batch is active and given to this agent
+            $fairBatchError = function ($fairProduct) use ($agent, $agent_id) {
+                $batch = $fairProduct ? DB::table('fair_batches')->where('id', $fairProduct->fair_batch_id)->first() : null;
+                if (!$batch) return null;
+                if ((int) $batch->status === 0) return 'This sample set is inactive and cannot be scanned.';
+                if ($agent && !$agent->is_master_agent && !AgentOrderRules::batchIsForAgent($batch->sales_agent_ids, $agent_id)) {
+                    return 'This sample set barcode is not assigned to your account.';
+                }
+                return null;
+            };
+
+            // 1. Format: BX-{{ boxNo }} (box number printed on a stock box label)
             if (strpos($barcode, 'BX-') === 0) {
-                $box = DB::table('packing_boxes')->where('box_no', $barcode)->first();
-                if ($box && $box->barcode) {
+                $boxRow = DB::table('domestic_inventories')->where('box_no', $barcode)->orderByDesc('total_boxes')->first();
+                if ($boxRow) {
+                    $barcode = 'D' . $boxRow->product_id . 'S' . $boxRow->size_set_id . 'C' . $boxRow->color_id;
+                } elseif (Schema::hasTable('packing_boxes') && ($box = DB::table('packing_boxes')->where('box_no', $barcode)->first()) && $box->barcode) {
                     $barcode = $box->barcode;
                 } else {
                     return response()->json(['success' => false, 'message' => 'Box not found in records.']);
@@ -1537,7 +1256,10 @@ class OrderController extends Controller
             // 3. Format: FAIR-{{ productId }}-{{ sizeSetId }}-{{ timestamp }} OR F{{ id_base36 }}
             if (!$productId && (strpos($barcode, 'FAIR-') === 0 || preg_match('/^F[A-Z0-9]+$/i', $barcode))) {
                 $fairProduct = \App\Models\FairProduct::where('barcode', $barcode)->first();
-                
+                if ($fairProduct && ($err = $fairBatchError($fairProduct))) {
+                    return response()->json(['success' => false, 'message' => $err]);
+                }
+
                 if (strpos($barcode, 'FAIR-') === 0) {
                     $parts = explode('-', $barcode);
                     if (count($parts) >= 3 && is_numeric($parts[1]) && is_numeric($parts[2])) {
@@ -1545,19 +1267,6 @@ class OrderController extends Controller
                         $scannedSizeSetId = (int) $parts[2];
                     }
                 } elseif ($fairProduct) {
-                    $batch = \App\Models\FairBatch::find($fairProduct->fair_batch_id);
-                    if ($batch) {
-                        if ($batch->status == 0) {
-                            return response()->json(['success' => false, 'message' => 'This sample set is inactive and cannot be scanned.']);
-                        }
-                        if ($agent && !$agent->is_master_agent) {
-                            $assignedAgents = is_array($batch->sales_agent_ids) ? $batch->sales_agent_ids : json_decode($batch->sales_agent_ids, true) ?? [];
-                            if (!empty($assignedAgents) && !in_array((string)$agent_id, $assignedAgents, true) && !in_array((int)$agent_id, $assignedAgents, true)) {
-                                return response()->json(['success' => false, 'message' => 'This sample set barcode is not assigned to your account.']);
-                            }
-                        }
-                    }
-
                     $productId = (int) $fairProduct->product_id;
                     $scannedSizeSetId = (int) $fairProduct->size_set_id;
                 }
@@ -1613,6 +1322,9 @@ class OrderController extends Controller
             // 7. Direct lookup in fair_products by barcode
             if (!$productId && Schema::hasTable('fair_products')) {
                 $fp = DB::table('fair_products')->where('barcode', $barcode)->first();
+                if ($fp && ($err = $fairBatchError($fp))) {
+                    return response()->json(['success' => false, 'message' => $err]);
+                }
                 if ($fp) {
                     $productId = (int) $fp->product_id;
                     $scannedSizeSetId = (int) $fp->size_set_id;
@@ -1666,14 +1378,13 @@ class OrderController extends Controller
                         ->toArray();
 
                     // Customer's own brand discount: from the order being edited, else the shop sent by the page
-                    $scanPartyType = $request->get('party_type', 'customer');
-                    $scanCustomerId = $request->get('shop_id');
-                    if ($request->filled('order_id')) {
-                        $scanOrder = AgentOrder::find($request->order_id);
-                        if ($scanOrder) {
-                            $scanPartyType = $scanOrder->party_type;
-                            $scanCustomerId = $scanOrder->master_customer_id;
-                        }
+                    // (only the agent's own orders / shops)
+                    $scanPartyType = $request->get('party_type', 'customer') === 'vendor' ? 'vendor' : 'customer';
+                    $scanCustomerId = ($scanPartyType === 'customer' && $this->rules()->customerFor($agent, $request->get('shop_id')))
+                        ? $request->get('shop_id') : null;
+                    if ($ownOrder) {
+                        $scanPartyType = $ownOrder->party_type;
+                        $scanCustomerId = $ownOrder->master_customer_id;
                     }
                     $discount_percentage = $this->customerBrandDiscount($scanPartyType, $scanCustomerId, $product->brand_id);
                 }
@@ -1687,12 +1398,8 @@ class OrderController extends Controller
                     $availableSizeSetIds = $product->variants->pluck('master_size_measurement_id')->unique()->filter()->toArray();
                 }
 
-                $isAdvanceSample = \DB::table('domestic_inventories')
-                    ->join('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                    ->join('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                    ->where('domestic_inventories.product_id', $productId)
-                    ->where('storerooms.name', 'ADVANCE SAMPLE')
-                    ->exists();
+                // "no stock limit" is decided per colour + size set (item kept in an "order more than stock" storeroom)
+                $isAdvanceSample = false;
 
                 $sizeSetsData = [];
 
@@ -1731,26 +1438,24 @@ class OrderController extends Controller
                         }
                     }
 
+                    // every colour in stock is listed; only boxes in storerooms that take orders count as available
                     $availableColors = $availableColorsQuery
                         ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
-                        ->select('master_colors.id', 'master_colors.name', DB::raw('SUM(domestic_inventories.total_boxes) as available_boxes'), DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'))
+                        ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
+                        ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
+                        ->select('master_colors.id', 'master_colors.name',
+                            DB::raw("SUM(CASE WHEN storerooms.id IS NULL OR storerooms.order_taken = 'Yes' THEN domestic_inventories.total_boxes ELSE 0 END) as available_boxes"),
+                            DB::raw('MAX(domestic_inventories.quantity) as pcs_per_box'),
+                            DB::raw('MAX(CASE WHEN ' . \App\Models\Storeroom::overStockSql() . ' THEN 1 ELSE 0 END) as is_advance_sample'))
                         ->groupBy('master_colors.id', 'master_colors.name')
                         ->get();
-                        
-                    $allocQuery = \DB::table('agent_order_items')
-                        ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
-                        ->where('agent_orders.status', 'pending')
+
+                    // boxes open orders still have to take (this order's picked boxes count as its own)
+                    $allocations = $this->openOrderBoxes($ownOrder->id ?? null)
                         ->where('agent_order_items.product_id', $productId)
-                        ->where('agent_order_items.size_set_id', $sizeSetId);
-                    
-                    if ($request->filled('order_id')) {
-                        $allocQuery->where('agent_orders.id', '!=', $request->order_id);
-                    }
-                    
-                    $allocations = $allocQuery->select('color_id', \DB::raw('SUM(box_qty) as total_allocated'))
-                        ->groupBy('color_id')
+                        ->where('agent_order_items.size_set_id', $sizeSetId)
                         ->pluck('total_allocated', 'color_id');
-                        
+
                     $variant = $product->variants->where('master_size_measurement_id', $sizeSetId)->first();
                     if (!$variant) {
                         $variant = $product->variants->first();
@@ -1762,11 +1467,13 @@ class OrderController extends Controller
                     $main_image = ($variant && !empty($variant->image)) ? $variant->image : $main_image_base;
 
                     foreach ($availableColors as $color) {
-                        if ($isAdvanceSample) {
+                        $color->is_advance_sample = (bool) $color->is_advance_sample;
+                        if ($color->is_advance_sample) {
                             $color->available_boxes = 99999;
+                            $isAdvanceSample = true;
                         } else {
-                            $allocated = $allocations->get($color->id) ?? 0;
-                            $color->available_boxes = max(0, $color->available_boxes - $allocated);
+                            $allocated = (int) ($allocations->get($color->id) ?? 0);
+                            $color->available_boxes = max(0, (int) $color->available_boxes - $allocated);
                         }
 
                         $cImg = null;
@@ -1831,88 +1538,9 @@ class OrderController extends Controller
         }
     }
 
+    /** Rack an order line is expected to be picked from (shared with the offline sync). */
     public function determineRackId($product_id, $color_id, $size_set_id, $barcode, $exclude_order_id = null)
     {
-        $allocated_query = DB::table('agent_order_items')
-            ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
-            ->where('agent_orders.status', 'pending')
-            ->where('agent_order_items.product_id', $product_id)
-            ->where('agent_order_items.color_id', $color_id)
-            ->where('agent_order_items.size_set_id', $size_set_id);
-            
-        if ($exclude_order_id) {
-            $allocated_query->where('agent_orders.id', '!=', $exclude_order_id);
-        }
-        
-        $allocated_qty = $allocated_query->sum('agent_order_items.box_qty') ?? 0;
-
-        $inventories = \App\Models\DomesticInventory::select('domestic_inventories.*', 'storerooms.name as storeroom_name', 'storerooms.order_priority')
-            ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-            ->where('domestic_inventories.product_id', $product_id)
-            ->where('domestic_inventories.color_id', $color_id)
-            ->where('domestic_inventories.size_set_id', $size_set_id)
-            ->where('domestic_inventories.total_boxes', '>', 0)
-            ->where(function ($q) {
-                $q->whereNull('storerooms.id')
-                  ->orWhere('storerooms.order_taken', '=', 'Yes');
-            })
-            ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
-            ->orderBy('domestic_inventories.total_boxes', 'desc')
-            ->get();
-
-        $total_physical = $inventories->sum('total_boxes');
-        $available_global = $total_physical - $allocated_qty;
-
-        $rack_id = null;
-        
-        if ($available_global > 0) {
-            $rack_id = $inventories->first()?->rack_id;
-        }
-
-        if (!$rack_id) {
-            $max_stock_rack = \App\Models\DomesticInventory::select('domestic_inventories.*')
-                ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                ->where('domestic_inventories.barcode', $barcode)
-                ->where('domestic_inventories.total_boxes', '>', 0)
-                ->where(function ($q) {
-                    $q->whereNull('storerooms.id')
-                      ->orWhere('storerooms.order_taken', '=', 'Yes');
-                })
-                ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
-                ->orderBy('domestic_inventories.total_boxes', 'desc')
-                ->first();
-                
-            if (!$max_stock_rack) {
-                $max_stock_rack = \App\Models\DomesticInventory::select('domestic_inventories.*')
-                    ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                    ->where('domestic_inventories.barcode', $barcode)
-                    ->where(function ($q) {
-                        $q->whereNull('storerooms.id')
-                          ->orWhere('storerooms.order_taken', '=', 'Yes');
-                    })
-                    ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
-                    ->orderBy('domestic_inventories.total_boxes', 'desc')
-                    ->first();
-            }
-            if (!$max_stock_rack) {
-                $max_stock_rack = \App\Models\DomesticInventory::select('domestic_inventories.*')
-                    ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-                    ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-                    ->where('domestic_inventories.product_id', $product_id)
-                    ->where(function ($q) {
-                        $q->whereNull('storerooms.id')
-                          ->orWhere('storerooms.order_taken', '=', 'Yes');
-                    })
-                    ->orderByRaw("CASE WHEN storerooms.order_priority IS NULL OR storerooms.order_priority = '' THEN 9999 ELSE CAST(storerooms.order_priority AS UNSIGNED) END ASC")
-                    ->orderBy('domestic_inventories.total_boxes', 'desc')
-                    ->first();
-            }
-            $rack_id = $max_stock_rack ? $max_stock_rack->rack_id : null;
-        }
-
-        return $rack_id;
+        return $this->rules()->rackFor($product_id, $color_id, $size_set_id, $barcode, $exclude_order_id);
     }
 }
