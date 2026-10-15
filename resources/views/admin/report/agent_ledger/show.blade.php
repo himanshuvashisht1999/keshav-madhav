@@ -71,9 +71,10 @@
                     <thead>
                         <tr>
                             <th>Shop Name</th>
-                            <th class="text-right">Total Orders</th>
-                            <th class="text-right">Total Received</th>
-                            <th class="text-right">Pending Balance</th>
+                            <th class="text-right">Opening Balance</th>
+                            <th class="text-right">Debit (Sale)</th>
+                            <th class="text-right">Credit (Received / Return)</th>
+                            <th class="text-right">Closing Balance</th>
                             <th class="text-center no-print" style="width: 130px;">Action</th>
                         </tr>
                     </thead>
@@ -81,10 +82,11 @@
                         @foreach($shopSummary as $summary)
                             <tr>
                                 <td class="font-weight-bold">{{ $summary->name }}</td>
-                                <td class="text-right">₹{{ number_format($summary->total_orders, 2) }}</td>
-                                <td class="text-right text-success font-weight-bold">₹{{ number_format($summary->total_received, 2) }}</td>
-                                <td class="text-right {{ $summary->pending_payment > 0 ? 'text-danger font-weight-bold' : 'text-success font-weight-bold' }}">
-                                    ₹{{ number_format($summary->pending_payment, 2) }}
+                                <td class="text-right text-nowrap {{ $summary->opening_balance < 0 ? 'text-danger' : 'text-success' }}">₹{{ number_format(abs($summary->opening_balance), 2) }} <small>{{ $summary->opening_balance < 0 ? 'DR' : 'CR' }}</small></td>
+                                <td class="text-right text-nowrap">₹{{ number_format($summary->total_debit, 2) }}</td>
+                                <td class="text-right text-nowrap">₹{{ number_format($summary->total_credit, 2) }}</td>
+                                <td class="text-right text-nowrap font-weight-bold {{ $summary->balance < 0 ? 'text-danger' : 'text-success' }}">
+                                    ₹{{ number_format(abs($summary->balance), 2) }} <small class="font-weight-bold">{{ $summary->balance < 0 ? 'DR' : 'CR' }}</small>
                                 </td>
                                 <td class="text-center no-print">
                                     <a href="{{ route('admin.report.agent-ledger.show', [$agent->id, 'shop_id' => $summary->id]) }}" 
@@ -97,10 +99,12 @@
                     </tbody>
                     <tfoot>
                         <tr>
+                            @php $sumOpen = $shopSummary->sum('opening_balance'); $sumBal = $shopSummary->sum('balance'); @endphp
                             <td>GRAND TOTAL</td>
-                            <td class="text-right">₹{{ number_format($shopSummary->sum('total_orders'), 2) }}</td>
-                            <td class="text-right">₹{{ number_format($shopSummary->sum('total_received'), 2) }}</td>
-                            <td class="text-right">₹{{ number_format($shopSummary->sum('pending_payment'), 2) }}</td>
+                            <td class="text-right text-nowrap">₹{{ number_format(abs($sumOpen), 2) }} {{ $sumOpen < 0 ? 'DR' : 'CR' }}</td>
+                            <td class="text-right text-nowrap">₹{{ number_format($shopSummary->sum('total_debit'), 2) }}</td>
+                            <td class="text-right text-nowrap">₹{{ number_format($shopSummary->sum('total_credit'), 2) }}</td>
+                            <td class="text-right text-nowrap">₹{{ number_format(abs($sumBal), 2) }} {{ $sumBal < 0 ? 'DR' : 'CR' }}</td>
                             <td class="no-print"></td>
                         </tr>
                     </tfoot>
@@ -125,13 +129,22 @@
                             <th style="width: 12%;">Date</th>
                             <th>Shop</th>
                             <th>Description</th>
-                            <th style="width: 15%;" class="text-right">Debit (Order)</th>
-                            <th style="width: 15%;" class="text-right">Credit (Payment)</th>
+                            <th style="width: 15%;" class="text-right">Debit (Sale)</th>
+                            <th style="width: 15%;" class="text-right">Credit (Received / Return)</th>
                             <th style="width: 18%;" class="text-right">Balance</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @php $currentBalance = 0; @endphp
+                        <tr class="font-weight-bold" style="background: #f8fafc;">
+                            <td>{{ $startDate ? \Carbon\Carbon::parse($startDate)->format('d M Y') : '' }}</td>
+                            <td></td>
+                            <td>Opening Balance</td>
+                            <td></td>
+                            <td></td>
+                            <td class="text-right text-nowrap {{ $openingBalance < 0 ? 'text-danger' : 'text-success' }}">
+                                ₹{{ number_format(abs($openingBalance), 2) }} <small>{{ $openingBalance < 0 ? 'DR' : 'CR' }}</small>
+                            </td>
+                        </tr>
                         @forelse($transactions as $tx)
                             <tr>
                                 <td>{{ \Carbon\Carbon::parse($tx->date)->format('d M Y') }}</td>
@@ -139,10 +152,8 @@
                                     <span class="badge badge-light border">{{ $tx->shop_name }}</span>
                                 </td>
                                 <td>
-                                    <strong>{{ $tx->description }}</strong>
-                                    <div class="text-muted small">
-                                        {{ $tx->type == 'order' ? 'Reference ID: ' : 'Payment ID: ' }}{{ $tx->reference }}
-                                    </div>
+                                    <strong>{{ $tx->type }}</strong> <span class="text-muted">{{ $tx->ref }}</span>
+                                    <div class="text-muted small">{{ $tx->description }}</div>
                                 </td>
                                 <td class="text-right font-weight-bold text-danger">
                                     {!! $tx->debit > 0 ? '₹' . number_format($tx->debit, 2) : '-' !!}
@@ -150,8 +161,8 @@
                                 <td class="text-right font-weight-bold text-success">
                                     {!! $tx->credit > 0 ? '₹' . number_format($tx->credit, 2) : '-' !!}
                                 </td>
-                                <td class="text-right font-weight-bold">
-                                    ₹{{ number_format($tx->running_balance, 2) }}
+                                <td class="text-right font-weight-bold text-nowrap">
+                                    ₹{{ number_format(abs($tx->running_balance), 2) }} <small>{{ $tx->running_balance < 0 ? 'DR' : 'CR' }}</small>
                                 </td>
                             </tr>
                         @empty
@@ -162,16 +173,14 @@
                             </tr>
                         @endforelse
                     </tbody>
-                    @if($transactions->isNotEmpty())
-                        <tfoot>
-                            <tr>
-                                <td colspan="3" class="text-right">Summary</td>
-                                <td class="text-right">₹{{ number_format($transactions->sum('debit'), 2) }}</td>
-                                <td class="text-right">₹{{ number_format($transactions->sum('credit'), 2) }}</td>
-                                <td class="text-right">₹{{ number_format($transactions->last()->running_balance, 2) }}</td>
-                            </tr>
-                        </tfoot>
-                    @endif
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-right">Summary</td>
+                            <td class="text-right">₹{{ number_format($transactions->sum('debit'), 2) }}</td>
+                            <td class="text-right">₹{{ number_format($transactions->sum('credit'), 2) }}</td>
+                            <td class="text-right text-nowrap">₹{{ number_format(abs($closingBalance), 2) }} {{ $closingBalance < 0 ? 'DR' : 'CR' }}</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -181,7 +190,7 @@
         <h6 class="font-weight-bold mb-2">Note:</h6>
         <p class="small text-muted mb-0">
             * <strong>Shop Summary</strong> shows the aggregate financial position of each associated shop. <br>
-            * <strong>Detailed Ledger</strong> shows the chronological flow of all transactions (Orders and Payments). <br>
+            * <strong>Detailed Ledger</strong> shows the same entries as the Party Ledger: sales dispatched, payments, returns and adjustments. DR = the shop owes us. <br>
             * Use the "Details" button or the shop filter to focus on a specific shop's ledger.
         </p>
     </div>

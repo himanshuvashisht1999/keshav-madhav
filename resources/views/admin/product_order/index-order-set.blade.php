@@ -675,10 +675,17 @@ $('#assignForm').on('submit', function (e) {
         }
     }
 
+    const $assignBtn = $(this).find('[type="submit"]');
+    if ($assignBtn.prop('disabled')) return;
+    $assignBtn.prop('disabled', true);
+
     $.ajax({
         url: "{{ route('admin.product_order.assign_to') }}",
         type: "POST",
         data: $(this).serialize(),
+        complete: function () {
+            $assignBtn.prop('disabled', false);
+        },
         success: function (res) {
             if (res.status) {
                 $('#assignModal').modal('hide');

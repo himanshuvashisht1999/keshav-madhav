@@ -43,6 +43,16 @@
                                     <a href="javascript:void(0)" class="erp-pill-btn erp-pill-refresh" id="refreshVendorBtn" title="Refresh"><i class="fas fa-sync-alt"></i></a>
                                 </span>
                             </label>
+                            @if($data->received_rolls > 0)
+                                {{-- fabric already received on this PO: the vendor stays the same --}}
+                                <input type="hidden" name="vendor_id" value="{{ $data->vendor_id }}">
+                                <select class="form-control select2 erp-input" disabled>
+                                    @foreach($vendors as $v)
+                                        <option value="{{ $v->id }}" {{ $data->vendor_id == $v->id ? 'selected' : '' }}>{{ $v->name }}</option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted">Fabric already received ({{ $data->received_rolls }} rolls), so the vendor cannot change.</small>
+                            @else
                             <select name="vendor_id" class="form-control select2 erp-input" required>
                                 @foreach($vendors as $v)
                                     <option value="{{ $v->id }}" {{ $data->vendor_id == $v->id ? 'selected' : '' }}>
@@ -50,6 +60,7 @@
                                     </option>
                                 @endforeach
                             </select>
+                            @endif
                         </div>
 
                         {{-- Warehouse --}}
@@ -131,10 +142,16 @@
                         </thead>
                         <tbody id="fabricRollContainer">
                             @foreach($data->items as $index => $item)
+                                @php $lineReceived = $item->receipts_count > 0; @endphp
                                 <tr class="fabric-roll-row">
                                     <td class="text-center row-num">{{ $index + 1 }}</td>
                                     <td>
-                                        <select name="fabrics[{{ $index }}][fabric_id]" class="form-control erp-input fabric-select select2" required style="width: 100%;">
+                                        <input type="hidden" name="fabrics[{{ $index }}][item_id]" value="{{ $item->id }}">
+                                        @if($lineReceived)
+                                            {{-- rolls are linked to this line: its fabric cannot change --}}
+                                            <input type="hidden" name="fabrics[{{ $index }}][fabric_id]" value="{{ $item->fabric_id }}">
+                                        @endif
+                                        <select @if(!$lineReceived) name="fabrics[{{ $index }}][fabric_id]" @endif class="form-control erp-input fabric-select select2" required style="width: 100%;" {{ $lineReceived ? 'disabled' : '' }}>
                                             <option value="">Select Fabric</option>
                                             @foreach($fabrics as $f)
                                                 <option value="{{ $f->id }}" data-sku="{{ $f->sku }}" {{ $item->fabric_id == $f->id ? 'selected' : '' }}>
@@ -145,16 +162,23 @@
                                         <input type="hidden" name="fabrics[{{ $index }}][sku]" class="item-sku" value="{{ $item->fabric_sku }}">
                                     </td>
                                     <td>
-                                        <input type="number" name="fabrics[{{ $index }}][meter]" class="form-control erp-input meter-input" placeholder="0.00" step="any" required value="{{ $item->meter }}">
+                                        <input type="number" name="fabrics[{{ $index }}][meter]" class="form-control erp-input meter-input" placeholder="0.00" step="any" min="0.01" required value="{{ $item->meter }}">
+                                        @if($lineReceived)
+                                            <small class="text-muted d-block">Received: {{ number_format((float) $item->receipts_sum_meter, 2) }} m</small>
+                                        @endif
                                     </td>
                                     <td>
-                                        <input type="number" name="fabrics[{{ $index }}][price]" class="form-control erp-input price-input" placeholder="0.00" step="any" value="{{ $item->price }}">
+                                        <input type="number" name="fabrics[{{ $index }}][price]" class="form-control erp-input price-input" placeholder="0.00" step="any" min="0" value="{{ $item->price }}">
                                     </td>
                                     <td>
                                         <input type="number" name="fabrics[{{ $index }}][total_price]" class="form-control erp-input total-price-input" readonly value="{{ $item->total_price }}" step="any">
                                     </td>
                                     <td class="text-center">
-                                        <button type="button" class="erp-action-btn erp-btn-delete removeRow" title="Remove Row"><i class="fas fa-trash"></i></button>
+                                        @if($lineReceived)
+                                            <span class="badge badge-success" title="Fabric already received on this line, so it cannot be removed">Received</span>
+                                        @else
+                                            <button type="button" class="erp-action-btn erp-btn-delete removeRow" title="Remove Row"><i class="fas fa-trash"></i></button>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -252,10 +276,10 @@
                             <input type="hidden" name="fabrics[${rowIndex}][sku]" class="item-sku">
                         </td>
                         <td>
-                            <input type="number" name="fabrics[${rowIndex}][meter]" class="form-control erp-input meter-input" required placeholder="0.00" step="any">
+                            <input type="number" name="fabrics[${rowIndex}][meter]" class="form-control erp-input meter-input" required placeholder="0.00" step="any" min="0.01">
                         </td>
                         <td>
-                            <input type="number" name="fabrics[${rowIndex}][price]" class="form-control erp-input price-input" placeholder="0.00" step="any">
+                            <input type="number" name="fabrics[${rowIndex}][price]" class="form-control erp-input price-input" placeholder="0.00" step="any" min="0">
                         </td>
                         <td>
                             <input type="number" name="fabrics[${rowIndex}][total_price]" class="form-control erp-input total-price-input" readonly value="0.00" step="any">
@@ -341,6 +365,7 @@
                         select.select2('destroy');
                     }
                     select.empty();
+                    select.append('<option value="">Select Warehouse</option>');
                     data.forEach(function(item) {
                         select.append('<option value="' + item.id + '">' + item.cutting_master_name + '</option>');
                     });

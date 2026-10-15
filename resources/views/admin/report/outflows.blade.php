@@ -229,7 +229,8 @@
                             </div>
                             <div class="form-group">
                                 <label for="debitAmount">Amount</label>
-                                <input type="number" class="form-control" id="debitAmount" name="amount" step="0.01">
+                                <input type="number" class="form-control" id="debitAmount" name="amount" step="0.01" readonly>
+                                <small class="text-muted">Value of the selected records. This amount is credited to the party above.</small>
                             </div>
                         </div>
 
@@ -377,7 +378,13 @@
                         }
                     },
                     error: function(err) {
-                        Swal.fire('Error', 'An error occurred while disposing.', 'error');
+                        let msg = 'An error occurred while disposing.';
+                        if (err.responseJSON && err.responseJSON.errors) {
+                            msg = Object.values(err.responseJSON.errors).map(m => m[0]).join('\n');
+                        } else if (err.responseJSON && err.responseJSON.message) {
+                            msg = err.responseJSON.message;
+                        }
+                        Swal.fire('Error', msg, 'error');
                     }
                 });
             });

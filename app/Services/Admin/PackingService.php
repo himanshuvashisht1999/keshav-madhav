@@ -1543,14 +1543,21 @@ class PackingService
             $toUnitId = $data['to_unit_id'];
             $remarks = $data['remarks'] ?? null;
 
-            $outflow = \App\Models\ProductionOutflowInventory::findOrFail($id);
+            if (!$toStageId || !$toUnitId) {
+                throw new \Exception("Please select the new Stage and Unit.");
+            }
+
+            $outflow = \App\Models\ProductionOutflowInventory::lockForUpdate()->findOrFail($id);
             if ($outflow->type !== 'rework') {
                 throw new \Exception("Invalid record type.");
             }
 
+            $records = collect([$outflow]);
             if ($outflow->assigned_transaction_id) {
-                $tx = OrderStageTransaction::find($outflow->assigned_transaction_id);
+                $tx = OrderStageTransaction::lockForUpdate()->find($outflow->assigned_transaction_id);
                 if ($tx) {
+                    // the unit may not have started on it yet (same rule as deleting a rework)
+                    $this->assertReworkNotStarted($tx, 'moved to another unit');
                     $tx->to_stage_id = $toStageId;
                     $tx->sub_stage_id_to = $toUnitId;
                     if ($remarks) {
@@ -1558,17 +1565,23 @@ class PackingService
                     }
                     $tx->save();
                 }
+                // every defect record sent in the same rework move goes with it
+                $records = \App\Models\ProductionOutflowInventory::where('assigned_transaction_id', $outflow->assigned_transaction_id)->get();
             }
 
-            $outflow->assigned_stage_id = $toStageId;
-            $outflow->assigned_unit_id = $toUnitId;
-            if ($remarks) {
-                $outflow->remarks = $remarks;
+            foreach ($records as $record) {
+                $record->assigned_stage_id = $toStageId;
+                $record->assigned_unit_id = $toUnitId;
+                if ($remarks) {
+                    $record->remarks = $remarks;
+                }
+                $record->save();
             }
-            $outflow->save();
 
             DB::commit();
-            return ['status' => 'success', 'message' => "Rework unit assignment updated successfully."];
+            return ['status' => 'success', 'message' => $records->count() > 1
+                ? "Rework unit assignment updated for {$records->count()} records sent together in the same rework."
+                : "Rework unit assignment updated successfully."];
         } catch (\Exception $e) {
             DB::rollBack();
             return ['status' => 'error', 'message' => $e->getMessage()];
@@ -1798,14 +1811,14 @@ class PackingService
     /**
      * A rework move that the receiving unit has already started on (sent some on, or closed) must not be deleted.
      */
-    private function assertReworkNotStarted(\App\Models\OrderStageTransaction $tx): void
+    private function assertReworkNotStarted(\App\Models\OrderStageTransaction $tx, string $action = 'deleted'): void
     {
         $started = $tx->remaining_quantity < $tx->quantity || !empty($tx->image) || $tx->is_closed_for_unit == 1
             || \App\Models\OrderStageTransaction::where('lot_no', $tx->lot_no)->where('from_stage_id', $tx->to_stage_id)
                 ->where('sub_stage_id', $tx->sub_stage_id_to)->where('id', '>', $tx->id)->exists();
         if ($started) {
             $unit = \App\Models\StageMasterUnit::find($tx->sub_stage_id_to);
-            throw new \Exception("Lot {$tx->lot_no}: the rework was already started by " . ($unit->name ?? 'the unit') . ", so it cannot be deleted.");
+            throw new \Exception("Lot {$tx->lot_no}: the rework was already started by " . ($unit->name ?? 'the unit') . ", so it cannot be {$action}.");
         }
     }
 

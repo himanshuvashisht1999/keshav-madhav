@@ -57,7 +57,7 @@
                                             <i class="fas fa-layer-group text-success mr-1"></i> Lot Number: {{ $lot->lot_no }}
                                         </div>
                                         <div>
-                                            <span class="badge badge-light border">{{ $lot->stage_master_unit->masterStage->name ?? '' }}</span>
+                                            <span class="badge badge-light border">Current stage: {{ $lot->current_stage ?? '-' }}</span>
                                         </div>
                                     </div>
                                     <div class="p-3 bg-white">

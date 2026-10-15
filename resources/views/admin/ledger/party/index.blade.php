@@ -105,12 +105,22 @@
     <div class="erp-filter-bar">
         <form action="{{ route('admin.ledger.party.index') }}" method="GET" class="m-0">
             <div class="row align-items-end">
-                <div class="col-md-5 col-sm-6 mb-1">
+                <div class="col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-search mr-1"></i> Search Party</label>
                     <input type="text" name="search" value="{{ request('search') }}" class="form-control erp-input" placeholder="Search by party name or phone...">
                 </div>
 
-                <div class="col-md-4 col-sm-6 mb-1">
+                <div class="col-md-2 col-sm-3 col-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> From</label>
+                    <input type="date" name="start_date" id="ledger_from" value="{{ $startDate }}" max="{{ $endDate }}" class="form-control erp-input">
+                </div>
+
+                <div class="col-md-2 col-sm-3 col-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> To</label>
+                    <input type="date" name="end_date" id="ledger_to" value="{{ $endDate }}" min="{{ $startDate }}" class="form-control erp-input">
+                </div>
+
+                <div class="col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-tags mr-1"></i> Master / Party Type</label>
                     <select name="type_id" class="form-control select2 erp-input">
                         <option value="">-- ALL MASTER TYPES --</option>
@@ -144,8 +154,17 @@
                         <th style="width: 45px;" class="text-center">#</th>
                         <th>Party Name</th>
                         <th style="width: 140px;" class="text-center">Master Type</th>
-                        <th style="width: 130px;">Contact Phone</th>
-                        <th class="text-right" style="width: 160px;">Current Balance</th>
+                        <th style="width: 120px;">Contact Phone</th>
+                        <th class="text-right" style="width: 150px;">
+                            Opening Balance
+                            <div class="font-weight-normal" style="font-size: 10px; text-transform: none;">{{ $startDate ? 'on ' . \Carbon\Carbon::parse($startDate)->format('d M Y') : 'opening entry' }}</div>
+                        </th>
+                        <th class="text-right" style="width: 130px;">Debit (DR)</th>
+                        <th class="text-right" style="width: 130px;">Credit (CR)</th>
+                        <th class="text-right" style="width: 150px;">
+                            Closing Balance
+                            <div class="font-weight-normal" style="font-size: 10px; text-transform: none;">{{ $endDate ? 'on ' . \Carbon\Carbon::parse($endDate)->format('d M Y') : 'today' }}</div>
+                        </th>
                         <th style="width: 110px;" class="text-center">Action</th>
                     </tr>
                 </thead>
@@ -170,19 +189,27 @@
                             <td class="text-muted font-weight-bold">
                                 {{ $party->phone ?? '-' }}
                             </td>
-                            <td class="text-right font-weight-bold" style="color: {{ $bal >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }};">
+                            @php $open = (float)($party->opening_balance ?? 0); @endphp
+                            <td class="text-right font-weight-bold text-nowrap" style="color: {{ $open >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }};">
+                                ₹ {{ number_format(abs($open), 2) }}
+                                <small class="font-weight-bold">{{ $open >= 0 ? 'CR' : 'DR' }}</small>
+                            </td>
+                            <td class="text-right text-nowrap {{ ($party->period_debit ?? 0) > 0 ? '' : 'text-muted' }}">₹ {{ number_format((float)($party->period_debit ?? 0), 2) }}</td>
+                            <td class="text-right text-nowrap {{ ($party->period_credit ?? 0) > 0 ? '' : 'text-muted' }}">₹ {{ number_format((float)($party->period_credit ?? 0), 2) }}</td>
+                            <td class="text-right font-weight-bold text-nowrap" style="color: {{ $bal >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }};">
                                 ₹ {{ number_format(abs($bal), 2) }}
                                 <small class="font-weight-bold" style="color: {{ $bal >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }};">
                                     {{ $bal >= 0 ? 'CR' : 'DR' }}
                                 </small>
                             </td>
+                            @php $statementUrl = route('admin.ledger.party.show', array_filter(['type' => $party->party_type, 'id' => $party->id, 'start_date' => $startDate, 'end_date' => $endDate])); @endphp
                             <td class="text-center">
-                                <a href="{{ route('admin.ledger.party.show', ['type' => $party->party_type, 'id' => $party->id]) }}" 
-                                   class="erp-action-btn erp-btn-view" 
+                                <a href="{{ $statementUrl }}"
+                                   class="erp-action-btn erp-btn-view"
                                    title="View Statement">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ route('admin.ledger.party.show', ['type' => $party->party_type, 'id' => $party->id]) }}" 
+                                <a href="{{ $statementUrl }}" 
                                    class="btn-erp btn-erp-primary btn-xs ml-1" 
                                    style="height: 24px; font-size: 11px; padding: 2px 8px;">
                                     View
@@ -191,7 +218,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
+                            <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="fas fa-user-slash fa-3x mb-2 text-secondary" style="opacity: 0.4;"></i>
                                 <p class="font-weight-bold mb-0">No parties found matching your search.</p>
                             </td>
@@ -201,8 +228,14 @@
                 @if($parties->count() > 0)
                 <tfoot>
                     <tr class="erp-table-grand-total">
-                        <td colspan="4" class="text-right font-weight-bold" style="letter-spacing: 0.5px;">TOTAL OUTSTANDING NET BALANCE (ALL PARTIES):</td>
-                        <td class="text-right font-weight-bold grand-total-val">
+                        <td colspan="4" class="text-right font-weight-bold" style="letter-spacing: 0.5px;">TOTAL (ALL PARTIES):</td>
+                        <td class="text-right font-weight-bold grand-total-val text-nowrap">
+                            ₹ {{ number_format(abs($totalOpening ?? 0), 2) }}
+                            <small>{{ ($totalOpening ?? 0) >= 0 ? 'CR' : 'DR' }}</small>
+                        </td>
+                        <td class="text-right font-weight-bold grand-total-val text-nowrap">₹ {{ number_format($totalPeriodDebit ?? 0, 2) }}</td>
+                        <td class="text-right font-weight-bold grand-total-val text-nowrap">₹ {{ number_format($totalPeriodCredit ?? 0, 2) }}</td>
+                        <td class="text-right font-weight-bold grand-total-val text-nowrap">
                             ₹ {{ number_format(abs($totalNetBalance ?? 0), 2) }}
                             <small>{{ ($totalNetBalance ?? 0) >= 0 ? 'CR' : 'DR' }}</small>
                         </td>
@@ -214,4 +247,9 @@
         </div>
     </div>
 </div>
+<script>
+    // From cannot be after To (and the other way round)
+    document.getElementById('ledger_from').addEventListener('change', function () { document.getElementById('ledger_to').min = this.value; });
+    document.getElementById('ledger_to').addEventListener('change', function () { document.getElementById('ledger_from').max = this.value; });
+</script>
 @endsection

@@ -24,8 +24,9 @@
             <div class="erp-card mb-2 p-3 text-center">
                 <label class="erp-label mb-2 font-weight-bold" style="font-size: 0.9rem;">Select Stock Type to Dispose</label>
                 <div class="d-flex justify-content-center">
-                    <div class="btn-group btn-group-toggle" data-toggle="buttons" style="max-width: 450px; width: 100%;">
-                        <label class="btn-erp btn-erp-primary flex-fill py-2 active" style="cursor: pointer;">
+                    {{-- no data-toggle="buttons": Bootstrap blocks clicks on labels without the .btn class; the script below switches the sections --}}
+                    <div class="btn-group" style="max-width: 450px; width: 100%;">
+                        <label class="btn-erp btn-erp-primary flex-fill py-2" style="cursor: pointer;">
                             <input type="radio" name="item_type" value="fabric" autocomplete="off" checked> 
                             <i class="fas fa-scroll mr-2"></i> Fabric Roll
                         </label>

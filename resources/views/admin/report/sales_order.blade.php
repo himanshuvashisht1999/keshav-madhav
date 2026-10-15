@@ -82,6 +82,7 @@
                             <th class="text-center" style="width: 100px;">Action</th>
                             <th>Lot Number</th>
                             <th class="text-right">Pcs / Lot</th>
+                            <th class="text-right">Dispatched</th>
                             <th>Current Stage</th>
                             <th class="text-center">Delay</th>
                         </tr>
@@ -124,6 +125,7 @@
                                         <span class="badge badge-light border">{{ $lot['lot_no'] }}</span>
                                     </td>
                                     <td class="text-right font-weight-bold">{{ number_format($lot['pieces_in_lot']) }}</td>
+                                    <td class="text-right">{{ number_format($lot['dispatched'] ?? 0) }}</td>
                                     <td>
                                         <span class="badge badge-light border">
                                             {{ $lot['stage_name'] }}
@@ -145,7 +147,7 @@
                             @php $sr++; @endphp
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center text-muted py-4">
+                                <td colspan="11" class="text-center text-muted py-4">
                                     No sales orders found
                                 </td>
                             </tr>

@@ -112,7 +112,6 @@ Route::get('/sc/{barcode}', [\App\Http\Controllers\Admin\Inventory\SampleProduct
 Route::get('/fc/{barcode}', [\App\Http\Controllers\Admin\Inventory\FairProductController::class, 'showColorChart'])->name('fair-product.color-chart');
 
 Route::get('/scan', [AdminFabricReceiptController::class, 'scan'])->name('scan');
-Route::get('/verify-stock-fix', [AdminReportController::class, 'verifyStockFix'])->name('verify-stock-fix');
 
 // Public Mobile Stock Check (No login required)
 Route::get('/stock-check', [\App\Http\Controllers\Admin\WarehouseStockActualController::class, 'mobileStockCheck'])->name('mobile.stock.check');
@@ -265,6 +264,14 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::get('/production-fix', [\App\Http\Controllers\Admin\ProductionFixController::class, 'show'])->name('production-fix.show');
         Route::post('/production-fix', [\App\Http\Controllers\Admin\ProductionFixController::class, 'run'])->name('production-fix.run');
 
+        // Corporate orders / dispatch: one-time repair of old order data (preview + one button)
+        Route::get('/corporate-fix', [\App\Http\Controllers\Admin\CorporateFixController::class, 'show'])->name('corporate-fix.show');
+        Route::post('/corporate-fix', [\App\Http\Controllers\Admin\CorporateFixController::class, 'run'])->name('corporate-fix.run');
+
+        // Fabric POs / shipments: one-time repair of old PO links (preview + one button)
+        Route::get('/fabric-fix', [\App\Http\Controllers\Admin\FabricFixController::class, 'show'])->name('fabric-fix.show');
+        Route::post('/fabric-fix', [\App\Http\Controllers\Admin\FabricFixController::class, 'run'])->name('fabric-fix.run');
+
         // Inventory: one-time repair of old stock data (preview + one button)
         Route::get('/inventory-fix', [\App\Http\Controllers\Admin\InventoryFixController::class, 'show'])->name('inventory-fix.show');
         Route::post('/inventory-fix', [\App\Http\Controllers\Admin\InventoryFixController::class, 'run'])->name('inventory-fix.run');
@@ -282,23 +289,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/send-whatsapp-report', [AdminPurchaseOrderController::class, 'sendWhatsappReport'])->name('send_whatsapp_report');
 
 
-            Route::get('/estimation', [AdminPurchaseOrderController::class, 'estimation'])->name('estimation');
-            Route::post('/estimation-store', [AdminPurchaseOrderController::class, 'estimation_store'])->name('estimation_store');
-            Route::post('/resend', [AdminPurchaseOrderController::class, 'resend'])->name('resend');
 
             Route::get('/vendor_fabrics/{vendor}', [AdminPurchaseOrderController::class, 'vendorFabrics'])->name('vendor_fabrics');
             Route::get('/all_vendors', [AdminPurchaseOrderController::class, 'allVendors'])->name('all_vendors');
             Route::get('/all_fabrics', [AdminPurchaseOrderController::class, 'allFabrics'])->name('all_fabrics');
             Route::get('/all_warehouses', [AdminPurchaseOrderController::class, 'allWarehouses'])->name('all_warehouses');
             Route::get('/all_companies', [AdminPurchaseOrderController::class, 'allCompanies'])->name('all_companies');
-
-            Route::get('/adjustment', [AdminPurchaseOrderController::class, 'adjustment'])->name('adjustment');
-
-            Route::get('/adjustment-shipment', [AdminPurchaseOrderController::class, 'adjustmentShipment'])->name('adjustmentShipment');
-
-            Route::POST('/adjustment-submit', [AdminPurchaseOrderController::class, 'adjustmentSubmit'])->name('adjustmentSubmit');
-
-            Route::get('/adjustment-dynamic', [AdminPurchaseOrderController::class, 'adjustmentDynamic'])->name('adjustmentDynamic');
         });
 
 
@@ -326,8 +322,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/upload-challan', [AdminFabricReceiptController::class, 'uploadChallan'])->name('upload_challan');
             Route::post('/upload-other-images', [AdminFabricReceiptController::class, 'uploadOtherImages'])->name('upload_other_images');
             Route::get('/delete-other-image/{id}', [AdminFabricReceiptController::class, 'deleteOtherImage'])->name('delete_other_image');
-            Route::get('/detail', [AdminFabricReceiptController::class, 'detail'])->name('detail');
-            Route::post('/store-detail', [AdminFabricReceiptController::class, 'storeDetail'])->name('storeDetail');
             Route::get('/purchase-order-items/{id}', [AdminFabricReceiptController::class, 'getPurchaseOrderItems'])->name('items');
 
             Route::get('/vendor_fabrics/{vendor}', [AdminFabricReceiptController::class, 'vendorFabrics'])->name('vendor_fabrics');
@@ -336,7 +330,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/check-roll-no', [AdminFabricReceiptController::class, 'checkRollNo'])->name('check-roll-no');
             Route::post('/check-bill-no', [AdminFabricReceiptController::class, 'checkBillNo'])->name('check-bill-no');
             Route::get('/download-report', [AdminFabricReceiptController::class, 'downloadReport'])->name('download_report');
-            Route::post('/return-fabric', [AdminFabricReceiptController::class, 'returnFabric'])->name('return_fabric');
             Route::get('/return', [AdminFabricReceiptController::class, 'returnPage'])->name('return');
             Route::post('/return-store', [AdminFabricReceiptController::class, 'storeReturn'])->name('store_return');
             Route::get('/return-report', [AdminFabricReceiptController::class, 'downloadReturnReport'])->name('download_return_report');
@@ -374,7 +367,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/index', [AdminStockController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminStockController::class, 'indexList'])->name('indexList');
             Route::get('/view', [AdminStockController::class, 'view'])->name('view');
-            Route::get('/detail', [AdminStockController::class, 'detail'])->name('detail');
             Route::post('/generatePdf', [AdminStockController::class, 'generateStockReportPDF'])->name('generatePdf');
             Route::post('/generateExcel', [AdminStockController::class, 'generateStockReportExcel'])->name('generateExcel');
             Route::get('/fabricQuantityExcel', [AdminStockController::class, 'generateFebricQuantityReportExcel'])->name('fabricQuantityExcel');
@@ -1902,208 +1894,7 @@ Route::prefix('/admin')->name('admin.')->middleware(['web', 'checkAdminLogin'])-
     });
 });
 
-// Tool to safely manage duplicate master colors in live / local without touching physical barcodes or box stickers
-// Accessible by logged-in admin OR ?key=km_merge_colors_live_2026
-Route::get('/admin/tools/merge-duplicate-colors', function (\Illuminate\Http\Request $request) {
-    if (!Auth::check() && $request->get('key') !== 'km_merge_colors_live_2026') {
-        return response()->json(['error' => 'Unauthorized. Please login as admin or pass key=km_merge_colors_live_2026.'], 403);
-    }
 
-    $results = [];
-
-    \DB::transaction(function () use (&$results) {
-        // Strategy:
-        // Physical box stickers printed with barcodes like D...C111 and D...C127 and existing PDFs MUST NOT BE BROKEN.
-        // Therefore, we keep barcodes and variant records intact, and set legacy duplicate master colors
-        // to status = 0 (Inactive) with their clean original names ('D.GREY', 'MIX').
-        // Because dropdowns only query `where('status', 1)`, users will NEVER see duplicates when creating
-        // new products or orders. And because MasterColor::find(111) returns 'D.GREY', warehouse scanners
-        // and PDFs will continue to resolve the color name seamlessly!
-
-        $colorConfigs = [
-            [
-                'active_id'   => 21,
-                'inactive_id' => 111,
-                'name'        => 'D.GREY',
-            ],
-            [
-                'active_id'   => 69,
-                'inactive_id' => 127,
-                'name'        => 'MIX',
-            ],
-        ];
-
-        foreach ($colorConfigs as $cfg) {
-            // 1. Keep primary active (status = 1)
-            \DB::table('master_colors')->where('id', $cfg['active_id'])->update([
-                'name'   => $cfg['name'],
-                'status' => 1,
-            ]);
-
-            // 2. Set duplicate to inactive (status = 0) with clean name so scanning & PDFs still resolve
-            \DB::table('master_colors')->where('id', $cfg['inactive_id'])->update([
-                'name'   => $cfg['name'],
-                'status' => 0,
-            ]);
-
-            $results[] = [
-                'color'       => $cfg['name'],
-                'active_id'   => $cfg['active_id'] . ' (status = 1, shown in dropdowns)',
-                'inactive_id' => $cfg['inactive_id'] . ' (status = 0, preserved for physical box barcodes & PDFs)',
-            ];
-        }
-
-        // 3. Ensure M.BLUE active (129) and deleted (35)
-        \DB::table('master_colors')->where('id', 129)->update([
-            'name'   => 'M.BLUE',
-            'status' => 1,
-        ]);
-        \DB::table('master_colors')->where('id', 35)->update([
-            'name'   => 'M.BLUE',
-            'status' => 3,
-        ]);
-        $results[] = [
-            'color'       => 'M.BLUE',
-            'active_id'   => '129 (status = 1, shown in dropdowns)',
-            'inactive_id' => '35 (status = 3, deleted)',
-        ];
-    });
-
-    return response()->json([
-        'status'  => 'success',
-        'message' => 'Duplicate colors deactivated safely without modifying any barcodes or physical box stickers.',
-        'details' => $results,
-    ]);
-})->middleware(['web'])->name('admin.tools.merge-duplicate-colors');
-
-Route::get('/admin/tools/fix-orphaned-inventory-products', function () {
-    $results = [];
-
-    \DB::transaction(function () use (&$results) {
-        // 1. Fix domestic_inventories product_id 116 -> 12 (Design 17123)
-        $inv = \DB::table('domestic_inventories')->where('product_id', 116)->get();
-        foreach ($inv as $item) {
-            $newBarcode = 'D12S' . $item->size_set_id . 'C' . $item->color_id;
-            \DB::table('domestic_inventories')->where('id', $item->id)->update([
-                'product_id' => 12,
-                'barcode'    => $newBarcode,
-            ]);
-            $results['domestic_inventories'][] = [
-                'id' => $item->id,
-                'old_product_id' => 116,
-                'new_product_id' => 12,
-                'old_barcode' => $item->barcode,
-                'new_barcode' => $newBarcode,
-                'total_boxes' => $item->total_boxes
-            ];
-        }
-
-        // Ensure variant exists for Product 12 with Size Set 4 so MRP and variants resolve
-        $variant = \DB::table('production_goods_variants')
-            ->where('production_goods_id', 12)
-            ->where('master_size_measurement_id', 4)
-            ->first();
-
-        if (!$variant) {
-            $variantId = \DB::table('production_goods_variants')->insertGetId([
-                'production_goods_id' => 12,
-                'master_size_measurement_id' => 4,
-                'mrp' => 1120.00,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-            $results['created_variant'] = [
-                'production_goods_id' => 12,
-                'size_set_id' => 4,
-                'variant_id' => $variantId,
-                'mrp' => 1120.00
-            ];
-        } else {
-            $variantId = $variant->id;
-        }
-
-        // Ensure variant color exists for color 58
-        $variantColor = \DB::table('production_goods_variant_colors')
-            ->where('variant_id', $variantId)
-            ->where('master_color_id', 58)
-            ->first();
-
-        if (!$variantColor) {
-            \DB::table('production_goods_variant_colors')->insert([
-                'variant_id' => $variantId,
-                'master_color_id' => 58,
-                'barcode' => 'D12S4C58',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-            $results['created_variant_color'] = [
-                'variant_id' => $variantId,
-                'color_id' => 58,
-                'barcode' => 'D12S4C58'
-            ];
-        }
-
-        // 2. Fix order_products_sets orphaned production_goods_id by matching design_number
-        $orphanedOps = \DB::table('order_products_sets as ops')
-            ->leftJoin('production_goods as pg', 'ops.production_goods_id', '=', 'pg.id')
-            ->whereNull('pg.id')
-            ->whereNotNull('ops.production_goods_id')
-            ->select('ops.id', 'ops.production_goods_id', 'ops.design_number')
-            ->get();
-
-        foreach ($orphanedOps as $ops) {
-            $cleanDesign = trim(explode('(', $ops->design_number)[0]);
-            $matchedProduct = \DB::table('production_goods')
-                ->where('design_number', $ops->design_number)
-                ->orWhere('design_number', $cleanDesign)
-                ->first();
-
-            if ($matchedProduct) {
-                \DB::table('order_products_sets')->where('id', $ops->id)->update([
-                    'production_goods_id' => $matchedProduct->id
-                ]);
-                $results['order_products_sets'][] = [
-                    'id' => $ops->id,
-                    'design_number' => $ops->design_number,
-                    'old_product_id' => $ops->production_goods_id,
-                    'matched_product_id' => $matchedProduct->id,
-                ];
-            }
-        }
-
-        // 3. Fix agent_order_items orphaned product_id by matching design_number
-        $orphanedAoi = \DB::table('agent_order_items as aoi')
-            ->leftJoin('production_goods as pg', 'aoi.product_id', '=', 'pg.id')
-            ->whereNull('pg.id')
-            ->whereNotNull('aoi.product_id')
-            ->select('aoi.id', 'aoi.product_id', 'aoi.design_number')
-            ->get();
-
-        foreach ($orphanedAoi as $aoi) {
-            $matchedProduct = \DB::table('production_goods')
-                ->where('design_number', $aoi->design_number)
-                ->first();
-
-            if ($matchedProduct) {
-                \DB::table('agent_order_items')->where('id', $aoi->id)->update([
-                    'product_id' => $matchedProduct->id
-                ]);
-                $results['agent_order_items'][] = [
-                    'id' => $aoi->id,
-                    'design_number' => $aoi->design_number,
-                    'old_product_id' => $aoi->product_id,
-                    'matched_product_id' => $matchedProduct->id,
-                ];
-            }
-        }
-    });
-
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Orphaned products fixed and re-linked successfully.',
-        'details' => $results
-    ]);
-})->middleware(['web'])->name('admin.tools.fix-orphaned-inventory-products');
 
 
 

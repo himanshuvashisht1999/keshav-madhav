@@ -283,6 +283,7 @@ class PaymentAdjustmentController extends Controller
         }
 
         // Update Global Account Balance (Single aggregate update)
+        $account = null; // no bank / cash account (e.g. a debit charged from Reports > Outflows)
         if ($mode == 'bank' && $accountId) {
             $account = BankAccount::find($accountId);
         } elseif ($accountId) {
@@ -689,6 +690,7 @@ class PaymentAdjustmentController extends Controller
         }
 
         // Reverse Global Account Balance
+        $account = null; // no bank / cash account (e.g. a debit charged from Reports > Outflows)
         if ($mode == 'bank' && $accountId) {
             $account = BankAccount::find($accountId);
         } elseif ($accountId) {

@@ -146,10 +146,10 @@
                                     <input type="hidden" name="fabrics[0][sku]" class="item-sku">
                                 </td>
                                 <td>
-                                    <input type="number" name="fabrics[0][meter]" class="form-control erp-input meter-input" placeholder="0.00" step="any" required value="{{ $selected_total_meter ?? '' }}">
+                                    <input type="number" name="fabrics[0][meter]" class="form-control erp-input meter-input" placeholder="0.00" step="any" min="0.01" required value="{{ $selected_total_meter ?? '' }}">
                                 </td>
                                 <td>
-                                    <input type="number" name="fabrics[0][price]" class="form-control erp-input price-input" placeholder="0.00" step="any">
+                                    <input type="number" name="fabrics[0][price]" class="form-control erp-input price-input" placeholder="0.00" step="any" min="0">
                                 </td>
                                 <td>
                                     <input type="number" name="fabrics[0][total_price]" class="form-control erp-input total-price-input" readonly value="0.00" step="any">
@@ -262,10 +262,10 @@
                             <input type="hidden" name="fabrics[${rowIndex}][sku]" class="item-sku">
                         </td>
                         <td>
-                            <input type="number" name="fabrics[${rowIndex}][meter]" class="form-control erp-input meter-input" required placeholder="0.00" step="any">
+                            <input type="number" name="fabrics[${rowIndex}][meter]" class="form-control erp-input meter-input" required placeholder="0.00" step="any" min="0.01">
                         </td>
                         <td>
-                            <input type="number" name="fabrics[${rowIndex}][price]" class="form-control erp-input price-input" placeholder="0.00" step="any">
+                            <input type="number" name="fabrics[${rowIndex}][price]" class="form-control erp-input price-input" placeholder="0.00" step="any" min="0">
                         </td>
                         <td>
                             <input type="number" name="fabrics[${rowIndex}][total_price]" class="form-control erp-input total-price-input" readonly value="0.00" step="any">
@@ -354,6 +354,7 @@
                         select.select2('destroy');
                     }
                     select.empty();
+                    select.append('<option value="">Select Warehouse</option>');
                     data.forEach(function(item) {
                         select.append('<option value="' + item.id + '">' + item.cutting_master_name + '</option>');
                     });

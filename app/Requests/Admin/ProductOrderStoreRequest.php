@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProductOrderStoreRequest extends FormRequest{
+    use ShowsErrorPopup; // the order screens show the session error as a pop-up
+
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -40,12 +42,18 @@ class ProductOrderStoreRequest extends FormRequest{
 
     public function messages(){
         return [
-
+            'product_quantity.*.min' => 'Every line needs a quantity of 1 or more.',
+            'corporate_order_file.mimes' => 'The order file must be a PDF or a picture (JPG / PNG).',
         ];
     }
 
     public function attributes(){
         return [
+            'master_customer_id' => 'customer',
+            'product_quantity.*' => 'quantity',
+            'designList.*' => 'design',
+            'colourList.*' => 'colour',
+            'sizeList.*' => 'size set',
         ];
     }
 }

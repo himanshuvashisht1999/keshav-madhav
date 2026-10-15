@@ -16,7 +16,7 @@
             </div>
         </div>
         <div class="erp-header-actions">
-            <button type="submit" form="delete-multiple-form" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete selected lots and all their related data?')">
+            <button type="submit" form="delete-multiple-form" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete the selected lots? A lot whose pieces have already gone to the next stage will not be deleted.')">
                 <i class="fas fa-trash mr-1"></i> Delete selected
             </button>
         </div>

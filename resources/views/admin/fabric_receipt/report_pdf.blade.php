@@ -251,7 +251,7 @@
             <tr>
                 <td width="70%" valign="top">
                     @php
-                        $general_setting = \App\Models\GeneralSetting::first();
+                        $general_setting = \App\Models\GeneralSettings::where('status', 1)->first();
                     @endphp
                     <div class="company-name">@include('admin.pdf.partials.brand_name', ['name' => $general_setting->website_name ?? 'SNAPKID'])</div>
                     <div class="company-meta">

@@ -126,7 +126,7 @@
                         <div class="col-md-3 col-sm-6 mb-2">
                             <label class="erp-label">Bill No <span class="required">*</span></label>
                             <input type="text" name="bill_no" id="bill_no" class="form-control erp-input" placeholder="Enter Bill No" required>
-                            <span id="bill_no_error" class="text-danger font-weight-bold" style="display: none; font-size: 10px;">Bill Number already exists!</span>
+                            <span id="bill_no_error" class="text-danger font-weight-bold" style="display: none; font-size: 10px;">This bill no is already entered for this vendor!</span>
                         </div>
 
                         <div class="col-md-3 col-sm-6 mb-2">
@@ -369,25 +369,9 @@
                 if (duplicateFound) {
                     alert('Duplicate Roll / Lot No for the same fabric in current form');
                     input.val('').focus();
-                    return; // 🚫 DB check stop
+                    return;
                 }
-
-                $.ajax({
-                    url: "{{ route('admin.fabric_receipt.check-roll-no') }}",
-                    type: "POST",
-                    data: {
-                        roll_no: rollNo,
-                        fabric_id: fabricId,
-                        warehouse_id: $('#master_fabric_warehouse_id').val(),
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function (res) {
-                        if (res.exists) {
-                            alert('Roll No already exists for this fabric');
-                            input.val('').focus();
-                        }
-                    }
-                });
+                // the same roll no may be used again in other shipments
             });
 
             $('#view-challan').on('click', function () {
@@ -1271,6 +1255,10 @@
     </script>
 
     <script>
+        // the same bill no is allowed for different vendors: check again when the vendor changes
+        $(document).on('change', '#vendor-select', function () {
+            if ($('#bill_no').val()) $('#bill_no').trigger('change');
+        });
         $(document).on('change', '#bill_no', function () {
             let bill_no = $(this).val();
             let bill_no_error = $('#bill_no_error');
@@ -1282,7 +1270,8 @@
                     type: 'POST',
                     data: {
                         _token: "{{ csrf_token() }}",
-                        bill_no: bill_no
+                        bill_no: bill_no,
+                        vendor_id: $('#vendor-select').val()
                     },
                     success: function (response) {
                         if (response.exists) {

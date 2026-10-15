@@ -956,15 +956,17 @@ class SlipReportService
             $sheet->setCellValue('I' . $row, $computed['total_quantity']);
             $sheet->setCellValue('J' . $row, $statusText);
 
-            $sheet->getStyle('A' . $row . ':J' . $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-            $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('C' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('G' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('I' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle('J' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
             $row++;
+        }
+
+        // same styles as before, set once for all data rows (styling row by row made big exports slow)
+        if ($row > 5) {
+            $last = $row - 1;
+            $sheet->getStyle('A5:J' . $last)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+            foreach (['A', 'C', 'G', 'H', 'J'] as $col) {
+                $sheet->getStyle($col . '5:' . $col . $last)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            }
+            $sheet->getStyle('I5:I' . $last)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         }
 
         foreach (range('A', 'J') as $col) {

@@ -128,65 +128,69 @@ class OrderDispatchController extends Controller
     public function updateInvoice(Request $request)
     {
         try {
-            $dispatch = OrderDispatch::findOrFail($request->dispatch_id);
-            $oldGrandTotal = $dispatch->total_amount;
+            $result = \DB::transaction(function () use ($request) {
+                $dispatch = OrderDispatch::lockForUpdate()->findOrFail($request->dispatch_id);
+                $oldGrandTotal = (float) $dispatch->total_amount;
 
-            // Recalculate based on items
-            $data = $this->service->view(new Request(['id' => $dispatch->id]));
-            $subtotal = $data['order_dispatch_data']['total_dispatch_amount'];
+                // Recalculate based on items
+                $data = $this->service->view(new Request(['id' => $dispatch->id]));
+                $subtotal = (float) $data['order_dispatch_data']['total_dispatch_amount'];
 
-            $discountAmount = floatval($request->discount_amount) ?? 0;
-            $discountPercentage = floatval($request->discount_percentage) ?? 0;
+                // Discount: typed as an amount or as a %
+                if ($request->filled('discount_percentage') && !$request->filled('discount_amount')) {
+                    $discountAmount = round($subtotal * Service::charge($request->discount_percentage, 'discount %', 100) / 100, 2);
+                } else {
+                    $discountAmount = Service::charge($request->discount_amount, 'discount');
+                }
+                if ($discountAmount > $subtotal + 0.001) {
+                    throw new \Exception('The discount is more than the bill.');
+                }
+                $otherCharges = Service::charge($request->other_charges, 'other charges');
+                $baseForGst = ($subtotal - $discountAmount) + $otherCharges;
 
-            // Bi-directional calculation
-            if ($request->filled('discount_percentage') && !$request->filled('discount_amount')) {
-                $discountAmount = ($subtotal * $discountPercentage) / 100;
-            } else if ($request->filled('discount_amount')) {
-                $discountPercentage = $subtotal > 0 ? ($discountAmount / $subtotal) * 100 : 0;
-            }
+                // GST: typed as a % or as an amount
+                if ($request->filled('gst_percentage') && !$request->filled('gst_amount')) {
+                    $gstPercentage = Service::charge($request->gst_percentage, 'GST %', 100);
+                } elseif ($request->filled('gst_amount')) {
+                    $gstAmount = Service::charge($request->gst_amount, 'GST amount');
+                    $gstPercentage = $baseForGst > 0 ? ($gstAmount / $baseForGst) * 100 : 0;
+                } else {
+                    $gstPercentage = Service::charge($request->gst_percentage, 'GST %', 100);
+                }
+                if ($gstPercentage > 100) {
+                    throw new \Exception('The GST is not valid.');
+                }
 
-            $otherCharges = floatval($request->other_charges) ?? 0;
-            $baseForGst = ($subtotal - $discountAmount) + $otherCharges;
+                $bill = Service::billTotals($subtotal, $discountAmount, $otherCharges, $gstPercentage);
 
-            $gstPercentage = floatval($request->gst_percentage) ?? 0;
-            $gstAmount = floatval($request->gst_amount) ?? 0;
+                // Update dispatch
+                $dispatch->company_id = $request->company_id;
+                if ($request->filled('dispatch_date')) {
+                    $dispatch->dispatch_date = $request->dispatch_date;
+                }
+                $dispatch->discount_percentage = $subtotal > 0 ? round($bill['discount'] / $subtotal * 100, 6) : 0;
+                $dispatch->discount_amount = $bill['discount'];
+                $dispatch->gst_percentage = $gstPercentage;
+                $dispatch->gst_amount = $bill['gst'];
+                $dispatch->other_charges = $bill['other'];
+                $dispatch->remark = $request->remark;
+                $dispatch->total_amount = $bill['total'];
+                $dispatch->save();
 
-            if ($request->filled('gst_percentage') && !$request->filled('gst_amount')) {
-                $gstAmount = ($baseForGst * $gstPercentage) / 100;
-            } else if ($request->filled('gst_amount')) {
-                $gstPercentage = $baseForGst > 0 ? ($gstAmount / $baseForGst) * 100 : 0;
-            } else {
-                $gstAmount = ($baseForGst * $gstPercentage) / 100;
-            }
-
-            $newGrandTotal = $baseForGst + $gstAmount;
-
-            // Update dispatch
-            $dispatch->company_id = $request->company_id;
-            if ($request->filled('dispatch_date')) {
-                $dispatch->dispatch_date = $request->dispatch_date;
-            }
-            $dispatch->discount_percentage = $discountPercentage;
-            $dispatch->discount_amount = $discountAmount;
-            $dispatch->gst_percentage = $gstPercentage;
-            $dispatch->gst_amount = $gstAmount;
-            $dispatch->other_charges = $otherCharges;
-            $dispatch->remark = $request->remark;
-            $dispatch->total_amount = $newGrandTotal;
-            $dispatch->save();
-
-            // Update Customer Balance
-            $diff = $oldGrandTotal - $newGrandTotal;
-            $customer = \App\Models\MasterCustomer::find($dispatch->customer_id);
-            if ($customer) {
-                $customer->balance += $diff;
-                $customer->save();
-            }
+                // Update Customer Balance
+                $diff = $oldGrandTotal - $bill['total'];
+                $customer = \App\Models\MasterCustomer::lockForUpdate()->find($dispatch->customer_id);
+                if ($customer) {
+                    $customer->balance += $diff;
+                    $customer->save();
+                }
+                return $bill['total'];
+            });
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Invoice updated successfully',
-                'new_total' => number_format($newGrandTotal, 2)
+                'new_total' => number_format($result, 2)
             ]);
 
         } catch (\Exception $e) {

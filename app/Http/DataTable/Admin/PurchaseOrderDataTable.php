@@ -10,7 +10,7 @@ use Yajra\DataTables\Facades\DataTables;
 class PurchaseOrderDataTable  {
 
     public function indexList($request){
-        $queue = PurchaseOrder::where('status', 1);
+        $queue = PurchaseOrder::where('status', 1)->withCount('received_rolls');
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -59,7 +59,7 @@ class PurchaseOrderDataTable  {
                 <div class="d-inline-flex align-items-center">
                     <a href="' . route('admin.purchase_order.view',['id' => $parameter]) . '" class="erp-action-btn erp-btn-view" data-toggle="tooltip" title="View"><i class="fas fa-eye"></i></a>
                     <a href="' . route('admin.purchase_order.edit',['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" data-toggle="tooltip" title="Edit"><i class="fas fa-edit"></i></a>
-                    <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="erp-action-btn erp-btn-delete" data-toggle="tooltip" title="Delete"><i class="fas fa-trash"></i></a>
+                    ' . ($queue->received_rolls_count > 0 ? '' : '<a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="erp-action-btn erp-btn-delete" data-toggle="tooltip" title="Delete"><i class="fas fa-trash"></i></a>') . '
                 </div>
                 ';
             })

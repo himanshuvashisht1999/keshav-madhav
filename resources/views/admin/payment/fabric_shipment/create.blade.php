@@ -91,6 +91,7 @@
                                                         <th>Shipment No</th>
                                                         <th>Total Amount</th>
                                                         <th>Paid</th>
+                                                        <th>Returned</th>
                                                         <th>Balance</th>
                                                         <th>Action</th>
                                                     </tr>
@@ -258,6 +259,7 @@
                                                                                     <td>${shipment.shipment_id || '-'}</td>
                                                                                     <td>${parseFloat(shipment.total_amount).toFixed(2)}</td>
                                                                                     <td>${parseFloat(shipment.paid_amount || 0).toFixed(2)}</td>
+                                                                                    <td>${parseFloat(shipment.returned_amount || 0).toFixed(2)}</td>
                                                                                     <td>${parseFloat(shipment.balance_amount || 0).toFixed(2)}</td>
                                                                                     <td>
                                                                                         <a href="{{ url('admin/fabric-receipt/view') }}?id=${shipment.id}" target="_blank" class="btn btn-sm btn-info" title="View Details">

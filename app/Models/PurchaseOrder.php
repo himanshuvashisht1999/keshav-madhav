@@ -41,6 +41,10 @@ class PurchaseOrder extends Model
     public function fabric_warehouse(){
         return $this->hasOne('App\Models\MasterFabricWarehouse','id','fabric_warehouse_id');
     }
+    // rolls received on this PO (a PO with received rolls cannot be deleted)
+    public function received_rolls(){
+        return $this->hasMany('App\Models\FabricReceiptDetail','purchase_order_id','id');
+    }
 
 
     

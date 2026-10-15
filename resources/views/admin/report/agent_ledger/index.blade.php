@@ -48,9 +48,10 @@
                             <th style="width: 50px;" class="text-center">#</th>
                             <th>Sales Agent</th>
                             <th class="text-center">Shops</th>
-                            <th class="text-right">Total Orders</th>
-                            <th class="text-right">Total Paid</th>
-                            <th class="text-right">Balance</th>
+                            <th class="text-right">Opening Balance</th>
+                            <th class="text-right">Debit (Sale)</th>
+                            <th class="text-right">Credit (Received / Return)</th>
+                            <th class="text-right">Closing Balance</th>
                             <th class="text-center" style="width: 120px;">Action</th>
                         </tr>
                     </thead>
@@ -65,14 +66,17 @@
                                 <td class="text-center">
                                     <span class="badge badge-light border">{{ $agent->shops_count }}</span>
                                 </td>
-                                <td class="text-right font-weight-bold">
-                                    ₹{{ number_format($agent->total_order_value, 2) }}
+                                <td class="text-right font-weight-bold text-nowrap {{ $agent->opening_balance < 0 ? 'text-danger' : 'text-success' }}">
+                                    ₹{{ number_format(abs($agent->opening_balance), 2) }} <small class="font-weight-bold">{{ $agent->opening_balance < 0 ? 'DR' : 'CR' }}</small>
                                 </td>
-                                <td class="text-right text-success font-weight-bold">
-                                    ₹{{ number_format($agent->total_payments, 2) }}
+                                <td class="text-right text-nowrap">
+                                    ₹{{ number_format($agent->total_debit, 2) }}
                                 </td>
-                                <td class="text-right font-weight-bold {{ $agent->balance > 0 ? 'text-danger' : 'text-success' }}">
-                                    ₹{{ number_format($agent->balance, 2) }}
+                                <td class="text-right text-nowrap">
+                                    ₹{{ number_format($agent->total_credit, 2) }}
+                                </td>
+                                <td class="text-right font-weight-bold text-nowrap {{ $agent->balance < 0 ? 'text-danger' : 'text-success' }}">
+                                    ₹{{ number_format(abs($agent->balance), 2) }} <small class="font-weight-bold">{{ $agent->balance < 0 ? 'DR' : 'CR' }}</small>
                                 </td>
                                 <td class="text-center">
                                     <a href="{{ route('admin.report.agent-ledger.show', $agent->id) }}"
@@ -83,7 +87,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
+                                <td colspan="8" class="text-center text-muted py-4">
                                     No sales agents found.
                                 </td>
                             </tr>

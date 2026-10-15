@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Foundation\Http\FormRequest;
 
 class PurchaseOrderUpdateRequest extends FormRequest{
+    use ShowsErrorPopup;
+
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -22,22 +24,31 @@ class PurchaseOrderUpdateRequest extends FormRequest{
         // dd($this);
         return [
             // 'sku'    => 'required|unique:purchase_orders,sku,' . $request->id,
+            'id' => 'required|integer|exists:purchase_orders,id',
             'date' => 'required',
-            'vendor_id' => 'required',
+            'vendor_id' => 'required|integer|exists:vendors,id',
             'delivery_date' => 'required',
             'fabric_warehouse_id' => 'required',
             'master_company_id' => 'required',
+            'fabrics' => 'required|array|min:1',
+            'fabrics.*.item_id' => 'nullable|integer',
+            'fabrics.*.fabric_id' => 'required|integer|exists:fabrics,id',
+            'fabrics.*.meter' => 'required|numeric|gt:0',
+            'fabrics.*.price' => 'nullable|numeric|min:0',
         ];
     }
 
     public function messages(){
         return [
-
+            'fabrics.required' => 'Add at least one fabric line.',
         ];
     }
 
     public function attributes(){
         return [
+            'fabrics.*.fabric_id' => 'fabric',
+            'fabrics.*.meter' => 'meters',
+            'fabrics.*.price' => 'price',
         ];
     }
 }

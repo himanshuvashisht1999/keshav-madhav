@@ -128,6 +128,13 @@
                 </tr>
                 @endif
 
+                @if(!empty($otherCharges) && $otherCharges > 0)
+                <tr class="summary-row">
+                    <td colspan="6" class="text-right">Other Charges (+)</td>
+                    <td class="text-right">+ Rs. {{ number_format($otherCharges, 2) }}</td>
+                </tr>
+                @endif
+
                 <tr class="summary-row">
                     <td colspan="5" class="text-right">GST (+)</td>
                     <td class="text-right"></td>

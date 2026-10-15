@@ -122,7 +122,7 @@
                                             <span class="font-weight-bold">{{ $order['total_pcs_in_order'] }}</span>
                                         </td>
                                         <td rowspan="{{ $rowspan }}" class="order-cell">
-                                            {{ \Carbon\Carbon::parse($order['expected_delivery_date'])->format('d M Y') }}
+                                            {{ $order['expected_delivery_date'] ? \Carbon\Carbon::parse($order['expected_delivery_date'])->format('d M Y') : '-' }}
                                         </td>
                                     @endif
 
@@ -247,12 +247,14 @@
                             <tr>
                                 <th style="width: 50px;" class="text-center">#</th>
                                 <th>Stage name</th>
-                                <th>Expected time</th>
+                                <th>Started</th>
+                                <th>Planned end</th>
+                                <th>Finished</th>
                             </tr>
                         </thead>
                         <tbody id="lotTrackingBody">
                             <tr>
-                                <td colspan="3" class="text-center py-3 text-muted">Loading...</td>
+                                <td colspan="5" class="text-center py-3 text-muted">Loading...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -311,11 +313,11 @@ document.addEventListener('DOMContentLoaded', function() {
         let tbody = document.getElementById('lotTrackingBody');
         tbody.innerHTML = `
             <tr>
-                <td colspan="3" class="text-center py-3 text-muted">Loading...</td>
+                <td colspan="5" class="text-center py-3 text-muted">Loading...</td>
             </tr>
         `;
 
-        fetch(`{{ route('admin.report.lotTrackingDetails') }}?lot_no=${lotNo}&order_no=${orderNo}`)
+        fetch(`{{ route('admin.report.lotTrackingDetails') }}?lot_no=${encodeURIComponent(lotNo)}&order_no=${encodeURIComponent(orderNo)}`)
             .then(res => res.json())
             .then(res => {
                 tbody.innerHTML = '';
@@ -324,8 +326,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!res.data || res.data.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="3" class="text-center py-3 text-danger">
-                                No stage tracking found
+                            <td colspan="5" class="text-center py-3 text-danger">
+                                No stage plan found for this lot
                             </td>
                         </tr>
                     `;
@@ -337,8 +339,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     tbody.innerHTML += `
                         <tr class="${isCurrent ? 'table-success font-weight-bold' : ''}">
                             <td class="text-center">${sr++}</td>
-                            <td>${row.stage_name}</td>
+                            <td>${row.stage_name}${isCurrent ? ' (current)' : ''}</td>
+                            <td>${row.start_time ?? '-'}</td>
                             <td>${row.expected_time ?? '-'}</td>
+                            <td>${row.complete_time ?? '-'}</td>
                         </tr>
                     `;
                 });
@@ -346,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(err => {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="text-center py-3 text-danger">
+                        <td colspan="5" class="text-center py-3 text-danger">
                             Error loading tracking data
                         </td>
                     </tr>

@@ -57,7 +57,7 @@ class FabricReturnController extends Controller
                 $q->where('vendor_id', $vendorId);
             })
             ->where('remaining_quantity', '>', 0)
-            ->where('status', '!=', 2)
+            ->where('status', '>', 0)
             ->orderBy('fabric_receipt_id', 'desc')
             ->orderBy('id', 'asc')
             ->get();
@@ -106,11 +106,19 @@ class FabricReturnController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $check = \Validator::make($request->all(), [
             'vendor_id' => 'required|exists:vendors,id',
             'date' => 'required|date',
             'returns' => 'required|array',
-        ]);
+            'gst_percentage' => 'nullable|numeric|min:0|max:100',
+            'discount' => 'nullable|numeric|min:0',
+            'other_charges' => 'nullable|numeric|min:0',
+            'returns.*.return_meter' => 'nullable|numeric',
+            'returns.*.price_per_meter' => 'nullable|numeric|min:0',
+        ], [], ['returns.*.price_per_meter' => 'rate', 'returns.*.return_meter' => 'return meter', 'gst_percentage' => 'GST %']);
+        if ($check->fails()) {
+            return redirect()->back()->withInput()->with('error', $check->errors()->first());
+        }
 
         // Ensure at least one roll is chosen with return meter > 0
         $validRollSelected = false;
@@ -135,7 +143,9 @@ class FabricReturnController extends Controller
             $return->vendor_id = $vendor->id;
             $return->date = $request->date ?? date('Y-m-d');
             $return->remarks = $request->remarks;
-            $return->return_number = 'RET-' . date('ymd') . '-' . rand(1000, 9999);
+            do {
+                $return->return_number = 'RET-' . date('ymd') . '-' . rand(1000, 9999);
+            } while (FabricReturn::where('return_number', $return->return_number)->exists());
             $return->gst_percentage = (float) ($request->gst_percentage ?? 0);
             $return->discount = (float) ($request->discount ?? 0);
             $return->other_charges = (float) ($request->other_charges ?? 0);
@@ -152,9 +162,12 @@ class FabricReturnController extends Controller
                     continue;
                 }
 
-                $detail = FabricReceiptDetail::find($detailId);
+                // only this vendor's rolls; locked so two returns cannot take the same meters
+                $detail = FabricReceiptDetail::whereHas('fabric_receipt', function ($q) use ($vendor) {
+                    $q->where('vendor_id', $vendor->id);
+                })->lockForUpdate()->find($detailId);
                 if (!$detail) {
-                    continue;
+                    throw new \Exception("A selected roll does not belong to {$vendor->name}.");
                 }
 
                 if (!$primaryReceiptId) {
@@ -189,6 +202,9 @@ class FabricReturnController extends Controller
 
             $gstAmount = round(($subTotal * $return->gst_percentage) / 100, 2);
             $grandTotal = round($subTotal + $gstAmount + $return->other_charges - $return->discount, 2);
+            if ($grandTotal < 0) {
+                throw new \Exception('The discount is more than the return amount.');
+            }
 
             $return->fabric_receipt_id = $primaryReceiptId;
             $return->sub_total = $subTotal;
@@ -197,10 +213,12 @@ class FabricReturnController extends Controller
             $return->save();
 
             // Deduct from vendor balance
+            $vendor = Vendor::lockForUpdate()->find($vendor->id);
             $vendor->balance -= $grandTotal;
             $vendor->save();
 
             DB::commit();
+            \App\Services\Admin\FabricPurchaseLink::forgetReturned(); // the shipments' pending amounts change
 
             return redirect()->route('admin.fabric_return.view', $return->id)
                 ->with('success', "Fabric Return voucher #{$return->return_number} generated successfully from multiple shipments.");
@@ -270,6 +288,7 @@ class FabricReturnController extends Controller
             $return->delete();
 
             DB::commit();
+            \App\Services\Admin\FabricPurchaseLink::forgetReturned(); // the shipments' pending amounts change
             return redirect()->route('admin.fabric_return.index')
                 ->with('success', "Fabric return {$returnNo} deleted successfully and roll quantities restored.");
         } catch (\Exception $e) {

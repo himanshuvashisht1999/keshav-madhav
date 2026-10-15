@@ -87,17 +87,23 @@
                     @php
                         $paid = $data->paid_amount;
                         $total = $data->total_amount;
-                        $is_paid = ($paid >= $total && $total > 0);
+                        $returned = $data->returned_amount;
+                        $is_paid = ($total > 0 && $data->balance_amount <= 0); // nothing left to pay (paid, or paid + returned)
                     @endphp
                     <div>
                         @if($is_paid)
                             <a href="{{ route('admin.payment.history.index', ['paymentable_type' => 'App\Models\FabricReceipt', 'paymentable_id' => $data->id]) }}">
-                                <span class="badge badge-success px-2 py-1 font-weight-bold">PAID</span>
+                                <span class="badge badge-success px-2 py-1 font-weight-bold">{{ $paid > 0 ? 'PAID' : 'RETURNED' }}</span>
                             </a>
+                            @if($returned > 0)
+                                <span class="ml-1 font-weight-bold" style="font-size: var(--erp-font-xs); color: var(--erp-text-muted);">
+                                    (Paid: Rs. {{ number_format($paid, 2) }}, Returned: Rs. {{ number_format($returned, 2) }}@if($data->balance_amount <= -1), vendor owes back Rs. {{ number_format(-$data->balance_amount, 2) }}@endif)
+                                </span>
+                            @endif
                         @else
                             <span class="badge badge-danger px-2 py-1 font-weight-bold">UNPAID</span>
                             <span class="ml-1 font-weight-bold" style="font-size: var(--erp-font-xs); color: var(--erp-text-muted);">
-                                (Paid: Rs. {{ number_format($paid, 2) }})
+                                (Paid: Rs. {{ number_format($paid, 2) }}@if($returned > 0), Returned: Rs. {{ number_format($returned, 2) }}, Due: Rs. {{ number_format($data->balance_amount, 2) }}@endif)
                             </span>
                         @endif
                     </div>
@@ -381,10 +387,18 @@
                                        class="erp-action-btn erp-btn-view" title="Download Report">
                                         <i class="fas fa-download"></i>
                                     </a>
+                                    @if($return->details->contains(fn($rd) => !$data->details->contains('id', $rd->fabric_receipt_detail_id)))
+                                        {{-- made on the Fabric Return screen with rolls of several shipments: it is edited there --}}
+                                        <a href="{{ route('admin.fabric_return.view', $return->id) }}"
+                                           class="erp-action-btn erp-btn-edit" title="Has rolls of several shipments - open in Fabric Return">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    @else
                                     <a href="{{ route('admin.fabric_receipt.edit_return', ['id' => $return->id]) }}" 
                                        class="erp-action-btn erp-btn-edit" title="Edit Return">
                                         <i class="fas fa-pencil-alt"></i>
                                     </a>
+                                    @endif
                                     <a href="{{ route('admin.fabric_receipt.delete_return', ['id' => $return->id]) }}" 
                                        class="erp-action-btn erp-btn-delete" 
                                        onclick="return confirm('Are you sure you want to delete this return record? This will revert the roll quantities and vendor balance.')"

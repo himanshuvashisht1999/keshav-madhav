@@ -80,13 +80,9 @@ class ProductOrderService
         // dd($request->all());
         try {
 
-            ////// corporate order photo upload
+            ////// corporate order file (PDF or picture)
             if ($request->file('corporate_order_file')) {
-                $image = $request->file('corporate_order_file');
-                $extImage = $image->getClientOriginalExtension();
-                $imgName = "corporate_order_file-" . rand() . "_" . time() . "." . $extImage;
-                $destinationPath = public_path() . '/assets/products';
-                $image->move($destinationPath, $imgName);
+                $imgName = $this->saveOrderFile($request->file('corporate_order_file'));
             }
 
             $save_data_main = new OrderMain;
@@ -215,16 +211,25 @@ class ProductOrderService
         try {
             $id = $request->id;
 
-            // Check if any lots exist for this order
-            $lotExists = OrderLot::where('order_main_id', $id)->exists();
-            if ($lotExists) {
+            // An order that already has work, stock or paperwork on it cannot be deleted
+            $setIds = OrderProductSet::where('order_main_id', $id)->pluck('id');
+            $blocked = [
+                'production lots' => OrderLot::where('order_main_id', $id)->exists(),
+                'production PO(s) (delete them first from the Production PO List)' => DB::table('production_pos')->where('order_main_id', $id)->exists()
+                    || OrderCuttingStage::where('order_main_id', $id)->whereNotNull('production_po_id')->exists(),
+                'production slips' => $setIds->isNotEmpty() && DB::table('production_slip_digitization')->whereIn('order_product_set_id', $setIds)->exists(),
+                'fabric issued for cutting' => $setIds->isNotEmpty() && DB::table('production_fabric_roll_assigning')->whereIn('order_products_set_id', $setIds)->exists(),
+                'packing' => DB::table('packing_mains')->where('order_main_id', $id)->exists(),
+                'dispatches' => DB::table('order_dispatch')->where('main_order_id', $id)->exists(),
+            ];
+            $reasons = array_keys(array_filter($blocked));
+            if ($reasons) {
+                DB::rollBack();
                 return [
                     'status_code' => 0,
-                    'message' => 'Cannot delete order because it has associated production lots.'
+                    'message' => 'Cannot delete this order because it has ' . implode(', ', $reasons) . '.'
                 ];
             }
-
-            $setIds = OrderProductSet::where('order_main_id', $id)->pluck('id');
 
             // Delete related records
             OrderProductSetDetail::whereIn('order_products_set_id', $setIds)->delete();
@@ -705,98 +710,121 @@ class ProductOrderService
         return $data;
     }
 
+    /**
+     * Edit an order. Lines keep their id (updated in place). A line already given to cutting or put on a production
+     * PO cannot be removed or get another design, colour, size or quantity (the edit screen locks those lines too).
+     */
     public function updateOrderMain(Request $request, $id)
     {
+        $moved = [];
         DB::beginTransaction();
         try {
-            $order_main = OrderMain::find($id);
+            $order_main = OrderMain::lockForUpdate()->find($id);
             if (!$order_main) {
                 throw new \Exception("Order not found.");
             }
 
-            ////// corporate order photo upload
-            $imgName = $order_main->corporate_order_file;
-            if ($request->file('corporate_order_file')) {
-                $image = $request->file('corporate_order_file');
-                $extImage = $image->getClientOriginalExtension();
-                $imgName = "corporate_order_file-" . rand() . "_" . time() . "." . $extImage;
-                $destinationPath = public_path() . '/assets/products';
-                $image->move($destinationPath, $imgName);
+            $existing_sets = OrderProductSet::where('order_main_id', $id)->lockForUpdate()->get()->keyBy('id');
+            $assigned = OrderCuttingStage::whereIn('set_product_id', $existing_sets->keys()->all() ?: [0])
+                ->pluck('set_product_id')->map(fn($v) => (int) $v)->unique()->flip();
+
+            // ---- 1. checks (nothing is changed yet) ----
+            $kept = [];
+            foreach ((array) $request->designList as $key => $design_id) {
+                $setId = (int) ($request->order_product_set_id[$key] ?? 0);
+                if (!$setId) {
+                    continue;
+                }
+                $set = $existing_sets->get($setId);
+                if (!$set || in_array($setId, $kept, true)) {
+                    throw new \Exception('A line of this order was not found. Please open the order again.');
+                }
+                $kept[] = $setId;
+                if (isset($assigned[$setId])) {
+                    $changed = (int) $set->production_goods_id !== (int) $design_id
+                        || (int) $set->color_id !== (int) ($request->colourList[$key] ?? 0)
+                        || (int) $set->set_size !== (int) ($request->sizeList[$key] ?? 0)
+                        || (int) $set->set_quantity !== (int) ($request->product_quantity[$key] ?? 0);
+                    if ($changed) {
+                        throw new \Exception("Line {$set->sku} ({$set->design_number}) is already given to cutting, so its design, colour, size and quantity cannot be changed. Add a new line for extra pieces.");
+                    }
+                }
+            }
+            $removed = $existing_sets->filter(fn($s, $sid) => !in_array((int) $sid, $kept, true));
+            foreach ($removed as $sid => $set) {
+                if (isset($assigned[(int) $sid])) {
+                    throw new \Exception("Line {$set->sku} ({$set->design_number}) is already given to cutting, so it cannot be removed.");
+                }
             }
 
+            // ---- 2. order details ----
+            if ($request->file('corporate_order_file')) {
+                $order_main->corporate_order_file = $this->saveOrderFile($request->file('corporate_order_file'), $moved);
+            }
             $order_main->order_type = $request->order_type ?? 'domestic';
             $order_main->expected_delivery_date = $request->expected_delivery_date;
             $order_main->po_number = $request->po_number;
             $order_main->po_date = $request->po_date;
             $order_main->master_customer_id = $request->master_customer_id;
-            $order_main->corporate_order_file = $imgName;
             $order_main->save();
 
-            $existing_sets = OrderProductSet::where('order_main_id', $id)->get();
-            $assigned_set_ids = [];
-            $unassigned_set_ids = [];
-            foreach ($existing_sets as $set) {
-                if (OrderCuttingStage::where('set_product_id', $set->id)->exists()) {
-                    $assigned_set_ids[] = $set->id;
-                } else {
-                    $unassigned_set_ids[] = $set->id;
-                }
+            // ---- 3. lines ----
+            if ($removed->isNotEmpty()) {
+                OrderProductSetDetail::whereIn('order_products_set_id', $removed->keys()->all())->delete();
+                OrderProductSet::whereIn('id', $removed->keys()->all())->delete();
             }
 
-            // Delete old sets and details only for the unassigned ones
-            if (!empty($unassigned_set_ids)) {
-                OrderProductSetDetail::whereIn('order_products_set_id', $unassigned_set_ids)->delete();
-                OrderProductSet::whereIn('id', $unassigned_set_ids)->delete();
-            }
-
-            // Create or preserve sets
-            $i = 0;
-            foreach ($request->designList as $key => $design_id) {
-                $i++;
+            // new lines are numbered after the highest line number of the order
+            $lineNo = $existing_sets->map(fn($s) => (int) (strrchr((string) $s->sku, '/') ? substr(strrchr((string) $s->sku, '/'), 1) : 0))->max() ?? 0;
+            foreach ((array) $request->designList as $key => $design_id) {
                 $setId = (int) ($request->order_product_set_id[$key] ?? 0);
-
-                // If the set is already assigned, it remains in the database. Skip recreation.
-                if ($setId > 0 && in_array($setId, $assigned_set_ids)) {
-                    continue;
+                if ($setId && isset($assigned[$setId])) {
+                    continue; // locked line, unchanged (checked above)
                 }
 
-                $order_quantity = $request->product_quantity[$key];
-
+                $order_quantity = (int) $request->product_quantity[$key];
                 $size_data = $this->getSizeDetails($request->sizeList[$key]);
-                $size_explode = explode(',', $size_data->size_group);
                 $product_data = ProductionGoods::where('id', $design_id)->first();
-                if ($product_data) {
-                    $save_orderProductSet = new OrderProductSet;
+                if (!$product_data || !$size_data) {
+                    throw new \Exception('A design or size set of this order was not found.');
+                }
+                $size_explode = explode(',', $size_data->size_group);
+
+                $save_orderProductSet = $setId ? $existing_sets->get($setId) : new OrderProductSet;
+                $sameLayout = $setId && (int) $save_orderProductSet->set_size === (int) $request->sizeList[$key]
+                    && (int) $save_orderProductSet->set_quantity === $order_quantity;
+                if (!$setId) {
                     $save_orderProductSet->order_main_id = $order_main->id;
-                    $save_orderProductSet->sku = $order_main->sku . '/' . $i;
-                    $save_orderProductSet->bar_code = $request->bar_codeList[$key] ?? null;
-                    $save_orderProductSet->design_number = $product_data->design_number;
-                    $save_orderProductSet->production_goods_id = $product_data->id;
-                    $save_orderProductSet->set_size = $request->sizeList[$key];
-                    $save_orderProductSet->color_id = $request->colourList[$key];
-                    $save_orderProductSet->set_quantity = $order_quantity;
-                    $save_orderProductSet->no_of_pcs = $size_data->no_of_pcs;
-                    $save_orderProductSet->total_quantity = $order_quantity * $size_data->no_of_pcs;
-                    $save_orderProductSet->remain_set_quantity = $order_quantity;
-                    $save_orderProductSet->remain_total_quantity = $order_quantity * $size_data->no_of_pcs;
+                    $save_orderProductSet->sku = $order_main->sku . '/' . (++$lineNo);
                     $save_orderProductSet->status = 1;
-                    $save_orderProductSet->save();
+                }
+                $save_orderProductSet->bar_code = $request->bar_codeList[$key] ?? null;
+                $save_orderProductSet->design_number = $product_data->design_number;
+                $save_orderProductSet->production_goods_id = $product_data->id;
+                $save_orderProductSet->set_size = $request->sizeList[$key];
+                $save_orderProductSet->color_id = $request->colourList[$key];
+                $save_orderProductSet->set_quantity = $order_quantity;
+                $save_orderProductSet->no_of_pcs = $size_data->no_of_pcs;
+                $save_orderProductSet->total_quantity = $order_quantity * $size_data->no_of_pcs;
+                $save_orderProductSet->remain_set_quantity = $order_quantity;
+                $save_orderProductSet->remain_total_quantity = $order_quantity * $size_data->no_of_pcs;
+                $save_orderProductSet->save();
 
-                    $sizeCounts = array_count_values($size_explode);
-                    foreach ($sizeCounts as $size => $count) {
-
-                        $totalQty = $count * $order_quantity;
-
-                        $save_orderProductSetDetail = new OrderProductSetDetail();
-                        $save_orderProductSetDetail->order_products_set_id = $save_orderProductSet->id;
-                        $save_orderProductSetDetail->sku = '';
-                        $save_orderProductSetDetail->size = $size;
-                        $save_orderProductSetDetail->total_quantity = $totalQty;
-                        $save_orderProductSetDetail->remaining_quantity = $totalQty;
-                        $save_orderProductSetDetail->remaining_lot_allocated = $totalQty;
-                        $save_orderProductSetDetail->status = 1;
-                        $save_orderProductSetDetail->save();
-                    }
+                if ($sameLayout) {
+                    continue; // same size set and quantity: its size lines stay as they are
+                }
+                OrderProductSetDetail::where('order_products_set_id', $save_orderProductSet->id)->delete();
+                foreach (array_count_values($size_explode) as $size => $count) {
+                    $totalQty = $count * $order_quantity;
+                    $save_orderProductSetDetail = new OrderProductSetDetail();
+                    $save_orderProductSetDetail->order_products_set_id = $save_orderProductSet->id;
+                    $save_orderProductSetDetail->sku = '';
+                    $save_orderProductSetDetail->size = $size;
+                    $save_orderProductSetDetail->total_quantity = $totalQty;
+                    $save_orderProductSetDetail->remaining_quantity = $totalQty;
+                    $save_orderProductSetDetail->remaining_lot_allocated = $totalQty;
+                    $save_orderProductSetDetail->status = 1;
+                    $save_orderProductSetDetail->save();
                 }
             }
 
@@ -804,12 +832,32 @@ class ProductOrderService
             return ['status_code' => 1, 'message' => 'Order updated successfully.'];
         } catch (\Exception $e) {
             DB::rollBack();
+            foreach ($moved as $path) {
+                @unlink($path);
+            }
             return ['status_code' => 0, 'message' => $e->getMessage()];
         }
     }
 
+    /** Saves the order file (PDF or picture) in public/assets/products; the ending comes from what the file really is. */
+    public function saveOrderFile($file, array &$moved = []): string
+    {
+        $ext = strtolower((string) $file->extension());
+        if ($ext === 'jpeg') {
+            $ext = 'jpg';
+        }
+        if (!$file->isValid() || !in_array($ext, ['pdf', 'jpg', 'png'], true)) {
+            throw new \Exception('The order file must be a PDF or a picture (JPG / PNG).');
+        }
+        $name = "corporate_order_file-" . rand() . "_" . time() . "." . $ext;
+        $file->move(public_path('assets/products'), $name);
+        $moved[] = public_path('assets/products/' . $name);
+        return $name;
+    }
+
     public function assign_to(Request $request)
     {
+        $messages = []; // WhatsApp messages, sent only after everything is saved
         try {
             DB::beginTransaction();
             // Support both single-id and multi-id assignment
@@ -819,16 +867,45 @@ class ProductOrderService
             } elseif ($request->order_product_set_id) {
                 $ids = [$request->order_product_set_id];
             }
+            if (!$ids) {
+                throw new \Exception('Please select the order line(s) to assign.');
+            }
+            if (!$request->master_cutting_id || !StageMasterUnit::where('id', $request->master_cutting_id)->exists()) {
+                throw new \Exception('Please select the cutting master.');
+            }
+            $askedQty = null;
+            if ($request->filled('assign_quantity')) {
+                if (!ctype_digit((string) $request->assign_quantity) || (int) $request->assign_quantity < 1) {
+                    throw new \Exception('The quantity to assign must be a whole number of 1 or more.');
+                }
+                $askedQty = (int) $request->assign_quantity;
+            }
 
+            $done = 0;
             foreach ($ids as $setId) {
-                $data = OrderProductSet::where('id', $setId)->first();
+                // locked: a second click waits here and then sees what the first one assigned
+                $data = OrderProductSet::where('id', $setId)->lockForUpdate()->first();
                 if ($data) {
 
+                    if ($data->remain_total_quantity <= 0) {
+                        if (count($ids) === 1) {
+                            throw new \Exception("Nothing is left to assign for Design: {$data->design_number}.");
+                        }
+                        continue;
+                    }
+
                     // Quantity to assign
-                    $assignQty = $request->assign_quantity ? (int) $request->assign_quantity : $data->remain_total_quantity;
+                    $assignQty = $askedQty ?? (int) $data->remain_total_quantity;
 
                     if ($assignQty > $data->remain_total_quantity) {
                         throw new \Exception("Assigned quantity ($assignQty) exceeds remaining quantity ({$data->remain_total_quantity}) for Design: {$data->design_number}");
+                    }
+
+                    // the same assignment saved a moment ago = a double click
+                    $justDone = OrderCuttingStage::where('set_product_id', $data->id)->where('to_assign_id', $request->master_cutting_id)
+                        ->where('quantity', $assignQty)->where('is_po', 0)->where('created_at', '>=', now()->subSeconds(15))->exists();
+                    if ($justDone) {
+                        throw new \Exception("Design {$data->design_number}: the same quantity was assigned to this cutting master a moment ago. Refresh the list before assigning again.");
                     }
 
                     // Create Cutting Stage Record
@@ -898,16 +975,27 @@ class ProductOrderService
                     }
 
                     $data->save();
+                    $done++;
 
-                    // Send WhatsApp message to Cutting Master
+                    // WhatsApp message to Cutting Master (sent after saving)
                     if ($unit && $unit->phone) {
-                        $message = "Namaste {$unit->name},\n\nAapko ek naya order assign hua hai (Order No: *{$cuttingStage->sku}*).\nKripya apne mobile app me check karein.\n\n- SNAPKIDS";
-                        send_whatsapp_message($unit->phone, $message);
+                        $messages[] = [$unit->phone, "Namaste {$unit->name},\n\nAapko ek naya order assign hua hai (Order No: *{$cuttingStage->sku}*).\nKripya apne mobile app me check karein.\n\n- SNAPKIDS"];
                     }
                 }
             }
+            if (!$done) {
+                throw new \Exception('Nothing is left to assign on the selected line(s).');
+            }
 
             DB::commit();
+
+            foreach ($messages as [$phone, $message]) {
+                try {
+                    send_whatsapp_message($phone, $message);
+                } catch (\Throwable $e) {
+                    report($e); // the assignment is saved; a failed message must not undo it
+                }
+            }
 
             return [
                 'status' => true,
@@ -1032,6 +1120,25 @@ class ProductOrderService
         }
     }
 
+    /** Quantity of a PO line: a whole number of 1 or more (empty = everything left on the order line). */
+    private function poLineQty($value, $left, $sku): int
+    {
+        if ($value === null || $value === '') {
+            return (int) $left;
+        }
+        if (!ctype_digit((string) $value) || (int) $value < 1) {
+            throw new \Exception("Line {$sku}: the PO quantity must be a whole number of 1 or more.");
+        }
+        return (int) $value;
+    }
+
+    private function poParty(Request $request): void
+    {
+        if ($request->po_type == 'vendor' ? !$request->vendor_id : !$request->customer_id) {
+            throw new \Exception($request->po_type == 'vendor' ? 'Please select the vendor.' : 'Please select the customer.');
+        }
+    }
+
     public function storeBulkPO(Request $request)
     {
         DB::beginTransaction();
@@ -1039,9 +1146,12 @@ class ProductOrderService
             if (!$request->items || !is_array($request->items)) {
                 throw new \Exception("No items selected for PO.");
             }
+            $this->poParty($request);
 
             $poMain = new \App\Models\ProductionPO();
-            $poMain->po_number = "PO-" . date('Ymd') . "-" . rand(1000, 9999);
+            do {
+                $poMain->po_number = "PO-" . date('Ymd') . "-" . rand(1000, 9999);
+            } while (\App\Models\ProductionPO::where('po_number', $poMain->po_number)->exists());
 
             // Get order_main_id (Prioritize order_id from request/URL)
             if ($request->order_id) {
@@ -1070,10 +1180,17 @@ class ProductOrderService
             $poMain->status = 1;
             $poMain->save();
 
+            $lines = 0;
             foreach ($request->items as $item) {
-                $data = OrderProductSet::find($item['order_product_set_id']);
+                // locked: two POs cannot take the same pieces
+                $data = OrderProductSet::lockForUpdate()->find($item['order_product_set_id'] ?? 0);
                 if (!$data)
                     continue;
+
+                $qty = $this->poLineQty($item['quantity'] ?? null, $data->remain_total_quantity, $data->sku);
+                if ($qty > $data->remain_total_quantity) {
+                    throw new \Exception("Line {$data->sku} ({$data->design_number}): only {$data->remain_total_quantity} pieces are left to assign, {$qty} entered.");
+                }
 
                 $po = new OrderCuttingStage();
                 $po->sku = $data->sku; // Keep original SKU for reference
@@ -1086,9 +1203,9 @@ class ProductOrderService
 
                 $po->is_po = 1;
                 $po->production_po_id = $poMain->id; // Link to the main PO
-                $po->rate = $item['rate'] ?? 0;
-                $po->quantity = $item['quantity'] ?? $data->remain_total_quantity;
-                $po->remaining_quantity = $item['quantity'] ?? $data->remain_total_quantity;
+                $po->rate = max(0, (float) ($item['rate'] ?? 0));
+                $po->quantity = $qty;
+                $po->remaining_quantity = $qty;
 
                 if (!empty($item['fabric_ids'])) {
                     $po->fabric_id = is_array($item['fabric_ids']) ? implode(',', $item['fabric_ids']) : $item['fabric_ids'];
@@ -1102,6 +1219,7 @@ class ProductOrderService
                 $po->processed_by = auth()->id();
                 $po->status = 1;
                 $po->save();
+                $lines++;
 
                 // Update Order Product Set
                 $data->remain_total_quantity -= $po->quantity;
@@ -1109,6 +1227,9 @@ class ProductOrderService
                     $data->status = 2; // Fully Assigned
                 }
                 $data->save();
+            }
+            if (!$lines) {
+                throw new \Exception("No items selected for PO.");
             }
 
             DB::commit();
@@ -1129,7 +1250,8 @@ class ProductOrderService
     {
         DB::beginTransaction();
         try {
-            $poMain = \App\Models\ProductionPO::findOrFail($id);
+            $poMain = \App\Models\ProductionPO::lockForUpdate()->findOrFail($id);
+            $this->poParty($request);
 
             if ($request->po_type == 'vendor') {
                 $poMain->vendor_id = $request->vendor_id;
@@ -1147,19 +1269,19 @@ class ProductOrderService
             if ($request->items && is_array($request->items)) {
                 foreach ($request->items as $itemData) {
                     if (!empty($itemData['id'])) {
-                        // EXISTING ITEM
-                        $item = OrderCuttingStage::find($itemData['id']);
+                        // EXISTING ITEM (only a line of this PO)
+                        $item = OrderCuttingStage::where('production_po_id', $poMain->id)->find($itemData['id']);
                         if (!$item)
-                            continue;
+                            throw new \Exception("A line of this PO was not found. Please open the PO again.");
 
                         $requestedItemIds[] = $item->id;
 
                         // Handle quantity change
+                        $set = OrderProductSet::lockForUpdate()->find($item->set_product_id);
                         $oldQty = $item->quantity;
-                        $newQty = $itemData['quantity'];
+                        $newQty = $this->poLineQty($itemData['quantity'] ?? $oldQty, $oldQty, $set->sku ?? $item->sku);
                         $diff = $newQty - $oldQty;
 
-                        $set = OrderProductSet::find($item->set_product_id);
                         if ($set && $diff != 0) {
                             if ($set->remain_total_quantity < $diff) {
                                 throw new \Exception("Insufficient quantity in set for item: " . $set->sku);
@@ -1175,7 +1297,7 @@ class ProductOrderService
 
                         $item->quantity = $newQty;
                         $item->remaining_quantity = $newQty;
-                        $item->rate = $itemData['rate'] ?? 0;
+                        $item->rate = max(0, (float) ($itemData['rate'] ?? 0));
 
                         if (!empty($itemData['fabric_ids'])) {
                             $item->fabric_id = is_array($itemData['fabric_ids']) ? implode(',', $itemData['fabric_ids']) : $itemData['fabric_ids'];
@@ -1189,9 +1311,14 @@ class ProductOrderService
                         $item->save();
                     } else {
                         // NEW ITEM
-                        $data = OrderProductSet::find($itemData['order_product_set_id']);
+                        $data = OrderProductSet::lockForUpdate()->find($itemData['order_product_set_id'] ?? 0);
                         if (!$data)
                             continue;
+
+                        $qty = $this->poLineQty($itemData['quantity'] ?? null, $data->remain_total_quantity, $data->sku);
+                        if ($qty > $data->remain_total_quantity) {
+                            throw new \Exception("Line {$data->sku} ({$data->design_number}): only {$data->remain_total_quantity} pieces are left to assign, {$qty} entered.");
+                        }
 
                         $po = new OrderCuttingStage();
                         $po->sku = $data->sku;
@@ -1202,9 +1329,9 @@ class ProductOrderService
                         $po->customer_id = $poMain->customer_id;
                         $po->is_po = 1;
                         $po->production_po_id = $poMain->id;
-                        $po->rate = $itemData['rate'] ?? 0;
-                        $po->quantity = $itemData['quantity'] ?? $data->remain_total_quantity;
-                        $po->remaining_quantity = $itemData['quantity'] ?? $data->remain_total_quantity;
+                        $po->rate = max(0, (float) ($itemData['rate'] ?? 0));
+                        $po->quantity = $qty;
+                        $po->remaining_quantity = $qty;
 
                         if (!empty($itemData['fabric_ids'])) {
                             $po->fabric_id = is_array($itemData['fabric_ids']) ? implode(',', $itemData['fabric_ids']) : $itemData['fabric_ids'];
@@ -1229,6 +1356,9 @@ class ProductOrderService
                     }
                 }
             }
+            if (!$requestedItemIds) {
+                throw new \Exception("A PO needs at least one line. To cancel the whole PO, delete it from the PO list.");
+            }
 
             // REMOVE ITEMS NOT IN REQUEST
             $itemsToDelete = OrderCuttingStage::where('production_po_id', $id)
@@ -1237,7 +1367,7 @@ class ProductOrderService
 
             foreach ($itemsToDelete as $delItem) {
                 // Restore quantity to set
-                $set = OrderProductSet::find($delItem->set_product_id);
+                $set = OrderProductSet::lockForUpdate()->find($delItem->set_product_id);
                 if ($set) {
                     $set->remain_total_quantity += $delItem->quantity;
                     $set->status = 1;

@@ -1,12 +1,12 @@
 <table border="1">
     <thead>
         <tr>
-            <th colspan="9" style="font-size:16px;font-weight:bold">
+            <th colspan="10" style="font-size:16px;font-weight:bold">
                 Sales Order Report
             </th>
         </tr>
         <tr>
-            <td colspan="9">
+            <td colspan="10">
                 Exported At: {{ $exportedAt->format('d M Y h:i A') }}
             </td>
         </tr>
@@ -17,6 +17,7 @@
             <th>Total Pcs</th>
             <th>Lot No</th>
             <th>Pcs / Lot</th>
+            <th>Dispatched</th>
             <th>Current Stage</th>
             <th>Delay</th>
             <th>Allowed Till</th>
@@ -42,6 +43,7 @@
                     {{-- LOT LEVEL --}}
                     <td>{{ $lot['lot_no'] }}</td>
                     <td>{{ $lot['pieces_in_lot'] }}</td>
+                    <td>{{ $lot['dispatched'] ?? 0 }}</td>
                     <td>{{ $lot['stage_name'] }}</td>
                     <td>{{ $lot['isDelayed'] }}</td>
                     <td>{{ $lot['allowed_till_datetime'] }}</td>

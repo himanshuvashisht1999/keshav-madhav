@@ -60,99 +60,197 @@ class ReportService
 
     public function salesOrder(Request $request)
     {
-        $result = [];
+        // Built from the real lot records (order_lots, roll sheets, stage moves, packing cartons).
+        $orders = $this->reportOrders($request);
+        $totals = $this->orderPieces($orders->pluck('id'));
+        $lots = $this->reportLots($orders->pluck('id'), $request);
+        $facts = $this->lotFacts($lots->flatten()->pluck('lot_no'));
+        $now = now()->toDateTimeString();
 
-        $orders = OrderMain::with('customer')
+        $result = [];
+        foreach ($orders as $order) {
+            $base = [
+                'order_date' => $order->created_at,
+                'order_id' => $order->id,
+                'customer' => $order->customer->name ?? '',
+                'order_no' => $order->sku,
+                'total_pcs_in_order' => (int) ($totals[$order->id] ?? 0),
+            ];
+            $orderLots = $lots[$order->id] ?? collect();
+
+            if ($orderLots->isEmpty()) {
+                if ($request->filled('lot_no') || $request->delay_status === 'Yes') {
+                    continue;
+                }
+                $result[] = $base + [
+                    'lot_no' => '-',
+                    'pieces_in_lot' => 0,
+                    'dispatched' => 0,
+                    'stage_name' => 'Not Issued',
+                    'isDelayed' => 'No',
+                    'allowed_till_datetime' => null,
+                    'current_datetime' => $now,
+                ];
+                continue;
+            }
+
+            foreach ($orderLots as $lot) {
+                $f = $facts[self::lotKey($lot->lot_no)];
+                if ($request->filled('delay_status') && $request->delay_status !== $f['is_delayed']) {
+                    continue;
+                }
+                $result[] = $base + [
+                    'lot_no' => $lot->lot_no,
+                    'pieces_in_lot' => $f['pieces'],
+                    'dispatched' => $f['dispatched'] + $f['in_stock'],
+                    'stage_name' => $f['stage_name'],
+                    'isDelayed' => $f['is_delayed'],
+                    'allowed_till_datetime' => $f['allowed_till'],
+                    'current_datetime' => $now,
+                ];
+            }
+        }
+
+        return collect($result)->groupBy('order_no');
+    }
+
+    /** Orders of the Sales Order / Order Tracking reports (same filters as before; customer = the order's customer). */
+    private function reportOrders(Request $request)
+    {
+        return OrderMain::with('customer')
             ->when($request->filled('order_no'), function ($q) use ($request) {
                 $q->where('sku', 'like', '%' . $request->order_no . '%');
             })
             ->when($request->filled('customer_id'), function ($q) use ($request) {
-                $q->where('customer_id', $request->customer_id);
+                $q->where('master_customer_id', $request->customer_id);
             })
             ->when($request->filled('date_from'), function ($q) use ($request) {
                 $q->whereDate('created_at', '>=', $request->date_from);
             })
             ->when($request->filled('date_to'), function ($q) use ($request) {
                 $q->whereDate('created_at', '<=', $request->date_to);
-            })->orderBy('id', 'desc')
+            })
+            ->orderBy('id', 'desc')
             ->get();
+    }
 
-        foreach ($orders as $order) {
+    /** Ordered pieces per order (sum of its lines). */
+    private function orderPieces($orderIds)
+    {
+        return OrderProductSet::whereIn('order_main_id', $orderIds)
+            ->groupBy('order_main_id')
+            ->selectRaw('order_main_id, SUM(total_quantity) as pcs')
+            ->pluck('pcs', 'order_main_id');
+    }
 
-            $lotNos = ProductionSlipDigitizationParts::where('from_stage_id', 3)
-                ->where('to_stage_id', 4)
-                ->where('order_no', $order->sku)
-                ->when($request->filled('lot_no'), function ($q) use ($request) {
-                    $q->where('lot_no', 'like', '%' . $request->lot_no . '%');
-                })
-                ->distinct()
-                ->pluck('lot_no');
+    /** Lots of the orders, grouped by order id (optional lot no filter). */
+    private function reportLots($orderIds, Request $request)
+    {
+        return \App\Models\OrderLot::whereIn('order_main_id', $orderIds)
+            ->when($request->filled('lot_no'), function ($q) use ($request) {
+                $q->where('lot_no', 'like', '%' . $request->lot_no . '%');
+            })
+            ->orderBy('id')
+            ->get(['id', 'order_main_id', 'order_products_set_id', 'lot_no'])
+            ->groupBy('order_main_id');
+    }
 
-            $total_pcs_in_order = OrderProductSet::where('order_main_id', $order->id)
-                ->sum('total_quantity');
+    private static function lotKey($lotNo): string
+    {
+        return mb_strtolower(rtrim((string) $lotNo));
+    }
 
-            if ($lotNos->isEmpty()) {
-                $result[] = [
-                    'order_date' => $order->created_at,
-                    'order_id' => $order->id, // Added ID
-                    'customer' => $order->customer->name ?? '',
-                    'order_no' => $order->sku,
-                    'lot_no' => '-',
-                    'total_pcs_in_order' => $total_pcs_in_order,
-                    'pieces_in_lot' => 0,
-                    'stage_name' => 'Pending',
-                    'isDelayed' => 'No',
-                    'allowed_till_datetime' => null,
-                    'current_datetime' => now()->toDateTimeString(),
-                ];
+    /**
+     * What the records say about each lot:
+     * - pieces: cut into the lot (roll sheets, as the Lots report)
+     * - dispatched / in_stock: packed pieces in dispatched cartons / in domestic stock cartons
+     * - stage: where the latest move sent the lot (same rule as getLastCurrentStage); "Dispatched" once all
+     *   cut pieces have left packing (dispatched or put in domestic stock)
+     * - is_delayed: the current stage's plan (order_lot_stage_timings) is not finished and its planned end
+     *   (allowed_till) has passed
+     * - expected_end: the latest planned end of the lot's stages
+     */
+    private function lotFacts($lotNos): array
+    {
+        $lotNos = collect($lotNos)->map(fn($l) => (string) $l)->filter(fn($l) => $l !== '')->unique()->values()->all();
+        $facts = [];
+        foreach ($lotNos as $l) {
+            $facts[self::lotKey($l)] = ['lot_no' => $l, 'pieces' => 0, 'packed' => 0, 'dispatched' => 0, 'in_stock' => 0,
+                'stage_id' => 3, 'stage_name' => 'Cutting', 'is_delayed' => 'No', 'allowed_till' => null, 'expected_end' => null];
+        }
+        if (!$facts) {
+            return [];
+        }
+        $put = function ($lot, $field, $value) use (&$facts) {
+            $key = self::lotKey($lot);
+            if (isset($facts[$key])) {
+                $facts[$key][$field] = $value;
+            }
+        };
+        $stageNames = MasterProductStage::pluck('name', 'id');
+        $latest = [];
+        $timings = collect();
+
+        foreach (array_chunk($lotNos, 500) as $chunk) {
+            \DB::table('production_fabric_roll_assigning as r')
+                ->join('production_fabric_roll_assigning_details as d', 'd.production_fabric_roll_assigning_id', '=', 'r.id')
+                ->whereIn('r.lot_no', $chunk)->groupBy('r.lot_no')
+                ->selectRaw('r.lot_no, SUM(d.quantity) as pcs')->get()
+                ->each(fn($r) => $put($r->lot_no, 'pieces', (int) $r->pcs));
+
+            \DB::table('packing_items as p')
+                ->leftJoin('packing_cartons as c', 'c.id', '=', 'p.packing_carton_id')
+                ->whereIn('p.lot_no', $chunk)->groupBy('p.lot_no')
+                ->selectRaw('p.lot_no, SUM(p.quantity) as packed, SUM(CASE WHEN c.status = 2 THEN p.quantity ELSE 0 END) as dispatched, SUM(CASE WHEN c.status = 3 THEN p.quantity ELSE 0 END) as in_stock')
+                ->get()
+                ->each(function ($r) use ($put) {
+                    $put($r->lot_no, 'packed', (int) $r->packed);
+                    $put($r->lot_no, 'dispatched', (int) $r->dispatched);
+                    $put($r->lot_no, 'in_stock', (int) $r->in_stock);
+                });
+
+            // latest move of each kind (highest id), then the newest of those, in getLastCurrentStage's order
+            foreach (['order_stage_transactions', 'order_godam_stage_transactions', 'order_printing_stage_transactions', 'order_printing_to_stiching_transactions'] as $table) {
+                $rows = \DB::table($table . ' as t')
+                    ->joinSub(\DB::table($table)->whereIn('lot_no', $chunk)->groupBy('lot_no')->selectRaw('MAX(id) as mid'), 'm', 'm.mid', '=', 't.id')
+                    ->get(['t.lot_no', 't.to_stage_id', 't.created_at']);
+                foreach ($rows as $r) {
+                    $key = self::lotKey($r->lot_no);
+                    if (!isset($latest[$key]) || (string) $r->created_at > (string) $latest[$key]->created_at) {
+                        $latest[$key] = $r;
+                    }
+                }
+            }
+
+            $timings = $timings->concat(\App\Models\OrderLotStageTiming::whereIn('lot_no', $chunk)->get(['lot_no', 'master_stage_id', 'end_date', 'complete_date']));
+        }
+        $timings = $timings->groupBy(fn($t) => self::lotKey($t->lot_no));
+
+        foreach ($facts as $key => &$f) {
+            if (isset($latest[$key]) && isset($stageNames[$latest[$key]->to_stage_id])) {
+                $f['stage_id'] = (int) $latest[$key]->to_stage_id;
+                $f['stage_name'] = $stageNames[$latest[$key]->to_stage_id];
+            }
+            $lotTimings = $timings[$key] ?? collect();
+            $ends = $lotTimings->pluck('end_date')->filter();
+            $f['expected_end'] = $ends->isNotEmpty() ? (string) $ends->max() : null;
+
+            if ($f['pieces'] > 0 && $f['dispatched'] + $f['in_stock'] >= $f['pieces']) {
+                $f['stage_id'] = 12;
+                $f['stage_name'] = ($f['in_stock'] > 0 && $f['dispatched'] == 0) ? 'Packed (stock)' : 'Dispatched';
                 continue;
             }
-
-            foreach ($lotNos as $lot_no) {
-
-                //$parts_data = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->get();
-                $parts_data = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->where('from_stage_id', 3)->where('to_stage_id', 4)->get();
-                $stage_name = ProductionSlipDigitizationParts::where('lot_no', $lot_no)
-                    ->orderBy('id', 'desc')->value('to_stage_name');
-
-                $allowed_till_datetime = ProductionSlipDigitizationParts::where('lot_no', $lot_no)
-                    ->orderBy('id', 'desc')->value('allowed_till_datetime');
-
-                $currentTime = Carbon::now();
-                $isDelayed = 'No';
-
-                if ($allowed_till_datetime && $currentTime->greaterThan(Carbon::parse($allowed_till_datetime))) {
-                    $isDelayed = 'Yes';
+            $plan = $lotTimings->firstWhere('master_stage_id', $f['stage_id']);
+            if ($plan && $plan->end_date) {
+                $f['allowed_till'] = (string) $plan->end_date;
+                if (!$plan->complete_date && now()->gt(Carbon::parse($plan->end_date))) {
+                    $f['is_delayed'] = 'Yes';
                 }
-
-                if ($request->filled('delay_status') && $request->delay_status !== $isDelayed) {
-                    continue;
-                }
-
-                $pieces_in_lot = 0;
-                foreach ($parts_data as $single_part) {
-                    $no_of_pcs = MasterSizeMeasurement::where('id', $single_part->set_size)
-                        ->value('no_of_pcs');
-                    $pieces_in_lot += $no_of_pcs * $single_part->set_quantity;
-                }
-
-                $result[] = [
-                    'order_date' => $order->created_at,
-                    'order_id' => $order->id, // Added ID
-                    'customer' => $order->customer->name ?? '',
-                    'order_no' => $order->sku,
-                    'lot_no' => $lot_no,
-                    'total_pcs_in_order' => $total_pcs_in_order,
-                    'pieces_in_lot' => $pieces_in_lot,
-                    'stage_name' => $stage_name ?? '',
-                    'isDelayed' => $isDelayed,
-                    'allowed_till_datetime' => $allowed_till_datetime,
-                    'current_datetime' => $currentTime->toDateTimeString(),
-                ];
             }
         }
+        unset($f);
 
-        return collect($result)->groupBy('order_no');
+        return $facts;
     }
 
     // public function getSalesOrderDetails($id)
@@ -277,67 +375,52 @@ class ReportService
 
         $allStages = \App\Models\MasterProductStage::where('status', 1)->get()
             ->sortBy(function ($stage) {
-                $order = [3, 2, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-                return array_search($stage->id, $order) ?? 999;
+                $order = [3, 2, 1, 13, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+                $pos = array_search($stage->id, $order);
+                return $pos === false ? 999 : $pos;
             });
+        $stageNames = \App\Models\MasterProductStage::pluck('name', 'id');
 
-        $sizePcsMap = \App\Models\MasterSizeMeasurement::pluck('no_of_pcs', 'id');
+        $order->OrderProductSets->each(function ($set) use ($allStages, $stageNames) {
 
-        $order->OrderProductSets->each(function ($set) use ($allStages, $sizePcsMap) {
-
-            $lots = \App\Models\FabricRollAssigning::select('lot_no', 'order_products_set_id')
-                ->where('order_products_set_id', $set->id)
-                ->groupBy('lot_no', 'order_products_set_id')
-                ->get();
+            $lots = \App\Models\OrderLot::where('order_products_set_id', $set->id)->orderBy('id')->get(['id', 'lot_no', 'order_products_set_id']);
 
             if ($lots->isEmpty()) {
                 $set->lots = collect();
                 return;
             }
 
-            $lotNos = $lots->pluck('lot_no');
+            $lotNos = $lots->pluck('lot_no')->all();
+            $facts = $this->lotFacts($lotNos);
 
-            $transactionsByLot = \App\Models\OrderStageTransaction::whereIn('lot_no', $lotNos)
-                ->with(['from_stage', 'to_stage'])
-                ->get()
-                ->groupBy('lot_no');
+            // every move of the lots: normal, printing, printing -> stitching, godam
+            $moves = collect();
+            foreach (['order_stage_transactions', 'order_printing_stage_transactions', 'order_printing_to_stiching_transactions', 'order_godam_stage_transactions'] as $table) {
+                $moves = $moves->concat(\DB::table($table)->whereIn('lot_no', $lotNos)
+                    ->get(['lot_no', 'from_stage_id', 'to_stage_id', 'quantity', 'remarks', 'processed_by', 'created_at']));
+            }
+            $movesByLot = $moves->groupBy(fn($m) => self::lotKey($m->lot_no));
 
-            $partsByLot = \App\Models\ProductionSlipDigitizationParts::whereIn('lot_no', $lotNos)
-                ->get()
-                ->groupBy('lot_no');
-
-            $lots->each(function ($lot) use ($allStages, $transactionsByLot, $partsByLot, $sizePcsMap) {
-
-                $transactions = $transactionsByLot[$lot->lot_no] ?? collect();
-                $parts = $partsByLot[$lot->lot_no] ?? collect();
-
-                $initialPcs = 0;
-                foreach ($parts as $part) {
-                    $pcsPerSet = $sizePcsMap[$part->set_size] ?? 0;
-                    $initialPcs += ($part->set_quantity * $pcsPerSet);
+            $lots->each(function ($lot) use ($allStages, $stageNames, $facts, $movesByLot) {
+                $f = $facts[self::lotKey($lot->lot_no)];
+                $lotMoves = ($movesByLot[self::lotKey($lot->lot_no)] ?? collect())
+                    ->filter(fn($m) => (int) $m->from_stage_id !== (int) $m->to_stage_id); // unit to unit inside one stage is not a stage move
+                // pieces that left packing: dispatched or put in domestic stock
+                $left = $f['dispatched'] + $f['in_stock'];
+                if ($left > 0) {
+                    $lotMoves = $lotMoves->push((object) ['from_stage_id' => 11, 'to_stage_id' => 12, 'quantity' => $left]);
                 }
 
                 $summary = [];
-
                 foreach ($allStages as $stage) {
-
-                    // IN flow
-                    $inFlows = $transactions->where('to_stage_id', $stage->id)
-                        ->groupBy('from_stage_id')
-                        ->map(fn($rows) => $rows->sum('quantity'));
-
+                    $inFlows = $lotMoves->where('to_stage_id', $stage->id)->groupBy('from_stage_id')->map(fn($rows) => $rows->sum('quantity'));
+                    $outFlows = $lotMoves->where('from_stage_id', $stage->id)->groupBy('to_stage_id')->map(fn($rows) => $rows->sum('quantity'));
                     $in = $inFlows->isEmpty() ? 0 : $inFlows->max();
-
-                    // OUT flow
-                    $outFlows = $transactions->where('from_stage_id', $stage->id)
-                        ->groupBy('to_stage_id')
-                        ->map(fn($rows) => $rows->sum('quantity'));
-
                     $out = $outFlows->isEmpty() ? 0 : $outFlows->max();
 
-                    // Cutting stage special case
-                    if ($stage->id == 3 && $in == 0 && $initialPcs > 0) {
-                        $in = $initialPcs;
+                    // Cutting: what was cut into the lot
+                    if ($stage->id == 3 && $in == 0) {
+                        $in = $f['pieces'];
                     }
 
                     $summary[] = [
@@ -350,14 +433,23 @@ class ReportService
                 }
 
                 $lot->stage_summary = $summary;
-                $lot->history = $transactions;
+                $lot->current_stage = $f['stage_name'];
+                $lot->history = ($movesByLot[self::lotKey($lot->lot_no)] ?? collect())
+                    ->sortBy('created_at')
+                    ->map(fn($m) => (object) [
+                        'created_at' => Carbon::parse($m->created_at),
+                        'from_stage' => (object) ['name' => $stageNames[$m->from_stage_id] ?? '-'],
+                        'to_stage' => (object) ['name' => $stageNames[$m->to_stage_id] ?? '-'],
+                        'quantity' => $m->quantity,
+                        'remarks' => $m->remarks,
+                        'processed_by' => $m->processed_by,
+                    ])->values();
             });
 
             $set->lots = $lots;
         });
         return $order;
     }
-
 
     public function stock(Request $request)
     {
@@ -445,7 +537,7 @@ class ReportService
 
         if ($level === 'warehouses') {
             // Level 2: Warehouses for a specific Fabric
-            $fabricId = $request->fabric_id;
+            $fabricId = (int) $request->fabric_id; // a number only: it is used inside raw SQL below
             $fabric = Fabric::find($fabricId);
 
             $query = \App\Models\MasterFabricWarehouse::query()
@@ -496,7 +588,7 @@ class ReportService
         }
 
         if ($level === 'receipts') {
-            $fabricId = $request->fabric_id;
+            $fabricId = (int) $request->fabric_id; // a number only: it is used inside raw SQL below
             $warehouseId = $request->warehouse_id;
 
             $query = FabricReceiptDetail::with(['fabric_receipt.vendor', 'fabric_receipt.cutting_master', 'purchase_order', 'master_fabric_warehouse', 'returns'])
@@ -566,7 +658,7 @@ class ReportService
         }
 
         if ($level === 'usages') {
-            $fabricId = $request->fabric_id;
+            $fabricId = (int) $request->fabric_id; // a number only: it is used inside raw SQL below
             $warehouseId = $request->warehouse_id;
 
             $unifiedUsages = collect();
@@ -1025,6 +1117,7 @@ class ReportService
             // Case 2: History for a specific fabric
             return \App\Models\PurchaseOrderItem::with(['purchaseOrder.vendor', 'fabric'])
                 ->where('fabric_id', $fabricId)
+                ->whereHas('purchaseOrder', fn($po) => $po->where('status', '!=', 0)) // not deleted POs
                 ->when($request->filled('start_date'), function ($q) use ($request) {
                     $q->whereHas('purchaseOrder', function ($po) use ($request) {
                         $po->whereDate('date', '>=', $request->start_date);
@@ -1054,6 +1147,8 @@ class ReportService
                 \DB::raw('AVG(purchase_order_items.price) as avg_rate')
             ])
             ->join('purchase_order_items', 'fabrics.id', '=', 'purchase_order_items.fabric_id')
+            ->join('purchase_orders', 'purchase_orders.id', '=', 'purchase_order_items.purchase_order_id')
+            ->where('purchase_orders.status', '!=', 0) // not deleted POs
             ->groupBy('fabrics.id', 'fabrics.name')
             ->when($request->filled('search'), function ($q) use ($request) {
                 $q->where('fabrics.name', 'LIKE', '%' . $request->search . '%');
@@ -1123,15 +1218,20 @@ class ReportService
                 $orderedSql = '(SELECT COALESCE(SUM(meter), 0) FROM purchase_order_items WHERE purchase_order_id = purchase_orders.id)';
                 $receivedSql = '(SELECT COALESCE(SUM(fabric_receipt_details.meter), 0) FROM fabric_receipt_details INNER JOIN purchase_order_items ON purchase_order_items.id = fabric_receipt_details.purchase_order_item_id WHERE purchase_order_items.purchase_order_id = purchase_orders.id)';
                 
+                // same rule as the Closed badge: fully received or closed by hand
                 if ($status === 'delayed') {
                     $q->whereDate('delivery_date', '<', now()->format('Y-m-d'))
+                      ->where('is_closed', '!=', 1)
                       ->whereRaw("{$orderedSql} > {$receivedSql}");
                 } elseif ($status === 'open') {
-                    $q->whereRaw("{$orderedSql} > {$receivedSql}");
+                    $q->where('is_closed', '!=', 1)->whereRaw("{$orderedSql} > {$receivedSql}");
                 } elseif ($status === 'closed') {
-                    $q->whereRaw("{$orderedSql} <= {$receivedSql}");
+                    $q->where(function ($qq) use ($orderedSql, $receivedSql) {
+                        $qq->where('is_closed', 1)->orWhereRaw("{$orderedSql} <= {$receivedSql}");
+                    });
                 }
             })
+            ->where('status', '!=', 0) // deleted POs
             ->orderBy('date', 'desc');
 
         if ($request->has('is_export')) {
@@ -1162,109 +1262,62 @@ class ReportService
 
     public function orderTrackingSystem(Request $request)
     {
+        // Built from the real lot records, like the Sales Order report.
+        $orders = $this->reportOrders($request);
+        $totals = $this->orderPieces($orders->pluck('id'));
+        $lots = $this->reportLots($orders->pluck('id'), $request);
+        $facts = $this->lotFacts($lots->flatten()->pluck('lot_no'));
+        $now = Carbon::now()->toDateTimeString();
+        $fmt = fn($d) => $d ? Carbon::parse($d)->format('d M Y h:i A') : '-';
+
         $result = [];
-
-        $orders = OrderMain::with('customer')
-            ->when($request->filled('order_no'), function ($q) use ($request) {
-                $q->where('sku', 'like', '%' . $request->order_no . '%');
-            })
-            ->when($request->filled('customer_id'), function ($q) use ($request) {
-                $q->where('customer_id', $request->customer_id);
-            })
-            ->when($request->filled('date_from'), function ($q) use ($request) {
-                $q->whereDate('created_at', '>=', $request->date_from);
-            })
-            ->when($request->filled('date_to'), function ($q) use ($request) {
-                $q->whereDate('created_at', '<=', $request->date_to);
-            })
-            ->orderBy('id', 'desc')->get();
-        // $expected_delivery_date = '';
         foreach ($orders as $order) {
-            $expected_delivery_date = $order->expected_delivery_date;
-            // 1️⃣ Total pieces in order
-            $total_pcs_in_order = OrderProductSet::where('order_main_id', $order->id)
-                ->sum('total_quantity');
+            $base = [
+                'order_date' => $order->created_at,
+                'customer' => $order->customer->name ?? '',
+                'order_no' => $order->sku,
+                'total_pcs_in_order' => (int) ($totals[$order->id] ?? 0),
+                'expected_delivery_date' => $order->expected_delivery_date,
+            ];
+            $orderLots = $lots[$order->id] ?? collect();
+            if ($request->filled('lot_no') && $orderLots->isEmpty()) {
+                continue;
+            }
 
-
-            // 2️⃣ Fetch allocated lots
-            $lotNos = ProductionSlipDigitizationParts::where('from_stage_id', 3)
-                ->where('to_stage_id', 4)
-                ->where('order_no', $order->sku)
-                ->when($request->filled('lot_no'), function ($q) use ($request) {
-                    $q->where('lot_no', 'like', '%' . $request->lot_no . '%');
-                })
-                ->distinct()
-                ->pluck('lot_no');
-
-            $allocated_pieces = 0;
-
-            foreach ($lotNos as $lot_no) {
-                $expected_delivery_date = $this->calculateExpectedDeliveryFromPlan($order->expected_delivery_date, $lot_no);
-
-
-
-                $stage_name = ProductionSlipDigitizationParts::where('lot_no', $lot_no)
-                    ->orderBy('id', 'desc')->value('to_stage_name');
-
-
-                $allowed_till_datetime = ProductionSlipDigitizationParts::where('lot_no', $lot_no)
-                    ->orderBy('id', 'desc')->value('allowed_till_datetime');
-
-                $currentTime = Carbon::now();
-                $isDelayed = $this->calculateDelayFromPlan($lot_no);
-
-                if ($request->filled('delay_status') && $request->delay_status !== $isDelayed) {
+            $rows = [];
+            $cutPieces = 0;
+            foreach ($orderLots as $lot) {
+                $f = $facts[self::lotKey($lot->lot_no)];
+                $cutPieces += $f['pieces'];
+                if ($request->filled('delay_status') && $request->delay_status !== $f['is_delayed']) {
                     continue;
                 }
-
-                // 3️⃣ Calculate pieces in this lot
-                $parts_data = ProductionSlipDigitizationParts::where('lot_no', $lot_no)->where('from_stage_id', 3)->where('to_stage_id', 4)->get();
-                $pieces_in_lot = 0;
-                foreach ($parts_data as $single_part) {
-                    $no_of_pcs = MasterSizeMeasurement::where('id', $single_part->set_size)
-                        ->value('no_of_pcs');
-                    $pieces_in_lot += $no_of_pcs * $single_part->set_quantity;
-                }
-
-                $allocated_pieces += $pieces_in_lot;
-
-                $result[] = [
-                    'order_date' => $order->created_at,
-                    'customer' => $order->customer->name ?? '',
-                    'order_no' => $order->sku,
-                    'lot_no' => $lot_no,
-                    'total_pcs_in_order' => $total_pcs_in_order,
-                    'pieces_in_lot' => $pieces_in_lot,
-                    'stage_name' => $stage_name ?? '',
-                    'isDelayed' => $isDelayed,
-                    'allowed_till_datetime' => $allowed_till_datetime,
-                    'current_datetime' => $currentTime->toDateTimeString(),
-                    'expected_delivery_date' => $expected_delivery_date,
-                    'expected_time' => $this->calculateFinalExpectedTimeFromPlan($lot_no),
+                $rows[] = $base + [
+                    'lot_no' => $lot->lot_no,
+                    'pieces_in_lot' => $f['pieces'],
+                    'stage_name' => $f['stage_name'],
+                    'isDelayed' => $f['is_delayed'],
+                    'allowed_till_datetime' => $f['allowed_till'],
+                    'current_datetime' => $now,
+                    'expected_time' => $fmt($f['expected_end']),
                 ];
             }
 
-            // 4️⃣ ADD "NOT ISSUED" ROW IF REQUIRED
-            $remaining_pieces = $total_pcs_in_order - $allocated_pieces;
-
-            if ($remaining_pieces > 0) {
-                $result[] = [
-                    'order_date' => $order->created_at,
-                    'customer' => $order->customer->name ?? '',
-                    'order_no' => $order->sku,
+            // pieces of the order not cut into any lot yet
+            $notIssued = $base['total_pcs_in_order'] - $cutPieces;
+            if ($notIssued > 0 && !$request->filled('lot_no') && $request->delay_status !== 'Yes') {
+                $rows[] = $base + [
                     'lot_no' => 'XXX',
-                    'total_pcs_in_order' => $total_pcs_in_order,
-                    'pieces_in_lot' => $remaining_pieces,
+                    'pieces_in_lot' => $notIssued,
                     'stage_name' => 'Not Issued',
                     'isDelayed' => 'No',
                     'allowed_till_datetime' => null,
-                    'current_datetime' => Carbon::now()->toDateTimeString(),
-                    'expected_delivery_date' => $expected_delivery_date,
+                    'current_datetime' => $now,
                     'expected_time' => '-',
                 ];
             }
+            array_push($result, ...$rows);
         }
-
 
         return collect($result)->groupBy('order_no');
     }
@@ -1315,42 +1368,29 @@ class ReportService
     }
     public function lotTrackingDetails(Request $request)
     {
-        $row = OrderStageWiseTimeTracking::where('lot_no', $request->lot_no)->first();
+        // The lot's stage plan (order_lot_stage_timings): started, planned end, finished
+        $lotNo = (string) $request->lot_no;
+        $fmt = fn($d) => $d ? Carbon::parse($d)->format('d M Y h:i A') : null;
+        $order = [3, 2, 1, 13, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+        $names = MasterProductStage::pluck('name', 'id');
 
-        if (!$row) {
+        $data = \App\Models\OrderLotStageTiming::where('lot_no', $lotNo)->get()
+            ->sortBy(fn($t) => array_search((int) $t->master_stage_id, $order) === false ? 99 : array_search((int) $t->master_stage_id, $order))
+            ->map(fn($t) => [
+                'stage_id' => (int) $t->master_stage_id,
+                'stage_name' => $names[$t->master_stage_id] ?? ('Stage ' . $t->master_stage_id),
+                'start_time' => $fmt($t->start_date),
+                'expected_time' => $fmt($t->end_date),
+                'complete_time' => $fmt($t->complete_date),
+            ])->values()->all();
 
-            $data = [
-                'current_stage' => null,
-                'data' => []
-            ];
-            return $data;
-        }
+        $facts = $lotNo !== '' ? $this->lotFacts([$lotNo]) : [];
+        $f = $facts[self::lotKey($lotNo)] ?? null;
 
-        $stage_numeric_array = [3, 2, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-
-        $data = [];
-        // for ($i = 1; $i <= 12; $i++) {
-        foreach ($stage_numeric_array as $i) {
-            $col = 'stage_id_' . $i;
-            if (!empty($row->$col)) {
-                $stage_name = MasterProductStage::where('id', $i)->value('name');
-                $data[] = [
-                    'stage_id' => $i,
-                    'expected_time' => $row->$col,
-                    'expected_time' => Carbon::parse($row->$col)->format('d M Y h:i A'),
-                    'stage_name' => $stage_name
-                ];
-            }
-        }
-
-        $current = end($data);
-
-        $data = [
-            'current_stage' => 'Stage ' . ($current['stage_id'] ?? ''),
-            'data' => $data
+        return [
+            'current_stage' => $f['stage_name'] ?? null,
+            'data' => $data,
         ];
-        return $data;
-
     }
 
     private function calculateFinalExpectedTimeFromPlan($lotNo)
@@ -1456,79 +1496,108 @@ class ReportService
 
     public function dispatchOrder(Request $request)
     {
-        $results = OrderDispatch::with([
+        // Cartons are read from the packing tables the dispatch screen uses (packing_items), and
+        // boxes bought from vendors (order_dispatch_purchases) are listed too, so pieces match the bill.
+        $dispatches = OrderDispatch::with([
             'dispatchDetails:id,order_dispatch_id,carton_packing_id',
+            'orderDispatchPurchases.product',
+            'orderDispatchPurchases.color',
+            'orderDispatchPurchases.sizeSet',
             'orderMain.customer',
-            'orderMain.OrderProductSets.colors',
-            'orderMain.OrderProductSets.sizeMeasurement'
         ])
             ->when($request->filled('order_no'), function ($q) use ($request) {
-                $q->where('sku', 'like', '%' . $request->order_no . '%');
+                $like = '%' . $request->order_no . '%';
+                $q->where(function ($qq) use ($like) {
+                    $qq->whereHas('orderMain', fn($o) => $o->where('sku', 'like', $like))
+                        ->orWhere('sku', 'like', $like);
+                });
             })
             ->when($request->filled('customer_id'), function ($q) use ($request) {
-                $q->where('customer_id', $request->customer_id);
+                $q->whereHas('orderMain', fn($o) => $o->where('master_customer_id', $request->customer_id));
             })
             ->orderBy('id', 'desc')
-            ->get()->toArray();
+            ->get();
+
+        $cartonIds = $dispatches->flatMap(fn($d) => $d->dispatchDetails->pluck('carton_packing_id'))->filter()->unique()->values();
+        $cartons = PackingCarton::with([
+            'items.detail.orderProductSet.colors',
+            'items.detail.orderProductSet.size_measurement',
+        ])->whereIn('id', $cartonIds)->get()->keyBy('id');
+
         $data = [];
-        foreach ($results as $order_dispatch) {
-            if ($order_dispatch) {
-                $order_dispatch_data = [
-                    'id' => $order_dispatch['id'],
-                    'order_dispatch_no' => $order_dispatch['sku'],
-                    'order_no' => $order_dispatch['order_main']['sku'] ?? '',
-                    'customer' => $order_dispatch['order_main']['customer']['name'] ?? '',
-                    'dispatch_date' => date("d-m-Y h:i A", strtotime($order_dispatch['dispatch_date'])) ?? '',
-                ];
-            }
-            $dispatch_carton_ids = [];
-            foreach ($order_dispatch['dispatch_details'] as $v) {
-                $dispatch_carton_ids[] = $v['carton_packing_id'];
-            }
-
-            $cartons_data = PackingCarton::with([
-                'cartonsDetails',
-                'orderMain.OrderProductSets.colors',
-                'orderMain.OrderProductSets.sizeMeasurement'
-            ])->whereIn('id', $dispatch_carton_ids)->get()->toArray();
-
-            $total_boxes_session = 0;
+        foreach ($dispatches as $dispatch) {
             $cartonsDetails = [];
-            foreach ($cartons_data as $carton) {
-                $total_boxes = 0;
-                $car_data = [];
-                foreach ($carton['cartons_details'] as $val) {
-                    foreach ($carton['order_main']['order_product_sets'] as $order_product_sets) {
-                        if ($val['bar_code'] == $order_product_sets['bar_code']) {
-                            $car_data[$val['bar_code']] = [
-                                'bar_code' => $order_product_sets['bar_code'],
-                                'design_number' => $order_product_sets['design_number'],
-                                'set_size' => $order_product_sets['size_measurement']['set_size'],
-                                'size_group' => $order_product_sets['size_measurement']['size_group'],
-                                'color' => isset($order_product_sets['colors']) ? $order_product_sets['colors']['name'] . ' (' . $order_product_sets['colors']['id'] . ')' : '',
-                                'no_of_pcs' => $order_product_sets['no_of_pcs'],
-                                'set_quantity' => $val['set_quantity'],
-                            ];
-                        }
-                    }
-                    $total_boxes += $val['set_quantity'];
-                    $total_boxes_session += $val['set_quantity'];
-                }
+            $totalPieces = 0;
 
-                $cartonsDetails[$carton['id']] = [
-                    'id' => $carton['id'],
-                    'total_boxes' => $total_boxes,
-                    'car_data' => $car_data,
+            foreach ($dispatch->dispatchDetails as $detail) {
+                $carton = $cartons[$detail->carton_packing_id] ?? null;
+                if (!$carton) {
+                    continue;
+                }
+                $rows = [];
+                $cartonPieces = 0;
+                foreach ($carton->items as $item) {
+                    $set = $item->detail->orderProductSet ?? null;
+                    $key = $item->detail->order_products_set_id ?? 0;
+                    if (!isset($rows[$key])) {
+                        $rows[$key] = [
+                            'design_number' => $set->design_number ?? 'N/A',
+                            'color' => $set->colors->name ?? 'N/A',
+                            'size_set' => $set->size_measurement->name ?? 'N/A',
+                            'sizes' => [],
+                            'pieces' => 0,
+                        ];
+                    }
+                    $rows[$key]['sizes'][] = ($item->detail->size ?? 'N/A') . ' (' . (int) $item->quantity . ')';
+                    $rows[$key]['pieces'] += (int) $item->quantity;
+                    $cartonPieces += (int) $item->quantity;
+                }
+                foreach ($rows as &$r) {
+                    $r['sizes'] = implode(', ', $r['sizes']);
+                }
+                unset($r);
+
+                $cartonsDetails[] = [
+                    'id' => $carton->id,
+                    'carton_no' => $carton->carton_no ?: $carton->id,
+                    'total_pieces' => $cartonPieces,
+                    'rows' => array_values($rows),
                 ];
+                $totalPieces += $cartonPieces;
             }
-            $order_dispatch_data['total_cartons'] = count($cartons_data);
-            $order_dispatch_data['total_boxes_dispatch'] = $total_boxes_session;
+
+            foreach ($dispatch->orderDispatchPurchases as $odp) {
+                $pieces = (int) $odp->total_pieces;
+                $cartonsDetails[] = [
+                    'id' => 'PO-' . $odp->id,
+                    'carton_no' => 'Purchased boxes',
+                    'total_pieces' => $pieces,
+                    'rows' => [[
+                        'design_number' => $odp->product ? ($odp->product->series_name ?? $odp->product->design_number ?? 'PO Product') : 'PO Product',
+                        'color' => $odp->color->name ?? 'N/A',
+                        'size_set' => $odp->sizeSet->name ?? 'N/A',
+                        'sizes' => (int) $odp->boxes_count . ' boxes x ' . (int) $odp->pieces_per_box . ' pcs',
+                        'pieces' => $pieces,
+                    ]],
+                ];
+                $totalPieces += $pieces;
+            }
+
             $data[] = [
-                'order_dispatch_data' => $order_dispatch_data,
+                'order_dispatch_data' => [
+                    'id' => $dispatch->id,
+                    'order_dispatch_no' => $dispatch->sku,
+                    'bill_number' => $dispatch->bill_number ?? '',
+                    'order_no' => $dispatch->orderMain->sku ?? '',
+                    'customer' => $dispatch->orderMain->customer->name ?? '',
+                    'dispatch_date' => $dispatch->dispatch_date ? date('d-m-Y h:i A', strtotime($dispatch->dispatch_date)) : '',
+                    'total_cartons' => count($cartonsDetails),
+                    'total_pieces' => $totalPieces,
+                ],
                 'cartonsDetails' => $cartonsDetails,
             ];
         }
-        // dd($data);
+
         return $data;
     }
 

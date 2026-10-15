@@ -6,7 +6,6 @@ use App\Models\FabricReturn;
 use App\Services\Admin\FabricReceiptService as Service;
 use App\Requests\Admin\FabricReceiptStoreRequest;
 use App\Requests\Admin\FabricReceiptUpdateRequest;
-use App\Requests\Admin\FabricReceiptDetailStoreRequest;
 use Illuminate\Support\Facades\Crypt;
 use Auth;
 
@@ -31,7 +30,7 @@ class FabricReceiptController extends Controller
     {
         $response['vendors'] = $this->service->vendors();
         $response['cutting_units'] = $this->service->cutting_units();
-        $response['purchase_orders'] = \App\Models\PurchaseOrder::with('vendor')->where('status', 1)->where('is_closed', 0)->orderBy('id', 'desc')->get(); // Only pending POs
+        $response['purchase_orders'] = $this->service->pendingPurchaseOrders(); // only POs with fabric still to receive
         $vendor_id = 0;
         $response['fabrics'] = $this->service->fabric_list_by_vendor($vendor_id);
         return view('admin.fabric_receipt.create_new', $response);
@@ -53,19 +52,12 @@ class FabricReceiptController extends Controller
     }
     public function store(FabricReceiptStoreRequest $request)
     {
-        $data = $this->service->store($request);
-        return redirect()->route('admin.fabric_receipt.detail', ['id' => $data])->withSuccess('The fabric receipt has been successfully created.');
-    }
-    public function detail(Request $request)
-    {
-        $response['data'] = $this->service->view($request);
-        $response['vendors'] = $this->service->vendors();
-        $response['fabrics'] = $this->service->fabric_list_by_vendor($response['data']->vendor_id);
-
-        $response['new_batch_no'] = $this->service->new_batch_no();
-
-        $request->merge(['vendor_id' => $response['data']->vendor_id]);
-        $response['purchase_orders'] = $this->service->purchase_orders($request);
+        try {
+            $data = $this->service->store($request);
+        } catch (\Throwable $e) {
+            report($e);
+            return redirect()->back()->withInput()->with('error', 'The shipment was not saved: ' . $e->getMessage());
+        }
         return redirect()->route('admin.fabric_receipt.index')->withSuccess('The fabric receipt has been successfully created.');
     }
     public function getPurchaseOrderItems($id)
@@ -83,6 +75,11 @@ class FabricReceiptController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.fabric_receipt.index')->with('error', 'Shipment not found.');
+        }
+        // rolls already used somewhere cannot be removed from the shipment
+        $response['used_rolls'] = \App\Services\Admin\FabricPurchaseLink::usedRolls($response['data']->details->pluck('id')->all());
         $response['vendors'] = $this->service->vendors();
         $response['cutting_units'] = $this->service->cutting_units();
         $response['fabrics'] = $this->service->fabrics();
@@ -94,14 +91,9 @@ class FabricReceiptController extends Controller
         try {
             $data = $this->service->update($request);
             return redirect()->route('admin.fabric_receipt.index')->withSuccess('The fabric receipt has been successfully updated.');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return redirect()->back()->withInput()->withError($e->getMessage());
         }
-    }
-    public function storeDetail(FabricReceiptDetailStoreRequest $request)
-    {
-        $data = $this->service->storeDetail($request);
-        return redirect()->route('admin.fabric_receipt.index')->withSuccess('The fabric receipt detail has been successfully created.');
     }
     public function view(Request $request)
     {
@@ -118,7 +110,7 @@ class FabricReceiptController extends Controller
         if ($status) {
             return redirect()->route('admin.fabric_receipt.index')->withSuccess('The fabric receipt has been successfully deleted.');
         } else {
-            return redirect()->route('admin.fabric_receipt.index')->withError('Delete Failed! This shipment has existing payment adjustments or used rolls.');
+            return redirect()->route('admin.fabric_receipt.index')->withError('Delete Failed! This shipment has payments, returns or rolls that are already used.');
         }
     }
 
@@ -145,14 +137,13 @@ class FabricReceiptController extends Controller
     }
     public function uploadChallan(Request $request)
     {
+        $check = \Validator::make($request->all(), ['challan_photo' => 'required|' . Service::UPLOAD_RULE], [], ['challan_photo' => 'challan']);
+        if ($check->fails()) {
+            return redirect()->back()->with('error', $check->errors()->first());
+        }
         $receipt = \App\Models\FabricReceipt::find($request->receipt_id);
-        if ($receipt && $request->hasFile('challan_photo')) {
-            $image = $request->file('challan_photo');
-            $extImage = $image->getClientOriginalExtension();
-            $imgName = "challan-image-" . rand() . "_" . time() . "." . $extImage;
-            $destinationPath = public_path() . '/assets/receipts/challan-image';
-            $image->move($destinationPath, $imgName);
-            $receipt->challan_photo = $imgName;
+        if ($receipt) {
+            $receipt->challan_photo = $this->service->saveUpload($request->file('challan_photo'), 'challan-image', 'challan-image');
             $receipt->save();
         }
         return redirect()->back()->withSuccess('Challan photo has been successfully updated.');
@@ -160,34 +151,20 @@ class FabricReceiptController extends Controller
 
     public function uploadOtherImages(Request $request)
     {
+        $check = \Validator::make($request->all(), ['other_images' => 'required|array', 'other_images.*' => Service::UPLOAD_RULE], [], ['other_images.*' => 'image']);
+        if ($check->fails()) {
+            return redirect()->back()->with('error', $check->errors()->first());
+        }
         $receipt = \App\Models\FabricReceipt::find($request->receipt_id);
-        if ($receipt && $request->hasFile('other_images')) {
+        if ($receipt) {
             foreach ($request->file('other_images') as $image) {
-                $extImage = $image->getClientOriginalExtension();
-                $imgName = "other-image-" . rand() . "_" . time() . "." . $extImage;
-                $destinationPath = public_path() . '/assets/receipts/other-images';
-                if (!file_exists($destinationPath)) {
-                    mkdir($destinationPath, 0777, true);
-                }
-                $image->move($destinationPath, $imgName);
-
                 \App\Models\FabricReceiptOtherImage::create([
                     'fabric_receipt_id' => $receipt->id,
-                    'image' => $imgName
+                    'image' => $this->service->saveUpload($image, 'other-images', 'other-image')
                 ]);
             }
         }
         return redirect()->back()->withSuccess('Other images have been successfully uploaded.');
-    }
-
-    public function returnFabric(Request $request)
-    {
-        $status = $this->service->returnFabric($request);
-        if ($status) {
-            return response()->json(['success' => true, 'message' => 'Fabric returned successfully.']);
-        } else {
-            return response()->json(['success' => false, 'message' => 'Return failed! Fabric might be already used or not found.'], 400);
-        }
     }
 
     public function returnPage(Request $request)
@@ -198,7 +175,11 @@ class FabricReceiptController extends Controller
 
     public function storeReturn(Request $request)
     {
-        $this->service->storeReturn($request);
+        try {
+            $this->service->storeReturn($request);
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', 'The return was not saved: ' . $e->getMessage());
+        }
         return redirect()->route('admin.fabric_receipt.view', ['id' => $request->fabric_receipt_id])->withSuccess('Fabric return has been successfully processed.');
     }
 
@@ -217,6 +198,9 @@ class FabricReceiptController extends Controller
     {
         $response['return'] = FabricReturn::with(['details.receipt_detail', 'receipt.details.fabric'])->find($id);
         if (!$response['return']) abort(404);
+        if ($this->service->returnHasOtherShipments($response['return'])) {
+            return redirect()->route('admin.fabric_return.view', $id)->with('error', 'This return has rolls of several shipments, so it is shown here in Fabric Return.');
+        }
         
         $response['data'] = $response['return']->receipt;
         return view('admin.fabric_receipt.edit_return', $response);
@@ -224,7 +208,11 @@ class FabricReceiptController extends Controller
 
     public function updateReturn(Request $request)
     {
-        $this->service->updateReturn($request);
+        try {
+            $this->service->updateReturn($request);
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', 'The return was not saved: ' . $e->getMessage());
+        }
         return redirect()->route('admin.fabric_receipt.view', ['id' => $request->fabric_receipt_id])->withSuccess('Fabric return has been successfully updated.');
     }
 
@@ -249,7 +237,6 @@ class FabricReceiptController extends Controller
 
     public function allPendingPOs()
     {
-        $data = \App\Models\PurchaseOrder::with('vendor')->where('status', 1)->where('is_closed', 0)->orderBy('id', 'desc')->get();
-        return response()->json($data);
+        return response()->json($this->service->pendingPurchaseOrders());
     }
 }

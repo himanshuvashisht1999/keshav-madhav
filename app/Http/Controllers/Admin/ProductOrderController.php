@@ -190,6 +190,9 @@ class ProductOrderController extends Controller
     {
         $response['order_main_id'] = $request->id ?? 0;
         $response['order_main'] = $this->service->orderMainDetails($request);
+        if (!$response['order_main']) {
+            return redirect()->route('admin.product_order.indexOrder')->with('error', 'Order not found.');
+        }
         $response['documents'] = app(\App\Services\Admin\OrderDocumentService::class)->forOrder($request->id ?? 0);
         $response['check_assign'] = $this->service->checkAssign($request);
         $response['cutting_units'] = $this->service->cutting_units();
@@ -321,7 +324,7 @@ class ProductOrderController extends Controller
         return view('admin.product_order.edit-order-main', $response);
     }
 
-    public function updateOrderMain(Request $request, $id)
+    public function updateOrderMain(\App\Requests\Admin\ProductOrderUpdateRequest $request, $id)
     {
         $request->validate(\App\Services\Admin\OrderDocumentService::RULES, \App\Services\Admin\OrderDocumentService::MESSAGES);
 
@@ -524,7 +527,7 @@ class ProductOrderController extends Controller
 
     public function getUnassignedOrders(Request $request)
     {
-        $query = OrderMain::whereHas('productSets', function ($q) {
+        $query = OrderMain::whereHas('OrderProductSets', function ($q) {
             $q->where('remain_total_quantity', '>', 0)
                 ->where('status', '!=', 2);
         });

@@ -2262,9 +2262,7 @@ class PackingController extends Controller
             return "No packing found.";
         }
 
-        $inventories = \App\Models\DomesticInventory::where('packing_main_id', $packing->id)
-            ->with(['product', 'color', 'sizeSet', 'pattern', 'fitting'])
-            ->get();
+        $inventories = \App\Models\DomesticInventory::where('packing_main_id', $packing->id)->get(); // only the barcodes are written
 
         if ($inventories->isEmpty()) {
             return "No inventory found.";

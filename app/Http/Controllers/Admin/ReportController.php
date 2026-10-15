@@ -486,115 +486,39 @@ class ReportController extends Controller
         return view('admin.report.lots', $response);
     }
 
-    private function forceDeleteLot($id)
-    {
-        $session = \App\Models\OrderLot::findOrFail($id);
-        $slip_id = $session->production_slip_digitization_id;
-
-        if (\App\Models\ProductionOutflowInventory::where('lot_no', $session->lot_no)->exists()) {
-            throw new \Exception("Cannot delete Lot {$session->lot_no}. It is already in packing.");
-        }
-
-        // FORCIBLY DELETE ALL SUBSEQUENT TRANSACTIONS FOR THIS LOT
-        $printingTxs = \App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)->get();
-        foreach($printingTxs as $ptx) {
-            \App\Models\OrderPrintingStageTransactionDetail::where('order_printing_stage_transaction_id', $ptx->id)->delete();
-            $ptx->delete();
-        }
-
-        $stageTxs = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)->get();
-        foreach($stageTxs as $stx) {
-            \App\Models\OrderStageTransactionDetail::where('order_stage_transaction_id', $stx->id)->delete();
-            $stx->delete();
-        }
-
-        $printStitchTxs = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $session->lot_no)->get();
-        foreach($printStitchTxs as $pstx) {
-            \App\Models\OrderPrintingToStichingTransactionDetail::where('order_printing_to_stiching_transaction_id', $pstx->id)->delete();
-            $pstx->delete();
-        }
-
-        $godamTxs = \App\Models\OrderGodamStageTransaction::where('lot_no', $session->lot_no)->get();
-        foreach($godamTxs as $gtx) {
-            \App\Models\OrderGodamStageTransactionDetail::where('order_godam_stage_transaction_id', $gtx->id)->delete();
-            $gtx->delete();
-        }
-
-        \App\Models\MasterStageWiseTimeAllocation::where('lot_no', $session->lot_no)->delete();
-
-        $parts = \App\Models\ProductionSlipDigitizationParts::where('lot_no', $session->lot_no)->get();
-        foreach($parts as $part) {
-            \App\Models\ProductionDigitizationSetsDetails::where('production_slip_digitization_parts_id', $part->id)->delete();
-            $part->delete();
-        }
-        \App\Models\OrderCuttingStage::where('lot_no', $session->lot_no)->delete();
-
-        // Revert FabricRollAssigning
-        $rolls = \App\Models\FabricRollAssigning::where('order_lot_id', $id)->get();
-        foreach ($rolls as $roll) {
-            // Revert FabricReceiptDetail meters
-            $receipt = \App\Models\FabricReceiptDetail::find($roll->fabric_receipt_detail_id);
-            if ($receipt) {
-                $receipt->remaining_quantity += $roll->meter;
-                $receipt->save();
-            }
-
-            // Revert OrderProductSetDetail quantities
-            $details = \App\Models\FabricRollAssigningsDetail::where('production_fabric_roll_assigning_id', $roll->id)->get();
-            foreach ($details as $detail) {
-                $setDetail = \App\Models\OrderProductSetDetail::where('order_products_set_id', $session->order_products_set_id)
-                    ->where('size', $detail->size)
-                    ->first();
-                if ($setDetail) {
-                    $setDetail->remaining_lot_allocated += $detail->quantity;
-                    $setDetail->save();
-                }
-
-                $detail->delete();
-            }
-            $roll->delete();
-        }
-        $session->delete();
-
-        // Reset Digitized Status of Slip
-        if ($slip_id) {
-            \App\Models\ProductionSlipDigitization::where('id', $slip_id)->update([
-                'status' => 0,
-                'save_type' => 1, // Restore save type
-                'lot_no' => null,
-                'to_stage_id' => null
-            ]);
-        }
-    }
-
     public function deleteMultipleLots(Request $request)
     {
-        $ids = $request->input('lot_ids', []);
-        
+        $ids = array_values(array_unique(array_filter((array) $request->input('lot_ids', []), fn($id) => is_numeric($id))));
+
         if (empty($ids)) {
             return redirect()->back()->with('error', 'No lots selected for deletion.');
         }
 
-        $successCount = 0;
-        $errorMsg = null;
-
+        // Same delete as the lot page: refused once pieces moved to the next stage; puts the fabric
+        // metres, the order line and the cutting task quantities back and writes the Deletion Log.
+        $deleted = [];
+        $refused = [];
         foreach ($ids as $id) {
-            \Illuminate\Support\Facades\DB::beginTransaction();
-            try {
-                $this->forceDeleteLot($id);
-                \Illuminate\Support\Facades\DB::commit();
-                $successCount++;
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\DB::rollBack();
-                $errorMsg = $e->getMessage();
+            $lot = \App\Models\OrderLot::find($id);
+            if (!$lot) {
+                $refused[] = "Lot #{$id}: not found";
+                continue;
+            }
+            $result = deleteProductionSession('lot', $lot->id);
+            if (($result['status'] ?? '') === 'success') {
+                $deleted[] = $lot->lot_no;
+            } else {
+                $why = preg_replace('/^Error deleting session: /', '', $result['message'] ?? 'not deleted');
+                $refused[] = "Lot {$lot->lot_no}: " . str_replace('Cannot delete Lot. Printing stage has already moved quantity forward.', 'its pieces have already been sent to the next stage', $why);
             }
         }
 
-        if ($successCount > 0) {
-            return redirect()->back()->with('success', "$successCount lot(s) deleted successfully." . ($errorMsg ? " But encountered error: " . $errorMsg : ""));
+        $message = $deleted ? count($deleted) . ' lot(s) deleted: ' . implode(', ', $deleted) . '.' : '';
+        if ($refused) {
+            $message = trim($message . ' Not deleted - ' . implode('; ', $refused));
+            return redirect()->back()->with('error', $message); // shown in red so a refused lot is not missed
         }
-
-        return redirect()->back()->with('error', $errorMsg ?: 'Error deleting selected lots.');
+        return redirect()->back()->with('success', $message);
     }
 
     public function lotDetails(Request $request)
@@ -759,51 +683,119 @@ class ReportController extends Controller
             'is_debit' => 'nullable|boolean',
             'adjustment_master_id' => 'required_if:is_debit,1',
             'ref_id' => 'required_if:is_debit,1',
-            'amount' => 'required_if:is_debit,1|numeric'
         ]);
 
-        $outflows = \App\Models\ProductionOutflowInventory::whereIn('id', $request->outflow_ids)->get();
-        $isDebit = $request->input('is_debit', false) || $request->input('is_debit') == '1';
-
-        if ($isDebit) {
-            foreach ($outflows as $outflow) {
-                if ($outflow->type !== 'debit') {
-                    return response()->json(['success' => false, 'message' => 'Cannot mix debit and non-debit outflows.']);
+        try {
+            $message = \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+                // locked, so pressing twice (or two tabs) cannot dispose and charge the same record again
+                $outflows = \App\Models\ProductionOutflowInventory::whereIn('id', array_unique(array_map('intval', $request->outflow_ids)))
+                    ->lockForUpdate()->get();
+                $done = $outflows->where('status', '!=', 'active');
+                if ($done->isNotEmpty()) {
+                    throw new \RuntimeException('Already disposed: record #' . $done->pluck('id')->implode(', #') . '. Refresh the page.');
                 }
-            }
 
-            $batchId = 'ADJ-' . time();
-            \App\Models\PaymentAdjustment::create([
-                'batch_id' => $batchId,
-                'adjustment_master_id' => $request->adjustment_master_id,
-                'ref_id' => $request->ref_id,
-                'type' => 'credit',
-                'payment_mode' => 'adjustment',
-                'payment_account_id' => 0,
-                'amount' => $request->amount,
-                'date' => now()->format('Y-m-d'),
-                'remarks' => $request->reason,
-            ]);
-        } else {
-            foreach ($outflows as $outflow) {
-                if ($outflow->type === 'debit') {
-                    return response()->json(['success' => false, 'message' => 'Missing debit ledger information.']);
+                $isDebit = $request->boolean('is_debit');
+                $debits = $outflows->where('type', 'debit');
+                if ($isDebit && $debits->count() !== $outflows->count()) {
+                    throw new \RuntimeException('Cannot mix debit and non-debit outflows.');
                 }
-            }
+                if (!$isDebit && $debits->isNotEmpty()) {
+                    throw new \RuntimeException('Missing debit ledger information.');
+                }
+
+                $charged = '';
+                if ($isDebit) {
+                    // the amount is the value of the selected records, not a typed figure
+                    $amount = round((float) $debits->sum('total_amount'), 2);
+                    if ($amount > 0) {
+                        $charged = ' ' . $this->postDisposeCredit((int) $request->adjustment_master_id, (string) $request->ref_id, $amount, (string) $request->reason);
+                    }
+                }
+
+                foreach ($outflows as $outflow) {
+                    $outflow->status = 'disposed';
+                    $outflow->save();
+
+                    \App\Models\ProductionOutflowDispose::create([
+                        'production_outflow_inventory_id' => $outflow->id,
+                        'reason' => $request->reason,
+                        'created_by' => auth()->id()
+                    ]);
+                }
+
+                return 'Selected outflows disposed successfully.' . $charged;
+            });
+        } catch (\RuntimeException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
 
-        foreach ($outflows as $outflow) {
-            $outflow->status = 'disposed';
-            $outflow->save();
+        return response()->json(['success' => true, 'message' => $message]);
+    }
 
-            \App\Models\ProductionOutflowDispose::create([
-                'production_outflow_inventory_id' => $outflow->id,
-                'reason' => $request->reason,
-                'created_by' => auth()->id()
-            ]);
+    /**
+     * Credit the chosen party with the value of disposed debit records, the same way the Payment Adjustment
+     * page saves one party line (adjustment row, payment row for vendor / employee / customer, party balance),
+     * so the party's balance and its ledger stay equal. No bank or cash account is involved.
+     * Deleting the batch from the Payment Adjustment page reverses it.
+     */
+    private function postDisposeCredit(int $masterId, string $refId, float $amount, string $remarks): string
+    {
+        $master = \App\Models\AdjustmentMaster::find($masterId);
+        $model = $master->model_name ?? null;
+        $item = $model && class_exists($model) ? $model::lockForUpdate()->find($refId) : null;
+        if (!$item) {
+            throw new \RuntimeException('Select the party to charge for the debit records.');
         }
 
-        return response()->json(['success' => true, 'message' => 'Selected outflows disposed successfully.']);
+        $batchId = 'ADJ-' . strtoupper(uniqid());
+        $date = now()->format('Y-m-d');
+        \App\Models\PaymentAdjustment::create([
+            'batch_id' => $batchId,
+            'adjustment_master_id' => $masterId,
+            'ref_id' => $refId,
+            'type' => 'credit',
+            'payment_mode' => 'adjustment',
+            'payment_account_id' => 0,
+            'amount' => $amount,
+            'date' => $date,
+            'remarks' => $remarks,
+        ]);
+
+        $payment = fn(string $category, string $tag) => \App\Models\Payment::create([
+            'payment_category' => $category,
+            'payment_type' => 'credit',
+            'party_type' => $model,
+            'party_id' => $item->id,
+            'paymentable_type' => $model,
+            'paymentable_id' => $item->id,
+            'amount' => $amount,
+            'payment_date' => $date,
+            'payment_mode' => 'Adjustment',
+            'reference_id' => $batchId,
+            'remarks' => $tag . ' ' . $remarks,
+            'created_by' => \Auth::id(),
+        ]);
+
+        if ($model == 'App\Models\Vendor') {
+            $payment('fabric_shipment', '[Vendor-Adj]');
+            $item->balance += $amount;
+            $item->save();
+        } elseif ($model == 'App\Models\Employee') {
+            $payment('employee_salary', '[Salary-Adj]');
+        } elseif ($model == 'App\Models\MasterCustomer') {
+            $payment('domestic_order', '[Customer-Adj]');
+            $item->balance += $amount;
+            $item->save();
+        } elseif (isset($item->balance)) {
+            $item->balance += $amount;
+            $item->save();
+        } elseif (isset($item->amount)) {
+            $item->amount += $amount;
+            $item->save();
+        }
+
+        return 'Rs ' . number_format($amount, 2) . ' credited to ' . ($item->name ?? $item->bank_name ?? ('#' . $item->id)) . " ({$master->name}), batch {$batchId}.";
     }
 
     public function outflowsDisposeHistoryReport(Request $request)
@@ -888,8 +880,12 @@ class ReportController extends Controller
     public function salesManReport(Request $request)
     {
         $salesMen = \App\Models\SalesMan::with(['orders' => function($q) use ($request) {
-            if ($request->filled('start_date') && $request->filled('end_date')) {
-                $q->whereBetween('order_date', [$request->start_date, $request->end_date]);
+            // order_date has a time, so compare dates only (the To day is included)
+            if ($request->filled('start_date')) {
+                $q->whereDate('order_date', '>=', $request->start_date);
+            }
+            if ($request->filled('end_date')) {
+                $q->whereDate('order_date', '<=', $request->end_date);
             }
         }, 'orders.dispatches'])->get();
 
@@ -901,8 +897,11 @@ class ReportController extends Controller
         $salesMan = \App\Models\SalesMan::findOrFail($id);
         $ordersQuery = $salesMan->orders()->with(['dispatches', 'items', 'fabricItems', 'shop', 'vendor']);
 
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $ordersQuery->whereBetween('order_date', [$request->start_date, $request->end_date]);
+        if ($request->filled('start_date')) {
+            $ordersQuery->whereDate('order_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $ordersQuery->whereDate('order_date', '<=', $request->end_date);
         }
 
         if ($request->filled('order_no')) {

@@ -53,7 +53,7 @@ class FabricReceiptDataTable
                 $parameter = $queue->id;
                 $paid = $queue->paid_amount;
                 $total = $queue->total_amount;
-                $is_paid = ($paid >= $total && $total > 0);
+                $is_paid = ($total > 0 && $queue->balance_amount <= 0); // nothing left to pay (paid, or paid + returned)
 
                 $action = '<div class="d-inline-flex align-items-center">';
                 $action .= '<a href="' . route('admin.fabric_receipt.view', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-view" data-toggle="tooltip" title="View"><i class="fas fa-eye"></i></a>';

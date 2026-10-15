@@ -37,7 +37,7 @@ class FabricReceipt extends Model
         'updated_at'
     ];
 
-    protected $appends = ['paid_amount', 'balance_amount', 'can_delete'];
+    protected $appends = ['paid_amount', 'returned_amount', 'balance_amount', 'can_delete'];
 
     public function other_images()
     {
@@ -46,9 +46,13 @@ class FabricReceipt extends Model
 
     public function getCanDeleteAttribute()
     {
-        // 1. Check if rolls have been used
-        $hasUsedRolls = $this->details()->whereColumn('remaining_quantity', '<', 'meter')->exists();
+        // 1. Check if rolls have been used (cut, sold, returned, moved to another warehouse, disposed)
+        $hasUsedRolls = \App\Services\Admin\FabricPurchaseLink::shipmentHasUsedRolls((int) $this->id);
         if ($hasUsedRolls) return false;
+
+        // payments made for this shipment, or returns made from it
+        if ($this->payments->isNotEmpty()) return false;
+        if (\App\Models\FabricReturn::where('fabric_receipt_id', $this->id)->exists()) return false;
 
         // 2. Check if any payment adjustments exist for this shipment
         $hasAdjustments = \App\Models\PaymentAdjustment::where('ref_id', (string)$this->id)
@@ -107,8 +111,15 @@ class FabricReceipt extends Model
         return $this->payments->sum('amount');
     }
 
+    // value of the fabric returned to the vendor from this shipment (Fabric Return / return from the shipment page)
+    public function getReturnedAmountAttribute()
+    {
+        return \App\Services\Admin\FabricPurchaseLink::returnedAmount((int) $this->id);
+    }
+
+    // still to pay for this shipment: bill - paid - returned
     public function getBalanceAmountAttribute()
     {
-        return $this->total_amount - $this->paid_amount;
+        return round($this->total_amount - $this->paid_amount - $this->returned_amount, 2);
     }
 }

@@ -71,8 +71,9 @@
                             <th>Dispatch no</th>
                             <th>Order no</th>
                             <th>Customer</th>
+                            <th>Dispatch date</th>
                             <th class="text-right">Total cartons</th>
-                            <th class="text-right">Total boxes</th>
+                            <th class="text-right">Total pieces</th>
                             <th class="text-center" style="width: 90px;">Action</th>
                         </tr>
                     </thead>
@@ -92,11 +93,14 @@
                                 <td class="order-cell">
                                     {{ $row['order_dispatch_data']['customer'] }}
                                 </td>
+                                <td class="order-cell">
+                                    {{ $row['order_dispatch_data']['dispatch_date'] }}
+                                </td>
                                 <td class="order-cell text-right">
                                     <span class="erp-badge-status erp-badge-status-neutral">{{ $row['order_dispatch_data']['total_cartons'] }}</span>
                                 </td>
                                 <td class="order-cell text-right">
-                                    <span class="font-weight-bold">{{ $row['order_dispatch_data']['total_boxes_dispatch'] }}</span>
+                                    <span class="font-weight-bold">{{ $row['order_dispatch_data']['total_pieces'] }}</span>
                                 </td>
                                 <td class="order-cell text-center">
                                     <button
@@ -110,7 +114,7 @@
                             @php $sr++; @endphp
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">
+                                <td colspan="8" class="text-center py-4 text-muted">
                                     <i class="fas fa-inbox fa-2x mb-2 d-block text-secondary"></i>
                                     No records found
                                 </td>
@@ -181,16 +185,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
         let html = '';
 
-        Object.values(cartons).forEach(carton => {
+        const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+
+        cartons.forEach(carton => {
 
             html += `
             <div class="card erp-card mb-3">
                 <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
                     <span class="font-weight-bold" style="color: var(--brand-dark-green, #05421c);">
-                        <i class="fas fa-box mr-1"></i> Carton ID: ${carton.id}
+                        <i class="fas fa-box mr-1"></i> ${String(carton.id).startsWith('PO-') ? '' : 'Carton '}${esc(carton.carton_no)}
                     </span>
                     <span class="badge badge-success px-2 py-1">
-                        Total boxes: ${carton.total_boxes}
+                        Pieces: ${carton.total_pieces}
                     </span>
                 </div>
 
@@ -198,39 +204,35 @@ document.addEventListener('DOMContentLoaded', function () {
                     <table class="table erp-table mb-0">
                         <thead>
                             <tr>
-                                <th>Barcode</th>
                                 <th>Design no</th>
-                                <th>Set size</th>
-                                <th>Size group</th>
                                 <th>Color</th>
-                                <th class="text-right">No of pcs</th>
-                                <th class="text-right">Set qty</th>
+                                <th>Size set</th>
+                                <th>Sizes</th>
+                                <th class="text-right">Pieces</th>
                             </tr>
                         </thead>
                         <tbody>
             `;
 
-            const boxes = carton.car_data || {};
+            const rows = carton.rows || [];
 
-            if (Object.keys(boxes).length === 0) {
+            if (rows.length === 0) {
                 html += `
                     <tr>
-                        <td colspan="7" class="text-center py-2 text-muted">
-                            No box data
+                        <td colspan="5" class="text-center py-2 text-muted">
+                            No items in this carton
                         </td>
                     </tr>
                 `;
             } else {
-                Object.values(boxes).forEach(box => {
+                rows.forEach(r => {
                     html += `
                     <tr>
-                        <td><code>${box.bar_code || '-'}</code></td>
-                        <td>${box.design_number || '-'}</td>
-                        <td>${box.set_size || '-'}</td>
-                        <td>${box.size_group || '-'}</td>
-                        <td>${box.color || '-'}</td>
-                        <td class="text-right">${box.no_of_pcs || 0}</td>
-                        <td class="text-right"><strong>${box.set_quantity || 0}</strong></td>
+                        <td>${esc(r.design_number) || '-'}</td>
+                        <td>${esc(r.color) || '-'}</td>
+                        <td>${esc(r.size_set) || '-'}</td>
+                        <td>${esc(r.sizes) || '-'}</td>
+                        <td class="text-right"><strong>${r.pieces || 0}</strong></td>
                     </tr>
                     `;
                 });
@@ -243,6 +245,10 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
             `;
         });
+
+        if (cartons.length === 0) {
+            html = '<div class="text-center py-3 text-muted">No cartons in this dispatch</div>';
+        }
 
         document.getElementById('cartonModalBody').innerHTML = html;
 
