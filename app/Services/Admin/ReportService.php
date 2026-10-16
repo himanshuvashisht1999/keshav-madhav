@@ -2187,8 +2187,12 @@ class ReportService
 
         $unitIds = [];
         if (!empty($unitIdsReq)) {
-            $selectedUnits = \App\Models\StageMasterUnit::whereIn('id', $unitIdsReq)->get();
-            $unitIds = $unitIdsReq;
+            $selectedUnitsQuery = \App\Models\StageMasterUnit::whereIn('id', $unitIdsReq);
+            if ($stageId) {
+                $selectedUnitsQuery->where('master_stage_id', $stageId);
+            }
+            $selectedUnits = $selectedUnitsQuery->get();
+            $unitIds = $selectedUnits->pluck('id')->toArray();
             foreach ($selectedUnits as $su) {
                 $matching = \App\Models\StageMasterUnit::where('name', $su->name)
                     ->where('master_stage_id', $su->master_stage_id)
@@ -2197,6 +2201,9 @@ class ReportService
                 $unitIds = array_merge($unitIds, $matching);
             }
             $unitIds = array_unique($unitIds);
+            if ($stageId) {
+                $unitIdsReq = $selectedUnits->pluck('id')->toArray();
+            }
         }
 
         $hasFilters = $lotNo || $orderNo || !empty($designNoReq) || $request->filled('start_date') || $request->filled('end_date') || !empty($unitIdsReq);
@@ -2642,7 +2649,10 @@ class ReportService
 
         $stages = \App\Models\MasterProductStage::where('status', 1)->orderBy('sequence', 'asc')->get();
         // Return only unit persons for the selected stage, or all if none
-        $unitsQuery = \App\Models\StageMasterUnit::where('status', 1);
+        $unitsQuery = \App\Models\StageMasterUnit::with('masterStage')->where('status', 1);
+        if ($stageId) {
+            $unitsQuery->where('master_stage_id', $stageId);
+        }
         $units = $unitsQuery->whereNotNull('name')
             ->where('name', '!=', '')
             ->where('name', '!=', 'NULL')

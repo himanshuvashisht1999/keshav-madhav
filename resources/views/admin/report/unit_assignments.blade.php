@@ -39,8 +39,7 @@
 
                 <div class="col-md-2 col-sm-6 mb-1">
                     <label class="small text-muted font-weight-bold mb-1">Stage</label>
-                    <select name="stage_id" id="stage_id" class="form-control form-control-sm select2 erp-filter-select"
-                        onchange="this.form.submit()">
+                    <select name="stage_id" id="stage_id" class="form-control form-control-sm select2 erp-filter-select">
                         <option value="">All stages</option>
                         @foreach($stages as $stage)
                             <option value="{{ $stage->id }}" {{ request('stage_id') == $stage->id ? 'selected' : '' }}>
@@ -59,7 +58,7 @@
                         @endphp
                         @foreach($units as $unit)
                             <option value="{{ $unit->id }}" {{ in_array($unit->id, $reqUnits) ? 'selected' : '' }}>
-                                {{ $unit->name }}
+                                {{ $unit->name }}{{ !request('stage_id') && $unit->masterStage ? ' (' . $unit->masterStage->name . ')' : '' }}
                             </option>
                         @endforeach
                     </select>
@@ -405,6 +404,11 @@
                 width: '100%'
             });
         }
+
+        $('#stage_id').on('change', function() {
+            $('#unit_id').val(null).trigger('change');
+            $(this).closest('form').submit();
+        });
     });
 </script>
 @endsection
