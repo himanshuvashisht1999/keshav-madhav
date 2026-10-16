@@ -36,12 +36,14 @@ class SlipReportService
         $allMatchingSlips = (clone $query)->setEagerLoads([])->with([
             'orderLots',
             'fabricRollAssignings.fabricRollAssigningsDetail',
-            'orderPrintingStageTransaction',
-            'orderStageTransaction',
-            'orderPrintingToStichingTransaction',
-            'orderGodamStageTransaction',
-            'packingMain.cartons.items',
+            'fabricRollAssignings.orderProductSet',
+            'orderPrintingStageTransaction.orderProduct.orderProductSet',
+            'orderStageTransaction.orderProduct.orderProductSet',
+            'orderPrintingToStichingTransaction.orderProduct.orderProductSet',
+            'orderGodamStageTransaction.orderProduct.orderProductSet',
+            'packingMain.cartons.items.detail.orderProductSet',
             'parts',
+            'orderProductSet'
         ])->get();
 
         $totalSlips = $allMatchingSlips->count();
@@ -49,11 +51,45 @@ class SlipReportService
         $pendingSlips = $allMatchingSlips->where('status', 0)->count();
         $skippedSlips = $allMatchingSlips->where('status', 2)->count();
 
+        $designFilter = $request->filled('design_no') ? trim($request->design_no) : null;
+        $lotFilter = $request->filled('lot_no') ? trim($request->lot_no) : null;
+
+        $lotToDesignMap = [];
+        if ($designFilter) {
+            $allLotNos = [];
+            foreach ($allMatchingSlips as $s) {
+                if ($s->lot_no) $allLotNos[$s->lot_no] = true;
+                foreach ($s->orderLots ?? [] as $ol) { if ($ol->lot_no) $allLotNos[$ol->lot_no] = true; }
+                foreach ($s->fabricRollAssignings ?? [] as $r) { if ($r->lot_no) $allLotNos[$r->lot_no] = true; }
+                foreach (['orderPrintingStageTransaction', 'orderStageTransaction', 'orderPrintingToStichingTransaction', 'orderGodamStageTransaction'] as $rel) {
+                    foreach ($s->{$rel} ?? [] as $tx) { if ($tx->lot_no) $allLotNos[$tx->lot_no] = true; }
+                }
+                if ($s->packingMain) {
+                    foreach ($s->packingMain->cartons ?? [] as $c) {
+                        foreach ($c->items ?? [] as $it) { if (!empty($it->lot_no)) $allLotNos[$it->lot_no] = true; }
+                    }
+                }
+                foreach ($s->parts ?? [] as $p) { if ($p->lot_no) $allLotNos[$p->lot_no] = true; }
+            }
+            if (!empty($allLotNos)) {
+                foreach (array_chunk(array_keys($allLotNos), 1000) as $chunk) {
+                    $mapped = OrderLot::whereIn('lot_no', $chunk)
+                        ->with('orderProductSet:id,design_number')
+                        ->get();
+                    foreach ($mapped as $ol) {
+                        if ($ol->orderProductSet && $ol->orderProductSet->design_number) {
+                            $lotToDesignMap[$ol->lot_no] = (string) $ol->orderProductSet->design_number;
+                        }
+                    }
+                }
+            }
+        }
+
         $allUniqueLots = collect();
         $totalProcessedPieces = 0;
 
         foreach ($allMatchingSlips as $s) {
-            $sData = $this->aggregateSlipTotals($s);
+            $sData = $this->aggregateSlipTotals($s, $designFilter, $lotFilter, $lotToDesignMap);
             $totalProcessedPieces += $sData['total_quantity'];
             $allUniqueLots = $allUniqueLots->merge($sData['lots']);
         }
@@ -65,6 +101,8 @@ class SlipReportService
             'skipped_slips' => $skippedSlips,
             'total_pieces' => $totalProcessedPieces,
             'total_unique_lots' => $allUniqueLots->map(fn($l) => (string) $l)->unique(null, true)->filter()->count(),
+            'filter_design_no' => $designFilter,
+            'filter_lot_no' => $lotFilter,
         ];
 
         // Paginate results
@@ -304,40 +342,80 @@ class SlipReportService
      * Pieces and lot numbers of one slip - exactly the totals of aggregateSlipEntriesSummary(),
      * without the design / customer details (used for the KPI boxes over all matching slips)
      */
-    protected function aggregateSlipTotals(ProductionSlipDigitization $slip)
+    protected function aggregateSlipTotals(ProductionSlipDigitization $slip, $designFilter = null, $lotFilter = null, array $lotToDesignMap = [])
     {
         $lots = [];
         $totalQty = 0;
-        $add = function ($lotNo, $qty) use (&$lots, &$totalQty) {
+        $add = function ($lotNo, $qty, $itemDesign = null) use (&$lots, &$totalQty, $designFilter, $lotFilter, $lotToDesignMap, $slip) {
+            if ($lotFilter !== null && $lotFilter !== '') {
+                if ($lotNo === null || stripos((string)$lotNo, (string)$lotFilter) === false) {
+                    return;
+                }
+            }
+            if ($designFilter !== null && $designFilter !== '') {
+                $design = $itemDesign 
+                    ?? ($lotToDesignMap[$lotNo] ?? ($slip->orderProductSet->design_number ?? null));
+                if ($design === null || stripos((string)$design, (string)$designFilter) === false) {
+                    return;
+                }
+            }
             $lots[$lotNo] = true;
             $totalQty += $qty;
         };
 
         foreach ($slip->orderLots ?? [] as $lot) {
-            $lots[$lot->lot_no] = true;
+            if ($lotFilter !== null && $lotFilter !== '') {
+                if ($lot->lot_no && stripos((string)$lot->lot_no, (string)$lotFilter) !== false) {
+                    $lots[$lot->lot_no] = true;
+                }
+            } else {
+                $lots[$lot->lot_no] = true;
+            }
         }
         foreach ($slip->fabricRollAssignings ?? [] as $roll) {
-            $add($roll->lot_no, $roll->fabricRollAssigningsDetail ? $roll->fabricRollAssigningsDetail->sum('quantity') : 0);
+            $add(
+                $roll->lot_no, 
+                $roll->fabricRollAssigningsDetail ? $roll->fabricRollAssigningsDetail->sum('quantity') : 0,
+                $roll->orderProductSet->design_number ?? null
+            );
         }
         foreach (['orderPrintingStageTransaction', 'orderStageTransaction', 'orderPrintingToStichingTransaction', 'orderGodamStageTransaction'] as $rel) {
             foreach ($slip->{$rel} ?? [] as $tx) {
-                $add($tx->lot_no, $tx->quantity);
+                $add(
+                    $tx->lot_no, 
+                    $tx->quantity,
+                    $tx->orderProduct->orderProductSet->design_number ?? null
+                );
             }
         }
         if ($slip->packingMain) {
             foreach ($slip->packingMain->cartons ?? [] as $c) {
                 foreach ($c->items ?? [] as $it) {
-                    $add($it->lot_no ?? 'Packing', $it->quantity);
+                    $add(
+                        $it->lot_no ?? 'Packing', 
+                        $it->quantity,
+                        $it->detail->orderProductSet->design_number ?? null
+                    );
                 }
             }
         }
         foreach ($slip->parts ?? [] as $part) {
             if ($part->lot_no) {
-                $add($part->lot_no, $part->set_quantity ?? $part->single_quantity ?? 0);
+                $add(
+                    $part->lot_no, 
+                    $part->set_quantity ?? $part->single_quantity ?? 0,
+                    $part->design_number ?? null
+                );
             }
         }
         if (empty($lots) && $slip->lot_no) {
-            $lots[$slip->lot_no] = true;
+            if ($lotFilter !== null && $lotFilter !== '') {
+                if (stripos((string)$slip->lot_no, (string)$lotFilter) !== false) {
+                    $lots[$slip->lot_no] = true;
+                }
+            } else {
+                $lots[$slip->lot_no] = true;
+            }
         }
 
         return ['lots' => array_keys($lots), 'total_quantity' => $totalQty];

@@ -52,7 +52,17 @@
                 <div>
                     <span class="small text-muted font-weight-bold text-uppercase" style="font-size: 11px;">Total pieces</span>
                     <h4 class="m-0 font-weight-bold text-dark" style="font-size: 18px;">{{ number_format($kpis['total_pieces']) }} <span class="small font-weight-normal text-muted">pcs</span></h4>
-                    <div class="small mt-1 text-muted" style="font-size: 11px;">Across all digitized entries</div>
+                    <div class="small mt-1 text-muted" style="font-size: 11px;">
+                        @if(!empty($kpis['filter_design_no']) && !empty($kpis['filter_lot_no']))
+                            For Lot #{{ $kpis['filter_lot_no'] }}, Design {{ $kpis['filter_design_no'] }}
+                        @elseif(!empty($kpis['filter_design_no']))
+                            For Design {{ $kpis['filter_design_no'] }}
+                        @elseif(!empty($kpis['filter_lot_no']))
+                            For Lot #{{ $kpis['filter_lot_no'] }}
+                        @else
+                            Across all digitized entries
+                        @endif
+                    </div>
                 </div>
                 <div class="rounded-circle p-2 bg-light text-warning">
                     <i class="fas fa-tshirt fa-lg"></i>
@@ -66,7 +76,15 @@
                 <div>
                     <span class="small text-muted font-weight-bold text-uppercase" style="font-size: 11px;">Distinct lots</span>
                     <h4 class="m-0 font-weight-bold text-dark" style="font-size: 18px;">{{ number_format($kpis['total_unique_lots']) }}</h4>
-                    <div class="small mt-1 text-muted" style="font-size: 11px;">Production lots processed</div>
+                    <div class="small mt-1 text-muted" style="font-size: 11px;">
+                        @if(!empty($kpis['filter_design_no']))
+                            For Design {{ $kpis['filter_design_no'] }}
+                        @elseif(!empty($kpis['filter_lot_no']))
+                            Matching Lot #{{ $kpis['filter_lot_no'] }}
+                        @else
+                            Production lots processed
+                        @endif
+                    </div>
                 </div>
                 <div class="rounded-circle p-2 bg-light text-primary">
                     <i class="fas fa-layer-group fa-lg"></i>
