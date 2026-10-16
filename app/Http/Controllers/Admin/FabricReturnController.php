@@ -241,6 +241,234 @@ class FabricReturnController extends Controller
         return view('admin.fabric_return.view', compact('return'));
     }
 
+    public function edit($id)
+    {
+        $return = FabricReturn::with([
+            'vendor',
+            'receipt.vendor',
+            'details.fabric',
+            'details.receipt_detail.fabric_receipt',
+            'details.receipt_detail.master_fabric_warehouse'
+        ])->findOrFail($id);
+
+        $vendor = $return->vendor ?? ($return->receipt ? $return->receipt->vendor : null);
+
+        if (!$vendor) {
+            return redirect()->route('admin.fabric_return.index')->with('error', 'Vendor not found for this return voucher.');
+        }
+
+        $existingDetails = $return->details->keyBy('fabric_receipt_detail_id');
+        $returnDetailIds = $existingDetails->keys()->toArray();
+
+        // Fetch all rolls for this vendor across all shipments:
+        // 1. Rolls currently in this return (even if remaining_quantity is 0)
+        // 2. Other rolls for this vendor that have remaining_quantity > 0 and status > 0
+        $rolls = FabricReceiptDetail::with([
+            'fabric_receipt:id,sku,shipment_id,bill_no,time,vendor_id,master_fabric_warehouse_id',
+            'fabric:id,name,sku',
+            'master_fabric_warehouse:id,cutting_master_name'
+        ])
+        ->whereHas('fabric_receipt', function ($q) use ($vendor) {
+            $q->where('vendor_id', $vendor->id);
+        })
+        ->where(function ($q) use ($returnDetailIds) {
+            $q->where(function ($sub) {
+                $sub->where('remaining_quantity', '>', 0)
+                    ->where('status', '>', 0);
+            });
+            if (!empty($returnDetailIds)) {
+                $q->orWhereIn('id', $returnDetailIds);
+            }
+        })
+        ->orderBy('fabric_receipt_id', 'desc')
+        ->orderBy('id', 'asc')
+        ->get();
+
+        $formattedRolls = $rolls->map(function ($roll) use ($existingDetails) {
+            $receipt = $roll->fabric_receipt;
+            $whName = $roll->master_fabric_warehouse->cutting_master_name
+                ?? ($receipt->master_fabric_warehouse->cutting_master_name ?? 'N/A');
+
+            $isReturnedInThis = $existingDetails->has($roll->id);
+            $oldReturn = $isReturnedInThis ? $existingDetails->get($roll->id) : null;
+            $oldReturnMeter = $oldReturn ? (float)$oldReturn->return_meter : 0;
+            $oldRate = $oldReturn ? (float)$oldReturn->price_per_meter : (float)$roll->price_per_meter;
+
+            // Maximum returnable meters in edit mode:
+            $availableMeter = (float)$roll->remaining_quantity + $oldReturnMeter;
+            $returnMeter = $isReturnedInThis ? $oldReturnMeter : $availableMeter;
+
+            return [
+                'id' => $roll->id,
+                'roll_number' => $roll->roll_number ?: ('#' . $roll->id),
+                'fabric_id' => $roll->fabric_id,
+                'fabric_name' => $roll->fabric->name ?? 'N/A',
+                'fabric_sku' => $roll->fabric->sku ?? ($roll->fabric_sku ?? ''),
+                'receipt_id' => $roll->fabric_receipt_id,
+                'shipment_sku' => $receipt->shipment_id ?: ($receipt->sku ?: 'N/A'),
+                'bill_no' => $receipt->bill_no ?: '-',
+                'receipt_date' => $receipt->time ? getformatDate($receipt->time) : '-',
+                'warehouse' => $whName,
+                'total_meter' => (float) $roll->meter,
+                'remaining_quantity' => (float) round($availableMeter, 2),
+                'price_per_meter' => (float) round($oldRate, 2),
+                'return_meter' => (float) round($returnMeter, 2),
+                'selected' => (bool) $isReturnedInThis,
+                'amount' => (float) round($returnMeter * $oldRate, 2),
+            ];
+        });
+
+        return view('admin.fabric_return.edit', compact('return', 'vendor', 'formattedRolls'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $check = \Validator::make($request->all(), [
+            'date' => 'required|date',
+            'returns' => 'required|array',
+            'gst_percentage' => 'nullable|numeric|min:0|max:100',
+            'discount' => 'nullable|numeric|min:0',
+            'other_charges' => 'nullable|numeric|min:0',
+            'returns.*.return_meter' => 'nullable|numeric',
+            'returns.*.price_per_meter' => 'nullable|numeric|min:0',
+        ], [], ['returns.*.price_per_meter' => 'rate', 'returns.*.return_meter' => 'return meter', 'gst_percentage' => 'GST %']);
+        if ($check->fails()) {
+            return redirect()->back()->withInput()->with('error', $check->errors()->first());
+        }
+
+        // Ensure at least one roll is chosen with return meter > 0 and selected
+        $validRollSelected = false;
+        if (is_array($request->returns)) {
+            foreach ($request->returns as $rollData) {
+                if (!empty($rollData['selected']) && (float)($rollData['return_meter'] ?? 0) > 0) {
+                    $validRollSelected = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$validRollSelected) {
+            return redirect()->back()->withInput()->with('error', 'Please select at least one roll with return meter greater than 0.');
+        }
+
+        DB::beginTransaction();
+        try {
+            $return = FabricReturn::with('details.receipt_detail')->lockForUpdate()->findOrFail($id);
+            $vendorId = $return->vendor_id ?? ($return->receipt ? $return->receipt->vendor_id : null);
+
+            // 1. Revert OLD return impact on roll quantities
+            foreach ($return->details as $oldDetail) {
+                if ($oldDetail->receipt_detail) {
+                    $newQty = min(
+                        (float) $oldDetail->receipt_detail->meter,
+                        (float) $oldDetail->receipt_detail->remaining_quantity + (float) $oldDetail->return_meter
+                    );
+                    $oldDetail->receipt_detail->remaining_quantity = $newQty;
+                    if ($oldDetail->receipt_detail->status == 2) {
+                        $oldDetail->receipt_detail->status = 1;
+                    }
+                    $oldDetail->receipt_detail->save();
+                }
+            }
+
+            // Revert OLD return impact on vendor balance (add back previous deduction)
+            if ($vendorId) {
+                $vendor = Vendor::lockForUpdate()->find($vendorId);
+                if ($vendor) {
+                    $vendor->balance += $return->total_amount;
+                    $vendor->save();
+                }
+            }
+
+            // Remove old details
+            $return->details()->delete();
+
+            // 2. Process NEW return lines
+            $subTotal = 0;
+            $primaryReceiptId = null;
+
+            foreach ((array) $request->returns as $detailId => $returnData) {
+                if (empty($returnData['selected']) || (float)($returnData['return_meter'] ?? 0) <= 0) {
+                    continue;
+                }
+
+                $detail = FabricReceiptDetail::lockForUpdate()->find((int) $detailId);
+                if (!$detail) {
+                    throw new \Exception("A selected roll was not found.");
+                }
+
+                if (!$primaryReceiptId) {
+                    $primaryReceiptId = $detail->fabric_receipt_id;
+                }
+
+                $returnMeter = (float) $returnData['return_meter'];
+                $price = $returnData['price_per_meter'] ?? null;
+                $pricePerMeter = ($price === null || $price === '') ? (float) $detail->price_per_meter : (float) $price;
+
+                if ($returnMeter > (float) $detail->remaining_quantity + 0.0001) {
+                    throw new \Exception("Return quantity ({$returnMeter} m) for roll #{$detail->roll_number} exceeds available quantity ({$detail->remaining_quantity} m).");
+                }
+
+                $lineTotal = $returnMeter * $pricePerMeter;
+                $subTotal += $lineTotal;
+
+                $returnDetail = new FabricReturnDetail();
+                $returnDetail->fabric_return_id = $return->id;
+                $returnDetail->fabric_receipt_detail_id = $detail->id;
+                $returnDetail->fabric_id = $detail->fabric_id;
+                $returnDetail->return_meter = $returnMeter;
+                $returnDetail->price_per_meter = $pricePerMeter;
+                $returnDetail->save();
+
+                // Deduct remaining quantity on roll
+                $detail->remaining_quantity -= $returnMeter;
+                if ($detail->remaining_quantity <= 0) {
+                    $detail->status = 2; // Fully Returned
+                }
+                $detail->save();
+            }
+
+            $gstPercentage = (float) ($request->gst_percentage ?? 0);
+            $gstAmount = round(($subTotal * $gstPercentage) / 100, 2);
+            $otherCharges = (float) ($request->other_charges ?? 0);
+            $discount = (float) ($request->discount ?? 0);
+            $grandTotal = round($subTotal + $gstAmount + $otherCharges - $discount, 2);
+
+            if ($grandTotal < 0) {
+                throw new \Exception('Discount cannot exceed the total return amount.');
+            }
+
+            $return->fabric_receipt_id = $primaryReceiptId;
+            $return->date = $request->date ?? date('Y-m-d');
+            $return->remarks = $request->remarks;
+            $return->sub_total = $subTotal;
+            $return->gst_percentage = $gstPercentage;
+            $return->gst_amount = $gstAmount;
+            $return->other_charges = $otherCharges;
+            $return->discount = $discount;
+            $return->total_amount = $grandTotal;
+            $return->save();
+
+            // Deduct NEW total from vendor balance
+            if ($vendorId) {
+                $vendor = Vendor::lockForUpdate()->find($vendorId);
+                if ($vendor) {
+                    $vendor->balance -= $grandTotal;
+                    $vendor->save();
+                }
+            }
+
+            DB::commit();
+            \App\Services\Admin\FabricPurchaseLink::forgetReturned();
+
+            return redirect()->route('admin.fabric_return.view', $return->id)
+                ->with('success', "Fabric return voucher #{$return->return_number} updated successfully.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
+        }
+    }
+
     public function downloadReport($id)
     {
         $return = FabricReturn::with([

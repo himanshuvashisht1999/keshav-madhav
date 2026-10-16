@@ -345,6 +345,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/vendor-available-rolls/{vendor_id}', [AdminFabricReturnController::class, 'getVendorAvailableRolls'])->name('vendor_available_rolls');
             Route::post('/store', [AdminFabricReturnController::class, 'store'])->name('store');
             Route::get('/view/{id}', [AdminFabricReturnController::class, 'view'])->name('view');
+            Route::get('/edit/{id}', [AdminFabricReturnController::class, 'edit'])->name('edit');
+            Route::post('/update/{id}', [AdminFabricReturnController::class, 'update'])->name('update');
             Route::get('/download-report/{id}', [AdminFabricReturnController::class, 'downloadReport'])->name('download_report');
             Route::get('/delete/{id}', [AdminFabricReturnController::class, 'delete'])->name('delete');
         });

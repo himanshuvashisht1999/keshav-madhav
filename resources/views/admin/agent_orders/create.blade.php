@@ -167,6 +167,16 @@
                     <input type="hidden" name="order_type" value="{{ request('order_type') }}">
                     <div class="row align-items-end">
                         <div class="col-md-3 col-6 mb-2">
+                            <label class="erp-label"><i class="fas fa-warehouse mr-1 text-primary"></i> Warehouse</label>
+                            <select name="warehouse_ids[]" id="warehouse_ids" class="form-control select2" multiple data-placeholder="Select Warehouse(s)">
+                                @foreach($warehouses as $wh)
+                                    <option value="{{ $wh->id }}" {{ in_array($wh->id, $selectedWarehouseIds ?? []) ? 'selected' : '' }}>
+                                        {{ $wh->name }}{{ $wh->order_priority ? ' (P' . $wh->order_priority . ')' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
                             <label class="erp-label">Design No</label>
                             <select name="design_number" class="form-control select2">
                                 <option value="">All Designs</option>
@@ -193,7 +203,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3 col-6 mb-2">
+                        <div class="col-md-2 col-6 mb-2">
                             <label class="erp-label">Size Set</label>
                             <select name="size_set_name" class="form-control select2">
                                 <option value="">All Sets</option>

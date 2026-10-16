@@ -133,6 +133,34 @@ class AgentOrderController extends Controller
             )
             ->groupBy('product_id', 'color_id', 'size_set_id');
 
+        $warehouses = \App\Models\Storeroom::where('status', 1)
+            ->where('order_taken', 'Yes')
+            ->orderByRaw("CASE WHEN order_priority IS NOT NULL AND order_priority != '' AND CAST(order_priority AS UNSIGNED) > 0 THEN CAST(order_priority AS UNSIGNED) ELSE 9999 END ASC, name ASC")
+            ->get();
+
+        if ($warehouses->isEmpty()) {
+            $warehouses = \App\Models\Storeroom::where('status', 1)
+                ->orderByRaw("CASE WHEN order_priority IS NOT NULL AND order_priority != '' AND CAST(order_priority AS UNSIGNED) > 0 THEN CAST(order_priority AS UNSIGNED) ELSE 9999 END ASC, name ASC")
+                ->get();
+        }
+
+        $priority1Warehouse = $warehouses->first(function ($w) {
+            return (string) $w->order_priority === '1';
+        }) ?? $warehouses->first();
+
+        if ($request->has('warehouse_ids')) {
+            $rawWh = $request->input('warehouse_ids');
+            if (is_array($rawWh)) {
+                $selectedWarehouseIds = array_values(array_filter(array_map('intval', $rawWh)));
+            } elseif (is_string($rawWh) && strlen(trim($rawWh)) > 0) {
+                $selectedWarehouseIds = array_values(array_filter(array_map('intval', explode(',', $rawWh))));
+            } else {
+                $selectedWarehouseIds = [];
+            }
+        } else {
+            $selectedWarehouseIds = $priority1Warehouse ? [$priority1Warehouse->id] : [];
+        }
+
         $query = DomesticInventory::where('domestic_inventories.status', 1)
             // ->where(function ($q) {
             //     $q->whereNull('order_main_id')->orWhere('order_main_id', 0);
@@ -144,16 +172,18 @@ class AgentOrderController extends Controller
             ->join('master_colors', 'domestic_inventories.color_id', '=', 'master_colors.id')
             ->join('master_size_measurements', 'domestic_inventories.size_set_id', '=', 'master_size_measurements.id')
             ->leftJoin('racks', 'domestic_inventories.rack_id', '=', 'racks.id')
-            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id')
-            ->where(function ($q) {
-                $q->whereNull('storerooms.id')
-                  ->orWhere('storerooms.order_taken', '=', 'Yes');
-            })
+            ->leftJoin('storerooms', 'racks.storeroom_id', '=', 'storerooms.id');
 
-            ->leftJoinSub($prices, 'ip', function ($join) {
-                $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
-                    ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
-            });
+        if (!empty($selectedWarehouseIds)) {
+            $query->whereIn('storerooms.id', $selectedWarehouseIds);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        $query->leftJoinSub($prices, 'ip', function ($join) {
+            $join->on('domestic_inventories.product_id', '=', 'ip.product_id')
+                ->on('domestic_inventories.size_set_id', '=', 'ip.size_set_id');
+        });
 
         $isSampleSet = $request->query('sample_set') == '1';
 
@@ -322,7 +352,7 @@ class AgentOrderController extends Controller
             ]);
         }
 
-        return view('admin.agent_orders.create', compact('agent', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'patterns', 'fittings', 'product_natures', 'fabric_types', 'brands', 'boxes', 'boxImages', 'gst_percentage'));
+        return view('admin.agent_orders.create', compact('agent', 'shop', 'designs', 'product_names', 'colors', 'size_sets', 'patterns', 'fittings', 'product_natures', 'fabric_types', 'brands', 'boxes', 'boxImages', 'gst_percentage', 'warehouses', 'selectedWarehouseIds'));
     }
 
     public function getFabricRolls($id)

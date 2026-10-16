@@ -249,11 +249,6 @@
                                    title="View Statement">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ $statementUrl }}" 
-                                   class="btn-erp btn-erp-primary btn-xs ml-1" 
-                                   style="height: 24px; font-size: 11px; padding: 2px 8px;">
-                                    View
-                                </a>
                             </td>
                         </tr>
                     @empty

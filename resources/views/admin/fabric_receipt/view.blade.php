@@ -12,9 +12,6 @@
             <a href="{{ route('admin.fabric_receipt.index') }}" class="btn-erp btn-erp-outline">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
-            <a href="{{ route('admin.fabric_receipt.return', ['id' => $data->id]) }}" class="btn-erp btn-erp-danger">
-                <i class="fas fa-undo"></i> Return Shipment
-            </a>
             <a href="{{ route('admin.fabric_receipt.download_report', ['id' => $data->id]) }}" class="btn-erp btn-erp-primary">
                 <i class="fas fa-download"></i> Download Report
             </a>

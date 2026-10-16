@@ -126,7 +126,7 @@
                         <th style="width: 120px;" class="text-right">Subtotal</th>
                         <th style="width: 120px;" class="text-right">GST</th>
                         <th style="width: 130px;" class="text-right">Total (Rs.)</th>
-                        <th style="width: 110px;" class="text-center">Action</th>
+                        <th style="width: 80px;" class="text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -226,21 +226,5 @@
             rTable.draw();
         });
     });
-
-    function confirmDeleteReturn(url, returnNo) {
-        Swal.fire({
-            title: "Delete Return " + returnNo + "?",
-            text: "This will restore returned roll quantities to available stock and revert vendor balance!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#dc2626",
-            cancelButtonColor: "#6c757d",
-            confirmButtonText: "Yes, delete & restore rolls!"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = url;
-            }
-        });
-    }
 </script>
 @endsection

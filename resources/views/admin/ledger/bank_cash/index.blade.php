@@ -184,11 +184,6 @@
                                    title="View Account Statement">
                                     <i class="fas fa-book-open"></i>
                                 </a>
-                                <a href="{{ route('admin.ledger.bank-cash-ledger.show', ['type' => $party->party_type, 'id' => $party->id]) }}" 
-                                   class="btn-erp btn-erp-primary btn-xs ml-1" 
-                                   style="height: 24px; font-size: 11px; padding: 2px 8px;">
-                                    View
-                                </a>
                             </td>
                         </tr>
                     @empty

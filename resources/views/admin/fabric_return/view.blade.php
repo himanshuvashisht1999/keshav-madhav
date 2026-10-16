@@ -8,12 +8,15 @@
         <div class="erp-header-title">
             <i class="fas fa-undo-alt text-danger"></i> Fabric Return Voucher: <span style="color: var(--brand-dark-green, #05421c);">{{ $return->return_number ?? '#' . $return->id }}</span>
         </div>
-        <div class="erp-header-actions">
-            <a href="{{ route('admin.fabric_return.download_report', $return->id) }}" class="btn-erp btn-erp-primary" style="background: #dc2626; border-color: #dc2626;">
-                <i class="fas fa-file-pdf mr-1"></i> Download PDF
+        <div class="erp-header-actions d-flex align-items-center">
+            <a href="{{ route('admin.fabric_return.edit', $return->id) }}" class="btn-erp btn-erp-primary mr-1">
+                <i class="fas fa-edit mr-1"></i> Edit Return
             </a>
-            <a href="javascript:void(0)" onclick="confirmDeleteVoucher()" class="btn-erp btn-erp-outline text-danger">
-                <i class="fas fa-trash-alt mr-1"></i> Delete & Revert
+            <a href="javascript:void(0)" onclick="confirmDeleteVoucher()" class="btn-erp btn-erp-outline text-danger mr-1" style="border-color: #ef4444;">
+                <i class="fas fa-trash-alt mr-1"></i> Delete Return
+            </a>
+            <a href="{{ route('admin.fabric_return.download_report', $return->id) }}" class="btn-erp btn-erp-outline mr-1" style="color: #dc2626; border-color: #dc2626;">
+                <i class="fas fa-file-pdf mr-1"></i> Download PDF
             </a>
             <a href="{{ route('admin.fabric_return.index') }}" class="btn-erp btn-erp-outline">
                 <i class="fas fa-arrow-left mr-1"></i> Back to Returns

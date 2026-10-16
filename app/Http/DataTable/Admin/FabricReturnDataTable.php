@@ -104,12 +104,10 @@ class FabricReturnDataTable
                 $id = $queue->id;
                 $viewUrl = route('admin.fabric_return.view', $id);
                 $pdfUrl = route('admin.fabric_return.download_report', $id);
-                $deleteUrl = route('admin.fabric_return.delete', $id);
 
                 $action = '<div class="d-inline-flex align-items-center">';
                 $action .= '<a href="' . $viewUrl . '" class="erp-action-btn erp-btn-view" data-toggle="tooltip" title="View Voucher"><i class="fas fa-eye"></i></a>';
                 $action .= '<a href="' . $pdfUrl . '" class="erp-action-btn erp-btn-pdf" data-toggle="tooltip" title="Download PDF"><i class="fas fa-file-pdf"></i></a>';
-                $action .= '<a href="javascript:void(0)" onclick="confirmDeleteReturn(\'' . $deleteUrl . '\', \'' . e($queue->return_number) . '\')" class="erp-action-btn erp-btn-delete" data-toggle="tooltip" title="Delete Return"><i class="fas fa-trash-alt"></i></a>';
                 $action .= '</div>';
 
                 return $action;

@@ -196,14 +196,7 @@ class FabricReceiptController extends Controller
 
     public function editReturnPage($id)
     {
-        $response['return'] = FabricReturn::with(['details.receipt_detail', 'receipt.details.fabric'])->find($id);
-        if (!$response['return']) abort(404);
-        if ($this->service->returnHasOtherShipments($response['return'])) {
-            return redirect()->route('admin.fabric_return.view', $id)->with('error', 'This return has rolls of several shipments, so it is shown here in Fabric Return.');
-        }
-        
-        $response['data'] = $response['return']->receipt;
-        return view('admin.fabric_receipt.edit_return', $response);
+        return redirect()->route('admin.fabric_return.edit', $id);
     }
 
     public function updateReturn(Request $request)

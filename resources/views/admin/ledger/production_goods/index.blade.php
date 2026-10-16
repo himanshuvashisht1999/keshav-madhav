@@ -180,11 +180,6 @@
                                        title="View Ledger Details">
                                         <i class="fas fa-book-open"></i>
                                     </a>
-                                    <a href="{{ route('admin.ledger.production-goods.show', ['id' => $good->id, 'size_set_id' => $variant->master_size_measurement_id, 'warehouse_ids' => $warehouseIds]) }}" 
-                                       class="btn-erp btn-erp-primary btn-xs ml-1" 
-                                       style="height: 24px; font-size: 11px; padding: 2px 8px;">
-                                        View
-                                    </a>
                                 </td>
                             </tr>
                         @endforeach
