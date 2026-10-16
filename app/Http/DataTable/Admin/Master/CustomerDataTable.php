@@ -91,8 +91,8 @@ class CustomerDataTable  {
 				$parameter= $queue->id;
                 return '
                 <div class="d-inline-flex" style="gap: 4px;">
-                    <a href="' . route('admin.master.customer.edit',['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
-                    <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="erp-action-btn erp-btn-delete" title="Delete"><i class="fas fa-trash"></i></a>
+                    <a href="' . route('admin.master.customer.view', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-view" title="View"><i class="fas fa-eye"></i></a>
+                    <a href="' . route('admin.master.customer.edit', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
                 </div>
                 ';
             })

@@ -24,7 +24,7 @@
 
     <!-- Summary Metrics Strip (Exact Fabric Module Standard) -->
     <div class="row mb-2">
-        <div class="col-md-3 col-sm-6 mb-1">
+        <div class="col-lg col-md-4 col-sm-6 mb-1">
             <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
@@ -43,7 +43,26 @@
             </div>
         </div>
 
-        <div class="col-md-3 col-sm-6 mb-1">
+        <div class="col-lg col-md-4 col-sm-6 mb-1">
+            <div class="erp-card {{ ($totalOpening ?? 0) >= 0 ? 'erp-metric-card-left-green' : 'erp-metric-card-left-yellow' }} py-2 px-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: {{ ($totalOpening ?? 0) >= 0 ? 'var(--erp-green-light)' : 'var(--erp-yellow-bg)' }}; color: {{ ($totalOpening ?? 0) >= 0 ? 'var(--erp-green-primary)' : 'var(--erp-yellow-dark)' }}; display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg); {{ ($totalOpening ?? 0) < 0 ? 'border: 1px solid var(--erp-yellow-badge-border);' : '' }}">
+                        <i class="fas fa-balance-scale"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Opening Balance</div>
+                        <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: {{ ($totalOpening ?? 0) >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }}; line-height: 1.2;">
+                            ₹ {{ number_format(abs($totalOpening ?? 0), 2) }}
+                        </div>
+                    </div>
+                </div>
+                <span class="badge {{ ($totalOpening ?? 0) >= 0 ? '' : 'erp-badge-yellow' }}" style="{{ ($totalOpening ?? 0) >= 0 ? 'background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border);' : '' }} font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">
+                    {{ ($totalOpening ?? 0) >= 0 ? 'CR' : 'DR' }}
+                </span>
+            </div>
+        </div>
+
+        <div class="col-lg col-md-4 col-sm-6 mb-1">
             <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
@@ -62,7 +81,7 @@
             </div>
         </div>
 
-        <div class="col-md-3 col-sm-6 mb-1">
+        <div class="col-lg col-md-6 col-sm-6 mb-1">
             <div class="erp-card erp-metric-card-left-yellow py-2 px-3 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-yellow-bg); color: var(--erp-yellow-dark); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg); border: 1px solid var(--erp-yellow-badge-border);">
@@ -81,7 +100,7 @@
             </div>
         </div>
 
-        <div class="col-md-3 col-sm-6 mb-1">
+        <div class="col-lg col-md-6 col-sm-6 mb-1">
             <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
@@ -120,14 +139,33 @@
                     <input type="date" name="end_date" id="ledger_to" value="{{ $endDate }}" min="{{ $startDate }}" class="form-control erp-input">
                 </div>
 
-                <div class="col-md-3 col-sm-6 mb-1">
-                    <label class="erp-filter-label"><i class="fas fa-tags mr-1"></i> Master / Party Type</label>
+                <div class="col-md-2 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-tags mr-1"></i> Master Type</label>
                     <select name="type_id" class="form-control select2 erp-input">
-                        <option value="">-- ALL MASTER TYPES --</option>
+                        <option value="">-- ALL TYPES --</option>
                         <option value="sales_agent" {{ request('type_id') === 'sales_agent' ? 'selected' : '' }}>Sales Agent</option>
                         @foreach($masters as $m)
                             <option value="{{ $m->id }}" {{ request('type_id') == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
                         @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-2 col-sm-3 col-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-rupee-sign mr-1"></i> Min Closing</label>
+                    <input type="number" step="0.01" name="min_closing" value="{{ request('min_closing') }}" class="form-control erp-input" placeholder="Min Amount">
+                </div>
+
+                <div class="col-md-2 col-sm-3 col-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-rupee-sign mr-1"></i> Max Closing</label>
+                    <input type="number" step="0.01" name="max_closing" value="{{ request('max_closing') }}" class="form-control erp-input" placeholder="Max Amount">
+                </div>
+
+                <div class="col-md-2 col-sm-3 col-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-exchange-alt mr-1"></i> Balance Type</label>
+                    <select name="balance_type" class="form-control erp-input">
+                        <option value="">ALL BALANCE</option>
+                        <option value="credit" {{ request('balance_type') == 'credit' ? 'selected' : '' }}>Credit (CR)</option>
+                        <option value="debit" {{ request('balance_type') == 'debit' ? 'selected' : '' }}>Debit (DR)</option>
                     </select>
                 </div>
 
@@ -174,7 +212,9 @@
                             $bal = (float)($party->balance ?? 0);
                         @endphp
                         <tr>
-                            <td class="text-center text-muted font-weight-bold">{{ $loop->iteration }}</td>
+                            <td class="text-center text-muted font-weight-bold">
+                                {{ $parties instanceof \Illuminate\Pagination\LengthAwarePaginator ? ($parties->firstItem() + $loop->index) : $loop->iteration }}
+                            </td>
                             <td>
                                 <div class="font-weight-bold" style="color: var(--erp-text-heading);">{{ $party->name }}</div>
                                 @if(isset($party->address) && $party->address)
@@ -225,26 +265,19 @@
                         </tr>
                     @endforelse
                 </tbody>
-                @if($parties->count() > 0)
-                <tfoot>
-                    <tr class="erp-table-grand-total">
-                        <td colspan="4" class="text-right font-weight-bold" style="letter-spacing: 0.5px;">TOTAL (ALL PARTIES):</td>
-                        <td class="text-right font-weight-bold grand-total-val text-nowrap">
-                            ₹ {{ number_format(abs($totalOpening ?? 0), 2) }}
-                            <small>{{ ($totalOpening ?? 0) >= 0 ? 'CR' : 'DR' }}</small>
-                        </td>
-                        <td class="text-right font-weight-bold grand-total-val text-nowrap">₹ {{ number_format($totalPeriodDebit ?? 0, 2) }}</td>
-                        <td class="text-right font-weight-bold grand-total-val text-nowrap">₹ {{ number_format($totalPeriodCredit ?? 0, 2) }}</td>
-                        <td class="text-right font-weight-bold grand-total-val text-nowrap">
-                            ₹ {{ number_format(abs($totalNetBalance ?? 0), 2) }}
-                            <small>{{ ($totalNetBalance ?? 0) >= 0 ? 'CR' : 'DR' }}</small>
-                        </td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-                @endif
             </table>
         </div>
+
+        @if($parties instanceof \Illuminate\Pagination\LengthAwarePaginator && $parties->hasPages())
+        <div class="d-flex justify-content-between align-items-center p-2 border-top flex-wrap" style="font-size: var(--erp-font-sm);">
+            <div class="text-muted font-weight-bold">
+                Showing {{ $parties->firstItem() ?? 0 }} to {{ $parties->lastItem() ?? 0 }} of {{ number_format($parties->total()) }} parties
+            </div>
+            <div>
+                {{ $parties->links('pagination::bootstrap-4') }}
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 <script>

@@ -29,41 +29,59 @@ class VendorDataTable  {
             $queue->where('status', $request->get('status'));
         }
 
-        $filteredVendors = (clone $queue)->get();
-        $totalCurrentBalance = $filteredVendors->sum('balance');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $hasDateFilter = !empty($startDate) || !empty($endDate);
+        $balanceType = $request->get('balance_type');
         
+        $calculatedBalances = [];
         $totalOpeningBalance = 0;
-        $vendorIds = $filteredVendors->pluck('id')->toArray();
+        $totalCurrentBalance = 0;
+
+        $vendorIds = (clone $queue)->pluck('id')->toArray();
         if (!empty($vendorIds)) {
-            $opBalances = \App\Models\MasterOpeningBalance::where('master_type', 'vendor')
-                ->whereIn('master_id', $vendorIds)
-                ->where('financial_year', \App\Models\MasterOpeningBalance::openingKey())
-                ->get();
-            foreach ($opBalances as $ob) {
-                $amt = (float) $ob->amount;
-                if (strtolower(trim($ob->balance_type)) === 'debit') {
-                    $amt = -$amt;
+            $calculatedBalances = app(\App\Services\Admin\Master\VendorService::class)->calculateVendorBalances($vendorIds, $hasDateFilter ? $startDate : null, $hasDateFilter ? $endDate : null);
+            
+            if (!empty($balanceType)) {
+                $bType = strtolower($balanceType);
+                $vendorIds = array_values(array_filter($vendorIds, function($id) use ($bType, $calculatedBalances) {
+                    $bal = isset($calculatedBalances[$id]) ? $calculatedBalances[$id]['closing_balance'] : 0;
+                    return $bType === 'credit' ? $bal >= 0 : $bal < 0;
+                }));
+                $queue->whereIn('id', $vendorIds);
+            }
+
+            foreach ($vendorIds as $id) {
+                if (isset($calculatedBalances[$id])) {
+                    $totalOpeningBalance += $calculatedBalances[$id]['opening_balance'];
+                    $totalCurrentBalance += $calculatedBalances[$id]['closing_balance'];
                 }
-                $totalOpeningBalance += $amt;
             }
         }
 
         return DataTables::of($queue)->addIndexColumn()
             ->with('total_opening_balance', $totalOpeningBalance)
             ->with('total_current_balance', $totalCurrentBalance)
-            ->filter(function ($query) {
-                // Do nothing to preserve DataTables default if any or just let it be
-            }) 
             ->order(function ($query) {
                 $query->orderBy('id', 'asc');
             })
-            ->editColumn('balance', function ($queue) {
-                $balance = $queue->balance;
+            ->editColumn('balance', function ($queue) use ($hasDateFilter, $calculatedBalances) {
+                if (isset($calculatedBalances[$queue->id])) {
+                    $balance = $calculatedBalances[$queue->id]['closing_balance'];
+                } else {
+                    $balance = $queue->balance;
+                }
                 $color = ($balance >= 0) ? 'var(--erp-green-primary)' : 'var(--erp-red-primary, #dc2626)';
                 $type = ($balance >= 0) ? 'Credit' : 'Debit';
                 return '<span style="color:' . $color . '; font-weight:700;">' . number_format(abs($balance), 2) . ' (' . $type . ')</span>';
             })
-            ->addColumn('opening_balance', function ($queue) {
+            ->addColumn('opening_balance', function ($queue) use ($hasDateFilter, $calculatedBalances) {
+                if ($hasDateFilter && isset($calculatedBalances[$queue->id])) {
+                    $opBal = $calculatedBalances[$queue->id]['opening_balance'];
+                    $color = ($opBal >= 0) ? 'var(--erp-green-primary)' : 'var(--erp-red-primary, #dc2626)';
+                    $label = ($opBal >= 0) ? 'Credit' : 'Debit';
+                    return '<span style="color:' . $color . '; font-weight:700;">' . number_format(abs($opBal), 2) . ' (' . $label . ')</span>';
+                }
                 if ($queue->currentOpeningBalance) {
                     $color = $queue->currentOpeningBalance->balance_type == 'Credit' ? 'var(--erp-green-primary)' : 'var(--erp-red-primary, #dc2626)';
                     $label = $queue->currentOpeningBalance->balance_type;
@@ -81,6 +99,7 @@ class VendorDataTable  {
 				$parameter= $queue->id;
                 return '
                 <div class="d-inline-flex" style="gap: 4px;">
+                    <a href="' . route('admin.master.vendor.view',['id' => $parameter]) . '" class="erp-action-btn erp-btn-view" title="View"><i class="fas fa-eye"></i></a>
                     <a href="' . route('admin.master.vendor.edit',['id' => $parameter]) . '" class="erp-action-btn erp-btn-edit" title="Edit"><i class="fas fa-edit"></i></a>
                     <a href="javascript:void(0)" onclick="deleteData(' . $parameter . ')" class="erp-action-btn erp-btn-delete" title="Delete"><i class="fas fa-trash"></i></a>
                 </div>

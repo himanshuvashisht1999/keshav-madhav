@@ -496,6 +496,28 @@ class CustomerService
         return $data;
     }
 
+    public function viewDetails(Request $request)
+    {
+        $data = $this->customer->with([
+            'agent',
+            'shops',
+            'brandDiscounts.brand',
+            'currentOpeningBalance',
+        ])->where('id', $request->id)->firstOrFail();
+
+        $calc = $this->calculateCustomerBalances([$data->id], null, null);
+        $data->calculated_closing_balance = $calc[$data->id]['closing_balance'] ?? $data->balance;
+        $data->calculated_opening_balance = $calc[$data->id]['opening_balance'] ?? ($data->currentOpeningBalance ? $data->currentOpeningBalance->amount : 0);
+
+        // Fetch recent records for customer
+        $data->recent_orders = \App\Models\OrderMain::where('master_customer_id', $data->id)->latest()->take(5)->get();
+        $data->recent_agent_orders = \App\Models\AgentOrder::where('master_customer_id', $data->id)->latest()->take(5)->get();
+        $data->recent_dispatches = \App\Models\AgentOrderDispatch::where('master_customer_id', $data->id)->latest()->take(5)->get();
+        $data->recent_order_dispatches = \App\Models\OrderDispatch::where('customer_id', $data->id)->latest()->take(5)->get();
+
+        return $data;
+    }
+
     public function update(Request $request)
     {
         $update_data = $this->customer->find($request->id);

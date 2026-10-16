@@ -24,6 +24,17 @@ class VendorController extends Controller {
     public function indexList(Request $request){
         return $this->service->indexList($request);
     }
+    public function downloadPdf(Request $request){
+        return $this->service->downloadPdf($request);
+    }
+    public function downloadExcel(Request $request){
+        return $this->service->downloadExcel($request);
+    }
+    public function view(Request $request){
+        $response['data'] = $this->service->viewDetails($request);
+        $response['items'] = $this->service->items();
+        return view('admin.master.vendor.view', $response);
+    }
     public function create(){
         $response['items'] = $this->service->items();
         $response['purchase_agents'] = $this->service->purchaseAgents();

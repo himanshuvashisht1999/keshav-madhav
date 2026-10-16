@@ -31,8 +31,31 @@ class PartyLedgerController extends Controller
         $totalPeriodDebit = (float)$parties->sum('period_debit');
         $totalPeriodCredit = (float)$parties->sum('period_credit');
 
-        return view('admin.ledger.party.index', compact('parties', 'masters', 'totalPartiesCount', 'totalCreditBalance', 'totalDebitBalance', 'totalNetBalance',
-            'totalOpening', 'totalPeriodDebit', 'totalPeriodCredit', 'startDate', 'endDate'));
+        $perPage = (int) $request->query('per_page', 25);
+        if ($perPage < 1) $perPage = 25;
+        $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage('page');
+        $currentItems = $parties->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        $paginatedParties = new \Illuminate\Pagination\LengthAwarePaginator(
+            $currentItems,
+            $totalPartiesCount,
+            $perPage,
+            $currentPage,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+        );
+
+        return view('admin.ledger.party.index', [
+            'parties' => $paginatedParties,
+            'masters' => $masters,
+            'totalPartiesCount' => $totalPartiesCount,
+            'totalCreditBalance' => $totalCreditBalance,
+            'totalDebitBalance' => $totalDebitBalance,
+            'totalNetBalance' => $totalNetBalance,
+            'totalOpening' => $totalOpening,
+            'totalPeriodDebit' => $totalPeriodDebit,
+            'totalPeriodCredit' => $totalPeriodCredit,
+            'startDate' => $startDate,
+            'endDate' => $endDate
+        ]);
     }
 
     public function show(Request $request, $type, $id)
@@ -189,7 +212,12 @@ class PartyLedgerController extends Controller
 
         // Period and date
         $sheet->mergeCells('A2:H2');
-        $sheet->setCellValue('A2', 'Period: ' . $this->periodText($data['startDate'], $data['endDate']) . '   |   Generated on: ' . date('d M Y, h:i A'));
+        $subtitle = 'Period: ' . $this->periodText($data['startDate'], $data['endDate']);
+        if ($request->query('min_closing')) $subtitle .= '   |   Min Closing: ₹ ' . number_format((float)$request->query('min_closing'), 2);
+        if ($request->query('max_closing')) $subtitle .= '   |   Max Closing: ₹ ' . number_format((float)$request->query('max_closing'), 2);
+        if ($request->query('balance_type')) $subtitle .= '   |   Balance: ' . strtoupper($request->query('balance_type'));
+        $subtitle .= '   |   Generated on: ' . date('d M Y, h:i A');
+        $sheet->setCellValue('A2', $subtitle);
         $sheet->getStyle('A2')->getFont()->setSize(10)->getColor()->setARGB('FF666666');
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
@@ -341,6 +369,35 @@ class PartyLedgerController extends Controller
                     return $this->withLedgerFigures($v, $ledgerRequest);
                 });
             $parties = $parties->concat($agentItems);
+        }
+
+        // Filter by closing balance min / max and balance type if requested
+        $minClosing = $request->query('min_closing', $request->query('min_amount'));
+        $maxClosing = $request->query('max_closing', $request->query('max_amount'));
+        $balanceType = strtolower(trim((string)$request->query('balance_type')));
+
+        if ($minClosing !== null && $minClosing !== '') {
+            $minVal = (float)$minClosing;
+            $parties = $parties->filter(function ($p) use ($minVal) {
+                return abs((float)$p->balance) >= $minVal;
+            });
+        }
+
+        if ($maxClosing !== null && $maxClosing !== '') {
+            $maxVal = (float)$maxClosing;
+            $parties = $parties->filter(function ($p) use ($maxVal) {
+                return abs((float)$p->balance) <= $maxVal;
+            });
+        }
+
+        if ($balanceType === 'credit') {
+            $parties = $parties->filter(function ($p) {
+                return (float)$p->balance > 0;
+            });
+        } elseif ($balanceType === 'debit') {
+            $parties = $parties->filter(function ($p) {
+                return (float)$p->balance < 0;
+            });
         }
 
         // Sort by name

@@ -96,12 +96,12 @@
         $el.select2($.extend(baseOptions, extraOptions || {}));
       }
 
-      $('.select2').each(function () {
+      $('.select2').not('thead tr.filter select').each(function () {
         initSelect2($(this));
       });
       
       //Initialize Select2 Elements
-      $('.select2bs4').each(function () {
+      $('.select2bs4').not('thead tr.filter select').each(function () {
         initSelect2($(this), { theme: 'bootstrap4' });
       });
       

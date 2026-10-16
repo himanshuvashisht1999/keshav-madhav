@@ -1001,6 +1001,8 @@ h1.erp-page-title {
     margin-bottom: 2px;
     display: block;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .erp-filter-label i {
@@ -3637,6 +3639,9 @@ select:-webkit-autofill:focus {
     display: block;
     margin-bottom: 3px;
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 /* inputs, dates and select2 all share one height so the row lines up */
 .erp-filter-bar .form-control,
@@ -3967,7 +3972,10 @@ body.km-admin .erp-page .text-uppercase.font-weight-bold.text-muted { color: var
 
 /* filter bars: keep the Filter / Reset buttons on the same row as the fields */
 .erp-filter-bar > .row > [class*="col-"],
-.erp-filter-bar > form > .row > [class*="col-"] { flex: 1 1 88px; }
+.erp-filter-bar > form > .row > [class*="col-"] {
+    flex: 1 1 105px;
+    min-width: 95px;
+}
 
 /* sidebar menu keeps full width whether sub menus are open or closed */
 .km-sidebar .sidebar > nav,
@@ -3992,8 +4000,9 @@ body.km-admin .erp-page .text-uppercase.font-weight-bold.text-muted { color: var
 .erp-filter-bar > .row > .col-auto,
 .erp-filter-bar > form > .row > .col-auto { flex: 0 0 auto !important; width: auto !important; max-width: none; margin-left: auto; }
 .erp-filter-bar > .row > [class*="col-"]:not(.col-auto),
-.erp-filter-bar > form > .row > [class*="col-"]:not(.col-auto) { min-width: 0; }
+.erp-filter-bar > form > .row > [class*="col-"]:not(.col-auto) { min-width: 95px; }
 .erp-filter-bar input.form-control, .erp-filter-bar select.form-control, .erp-filter-bar .select2-container { min-width: 0 !important; width: 100% !important; }
+.erp-filter-bar input[type="date"].form-control { min-width: 120px !important; }
 /* inputs that live inside an input-group keep bootstrap's flex sizing (prepend/append icons stay on the same line) */
 .erp-filter-bar .input-group > input.form-control,
 .erp-filter-bar .input-group > select.form-control { width: 1% !important; flex: 1 1 auto; min-width: 0 !important; }

@@ -592,9 +592,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('master/vendors')->name('master.vendor.')->group(function () {
             Route::get('/index', [AdminVendorController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminVendorController::class, 'indexList'])->name('indexList');
+            Route::get('/downloadPdf', [AdminVendorController::class, 'downloadPdf'])->name('downloadPdf');
+            Route::get('/downloadExcel', [AdminVendorController::class, 'downloadExcel'])->name('downloadExcel');
             Route::get('/create', [AdminVendorController::class, 'create'])->name('create');
             Route::post('/store', [AdminVendorController::class, 'store'])->name('store');
             Route::get('/edit', [AdminVendorController::class, 'edit'])->name('edit');
+            Route::get('/view', [AdminVendorController::class, 'view'])->name('view');
             Route::post('/update', [AdminVendorController::class, 'update'])->name('update');
             Route::get('/delete', [AdminVendorController::class, 'delete'])->name('delete');
         });
@@ -1244,6 +1247,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::get('/create', [AdminCustomerController::class, 'create'])->name('create');
             Route::post('/store', [AdminCustomerController::class, 'store'])->name('store');
             Route::get('/edit', [AdminCustomerController::class, 'edit'])->name('edit');
+            Route::get('/view', [AdminCustomerController::class, 'view'])->name('view');
             Route::post('/update', [AdminCustomerController::class, 'update'])->name('update');
             Route::get('/delete', [AdminCustomerController::class, 'delete'])->name('delete');
         });

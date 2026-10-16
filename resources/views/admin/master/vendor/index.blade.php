@@ -7,7 +7,18 @@
         <div class="erp-header-title">
             <i class="fas fa-truck text-primary"></i> Manage Vendors
         </div>
-        <div class="erp-header-actions">
+        <div class="erp-header-actions d-flex align-items-center" style="gap: 6px;">
+            <select class="form-control form-control-sm erp-filter-select" name="balance_type" id="balance_type" style="width: 125px; height: 31px; display: inline-block;">
+                <option value="">All Balance</option>
+                <option value="credit">Credit (Cr)</option>
+                <option value="debit">Debit (Dr)</option>
+            </select>
+            <a href="javascript:void(0)" id="download-pdf-btn" class="btn-erp btn-erp-outline" title="Download PDF">
+                <i class="fas fa-file-pdf text-danger"></i> PDF
+            </a>
+            <a href="javascript:void(0)" id="download-excel-btn" class="btn-erp btn-erp-outline" title="Download Excel">
+                <i class="fas fa-file-excel text-success"></i> Excel
+            </a>
             <a href="{{ route('admin.master.vendor.create') }}" class="btn-erp btn-erp-primary">
                 <i class="fas fa-plus"></i> Add Vendor
             </a>
@@ -71,8 +82,12 @@
                         <td>
                             <input type="text" class="form-control erp-filter-input" name="email" id="email" placeholder="Search email..." autocomplete="off">
                         </td>
-                        <td></td>
-                        <td></td>
+                        <td data-label="From Date">
+                            <input type="date" class="form-control erp-filter-input" name="start_date" id="start_date" data-label="From Date" autocomplete="off" title="Opening Date / Start Date">
+                        </td>
+                        <td data-label="To Date">
+                            <input type="date" class="form-control erp-filter-input" name="end_date" id="end_date" data-label="To Date" autocomplete="off" title="Closing Date / End Date">
+                        </td>
                         <td>
                             <select class="form-control erp-filter-select" name="status" id="status" autocomplete="off">
                                 <option value="">ALL</option>
@@ -90,7 +105,7 @@
                         <th>Opening Balance</th>
                         <th>Balance</th>
                         <th style="width: 90px;" class="text-center">Status</th>
-                        <th style="width: 100px;" class="text-center">Action</th>
+                        <th style="width: 110px;" class="text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -106,7 +121,7 @@
             processing: true,
             serverSide: true,
             stateSave: true,
-            searching: true,
+            searching: false,
             ordering: false,
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             pageLength: 25,
@@ -118,6 +133,9 @@
                     d.phone = $('#phone').val();
                     d.email = $('#email').val();
                     d.status = $('#status').val();
+                    d.start_date = $('#start_date').val();
+                    d.end_date = $('#end_date').val();
+                    d.balance_type = $('#balance_type').val();
                 },
                 orderable: false
             },
@@ -146,22 +164,56 @@
             ]
         });
 
-        $('#name').on('keyup', function (e) {
+        $('#download-pdf-btn').on('click', function (e) {
+            e.preventDefault();
+            var name = $('#name').val() || '';
+            var phone = $('#phone').val() || '';
+            var email = $('#email').val() || '';
+            var status = $('#status').val() || '';
+            var start_date = $('#start_date').val() || '';
+            var end_date = $('#end_date').val() || '';
+            var balance_type = $('#balance_type').val() || '';
+            
+            var url = "{{ route('admin.master.vendor.downloadPdf') }}?" + 
+                "name=" + encodeURIComponent(name) + 
+                "&phone=" + encodeURIComponent(phone) + 
+                "&email=" + encodeURIComponent(email) + 
+                "&status=" + encodeURIComponent(status) +
+                "&start_date=" + encodeURIComponent(start_date) +
+                "&end_date=" + encodeURIComponent(end_date) +
+                "&balance_type=" + encodeURIComponent(balance_type);
+                
+            window.location.href = url;
+        });
+
+        $('#download-excel-btn').on('click', function (e) {
+            e.preventDefault();
+            var name = $('#name').val() || '';
+            var phone = $('#phone').val() || '';
+            var email = $('#email').val() || '';
+            var status = $('#status').val() || '';
+            var start_date = $('#start_date').val() || '';
+            var end_date = $('#end_date').val() || '';
+            var balance_type = $('#balance_type').val() || '';
+            
+            var url = "{{ route('admin.master.vendor.downloadExcel') }}?" + 
+                "name=" + encodeURIComponent(name) + 
+                "&phone=" + encodeURIComponent(phone) + 
+                "&email=" + encodeURIComponent(email) + 
+                "&status=" + encodeURIComponent(status) +
+                "&start_date=" + encodeURIComponent(start_date) +
+                "&end_date=" + encodeURIComponent(end_date) +
+                "&balance_type=" + encodeURIComponent(balance_type);
+                
+            window.location.href = url;
+        });
+
+        $('#name, #phone, #email').on('keyup', function (e) {
             oTable.draw();
             e.preventDefault();
         });
 
-        $('#phone').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#email').on('keyup', function (e) {
-            oTable.draw();
-            e.preventDefault();
-        });
-
-        $('#status').on('change', function (e) {
+        $('#status, #start_date, #end_date, #balance_type').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
         });

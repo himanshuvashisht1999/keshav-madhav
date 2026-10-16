@@ -49,6 +49,10 @@
     }
 
     function labelFor($cell) {
+        var $firstCtl = $cell.find('input,select').first();
+        var custom = $firstCtl.attr('data-label') || $cell.attr('data-label') || $firstCtl.attr('title');
+        if (custom) return custom;
+
         var idx = $cell.index();
         var $ths = $cell.closest('thead').find('tr:not(.filter)').last().children();
         var txt = $.trim($ths.eq(idx).text());
@@ -80,17 +84,22 @@
 
         $filterRow.children().each(function () {
             var $cell = $(this);
-            var $ctl = $cell.find('input:not([type=hidden]), select');
+            var $ctl = $cell.find('input:not([type=hidden]):not(.select2-search__field), select').not('.select2-container *').not('.select2 *');
             if (!$ctl.length) return;
             var $col = $('<div class="col-lg-2 col-md-3 col-sm-6 mb-1"></div>');
             $col.append($('<label class="erp-filter-label"></label>').text(labelFor($cell)));
             $ctl.each(function () {
                 var $orig = $(this);
+                var isSelect = $orig.is('select');
+                var hadSelect2 = $orig.hasClass('select2-hidden-accessible') || $orig.hasClass('select2bs4') || $orig.data('select2');
+                if (hadSelect2 && $orig.data('select2')) {
+                    try { $orig.select2('destroy'); } catch (e) {}
+                }
                 var $clone = $orig.clone(false, false);
                 $clone.val($orig.val());
                 $clone.addClass('form-control erp-input').removeClass('erp-filter-input erp-filter-select');
-                if ($orig.hasClass('select2-hidden-accessible') || $orig.data('select2')) {
-                    $clone.removeClass('select2-hidden-accessible').removeAttr('data-select2-id aria-hidden tabindex').css('width', '100%');
+                if (isSelect && (hadSelect2 || $orig.hasClass('select2') || $orig.prop('multiple'))) {
+                    $clone.removeClass('select2-hidden-accessible select2bs4').removeAttr('data-select2-id aria-hidden tabindex').css('width', '100%');
                     $clone.find('option').removeAttr('data-select2-id');
                     $clone.addClass('erp-needs-select2');
                 }
@@ -107,7 +116,18 @@
         var apply = function () { refresh(dt); };
         var reset = function () {
             $bar.find('input').val('');
-            $bar.find('select').each(function () { this.selectedIndex = 0; });
+            $bar.find('select').each(function () {
+                var $s = $(this);
+                var $def = $s.find('option[selected]');
+                if ($def.length) {
+                    $s.val($def.val());
+                } else {
+                    this.selectedIndex = 0;
+                }
+                if ($s.data('select2')) {
+                    $s.trigger('change');
+                }
+            });
             refresh(dt);
         };
         $row.append(buttons(apply, reset));
@@ -119,7 +139,14 @@
         $anchor.before($bar);
         if ($.fn.select2) {
             $bar.find('select.erp-needs-select2').each(function () {
-                $(this).removeClass('erp-needs-select2').select2({ theme: 'bootstrap4', width: '100%' });
+                var $s = $(this);
+                var ph = $s.attr('data-placeholder') || $s.attr('placeholder') || 'Select';
+                $s.removeClass('erp-needs-select2').select2({
+                    theme: 'bootstrap4',
+                    width: '100%',
+                    placeholder: ph,
+                    allowClear: !$s.prop('multiple')
+                });
             });
         }
         $table.data('erpFilterDone', true);

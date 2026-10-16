@@ -90,16 +90,16 @@
                                 <option value="agent">Domestic (Agent)</option>
                             </select>
                         </td>
-                        <td>
-                            <input type="date" class="form-control erp-filter-input" name="start_date" id="start_date" autocomplete="off">
+                        <td data-label="From Date">
+                            <input type="date" class="form-control erp-filter-input" name="start_date" id="start_date" data-label="From Date" title="From Date" autocomplete="off">
                         </td>
-                        <td>
-                            <input type="date" class="form-control erp-filter-input" name="end_date" id="end_date" autocomplete="off">
+                        <td data-label="To Date">
+                            <input type="date" class="form-control erp-filter-input" name="end_date" id="end_date" data-label="To Date" title="To Date" autocomplete="off">
                         </td>
                         <td>
                             <select class="form-control erp-filter-select" name="status" id="status" autocomplete="off">
                                 <option value="">ALL</option>
-                                <option value="1">Active</option>
+                                <option value="1" selected>Active</option>
                                 <option value="0">Inactive</option>
                             </select>
                         </td>
@@ -114,7 +114,7 @@
                         <th>Opening Balance</th>
                         <th>Balance</th>
                         <th style="width: 90px;" class="text-center">Status</th>
-                        <th style="width: 100px;" class="text-center">Action</th>
+                        <th style="width: 80px;" class="text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -130,7 +130,7 @@
             processing: true,
             serverSide: true,
             stateSave: true,
-            searching: true,
+            searching: false,
             ordering: false,
             lengthMenu: [[25, 100, -1], [25, 100, "All"]],
             pageLength: 25,

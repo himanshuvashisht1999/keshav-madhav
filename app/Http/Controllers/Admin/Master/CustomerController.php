@@ -18,8 +18,15 @@ class CustomerController extends Controller {
     public function index(){
         $response['items'] = $this->service->items();
         $response['agents'] = \App\Models\SalesAgent::where('status', 1)->orderBy('name', 'asc')->get();
-        $response['total_opening_balance'] = MasterOpeningBalance::getTotalOpeningBalance('customer');
-        $response['total_current_balance'] = MasterCustomer::where('status', '!=', 3)->sum('balance');
+        $activeCustomerIds = MasterCustomer::where('status', 1)->pluck('id')->toArray();
+        $response['total_opening_balance'] = MasterOpeningBalance::where('master_type', 'customer')
+            ->where('financial_year', MasterOpeningBalance::OPENING_KEY)
+            ->whereIn('master_id', $activeCustomerIds)
+            ->get()
+            ->sum(function ($item) {
+                return $item->balance_type == 'Credit' ? $item->amount : -$item->amount;
+            });
+        $response['total_current_balance'] = MasterCustomer::where('status', 1)->sum('balance');
         return view('admin.master.customer.index',$response);
     } 
     public function indexList(Request $request){
@@ -53,6 +60,11 @@ class CustomerController extends Controller {
         $response['data'] = $this->service->edit($request);
         $response['items'] = $this->service->items();
         return view('admin.master.customer.edit',$response);
+    }
+    public function view(Request $request){
+        $response['data'] = $this->service->viewDetails($request);
+        $response['items'] = $this->service->items();
+        return view('admin.master.customer.view', $response);
     }
     public function update(CustomerUpdateRequest $request){
         $data = $this->service->update($request);
