@@ -36,6 +36,12 @@
             <a href="{{ route('admin.payment.journal-voucher.edit', $voucher->id) }}" class="btn-erp btn-erp-primary">
                 <i class="fas fa-edit mr-1"></i> Edit Voucher
             </a>
+            <button type="button" onclick="deleteVoucher({{ $voucher->id }})" class="btn-erp btn-erp-danger" title="Delete Voucher">
+                <i class="fas fa-trash mr-1"></i> Delete Voucher
+            </button>
+            <form id="delete-form-{{ $voucher->id }}" action="{{ route('admin.payment.journal-voucher.delete', $voucher->id) }}" method="POST" style="display: none;">
+                @csrf
+            </form>
             <a href="{{ route('admin.payment.journal-voucher.index') }}" class="btn-erp btn-erp-secondary">
                 <i class="fas fa-arrow-left mr-1"></i> Back to List
             </a>
@@ -152,3 +158,13 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function deleteVoucher(id) {
+    if (confirm('Are you sure you want to delete this voucher? All associated financial entries will be reversed.')) {
+        document.getElementById('delete-form-' + id).submit();
+    }
+}
+</script>
+@endpush
