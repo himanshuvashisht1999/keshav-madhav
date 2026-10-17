@@ -47,7 +47,7 @@
                     <option value="debit" {{ request('type') == 'debit' ? 'selected' : '' }}>Debit (-)</option>
                 </select>
             </div>
-            <div class="col-lg-3 col-md-3 col-sm-6 mb-1">
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
                 <label class="erp-filter-label"><i class="fas fa-university mr-1"></i> To account</label>
                 <select name="payment_account_id" class="form-control form-control-sm erp-input select2" style="width: 100%;">
                     <option value="">All accounts</option>
@@ -62,6 +62,10 @@
                         @endforeach
                     </optgroup>
                 </select>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-search mr-1"></i> Search</label>
+                <input type="text" name="search" class="form-control form-control-sm erp-input" placeholder="Search party, batch, note..." value="{{ request('search') }}">
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6 mb-1">
                 <label class="erp-filter-label"><i class="fas fa-rupee-sign mr-1"></i> Amount Range</label>
@@ -227,7 +231,8 @@
         $('#adjust_table').DataTable({
             "order": [[0, "desc"]],
             pageLength: 25,
-            lengthMenu: [[25, 50, 100, -1], [25, 50, 100, "All"]]
+            lengthMenu: [[25, 50, 100, -1], [25, 50, 100, "All"]],
+            dom: "<'row mb-2'<'col-sm-6'l><'col-sm-6'>>rt<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>"
         });
     });
 </script>

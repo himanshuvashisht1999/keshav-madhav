@@ -243,9 +243,9 @@
                                 <a href="{{ route('admin.payment.journal-voucher.show', $voucher->id) }}" class="erp-action-btn erp-btn-view" title="View Voucher">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ route('admin.payment.journal-voucher.edit', $voucher->id) }}" class="erp-action-btn erp-btn-edit" title="Edit Voucher">
+                                {{-- <a href="{{ route('admin.payment.journal-voucher.edit', $voucher->id) }}" class="erp-action-btn erp-btn-edit" title="Edit Voucher">
                                     <i class="fas fa-edit"></i>
-                                </a>
+                                </a> --}}
                             </div>
                         </td>
                     </tr>

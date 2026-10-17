@@ -51,6 +51,28 @@ class PaymentAdjustmentController extends Controller
             return $item->batch_id ?? 'unique_' . $item->id;
         });
 
+        $search = trim((string)$request->query('search'));
+        if ($search !== '') {
+            $searchLower = strtolower($search);
+            $grouped = $grouped->filter(function ($items, $batchId) use ($searchLower) {
+                if (str_contains(strtolower((string)$batchId), $searchLower)) return true;
+                foreach ($items as $item) {
+                    if (str_contains(strtolower((string)$item->entity_name), $searchLower)) return true;
+                    if (isset($item->master->name) && str_contains(strtolower((string)$item->master->name), $searchLower)) return true;
+                    $accName = $item->account->bank_name ?? $item->account->name ?? '';
+                    if (str_contains(strtolower((string)$accName), $searchLower)) return true;
+                    if (str_contains(strtolower((string)$item->payment_mode), $searchLower)) return true;
+                    if (str_contains(strtolower((string)$item->remarks), $searchLower)) return true;
+                    if (str_contains((string)$item->amount, $searchLower)) return true;
+                }
+                return false;
+            });
+
+            $filteredFlat = $grouped->flatten();
+            $totalDebit = $filteredFlat->where('type', 'debit')->sum('amount');
+            $totalCredit = $filteredFlat->where('type', 'credit')->sum('amount');
+        }
+
         $bankAccounts = BankAccount::where('status', 1)->get();
         $cashAccounts = CashPayment::where('status', 1)->get();
 
