@@ -490,6 +490,16 @@
             $('.select2').select2({ width: '100%' });
         }
 
+        @if(session('success'))
+            toastr.success("{{ session('success') }}");
+        @endif
+        @if(session('info'))
+            toastr.info("{{ session('info') }}");
+        @endif
+        @if(session('error'))
+            toastr.error("{{ session('error') }}");
+        @endif
+
         loadReworkData();
 
         $('#btnFilterApply').click(function() {
@@ -977,7 +987,7 @@
         let ids = items.map(i => i.id);
         let totalPcs = items.reduce((s, i) => s + (parseInt(i.quantity) || 0), 0);
         $('#modalAssignIds').val(JSON.stringify(ids));
-        $('#modalItemsCount').text(`${items.length} Record(s) &bull; ${totalPcs} Pcs`);
+        $('#modalItemsCount').html(`${items.length} Record(s) &bull; ${totalPcs} Pcs`);
 
         let summaryHtml = '<ul class="pl-3 mb-0" style="font-size: 0.82rem;">';
         items.forEach(i => {
