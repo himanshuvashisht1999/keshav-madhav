@@ -13,6 +13,9 @@
             @endif
         </div>
         <div class="erp-header-actions">
+            <a href="{{ route('admin.ledger.party.detailedReport', request()->all()) }}" target="_blank" class="btn-erp btn-erp-primary" title="Detailed Ledger Report for Filtered Parties">
+                <i class="fas fa-file-invoice-dollar mr-1"></i> Detailed Ledger Report
+            </a>
             <a href="{{ route('admin.ledger.party.export-list-pdf', request()->all()) }}" class="btn-erp btn-erp-outline" title="Export to PDF">
                 <i class="fas fa-file-pdf text-danger"></i> Export PDF
             </a>
@@ -71,7 +74,7 @@
                     <div>
                         <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Total Credit (CR)</div>
                         <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-green-primary); line-height: 1.2;">
-                            ₹ {{ number_format($totalCreditBalance ?? 0, 2) }}
+                            ₹ {{ number_format($totalPeriodCredit ?? 0, 2) }}
                         </div>
                     </div>
                 </div>
@@ -90,7 +93,7 @@
                     <div>
                         <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Total Debit (DR)</div>
                         <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: #dc2626; line-height: 1.2;">
-                            ₹ {{ number_format($totalDebitBalance ?? 0, 2) }}
+                            ₹ {{ number_format($totalPeriodDebit ?? 0, 2) }}
                         </div>
                     </div>
                 </div>

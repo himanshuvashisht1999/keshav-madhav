@@ -179,6 +179,267 @@ class PartyLedgerController extends Controller
         return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
     }
 
+    public function detailedReport(Request $request)
+    {
+        $data = $this->getDetailedReportData($request);
+        return view('admin.ledger.party.detailed_report', $data);
+    }
+
+    public function detailedReportPdf(Request $request)
+    {
+        $data = $this->getDetailedReportData($request);
+        $pdf = \PDF::loadView('admin.ledger.party.detailed_report_pdf', $data)->setPaper('a4', 'landscape');
+        $name = 'Detailed_Party_Ledger_Report_' . date('Y-m-d_His') . '.pdf';
+        return $pdf->download($name);
+    }
+
+    public function detailedReportExcel(Request $request)
+    {
+        $data = $this->getDetailedReportData($request);
+        $viewMode = $data['viewMode'];
+        $crdr = fn($v) => number_format(abs($v), 2) . ' ' . ($v >= 0 ? 'CR' : 'DR');
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Detailed Ledger Report');
+
+        // Header Title
+        $sheet->mergeCells('A1:J1');
+        $sheet->setCellValue('A1', 'SNAPKID - Detailed Party Ledger Report');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setARGB('FF1E3C72');
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Subtitle
+        $sheet->mergeCells('A2:J2');
+        $periodText = $this->periodText($data['startDate'], $data['endDate']);
+        $modeText = $viewMode === 'party_wise' ? 'Party-wise (Grouped)' : 'Mix (Consolidated)';
+        $subtitle = 'Period: ' . $periodText . '   |   View Mode: ' . $modeText . '   |   Parties: ' . $data['filteredParties']->count() . '   |   Generated: ' . date('d M Y, h:i A');
+        $sheet->setCellValue('A2', $subtitle);
+        $sheet->getStyle('A2')->getFont()->setSize(10)->getColor()->setARGB('FF666666');
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Summary row
+        $sheet->setCellValue('A3', 'Opening Bal: ₹ ' . number_format(abs($data['totalOpeningBalance']), 2) . ' ' . ($data['totalOpeningBalance'] >= 0 ? 'CR' : 'DR'));
+        $sheet->setCellValue('E3', 'Period Debit: ₹ ' . number_format($data['totalPeriodDebit'], 2));
+        $sheet->setCellValue('G3', 'Period Credit: ₹ ' . number_format($data['totalPeriodCredit'], 2));
+        $sheet->setCellValue('I3', 'Closing Bal: ₹ ' . number_format(abs($data['totalClosingBalance']), 2) . ' ' . ($data['totalClosingBalance'] >= 0 ? 'CR' : 'DR'));
+        $sheet->getStyle('A3:J3')->getFont()->setBold(true);
+
+        // Headers
+        $headers = ['Date', 'Party Name', 'Party Type', 'Type', 'Ref / Voucher', 'Bill No', 'Particulars / Description', 'Debit (₹)', 'Credit (₹)', 'Balance (₹)'];
+        $cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+        foreach ($headers as $idx => $h) {
+            $sheet->setCellValue($cols[$idx] . '5', $h);
+        }
+
+        $headerRange = 'A5:J5';
+        $sheet->getStyle($headerRange)->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+        $sheet->getStyle($headerRange)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF1E3C72');
+        $sheet->getStyle($headerRange)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $row = 6;
+        if ($viewMode === 'party_wise') {
+            foreach ($data['detailedParties'] as $dp) {
+                // Party Section Header
+                $sheet->mergeCells("A{$row}:J{$row}");
+                $sheet->setCellValue("A{$row}", ($dp->party->name ?? 'Party') . ' (' . ucfirst($dp->party->party_type ?? '') . ')  |  Opening: ' . $crdr($dp->opening_balance) . '  |  Closing: ' . $crdr($dp->closing_balance));
+                $sheet->getStyle("A{$row}:J{$row}")->getFont()->setBold(true)->getColor()->setARGB('FF05421C');
+                $sheet->getStyle("A{$row}:J{$row}")->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFE8F5E9');
+                $row++;
+
+                // Opening row
+                $sheet->setCellValue('A' . $row, $data['startDate'] ? \Carbon\Carbon::parse($data['startDate'])->format('d M Y') : '-');
+                $sheet->setCellValue('B' . $row, $dp->party->name ?? '-');
+                $sheet->setCellValue('C' . $row, ucfirst($dp->party->party_type ?? '-'));
+                $sheet->setCellValue('D' . $row, 'Opening');
+                $sheet->setCellValue('G' . $row, 'Opening Balance B/F');
+                $sheet->setCellValue('H' . $row, $dp->opening_balance < 0 ? abs($dp->opening_balance) : 0);
+                $sheet->setCellValue('I' . $row, $dp->opening_balance >= 0 ? abs($dp->opening_balance) : 0);
+                $sheet->setCellValue('J' . $row, $crdr($dp->opening_balance));
+                $sheet->getStyle("A{$row}:J{$row}")->getFont()->setItalic(true);
+                $row++;
+
+                foreach ($dp->transactions as $tx) {
+                    $sheet->setCellValue('A' . $row, $tx->date ? \Carbon\Carbon::parse($tx->date)->format('d M Y') : '-');
+                    $sheet->setCellValue('B' . $row, $dp->party->name ?? '-');
+                    $sheet->setCellValue('C' . $row, ucfirst($dp->party->party_type ?? '-'));
+                    $sheet->setCellValue('D' . $row, $tx->type ?? '-');
+                    $sheet->setCellValue('E' . $row, $tx->ref ?? '-');
+                    $sheet->setCellValue('F' . $row, $tx->bill_no ?? '-');
+                    $sheet->setCellValue('G' . $row, $tx->description ?? '-');
+                    $sheet->setCellValue('H' . $row, (float)($tx->debit ?? 0));
+                    $sheet->setCellValue('I' . $row, (float)($tx->credit ?? 0));
+                    $bal = (float)($tx->running_balance ?? 0);
+                    $sheet->setCellValue('J' . $row, $crdr($bal));
+                    $row++;
+                }
+
+                // Subtotal row
+                $sheet->setCellValue('A' . $row, 'Total for ' . ($dp->party->name ?? 'Party'));
+                $sheet->mergeCells("A{$row}:G{$row}");
+                $sheet->setCellValue('H' . $row, (float)$dp->period_debit);
+                $sheet->setCellValue('I' . $row, (float)$dp->period_credit);
+                $sheet->setCellValue('J' . $row, $crdr($dp->closing_balance));
+                $sheet->getStyle("A{$row}:J{$row}")->getFont()->setBold(true);
+                $sheet->getStyle("A{$row}:J{$row}")->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
+                $row++;
+            }
+        } else {
+            // Mix mode
+            // Opening balance row
+            $sheet->setCellValue('A' . $row, $data['startDate'] ? \Carbon\Carbon::parse($data['startDate'])->format('d M Y') : '-');
+            $sheet->setCellValue('B' . $row, 'All Filtered Parties');
+            $sheet->setCellValue('C' . $row, '-');
+            $sheet->setCellValue('D' . $row, 'Opening');
+            $sheet->setCellValue('G' . $row, 'Opening Balance Brought Forward');
+            $sheet->setCellValue('H' . $row, $data['totalOpeningBalance'] < 0 ? abs($data['totalOpeningBalance']) : 0);
+            $sheet->setCellValue('I' . $row, $data['totalOpeningBalance'] >= 0 ? abs($data['totalOpeningBalance']) : 0);
+            $sheet->setCellValue('J' . $row, $crdr($data['totalOpeningBalance']));
+            $sheet->getStyle("A{$row}:J{$row}")->getFont()->setItalic(true);
+            $row++;
+
+            foreach ($data['allMixTransactions'] as $tx) {
+                $sheet->setCellValue('A' . $row, $tx->date ? \Carbon\Carbon::parse($tx->date)->format('d M Y') : '-');
+                $sheet->setCellValue('B' . $row, $tx->party_name ?? '-');
+                $sheet->setCellValue('C' . $row, ucfirst($tx->party_type ?? '-'));
+                $sheet->setCellValue('D' . $row, $tx->type ?? '-');
+                $sheet->setCellValue('E' . $row, $tx->ref ?? '-');
+                $sheet->setCellValue('F' . $row, $tx->bill_no ?? '-');
+                $sheet->setCellValue('G' . $row, $tx->description ?? '-');
+                $sheet->setCellValue('H' . $row, (float)($tx->debit ?? 0));
+                $sheet->setCellValue('I' . $row, (float)($tx->credit ?? 0));
+                $bal = (float)($tx->running_balance ?? 0);
+                $sheet->setCellValue('J' . $row, $crdr($bal));
+                $row++;
+            }
+        }
+
+        // Grand Total Row
+        $sheet->setCellValue('A' . $row, 'Grand Total');
+        $sheet->mergeCells("A{$row}:G{$row}");
+        $sheet->setCellValue('H' . $row, (float)$data['totalPeriodDebit']);
+        $sheet->setCellValue('I' . $row, (float)$data['totalPeriodCredit']);
+        $sheet->setCellValue('J' . $row, $crdr($data['totalClosingBalance']));
+        $sheet->getStyle("A{$row}:J{$row}")->getFont()->setBold(true);
+        $sheet->getStyle("A{$row}:J{$row}")->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFDDE7D8');
+
+        $sheet->getStyle('H6:I' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+
+        foreach (range('A', 'J') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = 'Detailed_Party_Ledger_Report_' . date('Y-m-d_His') . '.xlsx';
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $tempPath = storage_path('app/public/' . $fileName);
+        $writer->save($tempPath);
+
+        return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
+    }
+
+    public function getDetailedReportData(Request $request)
+    {
+        $data = $this->getPartyListData($request);
+        $parties = $data['parties'];
+        $masters = $data['masters'];
+        $startDate = $data['startDate'];
+        $endDate = $data['endDate'];
+
+        $selectedParty = $request->query('selected_party');
+        $viewMode = $request->query('view_mode', 'mix');
+
+        $filteredParties = $parties;
+        if (!empty($selectedParty)) {
+            $filteredParties = $parties->filter(function ($p) use ($selectedParty) {
+                return ($p->party_type . '_' . $p->id) === $selectedParty;
+            });
+        }
+
+        $allAvailableTypes = collect();
+        $detailedParties = collect();
+        $allMixTransactions = collect();
+
+        $totalOpeningBalance = 0;
+        $totalPeriodDebit = 0;
+        $totalPeriodCredit = 0;
+        $totalClosingBalance = 0;
+
+        foreach ($filteredParties as $p) {
+            $ledgerData = app(\App\Services\Ledger\PartyLedgerService::class)->build($request, $p->party_type, $p->id);
+
+            $pOpening = (float)($ledgerData['openingBalAmount'] ?? 0);
+            $pClosing = (float)($ledgerData['party']->balance ?? 0);
+            $txCollection = collect($ledgerData['transactions'] ?? []);
+
+            $pDebit = (float)$txCollection->sum('debit');
+            $pCredit = (float)$txCollection->sum('credit');
+
+            $totalOpeningBalance += $pOpening;
+            $totalPeriodDebit += $pDebit;
+            $totalPeriodCredit += $pCredit;
+            $totalClosingBalance += $pClosing;
+
+            if (isset($ledgerData['availableTypes']) && is_array($ledgerData['availableTypes'])) {
+                $allAvailableTypes = $allAvailableTypes->merge($ledgerData['availableTypes']);
+            }
+
+            foreach ($txCollection as $tx) {
+                $tx->party_name = $p->name ?? '-';
+                $tx->party_type = $p->party_type;
+                $tx->party_id = $p->id;
+                $tx->party_key = $p->party_type . '_' . $p->id;
+                $allMixTransactions->push($tx);
+            }
+
+            $detailedParties->push((object)[
+                'party' => $p,
+                'opening_balance' => $pOpening,
+                'closing_balance' => $pClosing,
+                'period_debit' => $pDebit,
+                'period_credit' => $pCredit,
+                'transactions' => $txCollection
+            ]);
+        }
+
+        // Sort mix transactions chronologically
+        $allMixTransactions = $allMixTransactions->sort(function ($a, $b) {
+            $dateA = \Carbon\Carbon::parse($a->date)->format('Y-m-d');
+            $dateB = \Carbon\Carbon::parse($b->date)->format('Y-m-d');
+            if ($dateA !== $dateB) {
+                return $dateA <=> $dateB;
+            }
+            return ($a->created_at ?? 0) <=> ($b->created_at ?? 0);
+        })->values();
+
+        // Calculate running balance for consolidated mix stream
+        $runningBal = $totalOpeningBalance;
+        foreach ($allMixTransactions as $tx) {
+            $runningBal += ($tx->credit - $tx->debit);
+            $tx->running_balance = $runningBal;
+        }
+
+        $availableTypes = $allAvailableTypes->unique()->filter()->values()->all();
+
+        return [
+            'parties' => $parties,
+            'filteredParties' => $filteredParties,
+            'detailedParties' => $detailedParties,
+            'allMixTransactions' => $allMixTransactions,
+            'totalOpeningBalance' => $totalOpeningBalance,
+            'totalPeriodDebit' => $totalPeriodDebit,
+            'totalPeriodCredit' => $totalPeriodCredit,
+            'totalClosingBalance' => $totalClosingBalance,
+            'availableTypes' => $availableTypes,
+            'viewMode' => $viewMode,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'selectedParty' => $selectedParty,
+            'typeId' => $request->query('type_id'),
+            'search' => $request->query('search'),
+            'masters' => $masters,
+        ];
+    }
+
     public function exportListPdf(Request $request)
     {
         $search = $request->query('search');
