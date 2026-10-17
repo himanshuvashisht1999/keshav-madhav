@@ -211,6 +211,7 @@
                                 <th style="width: 100px;">Date</th>
                                 <th style="width: 100px;" class="text-center">Type</th>
                                 <th style="width: 120px;">Reference</th>
+                                <th style="width: 120px;">Bill No.</th>
                                 <th>Particulars</th>
                                 <th class="text-right" style="width: 140px;">Debit (DR)</th>
                                 <th class="text-right" style="width: 140px;">Credit (CR)</th>
@@ -228,6 +229,7 @@
                                         <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs);">{{ $tx->type }}</span>
                                     </td>
                                     <td class="font-weight-bold text-muted small">{{ $tx->ref }}</td>
+                                    <td class="font-weight-bold text-dark small">{{ $tx->bill_no ?? '-' }}</td>
                                     <td>{{ $tx->description }}</td>
                                     <td class="text-right font-weight-bold text-danger">
                                         {{ $tx->debit > 0 ? '₹ ' . number_format($tx->debit, 2) : '-' }}
@@ -289,6 +291,7 @@
                             <th style="width: 100px;">Date</th>
                             <th style="width: 110px;" class="text-center">Type</th>
                             <th style="width: 130px;">Reference</th>
+                            <th style="width: 120px;">Bill No.</th>
                             <th>Particulars / Description</th>
                             <th class="text-right" style="width: 140px;">Debit (DR)</th>
                             <th class="text-right" style="width: 140px;">Credit (CR)</th>
@@ -302,6 +305,7 @@
                         <tr style="background: var(--erp-green-light);">
                             <td class="font-weight-bold">{{ \Carbon\Carbon::parse($startDate)->format('d M Y') }}</td>
                             <td class="text-center"><span class="badge" style="background: var(--erp-yellow-bg); color: var(--erp-yellow-dark); border: 1px solid var(--erp-yellow-badge-border); font-size: var(--erp-font-xs);">OPENING</span></td>
+                            <td class="text-muted">-</td>
                             <td class="text-muted">-</td>
                             <td class="font-weight-bold" style="color: var(--erp-text-heading);">Opening Balance Brought Forward</td>
                             <td class="text-right text-muted">-</td>
@@ -327,6 +331,9 @@
                                 </td>
                                 <td class="font-weight-bold text-muted small">
                                     {{ $tx->ref }}
+                                </td>
+                                <td class="font-weight-bold text-dark small">
+                                    {{ $tx->bill_no ?? '-' }}
                                 </td>
                                 <td>
                                     <span class="font-weight-bold" style="color: var(--erp-text-heading);">{{ $tx->description }}</span>
@@ -368,7 +375,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-5 text-muted">
+                                <td colspan="9" class="text-center py-5 text-muted">
                                     <i class="fas fa-receipt fa-3x mb-2 text-secondary" style="opacity: 0.4;"></i>
                                     <p class="font-weight-bold mb-0">No transaction records found for the selected period.</p>
                                 </td>
@@ -378,7 +385,7 @@
                     @if(!$transactions->isEmpty())
                     <tfoot>
                         <tr class="erp-table-grand-total">
-                            <td colspan="4" class="text-right font-weight-bold" style="letter-spacing: 0.5px;">STATEMENT PERIOD TOTALS:</td>
+                            <td colspan="5" class="text-right font-weight-bold" style="letter-spacing: 0.5px;">STATEMENT PERIOD TOTALS:</td>
                             <td class="text-right font-weight-bold text-danger">
                                 ₹ {{ number_format($transactions->sum('debit'), 2) }}
                             </td>

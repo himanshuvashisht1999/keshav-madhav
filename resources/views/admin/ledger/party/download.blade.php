@@ -485,19 +485,21 @@
             <table class="ledger-table">
                 <thead>
                     <tr>
-                        <th width="10%" class="text-center border-right-light">Date</th>
-                        <th width="12%" class="text-center border-right-light">Type</th>
-                        <th width="14%" class="text-left border-right-light">Ref / Voucher</th>
+                        <th width="9%" class="text-center border-right-light">Date</th>
+                        <th width="11%" class="text-center border-right-light">Type</th>
+                        <th width="12%" class="text-left border-right-light">Ref / Voucher</th>
+                        <th width="11%" class="text-left border-right-light">Bill No.</th>
                         <th class="text-left border-right-light">Description</th>
-                        <th width="12%" class="text-right border-right-light">Debit (₹)</th>
-                        <th width="12%" class="text-right border-right-light">Credit (₹)</th>
-                        <th width="14%" class="text-right">Balance (₹)</th>
+                        <th width="11%" class="text-right border-right-light">Debit (₹)</th>
+                        <th width="11%" class="text-right border-right-light">Credit (₹)</th>
+                        <th width="13%" class="text-right">Balance (₹)</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr class="row-opening">
                         <td class="text-center">{{ $startDate ? date('d-M-y', strtotime($startDate)) : '-' }}</td>
                         <td class="text-center"><span class="type-pill">OPENING</span></td>
+                        <td>-</td>
                         <td>-</td>
                         <td>Opening Balance Brought Forward</td>
                         <td class="text-right">{{ $grpOpenBal < 0 ? '₹ ' . number_format(abs($grpOpenBal), 2) : '-' }}</td>
@@ -513,6 +515,7 @@
                             <td class="text-center">{{ $tx->date ? date('d-M-y', strtotime($tx->date)) : '-' }}</td>
                             <td class="text-center"><span class="type-pill">{{ $tx->type ?? 'Tx' }}</span></td>
                             <td class="font-bold">{{ $tx->ref ?? '-' }}</td>
+                            <td>{{ $tx->bill_no ?? '-' }}</td>
                             <td>{{ $tx->description ?? '-' }}</td>
                             <td class="text-right color-debit">
                                 {{ $tx->debit > 0 ? '₹ ' . number_format($tx->debit, 2) : '-' }}
@@ -527,13 +530,13 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center" style="padding: 15px; color: #0d5f2c;">No transactions recorded in this period.</td>
+                            <td colspan="8" class="text-center" style="padding: 15px; color: #0d5f2c;">No transactions recorded in this period.</td>
                         </tr>
                     @endforelse
                 </tbody>
                 <tfoot>
                     <tr class="totals-row">
-                        <td colspan="4" class="text-right text-uppercase font-bold">Total Activity:</td>
+                        <td colspan="5" class="text-right text-uppercase font-bold">Total Activity:</td>
                         <td class="text-right color-debit">₹ {{ number_format($grpTotalDebit, 2) }}</td>
                         <td class="text-right color-credit">₹ {{ number_format($grpTotalCredit, 2) }}</td>
                         <td class="text-right font-bold" style="color: #05421c;">
@@ -578,12 +581,13 @@
             <thead>
                 <tr>
                     <th width="9%" class="text-center border-right-light">Date</th>
-                    <th width="12%" class="text-center border-right-light">Type</th>
-                    <th width="14%" class="text-left border-right-light">Ref / Voucher</th>
+                    <th width="11%" class="text-center border-right-light">Type</th>
+                    <th width="12%" class="text-left border-right-light">Ref / Voucher</th>
+                    <th width="11%" class="text-left border-right-light">Bill No.</th>
                     <th class="text-left border-right-light">Particulars / Description</th>
-                    <th width="12%" class="text-right border-right-light">Debit (Dr)</th>
-                    <th width="12%" class="text-right border-right-light">Credit (Cr)</th>
-                    <th width="14%" class="text-right">Balance</th>
+                    <th width="11%" class="text-right border-right-light">Debit (Dr)</th>
+                    <th width="11%" class="text-right border-right-light">Credit (Cr)</th>
+                    <th width="13%" class="text-right">Balance</th>
                 </tr>
             </thead>
             <tbody>
@@ -591,6 +595,7 @@
                 <tr class="row-opening">
                     <td class="text-center">{{ $startDate ? date('d-M-y', strtotime($startDate)) : '-' }}</td>
                     <td class="text-center"><span class="type-pill">OPENING</span></td>
+                    <td>-</td>
                     <td>-</td>
                     <td>Opening Balance Brought Forward</td>
                     <td class="text-right">{{ $openingBalAmount < 0 ? '₹ ' . number_format(abs($openingBalAmount), 2) : '-' }}</td>
@@ -607,6 +612,7 @@
                         <td class="text-center">{{ $tx->date ? date('d-M-y', strtotime($tx->date)) : '-' }}</td>
                         <td class="text-center"><span class="type-pill">{{ $tx->type ?? 'Tx' }}</span></td>
                         <td class="font-bold">{{ $tx->ref ?? '-' }}</td>
+                        <td>{{ $tx->bill_no ?? '-' }}</td>
                         <td>{{ $tx->description ?? '-' }}</td>
                         <td class="text-right color-debit">
                             {{ $tx->debit > 0 ? '₹ ' . number_format($tx->debit, 2) : '-' }}
@@ -621,13 +627,13 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-center" style="padding: 18px; color: #0d5f2c;">No transaction entries found for the selected period.</td>
+                        <td colspan="8" class="text-center" style="padding: 18px; color: #0d5f2c;">No transaction entries found for the selected period.</td>
                     </tr>
                 @endforelse
             </tbody>
             <tfoot>
                 <tr class="totals-row">
-                    <td colspan="4" class="text-right text-uppercase font-bold">Grand Totals:</td>
+                    <td colspan="5" class="text-right text-uppercase font-bold">Grand Totals:</td>
                     <td class="text-right color-debit">₹ {{ number_format($totalDebit, 2) }}</td>
                     <td class="text-right color-credit">₹ {{ number_format($totalCredit, 2) }}</td>
                     <td class="text-right font-bold" style="color: #05421c;">

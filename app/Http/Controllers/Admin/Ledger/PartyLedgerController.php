@@ -84,13 +84,13 @@ class PartyLedgerController extends Controller
         $sheet->setTitle('Party Ledger');
 
         // Header Title
-        $sheet->mergeCells('A1:G1');
+        $sheet->mergeCells('A1:H1');
         $sheet->setCellValue('A1', 'SNAPKID - ' . ($party->name ?? 'Party') . ' Account Ledger');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setARGB('FF1E3C72');
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         // Subtitle
-        $sheet->mergeCells('A2:G2');
+        $sheet->mergeCells('A2:H2');
         $periodText = 'All Dates';
         if ($data['startDate'] && $data['endDate']) {
             $periodText = $data['startDate'] . ' to ' . $data['endDate'];
@@ -105,17 +105,17 @@ class PartyLedgerController extends Controller
 
         // Balance Summary row
         $sheet->setCellValue('A3', 'Opening Balance: ₹ ' . number_format(abs($openingBalAmount), 2) . ' ' . ($openingBalAmount >= 0 ? 'CR' : 'DR'));
-        $sheet->setCellValue('E3', 'Current Balance: ₹ ' . number_format(abs($party->balance), 2) . ' ' . ($party->balance >= 0 ? 'CR' : 'DR'));
-        $sheet->getStyle('A3:G3')->getFont()->setBold(true);
+        $sheet->setCellValue('F3', 'Current Balance: ₹ ' . number_format(abs($party->balance), 2) . ' ' . ($party->balance >= 0 ? 'CR' : 'DR'));
+        $sheet->getStyle('A3:H3')->getFont()->setBold(true);
 
         // Table Headers
-        $headers = ['Date', 'Type', 'Ref / Voucher No', 'Particulars', 'Debit (₹)', 'Credit (₹)', 'Balance (₹)'];
-        $cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+        $headers = ['Date', 'Type', 'Ref / Voucher No', 'Bill No', 'Particulars', 'Debit (₹)', 'Credit (₹)', 'Balance (₹)'];
+        $cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
         foreach ($headers as $idx => $h) {
             $sheet->setCellValue($cols[$idx] . '5', $h);
         }
 
-        $headerRange = 'A5:G5';
+        $headerRange = 'A5:H5';
         $sheet->getStyle($headerRange)->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
         $sheet->getStyle($headerRange)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF1E3C72');
         $sheet->getStyle($headerRange)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
@@ -128,11 +128,12 @@ class PartyLedgerController extends Controller
         $sheet->setCellValue('A' . $row, $data['startDate'] ? \Carbon\Carbon::parse($data['startDate'])->format('d M Y') : '-');
         $sheet->setCellValue('B' . $row, 'Opening');
         $sheet->setCellValue('C' . $row, '-');
-        $sheet->setCellValue('D' . $row, 'Opening Balance B/F');
-        $sheet->setCellValue('E' . $row, $openingBalAmount < 0 ? abs($openingBalAmount) : 0);
-        $sheet->setCellValue('F' . $row, $openingBalAmount >= 0 ? abs($openingBalAmount) : 0);
-        $sheet->setCellValue('G' . $row, number_format(abs($openingBalAmount), 2) . ' ' . ($openingBalAmount >= 0 ? 'CR' : 'DR'));
-        $sheet->getStyle('A' . $row . ':G' . $row)->getFont()->setItalic(true);
+        $sheet->setCellValue('D' . $row, '-');
+        $sheet->setCellValue('E' . $row, 'Opening Balance B/F');
+        $sheet->setCellValue('F' . $row, $openingBalAmount < 0 ? abs($openingBalAmount) : 0);
+        $sheet->setCellValue('G' . $row, $openingBalAmount >= 0 ? abs($openingBalAmount) : 0);
+        $sheet->setCellValue('H' . $row, number_format(abs($openingBalAmount), 2) . ' ' . ($openingBalAmount >= 0 ? 'CR' : 'DR'));
+        $sheet->getStyle('A' . $row . ':H' . $row)->getFont()->setItalic(true);
         $row++;
 
         foreach ($transactions as $tx) {
@@ -146,26 +147,27 @@ class PartyLedgerController extends Controller
             $sheet->setCellValue('A' . $row, $tx->date ? \Carbon\Carbon::parse($tx->date)->format('d M Y') : '-');
             $sheet->setCellValue('B' . $row, $tx->type ?? '-');
             $sheet->setCellValue('C' . $row, $tx->ref ?? '-');
-            $sheet->setCellValue('D' . $row, $tx->description ?? '-');
-            $sheet->setCellValue('E' . $row, $debit);
-            $sheet->setCellValue('F' . $row, $credit);
-            $sheet->setCellValue('G' . $row, number_format(abs($bal), 2) . ' ' . ($bal >= 0 ? 'CR' : 'DR'));
+            $sheet->setCellValue('D' . $row, $tx->bill_no ?? '-');
+            $sheet->setCellValue('E' . $row, $tx->description ?? '-');
+            $sheet->setCellValue('F' . $row, $debit);
+            $sheet->setCellValue('G' . $row, $credit);
+            $sheet->setCellValue('H' . $row, number_format(abs($bal), 2) . ' ' . ($bal >= 0 ? 'CR' : 'DR'));
 
             $row++;
         }
 
         // Total Row
         $sheet->setCellValue('A' . $row, 'Total');
-        $sheet->setCellValue('E' . $row, $totalDebit);
-        $sheet->setCellValue('F' . $row, $totalCredit);
-        $sheet->setCellValue('G' . $row, number_format(abs($party->balance), 2) . ' ' . ($party->balance >= 0 ? 'CR' : 'DR'));
-        $sheet->getStyle('A' . $row . ':G' . $row)->getFont()->setBold(true);
-        $sheet->getStyle('A' . $row . ':G' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
+        $sheet->setCellValue('F' . $row, $totalDebit);
+        $sheet->setCellValue('G' . $row, $totalCredit);
+        $sheet->setCellValue('H' . $row, number_format(abs($party->balance), 2) . ' ' . ($party->balance >= 0 ? 'CR' : 'DR'));
+        $sheet->getStyle('A' . $row . ':H' . $row)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $row . ':H' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
 
         // Number formats
-        $sheet->getStyle('E6:F' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->getStyle('F6:G' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
 
-        foreach (range('A', 'G') as $col) {
+        foreach (range('A', 'H') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 

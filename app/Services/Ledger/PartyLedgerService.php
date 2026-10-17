@@ -475,6 +475,7 @@ class PartyLedgerService
                         'created_at' => $r->created_at,
                         'type' => 'Fabric Purchase',
                         'ref' => 'Receipt #' . $r->sku,
+                        'bill_no' => $r->bill_no ?: '-',
                         'debit' => 0,
                         'credit' => (float) $r->total_amount,
                         'description' => 'Fabric Inward (Shipment: ' . ($r->shipment_id ?? '-') . ')',
@@ -484,7 +485,7 @@ class PartyLedgerService
                 }
 
                 // 7. Vendor Specific: Returns to Vendor (Purchase Returns) - DEBIT
-                $pReturns = FabricReturn::where('vendor_id', $id)
+                $pReturns = FabricReturn::with('receipt')->where('vendor_id', $id)
                     ->orWhereHas('receipt', function ($q) use ($id) {
                         $q->where('vendor_id', $id);
                     })
@@ -496,6 +497,7 @@ class PartyLedgerService
                         'created_at' => $pr->created_at,
                         'type' => 'Fabric Return',
                         'ref' => 'Return #' . ($pr->return_number ?? $pr->id),
+                        'bill_no' => $pr->receipt->bill_no ?? '-',
                         'debit' => (float) $pr->total_amount,
                         'credit' => 0,
                         'description' => 'Fabric Return to Vendor',
@@ -702,6 +704,7 @@ class PartyLedgerService
             } else {
                 if ($endDate && $dateTx > $endDate) continue;
                 $balance += ($tx->credit - $tx->debit);
+                $tx->bill_no = $tx->bill_no ?? '-';
                 $tx->running_balance = $balance;
                 $finalTransactions->push($tx);
             }
@@ -772,7 +775,8 @@ class PartyLedgerService
             if ($refNo && trim($refNo) !== '') {
                 $refSearch = trim($refNo);
                 $txRef = (string)($tx->ref ?? '');
-                if (stripos($txRef, $refSearch) === false && stripos((string)($tx->description ?? ''), $refSearch) === false) {
+                $txBill = (string)($tx->bill_no ?? '');
+                if (stripos($txRef, $refSearch) === false && stripos((string)($tx->description ?? ''), $refSearch) === false && stripos($txBill, $refSearch) === false) {
                     return false;
                 }
             }
