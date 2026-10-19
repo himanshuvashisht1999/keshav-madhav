@@ -3537,6 +3537,16 @@ class AgentOrderController extends Controller
             $row++;
         }
 
+        // Total row in Excel
+        $totalGrandTotal = $dispatches->sum('grand_total');
+        $sheet->setCellValue('A' . $row, 'TOTAL');
+        $sheet->mergeCells('A' . $row . ':F' . $row);
+        $sheet->setCellValue('G' . $row, $totalGrandTotal);
+        $sheet->setCellValue('H' . $row, $dispatches->count() . ' dispatches');
+        $sheet->getStyle('A' . $row . ':J' . $row)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $row . ':J' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('f1f5f9');
+        $sheet->getStyle('G' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+
         // Auto-size columns
         foreach ($cols as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
@@ -3558,9 +3568,13 @@ class AgentOrderController extends Controller
     {
         $query = $this->buildDispatchesQuery($request);
 
-        $totalGrandTotal = $query->sum('grand_total');
+        $totalGrandTotal = (float) (clone $query)->sum('grand_total');
 
         $dispatches = $query->paginate(20)->withQueryString();
+        $totalDispatchesCount = $dispatches->total();
+        $pageGrandTotal = (float) $dispatches->sum('grand_total');
+        $avgGrandTotal = $totalDispatchesCount > 0 ? ($totalGrandTotal / $totalDispatchesCount) : 0;
+
         $shops = DB::table('master_customers')
             ->where('status', '!=', 3)
             ->orderBy('name')
@@ -3568,7 +3582,16 @@ class AgentOrderController extends Controller
         $vendors = DB::table('vendors')->where('status', '!=', 3)->orderBy('name')->select('id', 'name')->get();
         $agents = \App\Models\SalesAgent::where('status', 1)->orderBy('name')->select('id', 'name')->get();
 
-        return view('admin.agent_orders.dispatches.index', compact('dispatches', 'shops', 'vendors', 'agents', 'totalGrandTotal'));
+        return view('admin.agent_orders.dispatches.index', compact(
+            'dispatches',
+            'shops',
+            'vendors',
+            'agents',
+            'totalGrandTotal',
+            'totalDispatchesCount',
+            'pageGrandTotal',
+            'avgGrandTotal'
+        ));
     }
 
     public function dispatchShow($id)

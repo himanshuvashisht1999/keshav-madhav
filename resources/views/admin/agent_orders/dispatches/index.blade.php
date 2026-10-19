@@ -110,6 +110,85 @@
             </form>
         </div>
 
+        <!-- Totals Summary Cards (Filtered) -->
+        <div class="row mb-2">
+            <div class="col-lg-3 col-md-6 col-sm-6 mb-1">
+                <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Total Dispatches</div>
+                            <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-green-primary); line-height: 1.2;">
+                                {{ number_format($totalDispatchesCount ?? 0) }}
+                            </div>
+                        </div>
+                    </div>
+                    <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">
+                        Dispatches
+                    </span>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6 col-sm-6 mb-1">
+                <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Page Sub-Total</div>
+                            <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-green-primary); line-height: 1.2;">
+                                ₹ {{ number_format($pageGrandTotal ?? 0, 2) }}
+                            </div>
+                        </div>
+                    </div>
+                    <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">
+                        Page
+                    </span>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6 col-sm-6 mb-1">
+                <div class="erp-card erp-metric-card-left-yellow py-2 px-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-yellow-bg); color: var(--erp-yellow-dark); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg); border: 1px solid var(--erp-yellow-badge-border);">
+                            <i class="fas fa-rupee-sign"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Grand Total (Filtered)</div>
+                            <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-text-heading); line-height: 1.2;">
+                                ₹ {{ number_format($totalGrandTotal ?? 0, 2) }}
+                            </div>
+                        </div>
+                    </div>
+                    <span class="badge erp-badge-yellow" style="padding: 4px 9px;">
+                        Filtered
+                    </span>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6 col-sm-6 mb-1">
+                <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Avg Dispatch Value</div>
+                            <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-text-heading); line-height: 1.2;">
+                                ₹ {{ number_format($avgGrandTotal ?? 0, 2) }}
+                            </div>
+                        </div>
+                    </div>
+                    <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">
+                        Average
+                    </span>
+                </div>
+            </div>
+        </div>
+
         <!-- Table Card -->
         <div class="erp-card p-0">
             <div class="p-2 border-bottom bg-light d-flex justify-content-between align-items-center">
@@ -143,17 +222,7 @@
                             <th>Agent</th>
                             <th class="text-right">Grand total</th>
                             <th>Bill no</th>
-                            <th style="min-width: 110px;">
-                                @php
-                                    $currSort = request('sort_order', 'desc');
-                                    $toggleSort = $currSort === 'desc' ? 'asc' : 'desc';
-                                    $sortUrl = request()->fullUrlWithQuery(['sort_order' => $toggleSort]);
-                                @endphp
-                                <a href="{{ $sortUrl }}" class="text-dark d-flex align-items-center justify-content-between text-decoration-none" title="Sort {{ strtoupper($toggleSort) }} by Date">
-                                    <span>Date</span>
-                                    <i class="fas fa-sort-{{ $currSort === 'desc' ? 'down text-primary' : 'up text-primary' }} ml-1"></i>
-                                </a>
-                            </th>
+                            <th>Date</th>
                             <th>Remark</th>
                             <th class="text-right" style="width: 160px;">Actions</th>
                         </tr>
@@ -308,8 +377,13 @@
                 </table>
             </div>
             @if($dispatches->hasPages())
-                <div class="p-2 border-top bg-white">
-                    {{ $dispatches->appends(request()->query())->links() }}
+                <div class="d-flex justify-content-between align-items-center p-2 border-top bg-white flex-wrap" style="font-size: var(--erp-font-sm);">
+                    <div class="text-muted font-weight-bold">
+                        Showing {{ $dispatches->firstItem() ?? 0 }} to {{ $dispatches->lastItem() ?? 0 }} of {{ number_format($dispatches->total()) }} dispatches
+                    </div>
+                    <div>
+                        {{ $dispatches->appends(request()->query())->links() }}
+                    </div>
                 </div>
             @endif
         </div>
