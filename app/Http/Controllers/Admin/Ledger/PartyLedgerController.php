@@ -350,9 +350,14 @@ class PartyLedgerController extends Controller
 
         $filteredParties = $parties;
         if (!empty($selectedParty)) {
-            $filteredParties = $parties->filter(function ($p) use ($selectedParty) {
+            $matched = $parties->filter(function ($p) use ($selectedParty) {
                 return ($p->party_type . '_' . $p->id) === $selectedParty;
             });
+            if ($matched->isNotEmpty()) {
+                $filteredParties = $matched;
+            } else {
+                $selectedParty = null;
+            }
         }
 
         $allAvailableTypes = collect();

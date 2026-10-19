@@ -90,7 +90,7 @@
                         <input type="text" name="order_id" class="form-control erp-input" value="{{ request('order_id') }}" placeholder="Order ID..." autocomplete="off">
                     </div>
                     <div class="col-md-1 mb-1">
-                        <label class="erp-filter-label"><i class="fas fa-sort mr-1"></i> Sort ID</label>
+                        <label class="erp-filter-label"><i class="fas fa-sort mr-1"></i> Sort Date</label>
                         <select name="sort_order" class="form-control select2 erp-input" style="width: 100%;">
                             <option value="desc" {{ request('sort_order', 'desc') === 'desc' ? 'selected' : '' }}>DESC</option>
                             <option value="asc" {{ request('sort_order') === 'asc' ? 'selected' : '' }}>ASC</option>
@@ -136,24 +136,24 @@
                 <table class="table erp-table table-bordered table-hover mb-0">
                     <thead>
                         <tr>
-                            <th style="width: 120px;">
-                                @php
-                                    $currSort = request('sort_order', 'desc');
-                                    $toggleSort = $currSort === 'desc' ? 'asc' : 'desc';
-                                    $sortUrl = request()->fullUrlWithQuery(['sort_order' => $toggleSort]);
-                                @endphp
-                                <a href="{{ $sortUrl }}" class="text-dark d-flex align-items-center justify-content-between text-decoration-none" title="Sort {{ strtoupper($toggleSort) }} by ID">
-                                    <span>Dispatch ID</span>
-                                    <i class="fas fa-sort-{{ $currSort === 'desc' ? 'down text-primary' : 'up text-primary' }} ml-1"></i>
-                                </a>
-                            </th>
+                            <th style="width: 120px;">Dispatch ID</th>
                             <th>Order id</th>
                             <th>Source</th>
                             <th>Party name</th>
                             <th>Agent</th>
                             <th class="text-right">Grand total</th>
                             <th>Bill no</th>
-                            <th>Date</th>
+                            <th style="min-width: 110px;">
+                                @php
+                                    $currSort = request('sort_order', 'desc');
+                                    $toggleSort = $currSort === 'desc' ? 'asc' : 'desc';
+                                    $sortUrl = request()->fullUrlWithQuery(['sort_order' => $toggleSort]);
+                                @endphp
+                                <a href="{{ $sortUrl }}" class="text-dark d-flex align-items-center justify-content-between text-decoration-none" title="Sort {{ strtoupper($toggleSort) }} by Date">
+                                    <span>Date</span>
+                                    <i class="fas fa-sort-{{ $currSort === 'desc' ? 'down text-primary' : 'up text-primary' }} ml-1"></i>
+                                </a>
+                            </th>
                             <th>Remark</th>
                             <th class="text-right" style="width: 160px;">Actions</th>
                         </tr>

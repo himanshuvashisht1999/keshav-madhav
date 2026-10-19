@@ -13,7 +13,7 @@
             @endif
         </div>
         <div class="erp-header-actions">
-            <a href="{{ route('admin.ledger.party.detailedReport', request()->all()) }}" target="_blank" class="btn-erp btn-erp-primary" title="Detailed Ledger Report for Filtered Parties">
+            <a href="{{ route('admin.ledger.party.detailedReport', request()->all()) }}" target="_blank" class="btn-erp btn-erp-primary" id="detailedReportBtn" title="Detailed Ledger Report for Filtered Parties">
                 <i class="fas fa-file-invoice-dollar mr-1"></i> Detailed Ledger Report
             </a>
             <a href="{{ route('admin.ledger.party.export-list-pdf', request()->all()) }}" class="btn-erp btn-erp-outline" title="Export to PDF">
@@ -144,7 +144,7 @@
 
                 <div class="col-md-2 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-tags mr-1"></i> Master Type</label>
-                    <select name="type_id" class="form-control select2 erp-input">
+                    <select name="type_id" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="">-- ALL TYPES --</option>
                         <option value="sales_agent" {{ request('type_id') === 'sales_agent' ? 'selected' : '' }}>Sales Agent</option>
                         @foreach($masters as $m)
@@ -165,7 +165,7 @@
 
                 <div class="col-md-2 col-sm-3 col-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-exchange-alt mr-1"></i> Balance Type</label>
-                    <select name="balance_type" class="form-control erp-input">
+                    <select name="balance_type" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="">ALL BALANCE</option>
                         <option value="credit" {{ request('balance_type') == 'credit' ? 'selected' : '' }}>Credit (CR)</option>
                         <option value="debit" {{ request('balance_type') == 'debit' ? 'selected' : '' }}>Debit (DR)</option>
@@ -277,10 +277,49 @@
         </div>
         @endif
     </div>
-</div>
+@endsection
+
+@section('scripts')
 <script>
-    // From cannot be after To (and the other way round)
-    document.getElementById('ledger_from').addEventListener('change', function () { document.getElementById('ledger_to').min = this.value; });
-    document.getElementById('ledger_to').addEventListener('change', function () { document.getElementById('ledger_from').max = this.value; });
+    $(document).ready(function() {
+        if ($.fn.select2) {
+            $('.select2').each(function() {
+                if ($(this).data('select2')) {
+                    $(this).select2('destroy');
+                }
+                $(this).select2({
+                    theme: 'bootstrap4',
+                    width: '100%'
+                });
+            });
+        }
+
+        // From cannot be after To (and the other way round)
+        var fromEl = document.getElementById('ledger_from');
+        var toEl = document.getElementById('ledger_to');
+        if (fromEl && toEl) {
+            fromEl.addEventListener('change', function () { toEl.min = this.value; });
+            toEl.addEventListener('change', function () { fromEl.max = this.value; });
+        }
+
+        // Update Detailed Ledger Report button URL when Master Type changes
+        const masterTypeSelect = document.querySelector('select[name="type_id"]');
+        if (masterTypeSelect) {
+            const updateDetailedLink = function () {
+                const btn = document.getElementById('detailedReportBtn');
+                if (btn) {
+                    const url = new URL(btn.href, window.location.origin);
+                    if (masterTypeSelect.value) {
+                        url.searchParams.set('type_id', masterTypeSelect.value);
+                    } else {
+                        url.searchParams.delete('type_id');
+                    }
+                    btn.href = url.toString();
+                }
+            };
+            masterTypeSelect.addEventListener('change', updateDetailedLink);
+            $(masterTypeSelect).on('change', updateDetailedLink);
+        }
+    });
 </script>
 @endsection

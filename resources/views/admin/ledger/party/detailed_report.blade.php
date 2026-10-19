@@ -8,8 +8,13 @@
             <i class="fas fa-file-invoice-dollar text-primary"></i> 
             Detailed Ledger Report
             @if(!empty($typeId))
+                @php
+                    $displayTypeName = $typeId === 'sales_agent' 
+                        ? 'Sales Agent' 
+                        : (isset($masters) && $masters->firstWhere('id', $typeId) ? $masters->firstWhere('id', $typeId)->name : str_replace('_', ' ', $typeId));
+                @endphp
                 <span class="badge ml-2" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs);">
-                    {{ strtoupper(str_replace('_', ' ', $typeId)) }}
+                    {{ strtoupper($displayTypeName) }}
                 </span>
             @endif
             <span class="badge ml-1" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: var(--erp-font-xs);">
@@ -135,14 +140,24 @@
     <!-- Compact ERP Filter Bar -->
     <div class="erp-filter-bar mb-2">
         <form action="{{ route('admin.ledger.party.detailedReport') }}" method="GET" class="m-0">
-            <!-- Hidden inputs to retain origin list filters -->
-            <input type="hidden" name="type_id" value="{{ request('type_id') }}">
             <input type="hidden" name="search" value="{{ request('search') }}">
             <input type="hidden" name="min_closing" value="{{ request('min_closing') }}">
             <input type="hidden" name="max_closing" value="{{ request('max_closing') }}">
             <input type="hidden" name="balance_type" value="{{ request('balance_type') }}">
 
             <div class="row align-items-end">
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-tags mr-1"></i> Master Type</label>
+                    <select name="type_id" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">-- ALL TYPES --</option>
+                        <option value="sales_agent" {{ request('type_id') === 'sales_agent' ? 'selected' : '' }}>Sales Agent</option>
+                        @if(isset($masters))
+                            @foreach($masters as $m)
+                                <option value="{{ $m->id }}" {{ (string)request('type_id') === (string)$m->id ? 'selected' : '' }}>{{ $m->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
                 <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> Start Date</label>
                     <input type="date" name="start_date" value="{{ request('start_date') }}" class="form-control erp-input">
@@ -153,7 +168,7 @@
                 </div>
                 <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-tag mr-1"></i> Type</label>
-                    <select name="transaction_type" class="form-control erp-input">
+                    <select name="transaction_type" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="">-- ALL TYPES --</option>
                         @if(isset($availableTypes) && count($availableTypes) > 0)
                             @foreach($availableTypes as $t)
@@ -170,7 +185,7 @@
                 </div>
                 <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-filter mr-1"></i> Adjustment</label>
-                    <select name="adjustment_type" class="form-control erp-input">
+                    <select name="adjustment_type" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="">-- ALL --</option>
                         <option value="payment" {{ request('adjustment_type') === 'payment' ? 'selected' : '' }}>Payment (DR)</option>
                         <option value="receipt" {{ request('adjustment_type') === 'receipt' ? 'selected' : '' }}>Receipt (CR)</option>
@@ -182,7 +197,7 @@
                 </div>
                 <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-paperclip mr-1"></i> Slip</label>
-                    <select name="has_slip" class="form-control erp-input">
+                    <select name="has_slip" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="">-- ALL --</option>
                         <option value="yes" {{ request('has_slip') === 'yes' ? 'selected' : '' }}>With Slip</option>
                         <option value="no" {{ request('has_slip') === 'no' ? 'selected' : '' }}>Without Slip</option>
@@ -191,11 +206,11 @@
 
                 <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-user-tag mr-1"></i> Party Selection</label>
-                    <select name="selected_party" class="form-control erp-input" onchange="this.form.submit()">
+                    <select name="selected_party" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="">All Filtered Parties ({{ $parties->count() }})</option>
                         @foreach($parties as $p)
                             @php $pKey = $p->party_type . '_' . $p->id; @endphp
-                            <option value="{{ $pKey }}" {{ request('selected_party') === $pKey ? 'selected' : '' }}>
+                            <option value="{{ $pKey }}" {{ (string)($selectedParty ?? request('selected_party')) === (string)$pKey ? 'selected' : '' }}>
                                 {{ $p->name }} ({{ ucfirst($p->party_type) }})
                             </option>
                         @endforeach
@@ -204,7 +219,7 @@
 
                 <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-columns mr-1"></i> View Mode</label>
-                    <select name="view_mode" class="form-control erp-input" onchange="this.form.submit()">
+                    <select name="view_mode" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="mix" {{ request('view_mode', 'mix') === 'mix' ? 'selected' : '' }}>Mix (Consolidated)</option>
                         <option value="party_wise" {{ request('view_mode') === 'party_wise' ? 'selected' : '' }}>Party-wise (Grouped)</option>
                     </select>
@@ -565,6 +580,44 @@
 @section('scripts')
 <script>
     $(document).ready(function() {
+        // Ensure all Select2 elements are initialized cleanly with bootstrap4 theme
+        if ($.fn.select2) {
+            $('.select2').each(function() {
+                if ($(this).data('select2')) {
+                    $(this).select2('destroy');
+                }
+                $(this).select2({
+                    theme: 'bootstrap4',
+                    width: '100%'
+                });
+            });
+        }
+
+        // Auto-submit when Master Type, Party Selection, or View Mode change
+        $('select[name="type_id"]').on('change', function() {
+            var form = this.form || $(this).closest('form')[0];
+            if (form) {
+                if (form.selected_party) {
+                    $(form.selected_party).val('');
+                }
+                form.submit();
+            }
+        });
+
+        $('select[name="selected_party"]').on('change', function() {
+            var form = this.form || $(this).closest('form')[0];
+            if (form) {
+                form.submit();
+            }
+        });
+
+        $('select[name="view_mode"]').on('change', function() {
+            var form = this.form || $(this).closest('form')[0];
+            if (form) {
+                form.submit();
+            }
+        });
+
         let currentRotation = 0;
         let isZoomed = false;
 

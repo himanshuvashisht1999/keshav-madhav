@@ -119,7 +119,7 @@
                 <div style="font-size: 8.5px; color: #555; margin-top: 2px;">
                     Detailed Financial Ledger Report
                     @if(!empty($typeId))
-                        - {{ strtoupper(str_replace('_', ' ', $typeId)) }}
+                        - {{ strtoupper($typeId === 'sales_agent' ? 'Sales Agent' : (isset($masters) && $masters->firstWhere('id', $typeId) ? $masters->firstWhere('id', $typeId)->name : str_replace('_', ' ', $typeId))) }}
                     @endif
                 </div>
             </td>

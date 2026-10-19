@@ -119,7 +119,7 @@
                 </div>
                 <div class="col-lg-2 col-md-4 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-tag mr-1"></i> Type</label>
-                    <select name="transaction_type" class="form-control erp-input">
+                    <select name="transaction_type" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="">-- ALL TYPES --</option>
                         @if(isset($availableTypes) && count($availableTypes) > 0)
                             @foreach($availableTypes as $t)
@@ -136,7 +136,7 @@
                 </div>
                 <div class="col-lg-2 col-md-4 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-filter mr-1"></i> Adjustment</label>
-                    <select name="adjustment_type" class="form-control erp-input">
+                    <select name="adjustment_type" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="">-- ALL --</option>
                         <option value="payment" {{ request('adjustment_type') === 'payment' ? 'selected' : '' }}>Payment (DR)</option>
                         <option value="receipt" {{ request('adjustment_type') === 'receipt' ? 'selected' : '' }}>Receipt (CR)</option>
@@ -148,7 +148,7 @@
                 </div>
                 <div class="col-lg-2 col-md-4 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-paperclip mr-1"></i> Slip</label>
-                    <select name="has_slip" class="form-control erp-input">
+                    <select name="has_slip" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="">-- ALL --</option>
                         <option value="yes" {{ request('has_slip') === 'yes' ? 'selected' : '' }}>With Slip</option>
                         <option value="no" {{ request('has_slip') === 'no' ? 'selected' : '' }}>Without Slip</option>
@@ -158,7 +158,7 @@
                 @if($type === 'sales_agent' && isset($shops))
                     <div class="col-lg-3 col-md-4 col-sm-6 mb-1">
                         <label class="erp-filter-label"><i class="fas fa-store mr-1"></i> Customer / Shop</label>
-                        <select name="customer_id" class="form-control erp-input" onchange="this.form.submit()">
+                        <select name="customer_id" class="form-control select2 erp-input" style="width: 100%;">
                             <option value="">All Customers (Mix)</option>
                             @foreach($shops as $shop)
                                 <option value="{{ $shop->id }}" {{ request('customer_id') == $shop->id ? 'selected' : '' }}>{{ $shop->name }}</option>
@@ -168,7 +168,7 @@
                     @if(!request('customer_id'))
                     <div class="col-lg-2 col-md-4 col-sm-6 mb-1">
                         <label class="erp-filter-label"><i class="fas fa-columns mr-1"></i> View Mode</label>
-                        <select name="view_mode" class="form-control erp-input" onchange="this.form.submit()">
+                        <select name="view_mode" class="form-control select2 erp-input" style="width: 100%;">
                             <option value="mix" {{ request('view_mode', 'mix') === 'mix' ? 'selected' : '' }}>Mix (Consolidated)</option>
                             <option value="party_wise" {{ request('view_mode') === 'party_wise' ? 'selected' : '' }}>Party-wise (Grouped)</option>
                         </select>
@@ -475,6 +475,25 @@
 @section('scripts')
 <script>
     $(document).ready(function() {
+        if ($.fn.select2) {
+            $('.select2').each(function() {
+                if ($(this).data('select2')) {
+                    $(this).select2('destroy');
+                }
+                $(this).select2({
+                    theme: 'bootstrap4',
+                    width: '100%'
+                });
+            });
+        }
+
+        $('select[name="customer_id"], select[name="view_mode"]').on('change', function() {
+            var form = this.form || $(this).closest('form')[0];
+            if (form) {
+                form.submit();
+            }
+        });
+
         let currentRotation = 0;
         let isZoomed = false;
 

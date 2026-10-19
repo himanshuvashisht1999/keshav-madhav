@@ -3459,8 +3459,8 @@ class AgentOrderController extends Controller
 
         $finalQuery = DB::table(DB::raw("({$unionQuery->toSql()}) as combined"))
             ->mergeBindings($unionQuery)
-            ->orderBy('id', $sortOrder)
-            ->orderBy('created_at', $sortOrder);
+            ->orderBy('dispatch_date', $sortOrder)
+            ->orderBy('id', $sortOrder);
 
         return $finalQuery;
     }
