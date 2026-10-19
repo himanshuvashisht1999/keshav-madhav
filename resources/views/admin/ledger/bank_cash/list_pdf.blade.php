@@ -84,6 +84,17 @@
             </td>
             <td style="vertical-align: middle; text-align: right;">
                 <div class="report-title">Bank & Cash Accounts</div>
+                <div class="meta-info">
+                    Period:
+                    @if($startDate && $endDate) {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} to {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+                    @elseif($startDate) From {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }}
+                    @elseif($endDate) Up to {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+                    @else All dates
+                    @endif
+                    @if(request('min_closing')) | Min Closing: ₹ {{ number_format((float)request('min_closing'), 2) }} @endif
+                    @if(request('max_closing')) | Max Closing: ₹ {{ number_format((float)request('max_closing'), 2) }} @endif
+                    @if(request('balance_type')) | Balance: {{ strtoupper(request('balance_type')) }} @endif
+                </div>
                 <div class="meta-info">Generated: {{ date('d M Y, h:i A') }}</div>
             </td>
         </tr>
@@ -92,43 +103,69 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 5%; text-align: center;">#</th>
-                <th style="width: 35%;">Account Name</th>
-                <th style="width: 20%;">Type</th>
-                <th style="width: 20%;">Phone</th>
-                <th style="width: 20%; text-align: right;">Current Balance (₹)</th>
+                <th style="width: 4%; text-align: center;">#</th>
+                <th style="width: 24%;">Account Name</th>
+                <th style="width: 11%;">Type</th>
+                <th style="width: 11%;">Account No / Code</th>
+                <th style="width: 13%; text-align: right;">Opening (₹)</th>
+                <th style="width: 12%; text-align: right;">Debit (₹)</th>
+                <th style="width: 12%; text-align: right;">Credit (₹)</th>
+                <th style="width: 13%; text-align: right;">Closing (₹)</th>
             </tr>
         </thead>
         <tbody>
-            @php $totalBalance = 0; @endphp
-            @forelse($parties as $idx => $p)
-                @php 
+            @php
+                $totalBalance = 0;
+                $totalOpening = 0;
+                $totalDebit = 0;
+                $totalCredit = 0;
+            @endphp
+            @forelse($parties->values() as $idx => $p)
+                @php
                     $bal = (float)$p->balance;
+                    $open = (float)($p->opening_balance ?? 0);
+                    $deb = (float)($p->period_debit ?? 0);
+                    $cred = (float)($p->period_credit ?? 0);
                     $totalBalance += $bal;
+                    $totalOpening += $open;
+                    $totalDebit += $deb;
+                    $totalCredit += $cred;
                 @endphp
                 <tr>
                     <td class="text-center">{{ $idx + 1 }}</td>
                     <td class="font-weight-bold">{{ $p->name ?? '-' }}</td>
-                    <td>{{ ucfirst($p->party_type ?? '-') }}</td>
-                    <td>{{ $p->phone ?? '-' }}</td>
+                    <td>{{ ucwords(str_replace('_', ' ', $p->party_type ?? '-')) }}</td>
+                    <td>{{ $p->account_number ?? $p->code ?? '-' }}</td>
+                    <td class="text-right {{ $open >= 0 ? 'badge-cr' : 'badge-dr' }}">
+                        ₹ {{ number_format(abs($open), 2) }} {{ $open >= 0 ? 'CR' : 'DR' }}
+                    </td>
+                    <td class="text-right">₹ {{ number_format($deb, 2) }}</td>
+                    <td class="text-right">₹ {{ number_format($cred, 2) }}</td>
                     <td class="text-right {{ $bal >= 0 ? 'badge-cr' : 'badge-dr' }}">
                         ₹ {{ number_format(abs($bal), 2) }} {{ $bal >= 0 ? 'CR' : 'DR' }}
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="text-center" style="padding: 15px;">No accounts found.</td>
+                    <td colspan="8" class="text-center" style="padding: 15px;">No accounts found.</td>
                 </tr>
             @endforelse
         </tbody>
+        @if($parties->count() > 0)
         <tfoot>
             <tr style="background-color: #f0f8e7; font-weight: bold;">
                 <td colspan="4" class="text-right font-weight-bold">Total:</td>
+                <td class="text-right font-weight-bold {{ $totalOpening >= 0 ? 'badge-cr' : 'badge-dr' }}">
+                    ₹ {{ number_format(abs($totalOpening), 2) }} {{ $totalOpening >= 0 ? 'CR' : 'DR' }}
+                </td>
+                <td class="text-right font-weight-bold">₹ {{ number_format($totalDebit, 2) }}</td>
+                <td class="text-right font-weight-bold">₹ {{ number_format($totalCredit, 2) }}</td>
                 <td class="text-right font-weight-bold {{ $totalBalance >= 0 ? 'badge-cr' : 'badge-dr' }}">
                     ₹ {{ number_format(abs($totalBalance), 2) }} {{ $totalBalance >= 0 ? 'CR' : 'DR' }}
                 </td>
             </tr>
         </tfoot>
+        @endif
     </table>
 
     <div class="footer">

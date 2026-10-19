@@ -18,7 +18,44 @@ class BankCashLedgerController extends Controller
     public function index(Request $request)
     {
         $data = $this->getBankCashListData($request);
-        return view('admin.ledger.bank_cash.index', $data);
+        $parties = $data['parties'];
+        $masters = $data['masters'];
+        $startDate = $data['startDate'];
+        $endDate = $data['endDate'];
+
+        $totalAccountsCount = $parties->count();
+        $totalCreditBalance = (float)$parties->where('balance', '>', 0)->sum('balance');
+        $totalDebitBalance = (float)abs($parties->where('balance', '<', 0)->sum('balance'));
+        $totalNetBalance = (float)$parties->sum('balance');
+        $totalOpening = (float)$parties->sum('opening_balance');
+        $totalPeriodDebit = (float)$parties->sum('period_debit');
+        $totalPeriodCredit = (float)$parties->sum('period_credit');
+
+        $perPage = (int) $request->query('per_page', 25);
+        if ($perPage < 1) $perPage = 25;
+        $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage('page');
+        $currentItems = $parties->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        $paginatedParties = new \Illuminate\Pagination\LengthAwarePaginator(
+            $currentItems,
+            $totalAccountsCount,
+            $perPage,
+            $currentPage,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+        );
+
+        return view('admin.ledger.bank_cash.index', [
+            'parties' => $paginatedParties,
+            'masters' => $masters,
+            'totalAccountsCount' => $totalAccountsCount,
+            'totalCreditBalance' => $totalCreditBalance,
+            'totalDebitBalance' => $totalDebitBalance,
+            'totalNetBalance' => $totalNetBalance,
+            'totalOpening' => $totalOpening,
+            'totalPeriodDebit' => $totalPeriodDebit,
+            'totalPeriodCredit' => $totalPeriodCredit,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ]);
     }
 
     public function show(Request $request, $type, $id)
@@ -149,8 +186,10 @@ class BankCashLedgerController extends Controller
         $pdf = \PDF::loadView('admin.ledger.bank_cash.list_pdf', [
             'parties' => $data['parties'],
             'search' => $search,
-            'typeId' => $typeId
-        ])->setPaper('a4', 'portrait');
+            'typeId' => $typeId,
+            'startDate' => $data['startDate'],
+            'endDate' => $data['endDate'],
+        ])->setPaper('a4', 'landscape');
 
         return $pdf->download('Bank_Cash_Ledger_List_' . date('Y-m-d_His') . '.pdf');
     }
@@ -159,57 +198,80 @@ class BankCashLedgerController extends Controller
     {
         $data = $this->getBankCashListData($request);
         $parties = $data['parties'];
+        $crdr = fn($v) => number_format(abs($v), 2) . ' ' . ($v >= 0 ? 'CR' : 'DR');
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Bank Cash Ledger Summary');
 
         // Header Title
-        $sheet->mergeCells('A1:E1');
+        $sheet->mergeCells('A1:H1');
         $sheet->setCellValue('A1', 'SNAPKID - Bank & Cash Accounts Ledger Summary');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setARGB('FF1E3C72');
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-        // Date
-        $sheet->mergeCells('A2:E2');
-        $sheet->setCellValue('A2', 'Generated on: ' . date('d M Y, h:i A'));
+        // Subtitle
+        $sheet->mergeCells('A2:H2');
+        $subtitle = 'Period: ' . $this->periodText($data['startDate'], $data['endDate']);
+        if ($request->query('min_closing')) $subtitle .= '   |   Min Closing: ₹ ' . number_format((float)$request->query('min_closing'), 2);
+        if ($request->query('max_closing')) $subtitle .= '   |   Max Closing: ₹ ' . number_format((float)$request->query('max_closing'), 2);
+        if ($request->query('balance_type')) $subtitle .= '   |   Balance: ' . strtoupper($request->query('balance_type'));
+        $subtitle .= '   |   Generated on: ' . date('d M Y, h:i A');
+        $sheet->setCellValue('A2', $subtitle);
         $sheet->getStyle('A2')->getFont()->setSize(10)->getColor()->setARGB('FF666666');
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         // Headers
-        $headers = ['#', 'Account Name', 'Type', 'Phone', 'Current Balance (₹)'];
-        $cols = ['A', 'B', 'C', 'D', 'E'];
+        $headers = ['#', 'Account Name', 'Type', 'Account Number / Code', 'Opening Balance (₹)', 'Debit (₹)', 'Credit (₹)', 'Closing Balance (₹)'];
+        $cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
         foreach ($headers as $idx => $h) {
             $sheet->setCellValue($cols[$idx] . '4', $h);
         }
 
-        $headerRange = 'A4:E4';
+        $headerRange = 'A4:H4';
         $sheet->getStyle($headerRange)->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
         $sheet->getStyle($headerRange)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF1E3C72');
         $sheet->getStyle($headerRange)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         $row = 5;
         $totalBalance = 0;
-        foreach ($parties as $idx => $p) {
+        $totalOpening = 0;
+        $totalDebit = 0;
+        $totalCredit = 0;
+        foreach ($parties->values() as $idx => $p) {
             $bal = (float)$p->balance;
+            $open = (float)($p->opening_balance ?? 0);
+            $deb = (float)($p->period_debit ?? 0);
+            $cred = (float)($p->period_credit ?? 0);
+
             $totalBalance += $bal;
+            $totalOpening += $open;
+            $totalDebit += $deb;
+            $totalCredit += $cred;
 
             $sheet->setCellValue('A' . $row, $idx + 1);
             $sheet->setCellValue('B' . $row, $p->name ?? '-');
-            $sheet->setCellValue('C' . $row, ucfirst($p->party_type ?? '-'));
-            $sheet->setCellValue('D' . $row, $p->phone ?? '-');
-            $sheet->setCellValue('E' . $row, number_format(abs($bal), 2) . ' ' . ($bal >= 0 ? 'CR' : 'DR'));
+            $sheet->setCellValue('C' . $row, ucwords(str_replace('_', ' ', $p->party_type ?? '-')));
+            $sheet->setCellValue('D' . $row, $p->account_number ?? $p->code ?? '-');
+            $sheet->setCellValue('E' . $row, $crdr($open));
+            $sheet->setCellValue('F' . $row, $deb);
+            $sheet->setCellValue('G' . $row, $cred);
+            $sheet->setCellValue('H' . $row, $crdr($bal));
             $row++;
         }
 
         // Summary Row
         $sheet->setCellValue('A' . $row, 'Total');
         $sheet->mergeCells('A' . $row . ':D' . $row);
-        $sheet->setCellValue('E' . $row, number_format(abs($totalBalance), 2) . ' ' . ($totalBalance >= 0 ? 'CR' : 'DR'));
-        $sheet->getStyle('A' . $row . ':E' . $row)->getFont()->setBold(true);
-        $sheet->getStyle('A' . $row . ':E' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
+        $sheet->setCellValue('E' . $row, $crdr($totalOpening));
+        $sheet->setCellValue('F' . $row, $totalDebit);
+        $sheet->setCellValue('G' . $row, $totalCredit);
+        $sheet->setCellValue('H' . $row, $crdr($totalBalance));
+        $sheet->getStyle('A' . $row . ':H' . $row)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $row . ':H' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
+        $sheet->getStyle('F5:G' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
 
-        foreach (range('A', 'E') as $col) {
+        foreach (range('A', 'H') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
@@ -225,31 +287,36 @@ class BankCashLedgerController extends Controller
     {
         $search = $request->query('search');
         $typeId = $request->query('type_id');
+        [$startDate, $endDate] = $this->listPeriod($request);
+        $ledgerRequest = new Request(array_filter(['start_date' => $startDate, 'end_date' => $endDate]));
 
         $masters = \App\Models\AdjustmentMaster::whereIn('name', ['Bank Account', 'Cash Master'])->where('status', 1)->get();
         $parties = collect();
 
         if ($typeId) {
             $master = \App\Models\AdjustmentMaster::find($typeId);
-            if ($master) {
+            if ($master && in_array($master->name, ['Bank Account', 'Cash Master'])) {
                 $modelName = $master->model_name;
                 if (class_exists($modelName)) {
                     $items = $modelName::where('status', 1)
                         ->when($search, function ($q) use ($search, $modelName) {
                             if ($modelName == 'App\Models\BankAccount') {
-                                $q->where('bank_name', 'LIKE', "%$search%");
+                                $q->where(function ($sub) use ($search) {
+                                    $sub->where('bank_name', 'LIKE', "%$search%")
+                                        ->orWhere('account_name', 'LIKE', "%$search%")
+                                        ->orWhere('account_number', 'LIKE', "%$search%")
+                                        ->orWhere('branch_name', 'LIKE', "%$search%");
+                                });
                             } else {
                                 $q->where('name', 'LIKE', "%$search%");
                             }
                         })
                         ->get()
-                        ->map(function ($v) use ($master) {
+                        ->map(function ($v) use ($master, $ledgerRequest) {
                             $v->party_type = strtolower($master->name);
                             $v->master_id_val = $master->id;
                             if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
-                            $ledgerData = $this->getLedgerData(new Request(), $v->party_type, $v->id);
-                            $v->balance = $ledgerData['party']->balance ?? 0;
-                            return $v;
+                            return $this->withLedgerFigures($v, $ledgerRequest);
                         });
                     $parties = $parties->concat($items);
                 }
@@ -261,34 +328,96 @@ class BankCashLedgerController extends Controller
                     $items = $modelName::where('status', 1)
                         ->when($search, function ($q) use ($search, $modelName) {
                             if ($modelName == 'App\Models\BankAccount') {
-                                $q->where('bank_name', 'LIKE', "%$search%");
+                                $q->where(function ($sub) use ($search) {
+                                    $sub->where('bank_name', 'LIKE', "%$search%")
+                                        ->orWhere('account_name', 'LIKE', "%$search%")
+                                        ->orWhere('account_number', 'LIKE', "%$search%")
+                                        ->orWhere('branch_name', 'LIKE', "%$search%");
+                                });
                             } else {
                                 $q->where('name', 'LIKE', "%$search%");
                             }
                         })
-                        ->limit(100)
                         ->get()
-                        ->map(function ($v) use ($master) {
+                        ->map(function ($v) use ($master, $ledgerRequest) {
                             $v->party_type = strtolower($master->name);
                             $v->master_id_val = $master->id;
                             if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
-                            $ledgerData = $this->getLedgerData(new Request(), $v->party_type, $v->id);
-                            $v->balance = $ledgerData['party']->balance ?? 0;
-                            return $v;
+                            return $this->withLedgerFigures($v, $ledgerRequest);
                         });
                     $parties = $parties->concat($items);
                 }
             }
         }
 
+        // Filter by closing balance min / max and balance type if requested
+        $minClosing = $request->query('min_closing', $request->query('min_amount'));
+        $maxClosing = $request->query('max_closing', $request->query('max_amount'));
+        $balanceType = strtolower(trim((string)$request->query('balance_type')));
+
+        if ($minClosing !== null && $minClosing !== '') {
+            $minVal = (float)$minClosing;
+            $parties = $parties->filter(function ($p) use ($minVal) {
+                return abs((float)$p->balance) >= $minVal;
+            });
+        }
+
+        if ($maxClosing !== null && $maxClosing !== '') {
+            $maxVal = (float)$maxClosing;
+            $parties = $parties->filter(function ($p) use ($maxVal) {
+                return abs((float)$p->balance) <= $maxVal;
+            });
+        }
+
+        if ($balanceType === 'credit') {
+            $parties = $parties->filter(function ($p) {
+                return (float)$p->balance > 0;
+            });
+        } elseif ($balanceType === 'debit') {
+            $parties = $parties->filter(function ($p) {
+                return (float)$p->balance < 0;
+            });
+        }
+
         $parties = $parties->sortBy('name');
 
-        $totalAccountsCount = $parties->count();
-        $totalCreditBalance = (float)$parties->where('balance', '>', 0)->sum('balance');
-        $totalDebitBalance = (float)abs($parties->where('balance', '<', 0)->sum('balance'));
-        $totalNetBalance = (float)$parties->sum('balance');
+        return compact('parties', 'masters', 'startDate', 'endDate');
+    }
 
-        return compact('parties', 'masters', 'totalAccountsCount', 'totalCreditBalance', 'totalDebitBalance', 'totalNetBalance');
+    private function withLedgerFigures($v, Request $ledgerRequest)
+    {
+        $ledgerData = $this->getLedgerData($ledgerRequest, $v->party_type, $v->id);
+        $v->opening_balance = (float) ($ledgerData['openingBalAmount'] ?? 0);
+        $v->period_debit = (float) ($ledgerData['periodTotalDebit'] ?? 0);
+        $v->period_credit = (float) ($ledgerData['periodTotalCredit'] ?? 0);
+        $v->balance = (float) ($ledgerData['party']->balance ?? 0);
+        return $v;
+    }
+
+    private function listPeriod(Request $request): array
+    {
+        $date = function ($value) {
+            if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+                return null;
+            }
+            [$y, $m, $d] = array_map('intval', explode('-', $value));
+            return checkdate($m, $d, $y) ? $value : null;
+        };
+        $start = $date($request->query('start_date'));
+        $end = $date($request->query('end_date'));
+        if ($start && $end && $start > $end) {
+            [$start, $end] = [$end, $start];
+        }
+        return [$start, $end];
+    }
+
+    private function periodText($startDate, $endDate): string
+    {
+        $f = fn($d) => \Carbon\Carbon::parse($d)->format('d M Y');
+        if ($startDate && $endDate) return $f($startDate) . ' to ' . $f($endDate);
+        if ($startDate) return 'From ' . $f($startDate);
+        if ($endDate) return 'Up to ' . $f($endDate);
+        return 'All dates';
     }
 
     private function getLedgerData(Request $request, $type, $id)

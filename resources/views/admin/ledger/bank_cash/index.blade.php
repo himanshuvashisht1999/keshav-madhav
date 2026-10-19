@@ -19,7 +19,7 @@
 
     <!-- Summary Metrics Strip (Exact Fabric Module Standard) -->
     <div class="row mb-2">
-        <div class="col-md-3 col-sm-6 mb-1">
+        <div class="col-lg col-md-4 col-sm-6 mb-1">
             <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
@@ -38,45 +38,64 @@
             </div>
         </div>
 
-        <div class="col-md-3 col-sm-6 mb-1">
+        <div class="col-lg col-md-4 col-sm-6 mb-1">
+            <div class="erp-card {{ ($totalOpening ?? 0) >= 0 ? 'erp-metric-card-left-green' : 'erp-metric-card-left-yellow' }} py-2 px-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: {{ ($totalOpening ?? 0) >= 0 ? 'var(--erp-green-light)' : 'var(--erp-yellow-bg)' }}; color: {{ ($totalOpening ?? 0) >= 0 ? 'var(--erp-green-primary)' : 'var(--erp-yellow-dark)' }}; display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg); {{ ($totalOpening ?? 0) < 0 ? 'border: 1px solid var(--erp-yellow-badge-border);' : '' }}">
+                        <i class="fas fa-balance-scale"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Opening Balance</div>
+                        <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: {{ ($totalOpening ?? 0) >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }}; line-height: 1.2;">
+                            ₹ {{ number_format(abs($totalOpening ?? 0), 2) }}
+                        </div>
+                    </div>
+                </div>
+                <span class="badge {{ ($totalOpening ?? 0) >= 0 ? '' : 'erp-badge-yellow' }}" style="{{ ($totalOpening ?? 0) >= 0 ? 'background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border);' : '' }} font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">
+                    {{ ($totalOpening ?? 0) >= 0 ? 'CR' : 'DR' }}
+                </span>
+            </div>
+        </div>
+
+        <div class="col-lg col-md-4 col-sm-6 mb-1">
             <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
                         <i class="fas fa-arrow-down"></i>
                     </div>
                     <div>
-                        <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Positive Balance (CR)</div>
+                        <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Total Credit (CR)</div>
                         <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-green-primary); line-height: 1.2;">
-                            ₹ {{ number_format($totalCreditBalance ?? 0, 2) }}
+                            ₹ {{ number_format($totalPeriodCredit ?? 0, 2) }}
                         </div>
                     </div>
                 </div>
                 <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">
-                    Credit
+                    CR
                 </span>
             </div>
         </div>
 
-        <div class="col-md-3 col-sm-6 mb-1">
+        <div class="col-lg col-md-6 col-sm-6 mb-1">
             <div class="erp-card erp-metric-card-left-yellow py-2 px-3 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-yellow-bg); color: var(--erp-yellow-dark); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg); border: 1px solid var(--erp-yellow-badge-border);">
                         <i class="fas fa-arrow-up"></i>
                     </div>
                     <div>
-                        <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Overdraft (DR)</div>
+                        <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Total Debit (DR)</div>
                         <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: #dc2626; line-height: 1.2;">
-                            ₹ {{ number_format($totalDebitBalance ?? 0, 2) }}
+                            ₹ {{ number_format($totalPeriodDebit ?? 0, 2) }}
                         </div>
                     </div>
                 </div>
                 <span class="badge erp-badge-yellow" style="padding: 4px 9px;">
-                    Debit
+                    DR
                 </span>
             </div>
         </div>
 
-        <div class="col-md-3 col-sm-6 mb-1">
+        <div class="col-lg col-md-6 col-sm-6 mb-1">
             <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
@@ -86,14 +105,11 @@
                         <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Net Available Liquidity</div>
                         <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-text-heading); line-height: 1.2;">
                             ₹ {{ number_format(abs($totalNetBalance ?? 0), 2) }}
-                            <small style="font-size: 11px; font-weight: 700; color: {{ ($totalNetBalance ?? 0) >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }};">
-                                {{ ($totalNetBalance ?? 0) >= 0 ? 'CR' : 'DR' }}
-                            </small>
                         </div>
                     </div>
                 </div>
                 <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">
-                    Net
+                    {{ ($totalNetBalance ?? 0) >= 0 ? 'CR' : 'DR' }}
                 </span>
             </div>
         </div>
@@ -103,34 +119,65 @@
     <div class="erp-filter-bar">
         <form action="{{ route('admin.ledger.bank-cash-ledger.index') }}" method="GET" class="m-0">
             <div class="row align-items-end">
-                <div class="col-md-5 col-sm-12 mb-1">
-                    <label class="erp-filter-label"><i class="fas fa-search text-muted mr-1"></i> Search Account Name</label>
-                    <input type="text" name="search" value="{{ request('search') }}" class="form-control erp-filter-input" placeholder="Search by bank or cash account name...">
+                <div class="col-md-3 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-search mr-1"></i> Search Account</label>
+                    <input type="text" name="search" value="{{ request('search') }}" class="form-control erp-input" placeholder="Search by name, acc no, branch...">
                 </div>
 
-                <div class="col-md-4 col-sm-12 mb-1">
-                    <label class="erp-filter-label"><i class="fas fa-landmark text-muted mr-1"></i> Account Type</label>
-                    <select name="type_id" class="form-control erp-filter-select">
-                        <option value="">All Account Types</option>
+                <div class="col-md-2 col-sm-3 col-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> From</label>
+                    <input type="date" name="start_date" id="ledger_from" value="{{ $startDate }}" max="{{ $endDate }}" class="form-control erp-input">
+                </div>
+
+                <div class="col-md-2 col-sm-3 col-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> To</label>
+                    <input type="date" name="end_date" id="ledger_to" value="{{ $endDate }}" min="{{ $startDate }}" class="form-control erp-input">
+                </div>
+
+                <div class="col-md-2 col-sm-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-landmark mr-1"></i> Account Type</label>
+                    <select name="type_id" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">-- ALL TYPES --</option>
                         @foreach($masters as $m)
                             <option value="{{ $m->id }}" {{ request('type_id') == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="col-md-3 col-sm-12 mb-1 d-flex">
-                    <button type="submit" class="btn-erp btn-erp-primary mr-2" style="height: 31px;">
-                        <i class="fas fa-filter mr-1"></i> Apply Filter
-                    </button>
-                    <a href="{{ route('admin.ledger.bank-cash-ledger.index') }}" class="btn-erp btn-erp-outline" style="height: 31px;" title="Reset filters">
-                        <i class="fas fa-undo mr-1"></i> Reset
-                    </a>
+                <div class="col-md-1 col-sm-3 col-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-rupee-sign mr-1"></i> Min Closing</label>
+                    <input type="number" step="0.01" name="min_closing" value="{{ request('min_closing') }}" class="form-control erp-input" placeholder="Min Amount">
+                </div>
+
+                <div class="col-md-1 col-sm-3 col-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-rupee-sign mr-1"></i> Max Closing</label>
+                    <input type="number" step="0.01" name="max_closing" value="{{ request('max_closing') }}" class="form-control erp-input" placeholder="Max Amount">
+                </div>
+
+                <div class="col-md-1 col-sm-3 col-6 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-exchange-alt mr-1"></i> Balance Type</label>
+                    <select name="balance_type" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">ALL BALANCE</option>
+                        <option value="credit" {{ request('balance_type') == 'credit' ? 'selected' : '' }}>Credit (CR)</option>
+                        <option value="debit" {{ request('balance_type') == 'debit' ? 'selected' : '' }}>Debit (DR)</option>
+                    </select>
+                </div>
+
+                <div class="col-auto mb-1 ml-auto">
+                    <div class="erp-filter-actions">
+                        <button type="submit" class="btn-erp btn-erp-primary" title="Apply Filter">
+                            <i class="fas fa-filter"></i> Apply Filter
+                        </button>
+                        <a href="{{ route('admin.ledger.bank-cash-ledger.index') }}" class="btn-erp btn-erp-outline" title="Reset Filters">
+                            <i class="fas fa-undo"></i> Reset
+                        </a>
+                    </div>
                 </div>
             </div>
         </form>
     </div>
 
-    <!-- Main Data Table Card -->
+    <!-- Table Card -->
     <div class="erp-card">
         <div class="erp-card-body p-2 table-responsive">
             <table class="erp-table table table-bordered table-hover">
@@ -138,20 +185,34 @@
                     <tr>
                         <th style="width: 45px;" class="text-center">#</th>
                         <th>Account Name</th>
-                        <th style="width: 140px;" class="text-center">Type</th>
-                        <th style="width: 180px;">Account Number / Code</th>
-                        <th class="text-right" style="width: 180px;">Current Balance</th>
-                        <th class="text-center" style="width: 110px;">Action</th>
+                        <th style="width: 140px;" class="text-center">Account Type</th>
+                        <th style="width: 150px;">Account No / Code</th>
+                        <th class="text-right" style="width: 150px;">
+                            Opening Balance
+                            <div class="font-weight-normal" style="font-size: 10px; text-transform: none;">{{ $startDate ? 'on ' . \Carbon\Carbon::parse($startDate)->format('d M Y') : 'opening entry' }}</div>
+                        </th>
+                        <th class="text-right" style="width: 130px;">Debit (DR)</th>
+                        <th class="text-right" style="width: 130px;">Credit (CR)</th>
+                        <th class="text-right" style="width: 150px;">
+                            Closing Balance
+                            <div class="font-weight-normal" style="font-size: 10px; text-transform: none;">{{ $endDate ? 'on ' . \Carbon\Carbon::parse($endDate)->format('d M Y') : 'today' }}</div>
+                        </th>
+                        <th style="width: 110px;" class="text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($parties as $party)
                         @php
                             $bal = (float)($party->balance ?? 0);
+                            $open = (float)($party->opening_balance ?? 0);
+                            $deb = (float)($party->period_debit ?? 0);
+                            $cred = (float)($party->period_credit ?? 0);
                             $isBank = stripos($party->party_type, 'bank') !== false;
                         @endphp
                         <tr>
-                            <td class="text-center text-muted font-weight-bold">{{ $loop->iteration }}</td>
+                            <td class="text-center text-muted font-weight-bold">
+                                {{ $parties instanceof \Illuminate\Pagination\LengthAwarePaginator ? ($parties->firstItem() + $loop->index) : $loop->iteration }}
+                            </td>
                             <td>
                                 <div class="font-weight-bold" style="color: var(--erp-text-heading);">{{ $party->name }}</div>
                                 @if(isset($party->branch_name) && $party->branch_name)
@@ -172,14 +233,32 @@
                             <td class="text-muted font-weight-bold">
                                 {{ $party->account_number ?? $party->code ?? '-' }}
                             </td>
-                            <td class="text-right font-weight-bold" style="color: {{ $bal >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }};">
-                                ₹ {{ number_format(abs($bal), 2) }}
-                                <span class="badge ml-1" style="background: {{ $bal >= 0 ? 'var(--erp-green-light)' : '#fee2e2' }}; color: {{ $bal >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }}; font-size: 10px; padding: 2px 5px;">
-                                    {{ $bal >= 0 ? 'CR' : 'DR' }}
-                                </span>
+                            <td class="text-right font-weight-bold text-nowrap" style="color: {{ $open >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }};">
+                                ₹ {{ number_format(abs($open), 2) }}
+                                <small class="font-weight-bold">{{ $open >= 0 ? 'CR' : 'DR' }}</small>
                             </td>
+                            <td class="text-right text-nowrap {{ $deb > 0 ? '' : 'text-muted' }}">
+                                ₹ {{ number_format($deb, 2) }}
+                            </td>
+                            <td class="text-right text-nowrap {{ $cred > 0 ? '' : 'text-muted' }}">
+                                ₹ {{ number_format($cred, 2) }}
+                            </td>
+                            <td class="text-right font-weight-bold text-nowrap" style="color: {{ $bal >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }};">
+                                ₹ {{ number_format(abs($bal), 2) }}
+                                <small class="font-weight-bold" style="color: {{ $bal >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }};">
+                                    {{ $bal >= 0 ? 'CR' : 'DR' }}
+                                </small>
+                            </td>
+                            @php
+                                $statementUrl = route('admin.ledger.bank-cash-ledger.show', array_filter([
+                                    'type' => $party->party_type,
+                                    'id' => $party->id,
+                                    'start_date' => $startDate,
+                                    'end_date' => $endDate
+                                ]));
+                            @endphp
                             <td class="text-center">
-                                <a href="{{ route('admin.ledger.bank-cash-ledger.show', ['type' => $party->party_type, 'id' => $party->id]) }}" 
+                                <a href="{{ $statementUrl }}" 
                                    class="erp-action-btn erp-btn-view" 
                                    title="View Account Statement">
                                     <i class="fas fa-book-open"></i>
@@ -188,9 +267,9 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
+                            <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="fas fa-university fa-3x mb-2 text-secondary" style="opacity: 0.4;"></i>
-                                <p class="font-weight-bold mb-0">No bank or cash accounts found.</p>
+                                <p class="font-weight-bold mb-0">No bank or cash accounts found matching your search.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -198,12 +277,20 @@
                 @if($parties->count() > 0)
                 <tfoot>
                     <tr class="erp-table-grand-total">
-                        <td colspan="4" class="text-right font-weight-bold" style="letter-spacing: 0.5px;">TOTAL NET LIQUIDITY (ALL LISTED ACCOUNTS):</td>
+                        <td colspan="4" class="text-right font-weight-bold" style="letter-spacing: 0.5px;">TOTAL (ALL LISTED ACCOUNTS):</td>
+                        <td class="text-right font-weight-bold grand-total-val" style="color: {{ ($totalOpening ?? 0) >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }};">
+                            ₹ {{ number_format(abs($totalOpening ?? 0), 2) }}
+                            <small class="font-weight-bold">{{ ($totalOpening ?? 0) >= 0 ? 'CR' : 'DR' }}</small>
+                        </td>
                         <td class="text-right font-weight-bold grand-total-val">
+                            ₹ {{ number_format($totalPeriodDebit ?? 0, 2) }}
+                        </td>
+                        <td class="text-right font-weight-bold grand-total-val">
+                            ₹ {{ number_format($totalPeriodCredit ?? 0, 2) }}
+                        </td>
+                        <td class="text-right font-weight-bold grand-total-val" style="color: {{ ($totalNetBalance ?? 0) >= 0 ? 'var(--erp-green-primary)' : '#dc2626' }};">
                             ₹ {{ number_format(abs($totalNetBalance ?? 0), 2) }}
-                            <span class="badge ml-1" style="background: #ffffff; color: var(--erp-green-primary); font-size: 10px; padding: 2px 5px;">
-                                {{ ($totalNetBalance ?? 0) >= 0 ? 'CR' : 'DR' }}
-                            </span>
+                            <small class="font-weight-bold">{{ ($totalNetBalance ?? 0) >= 0 ? 'CR' : 'DR' }}</small>
                         </td>
                         <td></td>
                     </tr>
@@ -211,6 +298,44 @@
                 @endif
             </table>
         </div>
+
+        @if($parties instanceof \Illuminate\Pagination\LengthAwarePaginator && $parties->hasPages())
+        <div class="d-flex justify-content-between align-items-center p-2 border-top flex-wrap" style="font-size: var(--erp-font-sm);">
+            <div class="text-muted font-weight-bold">
+                Showing {{ $parties->firstItem() ?? 0 }} to {{ $parties->lastItem() ?? 0 }} of {{ number_format($parties->total()) }} accounts
+            </div>
+            <div>
+                {{ $parties->links('pagination::bootstrap-4') }}
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 @endsection
+
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        if ($.fn.select2) {
+            $('.select2').each(function() {
+                if ($(this).data('select2')) {
+                    $(this).select2('destroy');
+                }
+                $(this).select2({
+                    theme: 'bootstrap4',
+                    width: '100%'
+                });
+            });
+        }
+
+        // From cannot be after To (and the other way round)
+        var fromEl = document.getElementById('ledger_from');
+        var toEl = document.getElementById('ledger_to');
+        if (fromEl && toEl) {
+            fromEl.addEventListener('change', function () { toEl.min = this.value; });
+            toEl.addEventListener('change', function () { fromEl.max = this.value; });
+        }
+    });
+</script>
+@endsection
+
