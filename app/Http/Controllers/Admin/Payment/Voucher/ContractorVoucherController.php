@@ -42,6 +42,15 @@ class ContractorVoucherController extends Controller
         return redirect()->route('admin.payment.voucher.contractor.index')->withSuccess('The contractor voucher has been successfully created.');
     }
 
+    public function show(Request $request)
+    {
+        $response['data'] = $this->service->show($request);
+        if (!$response['data']) {
+            abort(404, 'Contractor voucher not found.');
+        }
+        return view('admin.payment.voucher.contractor.show', $response);
+    }
+
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);

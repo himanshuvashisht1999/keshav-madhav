@@ -88,7 +88,8 @@ class ContractorVoucherDataTable
                 return '<span class="text-nowrap text-secondary font-weight-500">' . date('d M Y', strtotime($row->voucher_date)) . '</span>';
             })
             ->editColumn('voucher_number', function ($row) {
-                return '<span class="font-weight-600 text-dark">' . e($row->voucher_number) . '</span>';
+                $num = $row->voucher_number ?: ('#' . $row->id);
+                return '<a href="' . route('admin.payment.voucher.contractor.show', ['id' => $row->id]) . '" class="font-weight-600 text-dark" title="View Voucher Details">' . e($num) . '</a>';
             })
             ->editColumn('total_amount', function ($row) {
                 return '<span class="font-weight-600" style="color: #05421c;">₹ ' . number_format($row->total_amount, 2) . '</span>';
@@ -113,8 +114,7 @@ class ContractorVoucherDataTable
             ->addColumn('action', function ($row) {
                 return '
                 <div class="d-flex align-items-center justify-content-center" style="gap: 6px;">
-                    <a href="' . route('admin.payment.voucher.contractor.edit', ['id' => $row->id]) . '" class="erp-action-btn erp-btn-edit" data-toggle="tooltip" title="Edit"><i class="fas fa-edit"></i></a>
-                    <a href="' . route('admin.payment.voucher.contractor.delete', ['id' => $row->id]) . '" class="erp-action-btn erp-btn-delete" data-toggle="tooltip" title="Delete" onclick="return confirm(\'Are you sure you want to delete this voucher?\')"><i class="fas fa-trash"></i></a>
+                    <a href="' . route('admin.payment.voucher.contractor.show', ['id' => $row->id]) . '" class="erp-action-btn erp-btn-view" data-toggle="tooltip" title="View Details"><i class="fas fa-eye"></i></a>
                 </div>';
             })
             ->rawColumns(['voucher_date', 'voucher_number', 'total_amount', 'action', 'document', 'lot_number'])

@@ -1805,6 +1805,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                     Route::get('/indexList', [AdminContractorVoucherController::class, 'indexList'])->name('indexList');
                     Route::get('/create', [AdminContractorVoucherController::class, 'create'])->name('create');
                     Route::post('/store', [AdminContractorVoucherController::class, 'store'])->name('store');
+                    Route::get('/show/{id?}', [AdminContractorVoucherController::class, 'show'])->name('show');
                     Route::get('/edit', [AdminContractorVoucherController::class, 'edit'])->name('edit');
                     Route::post('/update', [AdminContractorVoucherController::class, 'update'])->name('update');
                     Route::get('/delete', [AdminContractorVoucherController::class, 'delete'])->name('delete');
@@ -1815,6 +1816,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                     Route::get('/indexList', [AdminWashingVoucherController::class, 'indexList'])->name('indexList');
                     Route::get('/create', [AdminWashingVoucherController::class, 'create'])->name('create');
                     Route::post('/store', [AdminWashingVoucherController::class, 'store'])->name('store');
+                    Route::get('/show/{id?}', [AdminWashingVoucherController::class, 'show'])->name('show');
                     Route::get('/edit', [AdminWashingVoucherController::class, 'edit'])->name('edit');
                     Route::post('/update', [AdminWashingVoucherController::class, 'update'])->name('update');
                     Route::get('/delete', [AdminWashingVoucherController::class, 'delete'])->name('delete');

@@ -674,9 +674,9 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                                                                                                         </li> -->
                                     </ul>
                                 </li>
-                                <li class="nav-item {{ (str_contains($page_url, 'payment/voucher')) ? 'menu-open' : '' }}">
+                                <li class="nav-item {{ (str_contains($page_url, 'payment/voucher') || str_contains($page_url, 'payment/journal-voucher')) ? 'menu-open' : '' }}">
                                     <a href="#"
-                                        class="nav-link {{ (str_contains($page_url, 'payment/voucher')) ? 'active' : '' }}">
+                                        class="nav-link {{ (str_contains($page_url, 'payment/voucher') || str_contains($page_url, 'payment/journal-voucher')) ? 'active' : '' }}">
                                         <i class="far fa-circle nav-icon text-info"></i>
                                         <p>
                                             Voucher
@@ -705,6 +705,13 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                                 <p>Washing Voucher</p>
                                             </a>
                                         </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.payment.journal-voucher.index') }}"
+                                                class="{{ str_contains($page_url, 'payment/journal-voucher') ? 'active' : '' }} nav-link">
+                                                <i class="fas fa-circle nav-icon" style="font-size: 12px;"></i>
+                                                <p>Journal Voucher</p>
+                                            </a>
+                                        </li>
                                     </ul>
                                 </li>
                                 <li class="nav-item">
@@ -712,13 +719,6 @@ $stage_data = App\Models\MasterProductStage::orderBy('status', 'desc')->get();
                                         class="nav-link {{ str_contains($page_url, 'payment/adjustment') ? 'active' : '' }}">
                                         <i class="fas fa-balance-scale nav-icon"></i>
                                         <p>Payment Adjust</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.payment.journal-voucher.index') }}"
-                                        class="nav-link {{ str_contains($page_url, 'payment/journal-voucher') ? 'active' : '' }}">
-                                        <i class="fas fa-file-invoice-dollar nav-icon"></i>
-                                        <p>Journal Voucher</p>
                                     </a>
                                 </li>
                                 <!-- <li class="nav-item">

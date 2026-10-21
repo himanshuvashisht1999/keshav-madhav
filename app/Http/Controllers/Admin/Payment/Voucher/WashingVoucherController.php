@@ -42,6 +42,12 @@ class WashingVoucherController extends Controller
         return redirect()->route('admin.payment.voucher.washing.index')->withSuccess('The washing voucher has been successfully created.');
     }
 
+    public function show(Request $request)
+    {
+        $response['data'] = $this->service->show($request);
+        return view('admin.payment.voucher.washing.show', $response);
+    }
+
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);

@@ -94,6 +94,8 @@
                     @if(request('min_closing')) | Min Closing: ₹ {{ number_format((float)request('min_closing'), 2) }} @endif
                     @if(request('max_closing')) | Max Closing: ₹ {{ number_format((float)request('max_closing'), 2) }} @endif
                     @if(request('balance_type')) | Balance: {{ strtoupper(request('balance_type')) }} @endif
+                    @if(!empty($customerType)) | Customer Type: {{ ucfirst($customerType) }} @endif
+                    @if(!empty($vendorType)) | Vendor Type: {{ $vendorType === 'direct' ? 'Direct' : ($vendorType === 'agent' ? 'Fabric Purchase Agent' : ucfirst($vendorType)) }} @endif
                 </div>
                 <div class="meta-info">Generated: {{ date('d M Y, h:i A') }}</div>
             </td>

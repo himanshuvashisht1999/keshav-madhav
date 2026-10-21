@@ -74,9 +74,16 @@ class WashingVoucherService
         });
     }
 
+    public function show(Request $request)
+    {
+        $id = $request->id ?: $request->route('id');
+        return WashingVoucher::with(['items.orderLot', 'washingMaster'])->findOrFail($id);
+    }
+
     public function edit(Request $request)
     {
-        return WashingVoucher::with(['items', 'washingMaster', 'orderLot'])->find($request->id);
+        $id = $request->id ?: $request->route('id');
+        return WashingVoucher::with(['items.orderLot', 'washingMaster'])->find($id);
     }
 
     public function update(Request $request)

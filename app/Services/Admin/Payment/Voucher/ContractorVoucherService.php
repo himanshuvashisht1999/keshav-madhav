@@ -74,9 +74,16 @@ class ContractorVoucherService
         });
     }
 
+    public function show(Request $request)
+    {
+        $id = $request->route('id') ?? $request->id;
+        return ContractorVoucher::with(['items.orderLot', 'contractor', 'orderLot'])->find($id);
+    }
+
     public function edit(Request $request)
     {
-        return ContractorVoucher::with(['items', 'contractor', 'orderLot'])->find($request->id);
+        $id = $request->route('id') ?? $request->id;
+        return ContractorVoucher::with(['items.orderLot', 'contractor', 'orderLot'])->find($id);
     }
 
     public function update(Request $request)

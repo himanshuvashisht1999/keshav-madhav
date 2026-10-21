@@ -148,13 +148,50 @@
             <div class="row align-items-end">
                 <div class="col-lg-2 col-md-3 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-tags mr-1"></i> Master Type</label>
-                    <select name="type_id" class="form-control select2 erp-input" style="width: 100%;">
+                    <select name="type_id" id="dr_master_type_select" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="">-- ALL TYPES --</option>
                         <option value="sales_agent" {{ request('type_id') === 'sales_agent' ? 'selected' : '' }}>Sales Agent</option>
                         @if(isset($masters))
                             @foreach($masters as $m)
-                                <option value="{{ $m->id }}" {{ (string)request('type_id') === (string)$m->id ? 'selected' : '' }}>{{ $m->name }}</option>
+                                <option value="{{ $m->id }}" 
+                                    data-is-customer="{{ (strtolower($m->name) === 'customer' || $m->model_name === 'App\Models\MasterCustomer') ? '1' : '0' }}"
+                                    data-is-vendor="{{ (strtolower($m->name) === 'vendor' || $m->model_name === 'App\Models\Vendor') ? '1' : '0' }}"
+                                    {{ (string)request('type_id') === (string)$m->id ? 'selected' : '' }}>{{ $m->name }}</option>
                             @endforeach
+                        @endif
+                    </select>
+                </div>
+                @php
+                    $drSelectedMaster = isset($masters) ? $masters->firstWhere('id', request('type_id')) : null;
+                    $drIsCustomerSelected = $drSelectedMaster && (strtolower($drSelectedMaster->name) === 'customer' || $drSelectedMaster->model_name === 'App\Models\MasterCustomer');
+                    $drCurrentCustType = request('customer_type', request('type'));
+                @endphp
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1" id="dr_customer_type_container" style="{{ $drIsCustomerSelected ? '' : 'display: none;' }}">
+                    <label class="erp-filter-label"><i class="fas fa-user-tag mr-1"></i> Customer Type</label>
+                    <select name="customer_type" id="dr_customer_type_select" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">ALL</option>
+                        <option value="corporate" {{ $drCurrentCustType === 'corporate' ? 'selected' : '' }}>Corporate</option>
+                        <option value="domestic" {{ $drCurrentCustType === 'domestic' ? 'selected' : '' }}>Domestic</option>
+                        <option value="direct" {{ $drCurrentCustType === 'direct' ? 'selected' : '' }}>Domestic (Direct)</option>
+                        <option value="agent" {{ $drCurrentCustType === 'agent' ? 'selected' : '' }}>Domestic (Agent)</option>
+                    </select>
+                </div>
+                @php
+                    $drIsVendorSelected = $drSelectedMaster && (strtolower($drSelectedMaster->name) === 'vendor' || $drSelectedMaster->model_name === 'App\Models\Vendor');
+                    $drCurrentVendorType = request('vendor_type', request('purchase_agent_id'));
+                @endphp
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-1" id="dr_vendor_type_container" style="{{ $drIsVendorSelected ? '' : 'display: none;' }}">
+                    <label class="erp-filter-label"><i class="fas fa-truck mr-1"></i> Vendor Type</label>
+                    <select name="vendor_type" id="dr_vendor_type_select" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">ALL</option>
+                        <option value="direct" {{ $drCurrentVendorType === 'direct' ? 'selected' : '' }}>Direct</option>
+                        <option value="agent" {{ $drCurrentVendorType === 'agent' ? 'selected' : '' }}>Fabric Purchase Agent</option>
+                        @if(isset($purchaseAgents) && count($purchaseAgents) > 0)
+                            <optgroup label="Purchase Agents">
+                                @foreach($purchaseAgents as $pa)
+                                    <option value="pa_{{ $pa->id }}" {{ ($drCurrentVendorType === 'pa_' . $pa->id || $drCurrentVendorType == $pa->id) ? 'selected' : '' }}>{{ $pa->name }}</option>
+                                @endforeach
+                            </optgroup>
                         @endif
                     </select>
                 </div>
@@ -593,8 +630,37 @@
             });
         }
 
-        // Auto-submit when Master Type, Party Selection, or View Mode change
+        // Auto-submit when Master Type, Customer Type, Vendor Type, Party Selection, or View Mode change
         $('select[name="type_id"]').on('change', function() {
+            var form = this.form || $(this).closest('form')[0];
+            if (form) {
+                var selectedOpt = $(this).find('option:selected');
+                var isCustomer = selectedOpt.data('is-customer') == '1';
+                var isVendor = selectedOpt.data('is-vendor') == '1';
+                if (!isCustomer && form.customer_type) {
+                    $(form.customer_type).val('');
+                }
+                if (!isVendor && form.vendor_type) {
+                    $(form.vendor_type).val('');
+                }
+                if (form.selected_party) {
+                    $(form.selected_party).val('');
+                }
+                form.submit();
+            }
+        });
+
+        $('select[name="customer_type"]').on('change', function() {
+            var form = this.form || $(this).closest('form')[0];
+            if (form) {
+                if (form.selected_party) {
+                    $(form.selected_party).val('');
+                }
+                form.submit();
+            }
+        });
+
+        $('select[name="vendor_type"]').on('change', function() {
             var form = this.form || $(this).closest('form')[0];
             if (form) {
                 if (form.selected_party) {

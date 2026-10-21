@@ -36,6 +36,9 @@
             <a href="{{ route('admin.payment.voucher.consumable.edit', ['id' => $data->id]) }}" class="btn-erp btn-erp-primary">
                 <i class="fas fa-edit mr-1"></i> Edit Voucher
             </a>
+            <a href="{{ route('admin.payment.voucher.consumable.delete', ['id' => $data->id]) }}" class="btn-erp btn-erp-outline" onclick="return confirm('Are you sure you want to delete this voucher?')" style="color: #dc2626 !important; border-color: #dc2626 !important;">
+                <i class="fas fa-trash mr-1"></i> Delete Voucher
+            </a>
             @if($data->consumable_good_id)
                 <a href="{{ route('admin.ledger.party.show', ['type' => 'consumable good', 'id' => $data->consumable_good_id]) }}" class="btn-erp btn-erp-secondary">
                     <i class="fas fa-book-open mr-1"></i> Party Ledger

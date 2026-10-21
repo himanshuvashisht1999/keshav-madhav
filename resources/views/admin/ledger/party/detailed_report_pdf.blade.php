@@ -121,6 +121,12 @@
                     @if(!empty($typeId))
                         - {{ strtoupper($typeId === 'sales_agent' ? 'Sales Agent' : (isset($masters) && $masters->firstWhere('id', $typeId) ? $masters->firstWhere('id', $typeId)->name : str_replace('_', ' ', $typeId))) }}
                     @endif
+                    @if(!empty($customerType))
+                        ({{ ucfirst($customerType) }})
+                    @endif
+                    @if(!empty($vendorType))
+                        ({{ $vendorType === 'direct' ? 'Direct' : ($vendorType === 'agent' ? 'Fabric Purchase Agent' : ucfirst($vendorType)) }})
+                    @endif
                 </div>
             </td>
             <td style="width: 50%;" class="text-right">

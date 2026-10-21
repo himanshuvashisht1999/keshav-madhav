@@ -144,12 +144,51 @@
 
                 <div class="col-md-2 col-sm-6 mb-1">
                     <label class="erp-filter-label"><i class="fas fa-tags mr-1"></i> Master Type</label>
-                    <select name="type_id" class="form-control select2 erp-input" style="width: 100%;">
+                    <select name="type_id" id="master_type_select" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="">-- ALL TYPES --</option>
                         <option value="sales_agent" {{ request('type_id') === 'sales_agent' ? 'selected' : '' }}>Sales Agent</option>
                         @foreach($masters as $m)
-                            <option value="{{ $m->id }}" {{ request('type_id') == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
+                            <option value="{{ $m->id }}" 
+                                data-is-customer="{{ (strtolower($m->name) === 'customer' || $m->model_name === 'App\Models\MasterCustomer') ? '1' : '0' }}"
+                                data-is-vendor="{{ (strtolower($m->name) === 'vendor' || $m->model_name === 'App\Models\Vendor') ? '1' : '0' }}"
+                                {{ request('type_id') == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
                         @endforeach
+                    </select>
+                </div>
+
+                @php
+                    $selectedMaster = $masters->firstWhere('id', request('type_id'));
+                    $isCustomerSelected = $selectedMaster && (strtolower($selectedMaster->name) === 'customer' || $selectedMaster->model_name === 'App\Models\MasterCustomer');
+                    $currentCustType = request('customer_type', request('type'));
+                @endphp
+                <div class="col-md-2 col-sm-6 mb-1" id="customer_type_container" style="{{ $isCustomerSelected ? '' : 'display: none;' }}">
+                    <label class="erp-filter-label"><i class="fas fa-user-tag mr-1"></i> Customer Type</label>
+                    <select name="customer_type" id="customer_type_select" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">ALL</option>
+                        <option value="corporate" {{ $currentCustType === 'corporate' ? 'selected' : '' }}>Corporate</option>
+                        <option value="domestic" {{ $currentCustType === 'domestic' ? 'selected' : '' }}>Domestic</option>
+                        <option value="direct" {{ $currentCustType === 'direct' ? 'selected' : '' }}>Domestic (Direct)</option>
+                        <option value="agent" {{ $currentCustType === 'agent' ? 'selected' : '' }}>Domestic (Agent)</option>
+                    </select>
+                </div>
+
+                @php
+                    $isVendorSelected = $selectedMaster && (strtolower($selectedMaster->name) === 'vendor' || $selectedMaster->model_name === 'App\Models\Vendor');
+                    $currentVendorType = request('vendor_type', request('purchase_agent_id'));
+                @endphp
+                <div class="col-md-2 col-sm-6 mb-1" id="vendor_type_container" style="{{ $isVendorSelected ? '' : 'display: none;' }}">
+                    <label class="erp-filter-label"><i class="fas fa-truck mr-1"></i> Vendor Type</label>
+                    <select name="vendor_type" id="vendor_type_select" class="form-control select2 erp-input" style="width: 100%;">
+                        <option value="">ALL</option>
+                        <option value="direct" {{ $currentVendorType === 'direct' ? 'selected' : '' }}>Direct</option>
+                        <option value="agent" {{ $currentVendorType === 'agent' ? 'selected' : '' }}>Fabric Purchase Agent</option>
+                        @if(isset($purchaseAgents) && count($purchaseAgents) > 0)
+                            <optgroup label="Purchase Agents">
+                                @foreach($purchaseAgents as $pa)
+                                    <option value="pa_{{ $pa->id }}" {{ ($currentVendorType === 'pa_' . $pa->id || $currentVendorType == $pa->id) ? 'selected' : '' }}>{{ $pa->name }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endif
                     </select>
                 </div>
 
@@ -302,7 +341,50 @@
             toEl.addEventListener('change', function () { fromEl.max = this.value; });
         }
 
-        // Update Detailed Ledger Report button URL when Master Type changes
+        // Toggle Customer Type filter based on Master Type selection
+        function toggleCustomerTypeFilter() {
+            var selectedOpt = $('#master_type_select').find('option:selected');
+            var isCustomer = selectedOpt.data('is-customer') == '1';
+            var $container = $('#customer_type_container');
+            if (isCustomer) {
+                $container.show();
+                if ($.fn.select2) {
+                    $('#customer_type_select').select2({
+                        theme: 'bootstrap4',
+                        width: '100%'
+                    });
+                }
+            } else {
+                $container.hide();
+                $('#customer_type_select').val('').trigger('change.select2');
+            }
+        }
+
+        // Toggle Vendor Type filter based on Master Type selection
+        function toggleVendorTypeFilter() {
+            var selectedOpt = $('#master_type_select').find('option:selected');
+            var isVendor = selectedOpt.data('is-vendor') == '1';
+            var $container = $('#vendor_type_container');
+            if (isVendor) {
+                $container.show();
+                if ($.fn.select2) {
+                    $('#vendor_type_select').select2({
+                        theme: 'bootstrap4',
+                        width: '100%'
+                    });
+                }
+            } else {
+                $container.hide();
+                $('#vendor_type_select').val('').trigger('change.select2');
+            }
+        }
+
+        $('#master_type_select').on('change', function() {
+            toggleCustomerTypeFilter();
+            toggleVendorTypeFilter();
+        });
+
+        // Update Detailed Ledger Report button URL when Master Type, Customer Type, or Vendor Type changes
         const masterTypeSelect = document.querySelector('select[name="type_id"]');
         if (masterTypeSelect) {
             const updateDetailedLink = function () {
@@ -314,11 +396,25 @@
                     } else {
                         url.searchParams.delete('type_id');
                     }
+                    const custTypeSelect = document.querySelector('select[name="customer_type"]');
+                    if (custTypeSelect && custTypeSelect.value) {
+                        url.searchParams.set('customer_type', custTypeSelect.value);
+                    } else {
+                        url.searchParams.delete('customer_type');
+                    }
+                    const vendorTypeSelect = document.querySelector('select[name="vendor_type"]');
+                    if (vendorTypeSelect && vendorTypeSelect.value) {
+                        url.searchParams.set('vendor_type', vendorTypeSelect.value);
+                    } else {
+                        url.searchParams.delete('vendor_type');
+                    }
                     btn.href = url.toString();
                 }
             };
             masterTypeSelect.addEventListener('change', updateDetailedLink);
             $(masterTypeSelect).on('change', updateDetailedLink);
+            $('#customer_type_select').on('change', updateDetailedLink);
+            $('#vendor_type_select').on('change', updateDetailedLink);
         }
     });
 </script>

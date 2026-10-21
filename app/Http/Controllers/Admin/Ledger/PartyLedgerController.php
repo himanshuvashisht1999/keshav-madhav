@@ -43,9 +43,12 @@ class PartyLedgerController extends Controller
             ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
         );
 
+        $purchaseAgents = \App\Models\PurchaseAgent::where('status', 1)->orderBy('name', 'asc')->get();
+
         return view('admin.ledger.party.index', [
             'parties' => $paginatedParties,
             'masters' => $masters,
+            'purchaseAgents' => $purchaseAgents,
             'totalPartiesCount' => $totalPartiesCount,
             'totalCreditBalance' => $totalCreditBalance,
             'totalDebitBalance' => $totalDebitBalance,
@@ -54,7 +57,9 @@ class PartyLedgerController extends Controller
             'totalPeriodDebit' => $totalPeriodDebit,
             'totalPeriodCredit' => $totalPeriodCredit,
             'startDate' => $startDate,
-            'endDate' => $endDate
+            'endDate' => $endDate,
+            'customerType' => $data['customerType'] ?? null,
+            'vendorType' => $data['vendorType'] ?? null,
         ]);
     }
 
@@ -213,7 +218,14 @@ class PartyLedgerController extends Controller
         $sheet->mergeCells('A2:J2');
         $periodText = $this->periodText($data['startDate'], $data['endDate']);
         $modeText = $viewMode === 'party_wise' ? 'Party-wise (Grouped)' : 'Mix (Consolidated)';
-        $subtitle = 'Period: ' . $periodText . '   |   View Mode: ' . $modeText . '   |   Parties: ' . $data['filteredParties']->count() . '   |   Generated: ' . date('d M Y, h:i A');
+        $subtitle = 'Period: ' . $periodText . '   |   View Mode: ' . $modeText . '   |   Parties: ' . $data['filteredParties']->count();
+        if (!empty($data['customerType'])) {
+            $subtitle .= '   |   Customer Type: ' . ucfirst($data['customerType']);
+        }
+        if (!empty($data['vendorType'])) {
+            $subtitle .= '   |   Vendor Type: ' . $this->vendorTypeText($data['vendorType']);
+        }
+        $subtitle .= '   |   Generated: ' . date('d M Y, h:i A');
         $sheet->setCellValue('A2', $subtitle);
         $sheet->getStyle('A2')->getFont()->setSize(10)->getColor()->setARGB('FF666666');
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
@@ -440,6 +452,9 @@ class PartyLedgerController extends Controller
             'endDate' => $endDate,
             'selectedParty' => $selectedParty,
             'typeId' => $request->query('type_id'),
+            'customerType' => $data['customerType'] ?? null,
+            'vendorType' => $data['vendorType'] ?? null,
+            'purchaseAgents' => \App\Models\PurchaseAgent::where('status', 1)->orderBy('name', 'asc')->get(),
             'search' => $request->query('search'),
             'masters' => $masters,
         ];
@@ -455,6 +470,8 @@ class PartyLedgerController extends Controller
             'parties' => $data['parties'],
             'search' => $search,
             'typeId' => $typeId,
+            'customerType' => $data['customerType'] ?? null,
+            'vendorType' => $data['vendorType'] ?? null,
             'startDate' => $data['startDate'],
             'endDate' => $data['endDate'],
         ])->setPaper('a4', 'landscape');
@@ -484,6 +501,8 @@ class PartyLedgerController extends Controller
         if ($request->query('min_closing')) $subtitle .= '   |   Min Closing: ₹ ' . number_format((float)$request->query('min_closing'), 2);
         if ($request->query('max_closing')) $subtitle .= '   |   Max Closing: ₹ ' . number_format((float)$request->query('max_closing'), 2);
         if ($request->query('balance_type')) $subtitle .= '   |   Balance: ' . strtoupper($request->query('balance_type'));
+        if (!empty($data['customerType'])) $subtitle .= '   |   Customer Type: ' . ucfirst($data['customerType']);
+        if (!empty($data['vendorType'])) $subtitle .= '   |   Vendor Type: ' . $this->vendorTypeText($data['vendorType']);
         $subtitle .= '   |   Generated on: ' . date('d M Y, h:i A');
         $sheet->setCellValue('A2', $subtitle);
         $sheet->getStyle('A2')->getFont()->setSize(10)->getColor()->setARGB('FF666666');
@@ -556,6 +575,8 @@ class PartyLedgerController extends Controller
     {
         $search = $request->query('search');
         $typeId = $request->query('type_id');
+        $customerType = $request->query('customer_type', $request->query('type'));
+        $vendorType = $request->query('vendor_type', $request->query('purchase_agent_id'));
         [$startDate, $endDate] = $this->listPeriod($request);
         $ledgerRequest = new Request(array_filter(['start_date' => $startDate, 'end_date' => $endDate]));
 
@@ -580,12 +601,37 @@ class PartyLedgerController extends Controller
                 if ($master) {
                     $modelName = $master->model_name;
                     if (class_exists($modelName)) {
+                        $isCustomer = ($modelName === 'App\Models\MasterCustomer' || strtolower($master->name) === 'customer');
+                        $isVendor = ($modelName === 'App\Models\Vendor' || strtolower($master->name) === 'vendor');
                         $items = $modelName::where('status', 1)
                             ->when($search, function ($q) use ($search, $modelName) {
                                 if ($modelName == 'App\Models\BankAccount') {
                                     $q->where('bank_name', 'LIKE', "%$search%");
                                 } else {
                                     $q->where('name', 'LIKE', "%$search%");
+                                }
+                            })
+                            ->when($isCustomer && !empty($customerType), function ($q) use ($customerType) {
+                                if ($customerType == 'direct') {
+                                    $q->where('subtype', 'direct');
+                                } elseif ($customerType == 'agent') {
+                                    $q->where('subtype', 'agent');
+                                } else {
+                                    $q->where('type', $customerType);
+                                }
+                            })
+                            ->when($isVendor && !empty($vendorType), function ($q) use ($vendorType) {
+                                if ($vendorType === 'direct') {
+                                    $q->where(function ($sub) {
+                                        $sub->whereNull('purchase_agent_id')->orWhere('purchase_agent_id', 0);
+                                    });
+                                } elseif ($vendorType === 'agent') {
+                                    $q->whereNotNull('purchase_agent_id')->where('purchase_agent_id', '!=', 0);
+                                } elseif (str_starts_with($vendorType, 'pa_')) {
+                                    $agentId = (int) substr($vendorType, 3);
+                                    $q->where('purchase_agent_id', $agentId);
+                                } elseif (is_numeric($vendorType)) {
+                                    $q->where('purchase_agent_id', (int) $vendorType);
                                 }
                             })
                             ->get()
@@ -604,12 +650,37 @@ class PartyLedgerController extends Controller
             foreach ($masters as $master) {
                 $modelName = $master->model_name;
                 if (class_exists($modelName)) {
+                    $isCustomer = ($modelName === 'App\Models\MasterCustomer' || strtolower($master->name) === 'customer');
+                    $isVendor = ($modelName === 'App\Models\Vendor' || strtolower($master->name) === 'vendor');
                     $items = $modelName::where('status', 1)
                         ->when($search, function ($q) use ($search, $modelName) {
                             if ($modelName == 'App\Models\BankAccount') {
                                 $q->where('bank_name', 'LIKE', "%$search%");
                             } else {
                                 $q->where('name', 'LIKE', "%$search%");
+                            }
+                        })
+                        ->when($isCustomer && !empty($customerType), function ($q) use ($customerType) {
+                            if ($customerType == 'direct') {
+                                $q->where('subtype', 'direct');
+                            } elseif ($customerType == 'agent') {
+                                $q->where('subtype', 'agent');
+                            } else {
+                                $q->where('type', $customerType);
+                            }
+                        })
+                        ->when($isVendor && !empty($vendorType), function ($q) use ($vendorType) {
+                            if ($vendorType === 'direct') {
+                                $q->where(function ($sub) {
+                                    $sub->whereNull('purchase_agent_id')->orWhere('purchase_agent_id', 0);
+                                });
+                            } elseif ($vendorType === 'agent') {
+                                $q->whereNotNull('purchase_agent_id')->where('purchase_agent_id', '!=', 0);
+                            } elseif (str_starts_with($vendorType, 'pa_')) {
+                                $agentId = (int) substr($vendorType, 3);
+                                $q->where('purchase_agent_id', $agentId);
+                            } elseif (is_numeric($vendorType)) {
+                                $q->where('purchase_agent_id', (int) $vendorType);
                             }
                         })
                         ->limit(100) // Safety limit for "All" view
@@ -671,7 +742,20 @@ class PartyLedgerController extends Controller
         // Sort by name
         $parties = $parties->sortBy('name');
 
-        return compact('parties', 'masters', 'startDate', 'endDate');
+        return compact('parties', 'masters', 'startDate', 'endDate', 'customerType', 'vendorType');
+    }
+
+    private function vendorTypeText($vendorType, $purchaseAgents = null): string
+    {
+        if (empty($vendorType)) return '';
+        if ($vendorType === 'direct') return 'Direct';
+        if ($vendorType === 'agent') return 'Fabric Purchase Agent';
+        $paId = str_starts_with($vendorType, 'pa_') ? (int) substr($vendorType, 3) : (int) $vendorType;
+        if ($paId > 0) {
+            $pa = ($purchaseAgents ? $purchaseAgents->firstWhere('id', $paId) : null) ?: \App\Models\PurchaseAgent::find($paId);
+            return 'Purchase Agent: ' . ($pa ? $pa->name : $paId);
+        }
+        return ucfirst($vendorType);
     }
 
     /** Opening, debit, credit and closing of one party for the period, from the same ledger as its statement. */
