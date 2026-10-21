@@ -133,6 +133,16 @@
     <table class="filter-summary">
         <tr>
             <td style="width: 20%;">
+                <span class="filter-label">Report Type:</span>
+                @if(($filters['report_type'] ?? 'both') === 'sales')
+                    Sales Only
+                @elseif(($filters['report_type'] ?? 'both') === 'return')
+                    Sales Return Only
+                @else
+                    Both (Sales + Return)
+                @endif
+            </td>
+            <td style="width: 20%;">
                 <span class="filter-label">Party:</span> {{ $selectedParty ?? 'All Parties' }}
             </td>
             <td style="width: 20%;">
@@ -150,10 +160,7 @@
                 @endif
             </td>
             <td style="width: 20%;">
-                <span class="filter-label">Dispatch Type:</span> {{ !empty($filters['item_type']) ? $filters['item_type'] : 'All Types' }}
-            </td>
-            <td style="width: 20%;">
-                <span class="filter-label">Bill No:</span> {{ !empty($filters['bill_no']) ? $filters['bill_no'] : 'All' }}
+                <span class="filter-label">Date Order:</span> {{ strtoupper($filters['sort_date'] ?? 'desc') }}
             </td>
             <td style="width: 20%;">
                 <span class="filter-label">Date Range:</span>
@@ -167,26 +174,36 @@
     </table>
 
     <div class="total-box">
-        <span class="title">Total Grand Total:</span>
-        <span class="amount">₹{{ number_format($totalGrandTotal, 2) }}</span>
+        <span class="title">Net Sales Total:</span>
+        <span class="amount">₹{{ number_format($netGrandTotal ?? $totalGrandTotal, 2) }}</span>
+        @if(($filters['report_type'] ?? 'both') === 'both')
+            <span style="font-size: 8.5px; color: #555; margin-left: 10px;">
+                (Gross Sales: ₹{{ number_format($totalSalesGrandTotal ?? 0, 2) }} | Returns: ₹{{ number_format($totalReturnGrandTotal ?? 0, 2) }})
+            </span>
+        @endif
     </div>
 
     <table class="data-table">
         <thead>
             <tr>
                 <th style="width: 5%;" class="text-center">#</th>
-                <th style="width: 17%;">Dispatch ID / Bill</th>
-                <th style="width: 28%;">Party Name</th>
-                <th style="width: 15%;">Agent / Type</th>
-                <th style="width: 15%;" class="text-right">Grand Total</th>
-                <th style="width: 20%;">Date</th>
+                <th style="width: 10%;" class="text-center">Type</th>
+                <th style="width: 17%;">Dispatch / Return ID</th>
+                <th style="width: 26%;">Party Name</th>
+                <th style="width: 14%;">Agent / Type</th>
+                <th style="width: 14%;" class="text-right">Grand Total</th>
+                <th style="width: 14%;">Date</th>
             </tr>
         </thead>
         <tbody>
             @php $sno = 1; @endphp
             @forelse($sales as $dispatch)
-                <tr>
+                @php $isReturn = ($dispatch->entry_type ?? 'sale') === 'return'; @endphp
+                <tr style="{{ $isReturn ? 'background-color: #fff5f5;' : '' }}">
                     <td class="text-center">{{ $sno++ }}</td>
+                    <td class="text-center font-weight-bold" style="{{ $isReturn ? 'color: #b91c1c;' : 'color: #166534;' }}">
+                        {{ $isReturn ? 'Return' : 'Sale' }}
+                    </td>
                     <td>
                         <strong>{{ $dispatch->dispatch_no }}</strong>
                         @if(!empty($dispatch->bill_no))
@@ -202,19 +219,21 @@
                         @endif
                     </td>
                     <td>{{ $dispatch->source_type === 'corporate' ? 'Corporate' : ($dispatch->agent_name ? $dispatch->agent_name . ' (Agent)' : 'Domestic (Direct)') }}</td>
-                    <td class="text-right font-weight-bold">₹{{ number_format($dispatch->grand_total, 2) }}</td>
+                    <td class="text-right font-weight-bold" style="{{ $isReturn ? 'color: #dc2626;' : 'color: #05421c;' }}">
+                        {{ $isReturn ? '- ' : '' }}₹{{ number_format($dispatch->grand_total, 2) }}
+                    </td>
                     <td>{{ $dispatch->dispatch_date ? date('d M Y', strtotime($dispatch->dispatch_date)) : 'N/A' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center" style="padding: 15px; color: #8aa890;">No sales records found matching the criteria.</td>
+                    <td colspan="7" class="text-center" style="padding: 15px; color: #8aa890;">No sales or return records found matching the criteria.</td>
                 </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr style="background-color: #dfe9da; font-weight: bold;">
-                <td colspan="4" class="text-right">TOTAL:</td>
-                <td class="text-right" style="font-size: 11px; color: #05421c;">₹{{ number_format($totalGrandTotal, 2) }}</td>
+                <td colspan="5" class="text-right">NET TOTAL:</td>
+                <td class="text-right" style="font-size: 11px; color: #05421c;">₹{{ number_format($netGrandTotal ?? $totalGrandTotal, 2) }}</td>
                 <td></td>
             </tr>
         </tfoot>

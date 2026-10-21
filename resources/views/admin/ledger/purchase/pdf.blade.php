@@ -127,16 +127,23 @@
     <table class="filter-summary">
         <tr>
             <td style="width: 20%;">
+                <span class="filter-label">Report Type:</span>
+                @if(($filters['report_type'] ?? 'both') === 'purchase')
+                    Purchase Only
+                @elseif(($filters['report_type'] ?? 'both') === 'return')
+                    Purchase Return Only
+                @else
+                    Both (Purchase + Return)
+                @endif
+            </td>
+            <td style="width: 20%;">
                 <span class="filter-label">Vendor:</span> {{ $selectedVendor ?? 'All Vendors' }}
             </td>
             <td style="width: 20%;">
                 <span class="filter-label">Purchase Agent:</span> {{ $selectedPurchaseAgent ?? 'All Agents' }}
             </td>
             <td style="width: 20%;">
-                <span class="filter-label">Item Type:</span> {{ !empty($filters['item_type']) ? $filters['item_type'] : 'All Types' }}
-            </td>
-            <td style="width: 20%;">
-                <span class="filter-label">Bill No:</span> {{ !empty($filters['bill_no']) ? $filters['bill_no'] : 'All' }}
+                <span class="filter-label">Date Order:</span> {{ strtoupper($filters['sort_date'] ?? 'desc') }}
             </td>
             <td style="width: 20%;">
                 <span class="filter-label">Date Range:</span>
@@ -150,44 +157,54 @@
     </table>
 
     <div class="total-box">
-        <span class="title">Total Grand Total:</span>
-        <span class="amount">₹{{ number_format($totalGrandTotal, 2) }}</span>
+        <span class="title">Net Purchase Total:</span>
+        <span class="amount">₹{{ number_format($netGrandTotal ?? $totalGrandTotal, 2) }}</span>
+        @if(($filters['report_type'] ?? 'both') === 'both')
+            <span style="font-size: 8.5px; color: #555; margin-left: 10px;">
+                (Gross Purchases: ₹{{ number_format($totalPurchaseGrandTotal ?? 0, 2) }} | Returns: ₹{{ number_format($totalReturnGrandTotal ?? 0, 2) }})
+            </span>
+        @endif
     </div>
 
     <table class="data-table">
         <thead>
             <tr>
                 <th style="width: 5%;" class="text-center">#</th>
+                <th style="width: 10%;" class="text-center">Type</th>
                 <th style="width: 12%;">Date</th>
-                <th style="width: 16%;">Bill No.</th>
-                <th style="width: 25%;">Vendor Name</th>
-                <th style="width: 18%;">Purchase Agent</th>
-                <th style="width: 12%;">Receipt Type</th>
-                <th style="width: 12%;" class="text-right">Grand Total</th>
+                <th style="width: 16%;">Bill / Return No.</th>
+                <th style="width: 24%;">Vendor Name</th>
+                <th style="width: 16%;">Purchase Agent</th>
+                <th style="width: 17%;" class="text-right">Grand Total</th>
             </tr>
         </thead>
         <tbody>
             @php $sno = 1; @endphp
             @forelse($purchases as $item)
-                <tr>
+                @php $isReturn = ($item->entry_type ?? 'purchase') === 'return'; @endphp
+                <tr style="{{ $isReturn ? 'background-color: #fff5f5;' : '' }}">
                     <td class="text-center">{{ $sno++ }}</td>
+                    <td class="text-center font-weight-bold" style="{{ $isReturn ? 'color: #b91c1c;' : 'color: #166534;' }}">
+                        {{ $isReturn ? 'Return' : 'Purchase' }}
+                    </td>
                     <td>{{ $item->date ? date('d M Y', strtotime($item->date)) : 'N/A' }}</td>
                     <td><strong>{{ $item->invoice_no ?? 'N/A' }}</strong></td>
                     <td>{{ $item->vendor_name ?? 'N/A' }}</td>
                     <td>{{ $item->purchase_agent_name ?? 'Direct' }}</td>
-                    <td>{{ $item->item_type }}</td>
-                    <td class="text-right font-weight-bold">₹{{ number_format($item->grand_total, 2) }}</td>
+                    <td class="text-right font-weight-bold" style="{{ $isReturn ? 'color: #dc2626;' : 'color: #05421c;' }}">
+                        {{ $isReturn ? '- ' : '' }}₹{{ number_format($item->grand_total, 2) }}
+                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center" style="padding: 15px; color: #8aa890;">No purchase records found matching the criteria.</td>
+                    <td colspan="7" class="text-center" style="padding: 15px; color: #8aa890;">No purchase or return records found matching the criteria.</td>
                 </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr style="background-color: #dfe9da; font-weight: bold;">
-                <td colspan="6" class="text-right">TOTAL:</td>
-                <td class="text-right" style="font-size: 11px; color: #05421c;">₹{{ number_format($totalGrandTotal, 2) }}</td>
+                <td colspan="6" class="text-right">NET TOTAL:</td>
+                <td class="text-right" style="font-size: 11px; color: #05421c;">₹{{ number_format($netGrandTotal ?? $totalGrandTotal, 2) }}</td>
             </tr>
         </tfoot>
     </table>
