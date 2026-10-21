@@ -11,6 +11,14 @@
                 <i class="fas fa-undo-alt text-primary"></i> Sales Returns
             </div>
             <div class="erp-header-actions">
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Total returns</span>
+                    <span class="hud-stat-value text-success">{{ number_format($totalReturnsCount ?? 0) }}</span>
+                </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Total amount</span>
+                    <span class="hud-stat-value text-primary">₹ {{ number_format($totalReturnAmount ?? 0, 2) }}</span>
+                </div>
                 <a href="{{ route('admin.agent-orders.dispatches.index') }}" class="btn-erp btn-erp-primary">
                     <i class="fas fa-plus"></i> New Return (From Dispatch)
                 </a>

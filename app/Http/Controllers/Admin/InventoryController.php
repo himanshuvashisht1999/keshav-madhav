@@ -1344,8 +1344,15 @@ class InventoryController extends Controller
         if ($request->has('bill_no') && $request->bill_no) {
             $query->where('bill_no', 'like', "%{$request->bill_no}%");
         }
+        $totalsQuery = clone $query;
+        $totalPurchases = (clone $totalsQuery)->count();
+        $totalAmount = (clone $totalsQuery)->sum('total_amount');
+        $totalBoxes = \App\Models\DomesticInventoryHistory::whereIn('purchase_id', (clone $totalsQuery)->select('id'))->sum('box_quantity');
 
         return Datatables::of($query)
+            ->with('total_purchases', (int)$totalPurchases)
+            ->with('total_amount', (float)$totalAmount)
+            ->with('total_boxes', (int)$totalBoxes)
             ->addIndexColumn()
             ->addColumn('production_po', function ($row) {
                 return $row->productionPO ? $row->productionPO->po_number : '<span class="text-muted small">Manual</span>';
@@ -1456,7 +1463,13 @@ class InventoryController extends Controller
         // Order by latest
         $query->orderBy('id', 'desc');
 
+        $totalsQuery = clone $query;
+        $totalSessions = (clone $totalsQuery)->count();
+        $totalBoxes = \App\Models\PackingCarton::whereIn('packing_main_id', (clone $totalsQuery)->select('id'))->count();
+
         return Datatables::of($query)
+            ->with('total_sessions', (int)$totalSessions)
+            ->with('total_boxes', (int)$totalBoxes)
             ->addIndexColumn()
             ->addColumn('date', function ($row) {
                 return date('d M Y', strtotime($row->packing_date ?? $row->created_at));

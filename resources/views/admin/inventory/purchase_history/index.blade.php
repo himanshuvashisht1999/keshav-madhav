@@ -9,6 +9,18 @@
                 <i class="fas fa-shopping-cart text-primary"></i> Purchase History
             </div>
             <div class="erp-header-actions">
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Total purchases</span>
+                    <span class="hud-stat-value text-success" id="header_total_purchases">-</span>
+                </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Total boxes</span>
+                    <span class="hud-stat-value text-primary" id="header_total_boxes">-</span>
+                </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Total amount</span>
+                    <span class="hud-stat-value text-dark" id="header_total_amount">-</span>
+                </div>
                 <a href="{{ route('admin.inventory.purchase') }}" class="btn-erp btn-erp-primary">
                     <i class="fas fa-plus"></i> New Purchase
                 </a>
@@ -166,6 +178,14 @@
                     previous: '<i class="fas fa-chevron-left"></i>',
                     next: '<i class="fas fa-chevron-right"></i>'
                 }
+            }
+        });
+
+        table.on('xhr.dt', function(e, settings, json, xhr) {
+            if (json) {
+                if (json.total_purchases !== undefined) $('#header_total_purchases').text(Number(json.total_purchases).toLocaleString());
+                if (json.total_boxes !== undefined) $('#header_total_boxes').text(Number(json.total_boxes).toLocaleString());
+                if (json.total_amount !== undefined) $('#header_total_amount').text('₹ ' + Number(json.total_amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
             }
         });
 

@@ -24,7 +24,13 @@ class StockDisposalController extends Controller
     public function historyList(Request $request)
     {
         $query = StockDisposalMain::with(['user'])->withCount('items')->latest();
+        $totalsQuery = clone $query;
+        $totalDisposals = (clone $totalsQuery)->count();
+        $totalItems = StockDisposalItem::whereIn('stock_disposal_main_id', (clone $totalsQuery)->select('id'))->count();
+
         return DataTables::of($query)
+            ->with('total_disposals', (int)$totalDisposals)
+            ->with('total_items', (int)$totalItems)
             ->addIndexColumn()
             ->addColumn('action', function ($row) {
                 return '<div class="btn-group">

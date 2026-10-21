@@ -59,7 +59,11 @@ class FairProductController extends Controller
             $query->whereDate('created_at', '<=', $request->to_date);
         }
 
-        $batches = $query->orderBy('id', 'desc')->paginate(20);
+        $totalsQuery = clone $query;
+        $totalSets = (clone $totalsQuery)->count();
+        $totalItems = \App\Models\FairProduct::whereIn('fair_batch_id', (clone $totalsQuery)->select('id'))->count();
+
+        $batches = $query->orderBy('id', 'desc')->paginate(20)->withQueryString();
         $salesAgents = \App\Models\SalesAgent::where('status', 1)->get();
         $designNumbers = ProductionGoods::select('design_number')
             ->distinct()
@@ -77,7 +81,7 @@ class FairProductController extends Controller
         ->filter()
         ->values();
 
-        return view('admin.inventory.fair_product.index', compact('batches', 'salesAgents', 'designNumbers', 'sizeSets', 'productsList'));
+        return view('admin.inventory.fair_product.index', compact('batches', 'salesAgents', 'designNumbers', 'sizeSets', 'productsList', 'totalSets', 'totalItems'));
     }
 
     public function searchByDesign(Request $request)

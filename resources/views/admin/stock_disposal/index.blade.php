@@ -11,6 +11,14 @@
                 <i class="fas fa-trash-alt text-primary mr-2"></i> Stock Disposal History
             </div>
             <div class="erp-header-actions">
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Total disposals</span>
+                    <span class="hud-stat-value text-success" id="header_total_disposals">-</span>
+                </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Total items</span>
+                    <span class="hud-stat-value text-primary" id="header_total_items">-</span>
+                </div>
                 <a href="{{ route('admin.inventory.stock_disposal.create') }}" class="btn-erp btn-erp-primary">
                     <i class="fas fa-plus"></i> New Disposal
                 </a>
@@ -88,6 +96,13 @@
                 search: "_INPUT_",
                 searchPlaceholder: "Search history...",
                 processing: '<i class="fas fa-spinner fa-spin fa-2x text-success"></i>'
+            }
+        });
+
+        table.on('xhr.dt', function(e, settings, json, xhr) {
+            if (json) {
+                if (json.total_disposals !== undefined) $('#header_total_disposals').text(Number(json.total_disposals).toLocaleString());
+                if (json.total_items !== undefined) $('#header_total_items').text(Number(json.total_items).toLocaleString());
             }
         });
 

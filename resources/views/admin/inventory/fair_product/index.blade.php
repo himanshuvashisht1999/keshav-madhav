@@ -10,6 +10,14 @@
             <i class="fas fa-layer-group text-primary"></i> Sample Sets
         </div>
         <div class="erp-header-actions">
+            <div class="hud-stat-box">
+                <span class="hud-stat-label">Total sets</span>
+                <span class="hud-stat-value text-success">{{ number_format($totalSets ?? 0) }}</span>
+            </div>
+            <div class="hud-stat-box">
+                <span class="hud-stat-label">Total items</span>
+                <span class="hud-stat-value text-primary">{{ number_format($totalItems ?? 0) }}</span>
+            </div>
             <button type="button" class="btn-erp btn-erp-outline" data-toggle="modal" data-target="#designSearchModal">
                 <i class="fas fa-search"></i> Search Design No
             </button>

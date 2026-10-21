@@ -34,9 +34,13 @@ class SampleProductController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
+        $totalsQuery = clone $query;
+        $totalCatalogs = (clone $totalsQuery)->count();
+        $totalItems = \App\Models\SampleProduct::whereIn('sample_batch_id', (clone $totalsQuery)->select('id'))->count();
+
         $batches = $query->paginate(20)->withQueryString();
             
-        return view('admin.inventory.sample_product.index', compact('batches'));
+        return view('admin.inventory.sample_product.index', compact('batches', 'totalCatalogs', 'totalItems'));
     }
 
     public function create()

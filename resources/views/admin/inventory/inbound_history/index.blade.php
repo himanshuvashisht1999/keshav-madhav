@@ -9,6 +9,14 @@
                 <i class="fas fa-history text-primary"></i> Inbound Stock Session History
             </div>
             <div class="erp-header-actions">
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Total sessions</span>
+                    <span class="hud-stat-value text-success" id="header_total_sessions">-</span>
+                </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">Total boxes</span>
+                    <span class="hud-stat-value text-primary" id="header_total_boxes">-</span>
+                </div>
                 <a href="{{ route('admin.inventory.create') }}" class="btn-erp btn-erp-primary">
                     <i class="fas fa-plus"></i> New Stock Generate
                 </a>
@@ -105,6 +113,13 @@
                     previous: '<i class="fas fa-chevron-left"></i>',
                     next: '<i class="fas fa-chevron-right"></i>'
                 }
+            }
+        });
+
+        table.on('xhr.dt', function(e, settings, json, xhr) {
+            if (json) {
+                if (json.total_sessions !== undefined) $('#header_total_sessions').text(Number(json.total_sessions).toLocaleString());
+                if (json.total_boxes !== undefined) $('#header_total_boxes').text(Number(json.total_boxes).toLocaleString());
             }
         });
 

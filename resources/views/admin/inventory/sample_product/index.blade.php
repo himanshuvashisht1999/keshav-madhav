@@ -10,6 +10,14 @@
             <i class="fas fa-layer-group text-primary"></i> Sample Catalogs
         </div>
         <div class="erp-header-actions">
+            <div class="hud-stat-box">
+                <span class="hud-stat-label">Total catalogs</span>
+                <span class="hud-stat-value text-success">{{ number_format($totalCatalogs ?? 0) }}</span>
+            </div>
+            <div class="hud-stat-box">
+                <span class="hud-stat-label">Total items</span>
+                <span class="hud-stat-value text-primary">{{ number_format($totalItems ?? 0) }}</span>
+            </div>
             <a href="{{ route('admin.inventory.sample-product.create') }}" class="btn-erp btn-erp-primary">
                 <i class="fas fa-plus"></i> Create New Catalog
             </a>

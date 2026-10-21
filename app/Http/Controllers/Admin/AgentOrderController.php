@@ -4759,12 +4759,15 @@ class AgentOrderController extends Controller
             $query->whereDate('return_date', '<=', $request->to_date);
         }
 
+        $totalReturnsCount = (clone $query)->count();
+        $totalReturnAmount = (clone $query)->sum('grand_total');
+
         $returns = $query->latest()->paginate(20)->appends($request->query());
         
         $shops = DB::table('master_customers')->select('id', 'name')->where('status', 1)->get();
         $vendors = DB::table('vendors')->select('id', 'name')->where('status', 1)->get();
 
-        return view('admin.agent_orders.returns.index', compact('returns', 'shops', 'vendors'));
+        return view('admin.agent_orders.returns.index', compact('returns', 'shops', 'vendors', 'totalReturnsCount', 'totalReturnAmount'));
     }
 
     public function returnCreate($id)
