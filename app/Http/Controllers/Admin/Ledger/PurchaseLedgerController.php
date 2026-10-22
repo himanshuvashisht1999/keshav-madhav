@@ -17,17 +17,23 @@ class PurchaseLedgerController extends Controller
         $query = $this->getPurchasesQuery($request);
         $sortDate = strtolower($request->get('sort_date', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        $totalPurchaseGrandTotal = (float)(clone $query)->where('entry_type', 'purchase')->sum('grand_total');
-        $totalReturnGrandTotal = (float)(clone $query)->where('entry_type', 'return')->sum('grand_total');
+        $totals = (clone $query)->selectRaw("
+            COUNT(*) as total_records,
+            COALESCE(SUM(CASE WHEN entry_type = 'purchase' THEN grand_total ELSE 0 END), 0) as total_purchases,
+            COALESCE(SUM(CASE WHEN entry_type = 'return' THEN grand_total ELSE 0 END), 0) as total_return
+        ")->first();
+
+        $totalPurchaseGrandTotal = (float)($totals->total_purchases ?? 0);
+        $totalReturnGrandTotal = (float)($totals->total_return ?? 0);
         $netGrandTotal = $totalPurchaseGrandTotal - $totalReturnGrandTotal;
         $totalGrandTotal = $netGrandTotal;
+        $totalPurchasesCount = (int)($totals->total_records ?? 0);
 
         $purchases = $query->orderBy('date', $sortDate)->orderBy('ref_id', $sortDate)->paginate(25)->appends($request->all());
 
         $pagePurchaseTotal = (float)$purchases->where('entry_type', 'purchase')->sum('grand_total');
         $pageReturnTotal = (float)$purchases->where('entry_type', 'return')->sum('grand_total');
         $pageSubTotal = $pagePurchaseTotal - $pageReturnTotal;
-        $totalPurchasesCount = $purchases->total();
 
         $vendors = DB::table('vendors')->select('id', 'name')->orderBy('name')->get();
         $purchaseAgents = DB::table('purchase_agents')->select('id', 'name')->where('status', 1)->orderBy('name')->get();
@@ -50,8 +56,13 @@ class PurchaseLedgerController extends Controller
         $query = $this->getPurchasesQuery($request);
         $sortDate = strtolower($request->get('sort_date', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        $totalPurchaseGrandTotal = (float)(clone $query)->where('entry_type', 'purchase')->sum('grand_total');
-        $totalReturnGrandTotal = (float)(clone $query)->where('entry_type', 'return')->sum('grand_total');
+        $totals = (clone $query)->selectRaw("
+            COALESCE(SUM(CASE WHEN entry_type = 'purchase' THEN grand_total ELSE 0 END), 0) as total_purchases,
+            COALESCE(SUM(CASE WHEN entry_type = 'return' THEN grand_total ELSE 0 END), 0) as total_return
+        ")->first();
+
+        $totalPurchaseGrandTotal = (float)($totals->total_purchases ?? 0);
+        $totalReturnGrandTotal = (float)($totals->total_return ?? 0);
         $netGrandTotal = $totalPurchaseGrandTotal - $totalReturnGrandTotal;
         $totalGrandTotal = $netGrandTotal;
 
@@ -91,8 +102,13 @@ class PurchaseLedgerController extends Controller
         $query = $this->getPurchasesQuery($request);
         $sortDate = strtolower($request->get('sort_date', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        $totalPurchaseGrandTotal = (float)(clone $query)->where('entry_type', 'purchase')->sum('grand_total');
-        $totalReturnGrandTotal = (float)(clone $query)->where('entry_type', 'return')->sum('grand_total');
+        $totals = (clone $query)->selectRaw("
+            COALESCE(SUM(CASE WHEN entry_type = 'purchase' THEN grand_total ELSE 0 END), 0) as total_purchases,
+            COALESCE(SUM(CASE WHEN entry_type = 'return' THEN grand_total ELSE 0 END), 0) as total_return
+        ")->first();
+
+        $totalPurchaseGrandTotal = (float)($totals->total_purchases ?? 0);
+        $totalReturnGrandTotal = (float)($totals->total_return ?? 0);
         $netGrandTotal = $totalPurchaseGrandTotal - $totalReturnGrandTotal;
         $totalGrandTotal = $netGrandTotal;
 

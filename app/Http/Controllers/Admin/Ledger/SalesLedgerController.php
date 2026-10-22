@@ -18,17 +18,23 @@ class SalesLedgerController extends Controller
 
         $sortDate = strtolower($request->get('sort_date', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        $totalSalesGrandTotal = (float)(clone $query)->where('entry_type', 'sale')->sum('grand_total');
-        $totalReturnGrandTotal = (float)(clone $query)->where('entry_type', 'return')->sum('grand_total');
+        $totals = (clone $query)->selectRaw("
+            COUNT(*) as total_records,
+            COALESCE(SUM(CASE WHEN entry_type = 'sale' THEN grand_total ELSE 0 END), 0) as total_sales,
+            COALESCE(SUM(CASE WHEN entry_type = 'return' THEN grand_total ELSE 0 END), 0) as total_return
+        ")->first();
+
+        $totalSalesGrandTotal = (float)($totals->total_sales ?? 0);
+        $totalReturnGrandTotal = (float)($totals->total_return ?? 0);
         $netGrandTotal = $totalSalesGrandTotal - $totalReturnGrandTotal;
         $totalGrandTotal = $netGrandTotal;
+        $totalSalesCount = (int)($totals->total_records ?? 0);
 
         $sales = $query->orderBy('dispatch_date', $sortDate)->orderBy('id', $sortDate)->paginate(25)->appends($request->all());
 
         $pageSalesTotal = (float)$sales->where('entry_type', 'sale')->sum('grand_total');
         $pageReturnTotal = (float)$sales->where('entry_type', 'return')->sum('grand_total');
         $pageSubTotal = $pageSalesTotal - $pageReturnTotal;
-        $totalSalesCount = $sales->total();
 
         $parties = DB::table('master_customers')->select('id', 'name')->orderBy('name')->get();
         $vendors = DB::table('vendors')->select('id', 'name')->orderBy('name')->get();
@@ -51,8 +57,13 @@ class SalesLedgerController extends Controller
         $query = $this->getSalesQuery($request);
         $sortDate = strtolower($request->get('sort_date', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        $totalSalesGrandTotal = (float)(clone $query)->where('entry_type', 'sale')->sum('grand_total');
-        $totalReturnGrandTotal = (float)(clone $query)->where('entry_type', 'return')->sum('grand_total');
+        $totals = (clone $query)->selectRaw("
+            COALESCE(SUM(CASE WHEN entry_type = 'sale' THEN grand_total ELSE 0 END), 0) as total_sales,
+            COALESCE(SUM(CASE WHEN entry_type = 'return' THEN grand_total ELSE 0 END), 0) as total_return
+        ")->first();
+
+        $totalSalesGrandTotal = (float)($totals->total_sales ?? 0);
+        $totalReturnGrandTotal = (float)($totals->total_return ?? 0);
         $netGrandTotal = $totalSalesGrandTotal - $totalReturnGrandTotal;
         $totalGrandTotal = $netGrandTotal;
 
@@ -82,8 +93,13 @@ class SalesLedgerController extends Controller
         $query = $this->getSalesQuery($request);
         $sortDate = strtolower($request->get('sort_date', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        $totalSalesGrandTotal = (float)(clone $query)->where('entry_type', 'sale')->sum('grand_total');
-        $totalReturnGrandTotal = (float)(clone $query)->where('entry_type', 'return')->sum('grand_total');
+        $totals = (clone $query)->selectRaw("
+            COALESCE(SUM(CASE WHEN entry_type = 'sale' THEN grand_total ELSE 0 END), 0) as total_sales,
+            COALESCE(SUM(CASE WHEN entry_type = 'return' THEN grand_total ELSE 0 END), 0) as total_return
+        ")->first();
+
+        $totalSalesGrandTotal = (float)($totals->total_sales ?? 0);
+        $totalReturnGrandTotal = (float)($totals->total_return ?? 0);
         $netGrandTotal = $totalSalesGrandTotal - $totalReturnGrandTotal;
         $totalGrandTotal = $netGrandTotal;
 
