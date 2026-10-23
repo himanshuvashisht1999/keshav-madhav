@@ -102,7 +102,7 @@
                 <table class="table erp-table align-middle mb-0 text-sm">
                     <thead>
                         <tr>
-                            <th width="70" class="text-center">Slip ID</th>
+                            <th width="90" class="text-center">Slip ID</th>
                             <th width="100">Date</th>
                             <th>From Stage</th>
                             <th>Unit</th>
@@ -110,14 +110,33 @@
                             <th>Bill / Slip Target</th>
                             <th>To Stage</th>
                             <th class="text-center" width="100">Status</th>
-                            <th class="text-right pr-3" width="140">Action</th>
+                            <th class="text-right pr-3" width="160">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($slips as $slip)
                         <tr class="border-bottom">
-                            <td class="text-center font-weight-bold" style="color: var(--erp-green-primary);">
-                                #{{ $slip->id }}
+                            <td class="text-center">
+                                <div class="font-weight-bold" style="color: var(--erp-green-primary); font-size: 13px;">
+                                    #{{ $slip->id }}
+                                </div>
+                                @if(!empty($slip->slip_file))
+                                    <button type="button" 
+                                            class="btn btn-xs py-0 px-1 mt-1 btn-view-slip-photo"
+                                            style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; border-radius: 4px; font-size: 10px; font-weight: 600;"
+                                            data-slip-id="{{ $slip->id }}"
+                                            data-slip-url="{{ asset('assets/production_slips/' . $slip->slip_file) }}"
+                                            data-slip-date="{{ $slip->created_at->format('d M Y, h:i A') }}"
+                                            data-slip-unit="{{ $slip->getUnitMaster->name ?? '-' }}"
+                                            data-slip-from="{{ $slip->fromStage->name ?? '-' }}"
+                                            data-slip-to="{{ $slip->toStage->name ?? '-' }}"
+                                            data-slip-bill="{{ $slip->bill_number ?? '-' }}"
+                                            data-slip-pieces="{{ $slip->total_pieces ?? '-' }}"
+                                            data-slip-show-url="{{ route('admin.uploaded-slips.show', $slip->id) }}"
+                                            title="View Unit Uploaded Slip Image">
+                                        <i class="fas fa-image mr-1"></i> Slip
+                                    </button>
+                                @endif
                             </td>
                             <td class="text-muted font-weight-normal">
                                 {{ $slip->created_at->format('d M Y') }}
@@ -286,8 +305,26 @@
                                                         ($slip->packingMain ? 1 : 0);
                                     @endphp
                                     
+                                    @if(!empty($slip->slip_file))
+                                        <button type="button" 
+                                                class="erp-action-btn btn-view-slip-photo" 
+                                                style="color: #0284c7; border-color: #bae6fd; background: #f0f9ff;"
+                                                data-slip-id="{{ $slip->id }}"
+                                                data-slip-url="{{ asset('assets/production_slips/' . $slip->slip_file) }}"
+                                                data-slip-date="{{ $slip->created_at->format('d M Y, h:i A') }}"
+                                                data-slip-unit="{{ $slip->getUnitMaster->name ?? '-' }}"
+                                                data-slip-from="{{ $slip->fromStage->name ?? '-' }}"
+                                                data-slip-to="{{ $slip->toStage->name ?? '-' }}"
+                                                data-slip-bill="{{ $slip->bill_number ?? '-' }}"
+                                                data-slip-pieces="{{ $slip->total_pieces ?? '-' }}"
+                                                data-slip-show-url="{{ route('admin.uploaded-slips.show', $slip->id) }}"
+                                                title="View Uploaded Slip Photo in Modal">
+                                            <i class="fas fa-file-image"></i>
+                                        </button>
+                                    @endif
+
                                     @if($slip->status == 1 || $totalSessions > 0)
-                                        <a href="{{ route('admin.uploaded-slips.show', $slip->id) }}" class="erp-action-btn erp-btn-view" title="View Details">
+                                        <a href="{{ route('admin.uploaded-slips.show', $slip->id) }}" class="erp-action-btn erp-btn-view" title="View Digitization Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     @endif
@@ -343,14 +380,192 @@
         </div>
     </div>
 </div>
+
+<!-- ================= UNIT SLIP PHOTO PREVIEW MODAL ================= -->
+<div class="modal fade" id="unitSlipModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document" style="max-width: 950px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 8px; overflow: hidden;">
+            <!-- Modal Header -->
+            <div class="modal-header bg-dark text-white py-2 px-3 align-items-center">
+                <div class="d-flex align-items-center flex-wrap">
+                    <i class="fas fa-receipt text-warning mr-2" style="font-size: 1.1rem;"></i>
+                    <h6 class="modal-title font-weight-bold mb-0 mr-3">
+                        Unit Uploaded Slip <span class="text-warning font-weight-bold" id="unitSlipModalId">#</span>
+                    </h6>
+                    <span id="unitSlipModalUnit" class="badge badge-light border mr-1 text-dark" style="font-size: 11px;">-</span>
+                    <span id="unitSlipModalFrom" class="badge badge-info mr-1" style="font-size: 11px;">-</span>
+                    <span id="unitSlipModalDate" class="badge badge-secondary mr-1" style="font-size: 11px;">-</span>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.9;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <!-- Modal Subheader Details & Quick Toolbar -->
+            <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom flex-wrap" style="background: #f8fafc; font-size: 12px;">
+                <div class="d-flex align-items-center flex-wrap text-muted mr-2 my-1">
+                    <span class="mr-3"><strong>Bill No:</strong> <span id="unitSlipModalBill" class="text-dark font-weight-bold">-</span></span>
+                    <span class="mr-3"><strong>Target:</strong> <span id="unitSlipModalPieces" class="text-dark font-weight-bold">-</span> pcs</span>
+                    <span><strong>To Stage:</strong> <span id="unitSlipModalTo" class="text-dark font-weight-bold">-</span></span>
+                </div>
+                <!-- Image Controls Toolbar -->
+                <div class="btn-group btn-group-sm my-1" role="group">
+                    <button type="button" class="btn btn-outline-secondary" id="slipZoomInBtn" title="Zoom In">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="slipZoomOutBtn" title="Zoom Out">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="slipRotateLeftBtn" title="Rotate Counter-Clockwise">
+                        <i class="fas fa-undo"></i> 90°
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="slipRotateRightBtn" title="Rotate Clockwise">
+                        <i class="fas fa-redo"></i> 90°
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="slipResetBtn" title="Reset View">
+                        <i class="fas fa-sync-alt"></i> Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body with Image Display -->
+            <div class="modal-body p-3 text-center position-relative" style="background: #0f172a; min-height: 420px; max-height: 75vh; overflow: auto; display: flex; align-items: center; justify-content: center;">
+                <div id="slipLoadingSpinner" class="text-white py-5">
+                    <div class="spinner-border text-light mb-2" role="status"></div>
+                    <div>Loading slip image...</div>
+                </div>
+                <img id="unitSlipModalImg" 
+                     src="" 
+                     alt="Uploaded Slip" 
+                     class="img-fluid rounded shadow" 
+                     style="max-height: 70vh; max-width: 100%; object-fit: contain; transition: transform 0.2s ease; cursor: grab; display: none;">
+                <div id="slipErrorNotice" class="text-white py-5" style="display: none;">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h6 class="font-weight-bold">Slip Image Not Available</h6>
+                    <p class="text-muted small mb-0" id="slipErrorPath"></p>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer py-2 px-3 justify-content-between bg-light">
+                <div>
+                    <a id="unitSlipModalOpenNewTab" href="#" target="_blank" class="btn btn-sm btn-primary font-weight-bold mr-2">
+                        <i class="fas fa-external-link-alt mr-1"></i> Open Full Tab
+                    </a>
+                    <a id="unitSlipModalDownload" href="#" download class="btn btn-sm btn-outline-secondary mr-2">
+                        <i class="fas fa-download mr-1"></i> Download
+                    </a>
+                    <a id="unitSlipModalShowLink" href="#" class="btn btn-sm btn-outline-success font-weight-bold">
+                        <i class="fas fa-info-circle mr-1"></i> Digitization Details
+                    </a>
+                </div>
+                <button type="button" class="btn btn-sm btn-secondary font-weight-bold" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
 <script>
     $(document).ready(function() {
-        $('.select2').select2({
-            theme: 'default',
-            width: '100%'
+        if ($.fn.select2) {
+            $('.select2').select2({
+                theme: 'default',
+                width: '100%'
+            });
+        }
+
+        let currentSlipRotation = 0;
+        let currentSlipScale = 1;
+
+        function applySlipTransform() {
+            $('#unitSlipModalImg').css('transform', `rotate(${currentSlipRotation}deg) scale(${currentSlipScale})`);
+        }
+
+        $(document).on('click', '.btn-view-slip-photo', function(e) {
+            e.preventDefault();
+            const $btn = $(this);
+            const slipId = $btn.data('slip-id');
+            const slipUrl = $btn.data('slip-url');
+            const slipDate = $btn.data('slip-date');
+            const slipUnit = $btn.data('slip-unit');
+            const slipFrom = $btn.data('slip-from');
+            const slipTo = $btn.data('slip-to');
+            const slipBill = $btn.data('slip-bill');
+            const slipPieces = $btn.data('slip-pieces');
+            const showUrl = $btn.data('slip-show-url');
+
+            // Reset transform
+            currentSlipRotation = 0;
+            currentSlipScale = 1;
+            applySlipTransform();
+
+            // Populate modal texts
+            $('#unitSlipModalId').text('#' + slipId);
+            $('#unitSlipModalUnit').text(slipUnit || '-');
+            $('#unitSlipModalFrom').text('From: ' + (slipFrom || '-'));
+            $('#unitSlipModalDate').text(slipDate || '-');
+            $('#unitSlipModalBill').text(slipBill || '-');
+            $('#unitSlipModalPieces').text(slipPieces || '-');
+            $('#unitSlipModalTo').text(slipTo || '-');
+            $('#unitSlipModalOpenNewTab').attr('href', slipUrl);
+            $('#unitSlipModalDownload').attr('href', slipUrl);
+
+            if (showUrl) {
+                $('#unitSlipModalShowLink').attr('href', showUrl).show();
+            } else {
+                $('#unitSlipModalShowLink').hide();
+            }
+
+            // Image state management
+            $('#slipLoadingSpinner').show();
+            $('#slipErrorNotice').hide();
+            $('#unitSlipModalImg').hide();
+
+            const img = new Image();
+            img.onload = function() {
+                $('#slipLoadingSpinner').hide();
+                $('#unitSlipModalImg').attr('src', slipUrl).show();
+            };
+            img.onerror = function() {
+                $('#slipLoadingSpinner').hide();
+                $('#slipErrorPath').text(slipUrl);
+                $('#slipErrorNotice').show();
+            };
+            img.src = slipUrl;
+
+            $('#unitSlipModal').modal('show');
+        });
+
+        $('#slipRotateRightBtn').on('click', function() {
+            currentSlipRotation = (currentSlipRotation + 90) % 360;
+            applySlipTransform();
+        });
+
+        $('#slipRotateLeftBtn').on('click', function() {
+            currentSlipRotation = (currentSlipRotation - 90) % 360;
+            applySlipTransform();
+        });
+
+        $('#slipZoomInBtn').on('click', function() {
+            if (currentSlipScale < 3) {
+                currentSlipScale += 0.25;
+                applySlipTransform();
+            }
+        });
+
+        $('#slipZoomOutBtn').on('click', function() {
+            if (currentSlipScale > 0.5) {
+                currentSlipScale -= 0.25;
+                applySlipTransform();
+            }
+        });
+
+        $('#slipResetBtn').on('click', function() {
+            currentSlipRotation = 0;
+            currentSlipScale = 1;
+            applySlipTransform();
         });
     });
 </script>
