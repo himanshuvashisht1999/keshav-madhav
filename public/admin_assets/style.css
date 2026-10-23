@@ -3127,7 +3127,7 @@ select:-webkit-autofill:focus {
     bottom: 0;
     left: 250px;
     right: 0;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(10px);
     padding: 8px 24px;
     border-top: 1px solid #cbd5e1;
@@ -3136,14 +3136,24 @@ select:-webkit-autofill:focus {
     align-items: center;
     z-index: 1000;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+    transition: left 0.3s ease-in-out;
+}
+body.sidebar-collapse .sticky-bottom-bar {
+    left: 4.6rem;
 }
 @media (max-width: 991.98px) {
     .sticky-bottom-bar {
-        left: 0;
+        left: 0 !important;
     }
     .sticky-erp-hud {
         flex-wrap: wrap;
     }
+}
+
+/* Ensure pages with sticky bottom bar have clearance so the last rows aren't covered */
+.content-wrapper:has(.sticky-bottom-bar),
+.erp-page:has(.sticky-bottom-bar) {
+    padding-bottom: 90px !important;
 }
 
 /* Image Gallery Modal Styles */

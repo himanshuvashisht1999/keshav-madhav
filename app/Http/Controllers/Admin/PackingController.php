@@ -119,7 +119,7 @@ class PackingController extends Controller
         // Fetch ALL active orders for dropdown (Corporate & Domestic)
         $active_orders = \App\Models\OrderMain::with('customer')
             ->whereIn('id', $activeOrderIds)
-            ->whereIn('status', [0, 1, 2]) // Pending, Confirmed, Partial
+            ->whereIn('status', [0, 1, 2, 3]) // Pending, Confirmed, Partial, Completed/Dispatched
             ->orderBy('id', 'desc')->get();
 
         // Fully packed lots do not come; partly packed lots come with the pieces still to pack.

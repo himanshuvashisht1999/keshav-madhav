@@ -1,7 +1,7 @@
-﻿@extends('admin.layouts.app')
+@extends('admin.layouts.app')
 
 @section('content')
-<div class="content-wrapper erp-page p-2">
+<div class="content-wrapper erp-page p-2" style="padding-bottom: 90px !important;">
     <div class="container-fluid p-0">
         <!-- PAGE HEADER -->
         <div class="erp-header-bar mb-2">
