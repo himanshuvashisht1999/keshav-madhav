@@ -905,6 +905,16 @@ if (!function_exists('deleteProductionSession')) {
                 $session = $model::findOrFail($id);
                 $slip_id = $session->production_slip_digitization_id;
 
+                // If session was transferred to Packing (Stage 11), verify it has not been packed or selected
+                if ($session->to_stage_id == 11) {
+                    $hasChildPacking = \App\Models\PackingItem::where('lot_no', $session->lot_no)->exists()
+                        || \App\Models\PackingSelectedLot::where('lot_no', $session->lot_no)->exists()
+                        || \App\Models\ProductionOutflowInventory::where('lot_no', $session->lot_no)->exists();
+                    if ($hasChildPacking) {
+                        throw new \Exception('Cannot delete. This lot has already been packed or selected in the Packing module.');
+                    }
+                }
+
                 if ($session->remaining_quantity != $session->quantity) {
                     $canDelete = false;
                     
@@ -923,8 +933,14 @@ if (!function_exists('deleteProductionSession')) {
                         $hasChildGodam = \App\Models\OrderGodamStageTransaction::where('lot_no', $session->lot_no)
                             ->where('from_stage_id', $session->to_stage_id)
                             ->where('id', '>', $id)->exists();
+                        $hasChildPacking = false;
+                        if ($session->to_stage_id == 11) {
+                            $hasChildPacking = \App\Models\PackingItem::where('lot_no', $session->lot_no)->exists()
+                                || \App\Models\PackingSelectedLot::where('lot_no', $session->lot_no)->exists()
+                                || \App\Models\ProductionOutflowInventory::where('lot_no', $session->lot_no)->exists();
+                        }
                             
-                        if (!$hasChildTransfer && !$hasChildPrint && !$hasChildPrintStitch && !$hasChildGodam) {
+                        if (!$hasChildTransfer && !$hasChildPrint && !$hasChildPrintStitch && !$hasChildGodam && !$hasChildPacking) {
                             $canDelete = true;
                         }
                     }
