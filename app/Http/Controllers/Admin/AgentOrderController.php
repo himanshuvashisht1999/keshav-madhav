@@ -404,6 +404,9 @@ class AgentOrderController extends Controller
         // AJAX Store Logic
         $sale_type = $request->sale_type ?: 'item';
         $order_type = $request->order_type ?: ($request->sales_agent_id === 'direct' ? 'direct' : 'normal');
+        if (strtolower($request->status ?? '') === 'dispatched') {
+            $order_type = 'direct';
+        }
 
         if ($sale_type === 'fabric') {
             $request->validate([

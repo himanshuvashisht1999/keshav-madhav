@@ -19,7 +19,6 @@
             <div class="ao-card">
                 <form action="{{ route('admin.agent-orders.store') }}" method="POST" class="ao-form">
                     @csrf
-                    <input type="hidden" name="order_type" value="{{ request('order_type', 'normal') }}">
 
                     <div class="ao-body">
                         <div class="ao-grid">
