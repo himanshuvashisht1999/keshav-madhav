@@ -305,6 +305,19 @@ function getLotDetails($lot_id, $master_stage)
 
 function getLastCurrentStage($lot_no)
 {
+    // If lot has been packed into cartons and has an incoming packing transaction with no earlier pending pieces:
+    $packedQty = \App\Models\PackingItem::where('lot_no', $lot_no)->sum('quantity');
+    if ($packedQty > 0) {
+        $hasPackingTx = \App\Models\OrderStageTransaction::where('lot_no', $lot_no)->where('to_stage_id', 11)->exists();
+        $hasOpenEarlierTx = \App\Models\OrderStageTransaction::where('lot_no', $lot_no)
+            ->where('to_stage_id', '!=', 11)
+            ->where('remaining_quantity', '>', 0)
+            ->exists();
+        if ($hasPackingTx && !$hasOpenEarlierTx) {
+            return 'Packing';
+        }
+    }
+
     $latestTx = \App\Models\OrderStageTransaction::with('to_stage')->where('lot_no', $lot_no)->orderBy('id', 'desc')->first();
     $latestGodam = \App\Models\OrderGodamStageTransaction::with('to_stage')->where('lot_no', $lot_no)->orderBy('id', 'desc')->first();
     $latestPrint = \App\Models\OrderPrintingStageTransaction::with('to_stage')->where('lot_no', $lot_no)->orderBy('id', 'desc')->first();
