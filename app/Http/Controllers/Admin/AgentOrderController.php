@@ -3319,6 +3319,8 @@ class AgentOrderController extends Controller
                 'd.dispatch_date',
                 DB::raw("CAST(d.bill_no AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as bill_no"),
                 'd.grand_total',
+                DB::raw('COALESCE(iq.qty, 0) as dispatch_pcs'),
+                DB::raw('COALESCE(fq.meter, 0) as dispatch_meter'),
                 DB::raw("CAST(d.remark AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as remark"),
                 DB::raw("CAST(c.name AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as customer_name"),
                 DB::raw("CAST(v.name AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as vendor_name"),
@@ -3332,7 +3334,20 @@ class AgentOrderController extends Controller
             )
             ->leftJoin('master_customers as c', 'd.master_customer_id', '=', 'c.id')
             ->leftJoin('vendors as v', 'd.master_vendor_id', '=', 'v.id')
-            ->leftJoin('sales_agents as a', 'd.sales_agent_id', '=', 'a.id');
+            ->leftJoin('sales_agents as a', 'd.sales_agent_id', '=', 'a.id')
+            // dispatched pieces / fabric meters, same as the dispatch show page
+            ->leftJoinSub(
+                DB::table('agent_order_items')->whereNotNull('agent_order_dispatch_id')
+                    ->groupBy('agent_order_dispatch_id')
+                    ->selectRaw('agent_order_dispatch_id, SUM(quantity) as qty'),
+                'iq', 'iq.agent_order_dispatch_id', '=', 'd.id'
+            )
+            ->leftJoinSub(
+                DB::table('agent_order_fabric_items')->whereNotNull('agent_order_dispatch_id')
+                    ->groupBy('agent_order_dispatch_id')
+                    ->selectRaw('agent_order_dispatch_id, SUM(meter) as meter'),
+                'fq', 'fq.agent_order_dispatch_id', '=', 'd.id'
+            );
 
         if ($request->filled('shop_id')) {
             $q1->where('d.master_customer_id', $request->shop_id);
@@ -3428,6 +3443,8 @@ class AgentOrderController extends Controller
                 'd.dispatch_date',
                 DB::raw("CAST(d.bill_number AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as bill_no"),
                 'd.total_amount as grand_total',
+                DB::raw('COALESCE(cq.qty, 0) + COALESCE(pq.qty, 0) as dispatch_pcs'),
+                DB::raw('0 as dispatch_meter'),
                 DB::raw("CAST(d.remark AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as remark"),
                 DB::raw("CAST(c.name AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as customer_name"),
                 DB::raw("CAST(NULL AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as vendor_name"),
@@ -3435,7 +3452,22 @@ class AgentOrderController extends Controller
                 DB::raw("CAST(d.main_order_id AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci as order_ids"),
                 'd.created_at'
             )
-            ->leftJoin('master_customers as c', 'd.customer_id', '=', 'c.id');
+            ->leftJoin('master_customers as c', 'd.customer_id', '=', 'c.id')
+            // dispatched pieces = carton pieces + outside purchase pieces, same as the corporate dispatch view
+            ->leftJoinSub(
+                DB::table(DB::raw('(SELECT DISTINCT order_dispatch_id, carton_packing_id FROM order_dispatch_details) as dd'))
+                    ->join('packing_cartons as pc', 'pc.id', '=', 'dd.carton_packing_id')
+                    ->join('packing_items as pi', 'pi.packing_carton_id', '=', 'pc.id')
+                    ->groupBy('dd.order_dispatch_id')
+                    ->selectRaw('dd.order_dispatch_id, SUM(pi.quantity) as qty'),
+                'cq', 'cq.order_dispatch_id', '=', 'd.id'
+            )
+            ->leftJoinSub(
+                DB::table('order_dispatch_purchases')
+                    ->groupBy('order_dispatch_id')
+                    ->selectRaw('order_dispatch_id, SUM(total_pieces) as qty'),
+                'pq', 'pq.order_dispatch_id', '=', 'd.id'
+            );
 
         if ($request->filled('shop_id')) {
             $q2->where('d.customer_id', $request->shop_id);
@@ -3516,8 +3548,8 @@ class AgentOrderController extends Controller
         $sheet->setTitle('Dispatches');
 
         // Header row
-        $headers = ['#', 'Dispatch ID', 'Order ID', 'Party Name', 'Party Type', 'Agent', 'Grand Total (₹)', 'Bill No', 'Date', 'Remark'];
-        $cols    = range('A', 'J');
+        $headers = ['#', 'Dispatch ID', 'Order ID', 'Party Name', 'Party Type', 'Agent', 'Dispatch Qty', 'Grand Total (₹)', 'Bill No', 'Date', 'Remark'];
+        $cols    = range('A', 'K');
         foreach ($headers as $i => $h) {
             $cell = $cols[$i] . '1';
             $sheet->setCellValue($cell, $h);
@@ -3549,31 +3581,52 @@ class AgentOrderController extends Controller
                 }, $rawIds);
                 $orderIdFormatted = implode(', ', $formattedArr);
             }
-                
+
+            // pieces for items, meters for fabric (a dispatch holds one or the other)
+            $dispatchPcs = (int) $dispatch->dispatch_pcs;
+            $dispatchMeter = (float) $dispatch->dispatch_meter;
+
             $sheet->setCellValue('A' . $row, $i + 1);
             $sheet->setCellValue('B' . $row, '#DSP-' . str_pad($dispatch->id, 5, '0', STR_PAD_LEFT));
             $sheet->setCellValue('C' . $row, $orderIdFormatted);
             $sheet->setCellValue('D' . $row, $partyName);
             $sheet->setCellValue('E' . $row, ucfirst($dispatch->party_type ?? 'Customer'));
             $sheet->setCellValue('F' . $row, $agentName);
-            $sheet->setCellValue('G' . $row, $dispatch->grand_total);
-            $sheet->setCellValue('H' . $row, $dispatch->bill_no ?? '-');
-            $sheet->setCellValue('I' . $row, $dispatch->dispatch_date ? \Carbon\Carbon::parse($dispatch->dispatch_date)->format('d M Y') : 'N/A');
-            $sheet->setCellValue('J' . $row, $dispatch->remark);
-            
-            $sheet->getStyle('G' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+            if ($dispatchPcs > 0 && $dispatchMeter > 0) {
+                $sheet->setCellValue('G' . $row, number_format($dispatchPcs) . ' PCs + ' . number_format($dispatchMeter, 2) . ' m');
+            } elseif ($dispatchMeter > 0) {
+                $sheet->setCellValue('G' . $row, $dispatchMeter);
+                $sheet->getStyle('G' . $row)->getNumberFormat()->setFormatCode('#,##0.00 "m"');
+            } else {
+                $sheet->setCellValue('G' . $row, $dispatchPcs);
+                $sheet->getStyle('G' . $row)->getNumberFormat()->setFormatCode('#,##0 "PCs"');
+            }
+            $sheet->setCellValue('H' . $row, $dispatch->grand_total);
+            $sheet->setCellValue('I' . $row, $dispatch->bill_no ?? '-');
+            $sheet->setCellValue('J' . $row, $dispatch->dispatch_date ? \Carbon\Carbon::parse($dispatch->dispatch_date)->format('d M Y') : 'N/A');
+            $sheet->setCellValue('K' . $row, $dispatch->remark);
+
+            $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
             $row++;
         }
 
         // Total row in Excel
         $totalGrandTotal = $dispatches->sum('grand_total');
+        $totalPcs = (int) $dispatches->sum('dispatch_pcs');
+        $totalMeter = (float) $dispatches->sum('dispatch_meter');
         $sheet->setCellValue('A' . $row, 'TOTAL');
         $sheet->mergeCells('A' . $row . ':F' . $row);
-        $sheet->setCellValue('G' . $row, $totalGrandTotal);
-        $sheet->setCellValue('H' . $row, $dispatches->count() . ' dispatches');
-        $sheet->getStyle('A' . $row . ':J' . $row)->getFont()->setBold(true);
-        $sheet->getStyle('A' . $row . ':J' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('f1f5f9');
-        $sheet->getStyle('G' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+        if ($totalMeter > 0) {
+            $sheet->setCellValue('G' . $row, ($totalPcs > 0 ? number_format($totalPcs) . ' PCs + ' : '') . number_format($totalMeter, 2) . ' m');
+        } else {
+            $sheet->setCellValue('G' . $row, $totalPcs);
+            $sheet->getStyle('G' . $row)->getNumberFormat()->setFormatCode('#,##0 "PCs"');
+        }
+        $sheet->setCellValue('H' . $row, $totalGrandTotal);
+        $sheet->setCellValue('I' . $row, $dispatches->count() . ' dispatches');
+        $sheet->getStyle('A' . $row . ':K' . $row)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $row . ':K' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('f1f5f9');
+        $sheet->getStyle('H' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
 
         // Auto-size columns
         foreach ($cols as $col) {

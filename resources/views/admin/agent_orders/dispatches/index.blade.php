@@ -220,6 +220,7 @@
                             <th>Source</th>
                             <th>Party name</th>
                             <th>Agent</th>
+                            <th class="text-right">Dispatch qty</th>
                             <th class="text-right">Grand total</th>
                             <th>Bill no</th>
                             <th>Date</th>
@@ -280,6 +281,16 @@
                                     @else
                                         <span class="badge-erp-status badge-erp-info">{{ $dispatch->agent_name ?? 'Direct' }}</span>
                                     @endif
+                                </td>
+                                <td class="text-right text-nowrap font-weight-bold text-dark">
+                                    @php
+                                        $dispatchPcs = (int) $dispatch->dispatch_pcs;
+                                        $dispatchMeter = (float) $dispatch->dispatch_meter;
+                                    @endphp
+                                    @if($dispatchPcs > 0) {{ number_format($dispatchPcs) }} PCs @endif
+                                    @if($dispatchPcs > 0 && $dispatchMeter > 0) + @endif
+                                    @if($dispatchMeter > 0) {{ number_format($dispatchMeter, 2) }} m @endif
+                                    @if($dispatchPcs <= 0 && $dispatchMeter <= 0) <span class="text-muted">0</span> @endif
                                 </td>
                                 <td class="text-right font-weight-bold text-dark">
                                     ₹{{ number_format($dispatch->grand_total, 2) }}
@@ -367,7 +378,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center py-5 text-muted">
+                                <td colspan="11" class="text-center py-5 text-muted">
                                     <i class="fas fa-truck-loading fa-2x mb-2 text-secondary"></i>
                                     <div>No dispatch records found.</div>
                                 </td>

@@ -146,13 +146,14 @@
             <tr>
                 <th width="3%">#</th>
                 <th width="11%">Dispatch ID</th>
-                <th width="12%">Order ID</th>
+                <th width="11%">Order ID</th>
                 <th width="18%">Party Name</th>
-                <th width="9%">Party Type</th>
-                <th width="13%">Agent</th>
-                <th width="13%">Grand Total (Rs.)</th>
-                <th width="9%">Bill No</th>
-                <th width="12%">Date</th>
+                <th width="8%">Party Type</th>
+                <th width="11%">Agent</th>
+                <th width="9%">Dispatch Qty</th>
+                <th width="12%">Grand Total (Rs.)</th>
+                <th width="8%">Bill No</th>
+                <th width="9%">Date</th>
             </tr>
         </thead>
         <tbody>
@@ -175,6 +176,12 @@
                         }, $rawIds);
                         $orderIdsFormatted = implode(', ', $formattedOrders);
                     }
+
+                    $dispatchPcs = (int) $dispatch->dispatch_pcs;
+                    $dispatchMeter = (float) $dispatch->dispatch_meter;
+                    $qtyParts = [];
+                    if ($dispatchPcs > 0) $qtyParts[] = number_format($dispatchPcs) . ' PCs';
+                    if ($dispatchMeter > 0) $qtyParts[] = number_format($dispatchMeter, 2) . ' m';
                 @endphp
                 <tr>
                     <td>{{ $i + 1 }}</td>
@@ -183,19 +190,28 @@
                     <td>{{ $partyName }}</td>
                     <td>{{ ucfirst($dispatch->party_type ?? 'Customer') }}</td>
                     <td>{{ $agentName }}</td>
+                    <td>{{ $qtyParts ? implode(' + ', $qtyParts) : '0' }}</td>
                     <td>{{ number_format($dispatch->grand_total, 2) }}</td>
                     <td>{{ $dispatch->bill_no ?? '-' }}</td>
                     <td>{{ $dispatch->dispatch_date ? \Carbon\Carbon::parse($dispatch->dispatch_date)->format('d M Y') : 'N/A' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" style="text-align:center; padding:20px; color:#8aa890;">No records found.</td>
+                    <td colspan="10" style="text-align:center; padding:20px; color:#8aa890;">No records found.</td>
                 </tr>
             @endforelse
         </tbody>
         <tfoot>
+            @php
+                $totalPcs = (int) $dispatches->sum('dispatch_pcs');
+                $totalMeter = (float) $dispatches->sum('dispatch_meter');
+                $totalQtyParts = [];
+                if ($totalPcs > 0) $totalQtyParts[] = number_format($totalPcs) . ' PCs';
+                if ($totalMeter > 0) $totalQtyParts[] = number_format($totalMeter, 2) . ' m';
+            @endphp
             <tr class="totals-row">
                 <td colspan="6" style="text-align:right;">TOTAL</td>
+                <td>{{ $totalQtyParts ? implode(' + ', $totalQtyParts) : '0' }}</td>
                 <td>Rs. {{ number_format($totalGrandTotal, 2) }}</td>
                 <td colspan="2" style="text-align:center;">{{ $dispatches->count() }} dispatches</td>
             </tr>
