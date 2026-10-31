@@ -245,7 +245,10 @@
                                 <div class="stage-card card-completed">
                                     <span class="status-badge badge-completed">Cutting</span>
                                     
-                                    @if($lastSessionType == 'lot' && $lastSessionId == $lot->id)
+                                    @php $deleteBlock = ($lastSessionType == 'lot' && $lastSessionId == $lot->id) ? productionSessionDeleteBlock('lot', $lot) : null; @endphp
+                                    @if($deleteBlock)
+                                        <span class="text-muted" style="position: absolute; top: 12px; right: 80px; z-index: 10;" title="{{ $deleteBlock }}"><i class="fas fa-lock" style="font-size: 14px;"></i></span>
+                                    @elseif($lastSessionType == 'lot' && $lastSessionId == $lot->id)
                                         <form action="{{ route('admin.report.lots.delete-session', ['type' => 'lot', 'id' => $lot->id]) }}" method="POST" style="position: absolute; top: 12px; right: 80px; z-index: 10;">
                                             @csrf
                                             @method('DELETE')
@@ -279,7 +282,10 @@
                                 <div class="stage-card card-progress">
                                     <span class="status-badge badge-progress">Printing</span>
                                     
-                                    @if($lastSessionType == 'printing' && $lastSessionId == $printing->id)
+                                    @php $deleteBlock = ($lastSessionType == 'printing' && $lastSessionId == $printing->id) ? productionSessionDeleteBlock('printing', $printing) : null; @endphp
+                                    @if($deleteBlock)
+                                        <span class="text-muted" style="position: absolute; top: 12px; right: 85px; z-index: 10;" title="{{ $deleteBlock }}"><i class="fas fa-lock" style="font-size: 14px;"></i></span>
+                                    @elseif($lastSessionType == 'printing' && $lastSessionId == $printing->id)
                                         <form action="{{ route('admin.report.lots.delete-session', ['type' => 'printing', 'id' => $printing->id]) }}" method="POST" style="position: absolute; top: 12px; right: 85px; z-index: 10;">
                                             @csrf
                                             @method('DELETE')
@@ -322,7 +328,10 @@
                                         <span class="status-badge" style="background: #fef3c7; color: #b45309;">Transfer</span>
                                     @endif
                                     
-                                    @if($lastSessionType == $txType && $lastSessionId == $transaction->id)
+                                    @php $deleteBlock = ($lastSessionType == $txType && $lastSessionId == $transaction->id) ? productionSessionDeleteBlock($txType, $transaction) : null; @endphp
+                                    @if($deleteBlock)
+                                        <span class="text-muted" style="position: absolute; top: 12px; right: 85px; z-index: 10;" title="{{ $deleteBlock }}"><i class="fas fa-lock" style="font-size: 14px;"></i></span>
+                                    @elseif($lastSessionType == $txType && $lastSessionId == $transaction->id)
                                         <form action="{{ route('admin.report.lots.delete-session', ['type' => $txType, 'id' => $transaction->id]) }}" method="POST" style="position: absolute; top: 12px; right: 85px; z-index: 10;">
                                             @csrf
                                             @method('DELETE')
@@ -353,6 +362,37 @@
                                 </div>
                             @endforeach
                         @endif
+
+                        {{-- TYPE 4 : PACKING (no delete here: one packing session can hold other lots, it is deleted from the Packing module) --}}
+                        @foreach($data['packings'] ?? [] as $packing)
+                            @php
+                                $packingMetrics = ['Date' => \Carbon\Carbon::parse($packing->date)->format('d M Y'), 'Pieces packed' => $packing->pieces, 'Cartons' => $packing->cartons];
+                                foreach ($packing->outflows as $outflowType => $outflowQty) {
+                                    $packingMetrics[ucfirst($outflowType)] = $outflowQty;
+                                }
+                            @endphp
+                            <div class="stage-card" style="border-left-color: #0d9488; background: #f0fdfa;">
+                                <span class="status-badge" style="background: #ccfbf1; color: #0f766e;">Packing</span>
+
+                                <div class="mb-3" style="margin-top: 28px;">
+                                    <div class="text-muted" style="font-size: 11px; margin-bottom: 2px;">
+                                        Stage: <strong class="text-dark">Packing</strong>
+                                    </div>
+                                    <div class="text-muted" style="font-size: 11px;">
+                                        Unit: <strong class="text-dark">{{ $packing->unit_name }}</strong>
+                                    </div>
+                                    @if($packing->pieces == 0 && $packing->outflows->isEmpty())
+                                        <div class="text-muted mt-1" style="font-size: 11px;">Lot picked for packing, nothing packed yet</div>
+                                    @endif
+                                </div>
+
+                                <div class="stage-metrics">
+                                    @foreach($packingMetrics as $label => $value)
+                                        <div class="metric" style="text-align: {{ $loop->odd ? 'left' : 'right' }};">{{ $label }}<strong>{{ $value }}</strong></div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
 
                     </div>
                 </div>

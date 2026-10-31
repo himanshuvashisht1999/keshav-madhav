@@ -852,6 +852,71 @@ if (!function_exists('reopen_production_entry')) {
     }
 }
 
+if (!function_exists('productionSessionDeleteBlock')) {
+    // Why a production session cannot be deleted, or null when it can.
+    // deleteProductionSession() refuses with this message; the lot page hides its trash icon with it.
+    function productionSessionDeleteBlock($type, $session)
+    {
+        if ($type == 'lot') {
+            if (\App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)->exists() || \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)->exists()) {
+                return 'Cannot delete Lot. Printing stage has already moved quantity forward.';
+            }
+            return null;
+        }
+
+        if (!in_array($type, ['printing', 'transfer', 'printing_stitching', 'godam'])) {
+            return null;
+        }
+
+        // If session was transferred to Packing (Stage 11), verify it has not been packed or selected
+        if ($session->to_stage_id == 11) {
+            $hasChildPacking = \App\Models\PackingItem::where('lot_no', $session->lot_no)->exists()
+                || \App\Models\PackingSelectedLot::where('lot_no', $session->lot_no)->exists()
+                || \App\Models\ProductionOutflowInventory::where('lot_no', $session->lot_no)->exists();
+            if ($hasChildPacking) {
+                return 'Cannot delete. This lot has already been packed or selected in the Packing module.';
+            }
+        }
+
+        if ($session->remaining_quantity != $session->quantity) {
+            $canDelete = false;
+
+            // If a session was manually closed (Marked as Final), its remaining_quantity is forcefully set to 0.
+            // In this case, we verify if there are actual child sessions consuming it.
+            if (isset($session->is_closed_for_unit) && $session->is_closed_for_unit == 1 && $session->remaining_quantity == 0) {
+                $hasChildTransfer = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)
+                    ->where('from_stage_id', $session->to_stage_id)
+                    ->where('id', '>', $session->id)->exists();
+                $hasChildPrint = \App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)
+                    ->where('from_stage_id', $session->to_stage_id)
+                    ->where('id', '>', $session->id)->exists();
+                $hasChildPrintStitch = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $session->lot_no)
+                    ->where('from_stage_id', $session->to_stage_id)
+                    ->where('id', '>', $session->id)->exists();
+                $hasChildGodam = \App\Models\OrderGodamStageTransaction::where('lot_no', $session->lot_no)
+                    ->where('from_stage_id', $session->to_stage_id)
+                    ->where('id', '>', $session->id)->exists();
+                $hasChildPacking = false;
+                if ($session->to_stage_id == 11) {
+                    $hasChildPacking = \App\Models\PackingItem::where('lot_no', $session->lot_no)->exists()
+                        || \App\Models\PackingSelectedLot::where('lot_no', $session->lot_no)->exists()
+                        || \App\Models\ProductionOutflowInventory::where('lot_no', $session->lot_no)->exists();
+                }
+
+                if (!$hasChildTransfer && !$hasChildPrint && !$hasChildPrintStitch && !$hasChildGodam && !$hasChildPacking) {
+                    $canDelete = true;
+                }
+            }
+
+            if (!$canDelete) {
+                return 'Cannot delete. Some quantity has already been moved forward.';
+            }
+        }
+
+        return null;
+    }
+}
+
 if (!function_exists('deleteProductionSession')) {
     function deleteProductionSession($type, $id)
     {
@@ -863,8 +928,8 @@ if (!function_exists('deleteProductionSession')) {
                 $session = \App\Models\OrderLot::findOrFail($id);
                 $slip_id = $session->production_slip_digitization_id;
 
-                if (\App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)->exists() || \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)->exists()) {
-                    throw new \Exception('Cannot delete Lot. Printing stage has already moved quantity forward.');
+                if ($block = productionSessionDeleteBlock($type, $session)) {
+                    throw new \Exception($block);
                 }
 
                 // Revert FabricRollAssigning
@@ -928,49 +993,8 @@ if (!function_exists('deleteProductionSession')) {
                 $session = $model::findOrFail($id);
                 $slip_id = $session->production_slip_digitization_id;
 
-                // If session was transferred to Packing (Stage 11), verify it has not been packed or selected
-                if ($session->to_stage_id == 11) {
-                    $hasChildPacking = \App\Models\PackingItem::where('lot_no', $session->lot_no)->exists()
-                        || \App\Models\PackingSelectedLot::where('lot_no', $session->lot_no)->exists()
-                        || \App\Models\ProductionOutflowInventory::where('lot_no', $session->lot_no)->exists();
-                    if ($hasChildPacking) {
-                        throw new \Exception('Cannot delete. This lot has already been packed or selected in the Packing module.');
-                    }
-                }
-
-                if ($session->remaining_quantity != $session->quantity) {
-                    $canDelete = false;
-                    
-                    // If a session was manually closed (Marked as Final), its remaining_quantity is forcefully set to 0.
-                    // In this case, we verify if there are actual child sessions consuming it.
-                    if (isset($session->is_closed_for_unit) && $session->is_closed_for_unit == 1 && $session->remaining_quantity == 0) {
-                        $hasChildTransfer = \App\Models\OrderStageTransaction::where('lot_no', $session->lot_no)
-                            ->where('from_stage_id', $session->to_stage_id)
-                            ->where('id', '>', $id)->exists();
-                        $hasChildPrint = \App\Models\OrderPrintingStageTransaction::where('lot_no', $session->lot_no)
-                            ->where('from_stage_id', $session->to_stage_id)
-                            ->where('id', '>', $id)->exists();
-                        $hasChildPrintStitch = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $session->lot_no)
-                            ->where('from_stage_id', $session->to_stage_id)
-                            ->where('id', '>', $id)->exists();
-                        $hasChildGodam = \App\Models\OrderGodamStageTransaction::where('lot_no', $session->lot_no)
-                            ->where('from_stage_id', $session->to_stage_id)
-                            ->where('id', '>', $id)->exists();
-                        $hasChildPacking = false;
-                        if ($session->to_stage_id == 11) {
-                            $hasChildPacking = \App\Models\PackingItem::where('lot_no', $session->lot_no)->exists()
-                                || \App\Models\PackingSelectedLot::where('lot_no', $session->lot_no)->exists()
-                                || \App\Models\ProductionOutflowInventory::where('lot_no', $session->lot_no)->exists();
-                        }
-                            
-                        if (!$hasChildTransfer && !$hasChildPrint && !$hasChildPrintStitch && !$hasChildGodam && !$hasChildPacking) {
-                            $canDelete = true;
-                        }
-                    }
-
-                    if (!$canDelete) {
-                        throw new \Exception('Cannot delete. Some quantity has already been moved forward.');
-                    }
+                if ($block = productionSessionDeleteBlock($type, $session)) {
+                    throw new \Exception($block);
                 }
 
                 // Restore Source Quantity

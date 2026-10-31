@@ -161,8 +161,26 @@
             </div>
         @endforeach
     @endif
-    
-    @if(count($data['lots']) == 0 && count($data['printings']) == 0 && count($data['stage_transactions']) == 0)
+
+    {{-- TYPE 4 : PACKING --}}
+    @foreach($data['packings'] ?? [] as $packing)
+        <div class="wip-stage" style="border-left-color: #0d9488;">
+            <div class="wip-stage-badge" style="background: #0d9488;">Packing</div>
+            <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">
+                Unit: <strong style="color: #111827;">{{ $packing->unit_name }}</strong>
+                @foreach($packing->outflows as $outflowType => $outflowQty)
+                    <br>{{ ucfirst($outflowType) }}: <strong style="color: #111827;">{{ $outflowQty }}</strong>
+                @endforeach
+            </div>
+            <div class="wip-metrics">
+                <div class="wip-metric">Date<strong>{{ \Carbon\Carbon::parse($packing->date)->format('d M y') }}</strong></div>
+                <div class="wip-metric" style="text-align: center;">Cartons<strong>{{ $packing->cartons }}</strong></div>
+                <div class="wip-metric" style="text-align: right;">Packed<strong>{{ $packing->pieces }}</strong></div>
+            </div>
+        </div>
+    @endforeach
+
+    @if(count($data['lots']) == 0 && count($data['printings']) == 0 && count($data['stage_transactions']) == 0 && count($data['packings'] ?? []) == 0)
         <div style="text-align: center; color: #6b7280; font-size: 12px; margin-top: 20px;">
             <i class="fas fa-info-circle" style="font-size: 24px; color: #d1d5db; margin-bottom: 8px;"></i><br>
             No production stage data recorded for this lot yet.

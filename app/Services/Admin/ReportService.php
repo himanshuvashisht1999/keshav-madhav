@@ -2250,6 +2250,34 @@ class ReportService
             ->where('lot_no', $lot_no)
             ->get();
 
+        /* ---------------- PACKING SESSIONS ---------------- */
+        // one per packing slip that picked, packed or wrote off pieces of this lot (only this lot's pieces are counted)
+        $packedItems = \App\Models\PackingItem::where('lot_no', $lot_no)->get(['packing_main_id', 'packing_carton_id', 'quantity']);
+        $lotOutflows = \App\Models\ProductionOutflowInventory::where('lot_no', $lot_no)->get(['slip_id', 'type', 'quantity']);
+        $packingMainIds = $packedItems->pluck('packing_main_id')
+            ->merge(\App\Models\PackingSelectedLot::where('lot_no', $lot_no)->pluck('packing_main_id'))
+            ->filter()->unique()->values();
+        $packingMains = \App\Models\PackingMain::whereIn('id', $packingMainIds)
+            ->orWhereIn('slip_id', $lotOutflows->pluck('slip_id')->filter()->unique()->values())
+            ->orderBy('packing_date')->orderBy('id')
+            ->get();
+        $packingSlips = \App\Models\ProductionSlipDigitization::with('getUnitMaster')
+            ->whereIn('id', $packingMains->pluck('slip_id')->filter()->unique()->values())
+            ->get()->keyBy('id');
+
+        $packings = $packingMains->map(function ($main) use ($packedItems, $lotOutflows, $packingSlips) {
+            $items = $packedItems->where('packing_main_id', $main->id);
+            return (object) [
+                'id' => $main->id,
+                'date' => $main->packing_date ?? $main->created_at,
+                'unit_name' => $packingSlips->get($main->slip_id)?->getUnitMaster?->name ?? '-',
+                'pieces' => (int) $items->sum('quantity'),
+                'cartons' => $items->pluck('packing_carton_id')->filter()->unique()->count(),
+                // dead / sampling / debit / rework pieces of this lot written off on this slip
+                'outflows' => $main->slip_id ? $lotOutflows->where('slip_id', $main->slip_id)->groupBy('type')->map(fn($rows) => (int) $rows->sum('quantity')) : collect(),
+            ];
+        })->values();
+
         return [
             // 'order'      => $order,
             'lot_no' => $lot_no,
@@ -2259,7 +2287,8 @@ class ReportService
             'lots' => $lots,
             'printings' => $printings,
             'stage_transactions' => $stage_transactions,
-            'rolls' => $rolls
+            'rolls' => $rolls,
+            'packings' => $packings
         ];
     }
 
