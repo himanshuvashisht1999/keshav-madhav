@@ -85,6 +85,7 @@
         .st-progress { background: #fffde0; }
         .st-completed { border-left-color: #15803d; background: #f0fdf4; }
         .st-delayed { border-left-color: #dc2626; background: #fef2f2; }
+        .st-late { border-left-color: #c2410c; background: #fff7ed; }
         .st-waiting { background: #f6faf1; }
 
         .status-pill {
@@ -99,6 +100,7 @@
         .sp-progress { background: #05421c; }
         .sp-completed { background: #15803d; }
         .sp-delayed { background: #dc2626; }
+        .sp-late { background: #c2410c; }
         .sp-waiting { background: #64748b; }
 
         .stage-title { font-weight: bold; font-size: 12px; margin-bottom: 5px; }
@@ -265,13 +267,14 @@
                 $eta = Carbon::parse($d['time_allocation']);
                 $completed = $d['completed_time'] ? Carbon::parse($d['completed_time']) : null;
 
-                if ($remaining === 0) $status = ($completed && $completed->gt($eta)) ? 'delayed' : 'completed';
+                // late = all pieces sent on, but after the ETA (same rule as the lot page)
+                if ($remaining === 0) $status = ($completed && $completed->gt($eta)) ? 'late' : 'completed';
                 elseif (now()->gt($eta)) $status = 'delayed';
                 else $status = 'progress';
             @endphp
-            
+
             <div class="stage-card st-{{ $status }}">
-                <span class="status-pill sp-{{ $status }}">{{ $status }}</span>
+                <span class="status-pill sp-{{ $status }}">{{ $status === 'late' ? 'Completed late' : $status }}</span>
                 <div class="stage-title">{{ $stage->name }}</div>
                 <div class="stage-unit">
                     Unit: {{ $d['unit_name'] ?? 'N/A' }}

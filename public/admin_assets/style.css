@@ -2750,6 +2750,10 @@ select:-webkit-autofill:focus {
     background: #fff8f8;
     border-left-color: #dc2626;
 }
+.lot-details-container .card-late {
+    background: #fff7ed;
+    border-left-color: #c2410c;
+}
 .lot-details-container .card-not_started {
     background: #f8fafc;
     border-left-color: #94a3b8;
@@ -2768,6 +2772,7 @@ select:-webkit-autofill:focus {
 .lot-details-container .badge-progress { background: #f59e0b; }
 .lot-details-container .badge-completed { background: #16a34a; }
 .lot-details-container .badge-delayed { background: #dc2626; }
+.lot-details-container .badge-late { background: #c2410c; }
 .lot-details-container .badge-not_started { background: #94a3b8; }
 
 /* =========================================================

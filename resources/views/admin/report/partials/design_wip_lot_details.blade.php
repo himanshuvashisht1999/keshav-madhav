@@ -76,7 +76,7 @@
                 $eta = \Carbon\Carbon::parse($d['time_allocation']);
                 $completed = $d['completed_time'] ? \Carbon\Carbon::parse($d['completed_time']) : null;
                 
-                if ($remaining === 0) $status = ($completed && $completed->gt($eta)) ? 'delayed' : 'completed';
+                if ($remaining === 0) $status = ($completed && $completed->gt($eta)) ? 'late' : 'completed';
                 elseif (now()->gt($eta)) $status = 'delayed';
                 else $status = 'progress';
 
@@ -85,6 +85,7 @@
                     'progress' => ['bg' => '#edf5ee', 'text' => '#05421c', 'label' => 'In Progress'],
                     'completed' => ['bg' => '#dcfce7', 'text' => '#166534', 'label' => 'Completed'],
                     'delayed' => ['bg' => '#fee2e2', 'text' => '#991b1b', 'label' => 'Delayed'],
+                    'late' => ['bg' => '#ffedd5', 'text' => '#9a3412', 'label' => 'Completed late'],
                 ];
                 $c = $statusColors[$status];
             @endphp

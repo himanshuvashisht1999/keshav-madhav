@@ -151,17 +151,25 @@
                                 $eta = Carbon::parse($d['time_allocation']);
                                 $completed = $d['completed_time'] ? Carbon::parse($d['completed_time']) : null;
 
+                                // late = all pieces sent on, but after the ETA; delayed = still has pieces and the ETA has passed
                                 if ($remaining === 0)
-                                    $status = ($completed && $completed->gt($eta)) ? 'delayed' : 'completed';
+                                    $status = ($completed && $completed->gt($eta)) ? 'late' : 'completed';
                                 elseif (now()->gt($eta))
                                     $status = 'delayed';
                                 else
                                     $status = 'progress';
+
+                                $lateDays = null;
+                                if ($status === 'late' || $status === 'delayed') {
+                                    $lateTill = $status === 'late' ? $completed : now();
+                                    $lateDays = $eta->copy()->startOfDay()->diffInDays($lateTill->copy()->startOfDay());
+                                }
+                                $statusLabel = ['late' => 'Completed late', 'not_started' => 'Not Started'][$status] ?? ucfirst($status);
                             @endphp
 
                             <div class="stage-card card-{{ $status }}">
                                 <span class="status-badge badge-{{ $status }}">
-                                    {{ $status == 'not_started' ? 'Not Started' : ucfirst($status) }}
+                                    {{ $statusLabel }}
                                 </span>
 
                                 <h5>{{ $stage->name }}</h5>
@@ -174,6 +182,9 @@
                                     <div class="metric">ETA<strong>{{ $eta->format('d M Y') }}</strong></div>
                                     <div class="metric">
                                         Completed<strong>{{ ($remaining == 0 && $completed) ? $completed->format('d M Y') : '-' }}</strong></div>
+                                    @if($lateDays !== null)
+                                        <div class="metric">Late by<strong class="text-danger">{{ $lateDays === 0 ? 'Under 1 day' : $lateDays . ' ' . ($lateDays === 1 ? 'day' : 'days') }}</strong></div>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
