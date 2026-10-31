@@ -12,6 +12,7 @@
             <td><a href="{{ route('owner.lot-details', ['lot_no' => $row['lot_no']]) }}">{{ $row['lot_no'] }}</a></td>
             <td>{{ $row['order_no'] ?: '-' }}</td>
             <td>{{ $row['customer_name'] ?: '-' }}</td>
+            <td>{{ $row['season'] ?? '-' }}</td>
             <td>{{ $row['date'] }}</td>
             <td>
                 <span class="ow-badge {{ $tone }}">{{ $stage }}</span>

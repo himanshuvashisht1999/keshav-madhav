@@ -1,7 +1,7 @@
 <table border="1">
     <thead>
         <tr>
-            <th colspan="{{ 7 + count($master_stages) }}" style="text-align: center; font-size: 16px; font-weight: bold;">
+            <th colspan="{{ 8 + count($master_stages) }}" style="text-align: center; font-size: 16px; font-weight: bold;">
                 WIP Complete Report (Customer: {{ $data[0]['order']->customer->name ?? '' }})
             </th>
         </tr>
@@ -9,6 +9,7 @@
             <th>Order No</th>
             <th>Order Date</th>
             <th>Design No</th>
+            <th>Season</th>
             <th>Lot No</th>
             <th>Lot Qty</th>
             <th>Lot Status</th>
@@ -24,6 +25,7 @@
                 <td>{{ $row['order']->sku ?? '-' }}</td>
                 <td>{{ $row['order']->created_at ? $row['order']->created_at->format('d M, Y') : '-' }}</td>
                 <td>{{ $row['set']->design_number ?? '-' }}</td>
+                <td>{{ $row['set']->season->name ?? '-' }}</td>
                 <td>{{ $row['lot']->lot_no }}</td>
                 <td>{{ $row['lot_quantity'] ?? 0 }}</td>
                 @php

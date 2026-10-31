@@ -411,6 +411,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
 
             Route::get('/index-order', [AdminProductOrderController::class, 'indexOrder'])->name('indexOrder');
             Route::get('/get-order-sets/{id}', [AdminProductOrderController::class, 'getOrderSets'])->name('getOrderSets');
+            Route::post('/update-sets-season', [AdminProductOrderController::class, 'updateSetsSeason'])->name('updateSetsSeason');
             Route::get('/indexListOrder', [AdminProductOrderController::class, 'indexListOrder'])->name('indexListOrder');
             Route::get('/export-orders', [AdminProductOrderController::class, 'exportOrders'])->name('exportOrders');
 

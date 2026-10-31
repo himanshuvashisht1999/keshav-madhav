@@ -21,7 +21,7 @@
         </div>
 
         <!-- Compact ERP Filter Bar -->
-        <div class="erp-filter-bar mb-2">
+        <div class="erp-filter-bar erp-filter-grid mb-2">
             <form action="{{ route('admin.agent-orders.dispatches.index') }}" method="GET">
                 <div class="row align-items-end">
                     <div class="col-md-2 mb-1">
@@ -74,6 +74,13 @@
                         </select>
                     </div>
                     <div class="col-md-1 mb-1">
+                        <label class="erp-filter-label"><i class="fas fa-sort mr-1"></i> Sort Date</label>
+                        <select name="sort_order" class="form-control select2 erp-input" style="width: 100%;">
+                            <option value="desc" {{ request('sort_order', 'desc') === 'desc' ? 'selected' : '' }}>DESC</option>
+                            <option value="asc" {{ request('sort_order') === 'asc' ? 'selected' : '' }}>ASC</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 mb-1">
                         <label class="erp-filter-label"><i class="fas fa-calendar-alt mr-1"></i> From</label>
                         <input type="date" name="from_date" class="form-control erp-input" value="{{ request('from_date') }}">
                     </div>
@@ -89,14 +96,7 @@
                         <label class="erp-filter-label"><i class="fas fa-barcode mr-1"></i> Order ID</label>
                         <input type="text" name="order_id" class="form-control erp-input" value="{{ request('order_id') }}" placeholder="Order ID..." autocomplete="off">
                     </div>
-                    <div class="col-md-1 mb-1">
-                        <label class="erp-filter-label"><i class="fas fa-sort mr-1"></i> Sort Date</label>
-                        <select name="sort_order" class="form-control select2 erp-input" style="width: 100%;">
-                            <option value="desc" {{ request('sort_order', 'desc') === 'desc' ? 'selected' : '' }}>DESC</option>
-                            <option value="asc" {{ request('sort_order') === 'asc' ? 'selected' : '' }}>ASC</option>
-                        </select>
-                    </div>
-                    <div class="col-auto mb-1 ml-auto">
+                    <div class="col-auto mb-1 ml-auto fg-actions">
                         <div class="erp-filter-actions">
                             <button type="submit" class="btn-erp btn-erp-primary">
                                 <i class="fas fa-filter"></i> Filter
@@ -112,7 +112,7 @@
 
         <!-- Totals Summary Cards (Filtered) -->
         <div class="row mb-2">
-            <div class="col-lg-3 col-md-6 col-sm-6 mb-1">
+            <div class="col-lg-4 col-md-4 col-sm-12 mb-1">
                 <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center">
                         <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
@@ -131,26 +131,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-3 col-md-6 col-sm-6 mb-1">
-                <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
-                            <i class="fas fa-calculator"></i>
-                        </div>
-                        <div>
-                            <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Page Sub-Total</div>
-                            <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-green-primary); line-height: 1.2;">
-                                ₹ {{ number_format($pageGrandTotal ?? 0, 2) }}
-                            </div>
-                        </div>
-                    </div>
-                    <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">
-                        Page
-                    </span>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6 col-sm-6 mb-1">
+            <div class="col-lg-4 col-md-4 col-sm-12 mb-1">
                 <div class="erp-card erp-metric-card-left-yellow py-2 px-3 d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center">
                         <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-yellow-bg); color: var(--erp-yellow-dark); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg); border: 1px solid var(--erp-yellow-badge-border);">
@@ -169,21 +150,23 @@
                 </div>
             </div>
 
-            <div class="col-lg-3 col-md-6 col-sm-6 mb-1">
+            <div class="col-lg-4 col-md-4 col-sm-12 mb-1">
                 <div class="erp-card erp-metric-card-left-green py-2 px-3 d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center">
                         <div class="mr-3" style="width: 40px; height: 40px; border-radius: 6px; background: var(--erp-green-light); color: var(--erp-green-primary); display: flex; align-items: center; justify-content: center; font-size: var(--erp-font-lg);">
-                            <i class="fas fa-coins"></i>
+                            <i class="fas fa-boxes"></i>
                         </div>
                         <div>
-                            <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Avg Dispatch Value</div>
-                            <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-text-heading); line-height: 1.2;">
-                                ₹ {{ number_format($avgGrandTotal ?? 0, 2) }}
+                            <div style="font-size: var(--erp-font-sm); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Dispatch Qty</div>
+                            <div class="font-weight-bold" style="font-size: var(--erp-font-xl); color: var(--erp-green-primary); line-height: 1.2;">
+                                @if(($totalDispatchPcs ?? 0) > 0 || ($totalDispatchMeter ?? 0) <= 0) {{ number_format($totalDispatchPcs ?? 0) }} PCs @endif
+                                @if(($totalDispatchPcs ?? 0) > 0 && ($totalDispatchMeter ?? 0) > 0) + @endif
+                                @if(($totalDispatchMeter ?? 0) > 0) {{ number_format($totalDispatchMeter, 2) }} m @endif
                             </div>
                         </div>
                     </div>
                     <span class="badge" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs); font-weight: 700; padding: 4px 9px;">
-                        Average
+                        Filtered
                     </span>
                 </div>
             </div>

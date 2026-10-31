@@ -540,6 +540,7 @@ class ReportController extends Controller
     {
         $response['data'] = $this->service->orderLotsDetailed($request);
         $response['lotNos'] = $this->service->lot_numbers();
+        $response['seasons'] = \App\Models\ProductSeason::where('status', '!=', 3)->orderBy('name')->get();
         return view('admin.report.lots', $response);
     }
 
@@ -621,6 +622,7 @@ class ReportController extends Controller
     public function unitAssignments(Request $request)
     {
         $response = $this->service->unitAssignments($request);
+        $response['seasons'] = \App\Models\ProductSeason::where('status', '!=', 3)->orderBy('name')->get();
         return view('admin.report.unit_assignments', $response);
     }
 
@@ -876,6 +878,7 @@ class ReportController extends Controller
         $response['patterns'] = \App\Models\MasterDesignPattern::where('status', 1)->get();
         $response['fittings'] = \App\Models\MasterProductFitting::where('status', 1)->get();
         $response['stages'] = \App\Models\MasterProductStage::where('status', 1)->pluck('name')->toArray();
+        $response['seasons'] = \App\Models\ProductSeason::where('status', '!=', 3)->orderBy('name')->get();
         return view('admin.report.design_wip', $response);
     }
 
@@ -998,7 +1001,7 @@ class ReportController extends Controller
 
         if ($selectedCustomer) {
             // orders -> order lines -> lots of the customer; choices of another customer are ignored
-            $wip = $this->service->wipCompleteLots($selectedCustomer, $selectedOrders, $selectedDesigns, $selectedLots);
+            $wip = $this->service->wipCompleteLots($selectedCustomer, $selectedOrders, $selectedDesigns, $selectedLots, $request->product_season_id);
             $availableOrders = $wip['options']['orders'];
             foreach (array_keys($wip['options']['designs']) as $designNo) {
                 $availableDesigns[$designNo] = $designNo;
@@ -1035,9 +1038,12 @@ class ReportController extends Controller
                 );
         }
 
+        $seasons = \App\Models\ProductSeason::where('status', '!=', 3)->orderBy('name')->get();
+
         return view('admin.report.wip_complete', compact(
-            'customers', 
-            'selectedCustomer', 
+            'customers',
+            'seasons',
+            'selectedCustomer',
             'data', 
             'master_stages',
             'availableOrders',

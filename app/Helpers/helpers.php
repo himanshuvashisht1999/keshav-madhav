@@ -21,6 +21,60 @@ function getformatDate($dateString)
     return date('d M Y', strtotime($dateString));
 }
 
+/**
+ * Seasons of an order's sets for list pages: each different season once (sets with different seasons
+ * show all of them), plus 'No season' when some sets are tagged and others not.
+ * The sets need their 'season' relation loaded.
+ */
+function orderSetSeasonNames($sets): array
+{
+    $sets = collect($sets);
+    $names = $sets->map(fn ($set) => $set->season->name ?? null)->filter()->unique()->sort()->values()->all();
+    if ($names && $sets->contains(fn ($set) => empty($set->product_season_id))) {
+        $names[] = 'No season';
+    }
+    return $names;
+}
+
+/** Season filter of lot lists (OrderLot query): lots whose order set has that season, or none ('none'). */
+function filterLotsBySeason($query, $season)
+{
+    if ($season === null || $season === '') {
+        return $query;
+    }
+    return $season === 'none'
+        ? $query->whereDoesntHave('orderProductSet', fn ($q) => $q->whereNotNull('product_season_id'))
+        : $query->whereHas('orderProductSet', fn ($q) => $q->where('product_season_id', (int) $season));
+}
+
+/** Seasons of a lot: those of its order set(s), from the lots_data rows of ReportService::lotDetails(). */
+function lotSeasonNames($lotsData): array
+{
+    return orderSetSeasonNames(collect($lotsData)->map(fn ($row) => $row->orderProductSet ?? null)->filter()->unique('id')->values());
+}
+
+/** Season names as small badges, '-' when there is none. */
+function seasonBadges(array $names): string
+{
+    if (!$names) {
+        return '<span class="text-muted">-</span>';
+    }
+    return implode(' ', array_map(fn ($name) => $name === 'No season'
+        ? '<span class="badge badge-light border text-muted">No season</span>'
+        : '<span class="badge badge-success">' . e($name) . '</span>', $names));
+}
+
+/** Season filter of order lists: orders with a set of that season, or with a set without season ('none'). */
+function filterOrdersBySeason($query, $season)
+{
+    if ($season === null || $season === '') {
+        return $query;
+    }
+    return $query->whereHas('OrderProductSets', fn ($q) => $season === 'none'
+        ? $q->whereNull('product_season_id')
+        : $q->where('product_season_id', (int) $season));
+}
+
 // function getCurrentStage($order_product_id,$from_stage_id){
 //     $data = OrderProductStage::where('order_product_id', $order_product_id)->where('stage_id', $from_stage_id)->whereNotIn('stage_id',[1,2])->first();
 //     return $data;

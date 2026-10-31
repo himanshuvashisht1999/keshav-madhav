@@ -23,27 +23,27 @@
     {{-- Filter Card --}}
     <div class="erp-card mb-2 p-2">
         <div class="form-row align-items-end">
-            <div class="col-md-2 col-sm-4 mb-1">
+            <div class="col-md col-sm-4 mb-1">
                 <label class="small text-muted font-weight-bold mb-1">Order no</label>
                 <input type="text" id="order_no" class="form-control form-control-sm erp-filter-input" placeholder="Order no...">
             </div>
 
-            <div class="col-md-2 col-sm-4 mb-1">
+            <div class="col-md col-sm-4 mb-1">
                 <label class="small text-muted font-weight-bold mb-1">PO number</label>
                 <input type="text" id="po_number" class="form-control form-control-sm erp-filter-input" placeholder="PO number...">
             </div>
 
-            <div class="col-md-2 col-sm-4 mb-1">
+            <div class="col-md col-sm-4 mb-1">
                 <label class="small text-muted font-weight-bold mb-1">Lot no</label>
                 <input type="text" id="lot_no" class="form-control form-control-sm erp-filter-input" placeholder="Lot no...">
             </div>
 
-            <div class="col-md-2 col-sm-4 mb-1">
+            <div class="col-md col-sm-4 mb-1">
                 <label class="small text-muted font-weight-bold mb-1">Design no</label>
                 <input type="text" id="design_number" class="form-control form-control-sm erp-filter-input" placeholder="Design no...">
             </div>
 
-            <div class="col-md-3 col-sm-4 mb-1">
+            <div class="col-md col-sm-4 mb-1">
                 <label class="small text-muted font-weight-bold mb-1">Customer</label>
                 <select id="customer_id" class="form-control form-control-sm select2 erp-filter-select">
                     <option value="">All customers</option>
@@ -55,9 +55,20 @@
                 </select>
             </div>
 
-            <div class="col-md-1 col-sm-4 mb-1">
+            <div class="col-md col-sm-4 mb-1">
+                <label class="small text-muted font-weight-bold mb-1">Season</label>
+                <select id="product_season_id" class="form-control form-control-sm erp-filter-select">
+                    <option value="">All seasons</option>
+                    @foreach($seasons as $season)
+                        <option value="{{ $season->id }}">{{ $season->name }}</option>
+                    @endforeach
+                    <option value="none">No season</option>
+                </select>
+            </div>
+
+            <div class="col-md-auto col-sm-4 mb-1">
                 <button type="button" class="btn-erp btn-erp-outline btn-sm w-100"
-                    onclick="$('#order_no,#po_number,#lot_no,#design_number,#customer_id').val('').trigger('change')" title="Reset filters">
+                    onclick="$('#order_no,#po_number,#lot_no,#design_number,#customer_id,#product_season_id').val('').trigger('change')" title="Reset filters">
                     <i class="fas fa-undo mr-1"></i> Reset
                 </button>
             </div>
@@ -75,6 +86,7 @@
                         <th>PO number</th>
                         <th>Customer</th>
                         <th>Design no</th>
+                        <th class="text-center">Season</th>
                         <th class="text-center">Lots</th>
                         <th>Order date</th>
                         <th>Expected delivery</th>
@@ -189,6 +201,7 @@
                     d.lot_no = $('#lot_no').val();
                     d.design_number = $('#design_number').val();
                     d.customer_id = $('#customer_id').val();
+                    d.product_season_id = $('#product_season_id').val();
                 }
             },
             columns: [
@@ -228,6 +241,13 @@
                     }
                 },
                 {
+                    data: 'season',
+                    name: 'season',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center'
+                },
+                {
                     data: 'lots',
                     name: 'lots',
                     orderable: false,
@@ -255,7 +275,7 @@
             ]
         });
 
-        $('#order_no, #po_number, #lot_no, #design_number, #customer_id').on('keyup change', function () {
+        $('#order_no, #po_number, #lot_no, #design_number, #customer_id, #product_season_id').on('keyup change', function () {
             table.draw();
         });
     });

@@ -51,6 +51,7 @@
             <dt>Order</dt><dd>{{ $order->sku ?? '-' }}</dd>
             <dt>Customer</dt><dd>{{ $order->customer->name ?? '-' }}</dd>
             <dt>Design</dt><dd>{{ $set->design_number ?? '-' }}</dd>
+            <dt>Season</dt><dd>{{ implode(', ', lotSeasonNames($data['lots_data'])) ?: '-' }}</dd>
             <dt>Fabric</dt><dd>{{ $set->fabric->name ?? '-' }}</dd>
             <dt>Colour</dt><dd>{{ $set->colors->name ?? '-' }}</dd>
             <dt>Pattern</dt><dd>{{ $set->master_design_pattern->name ?? '-' }}</dd>

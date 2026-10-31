@@ -1,7 +1,7 @@
 <table>
     <thead>
         <tr>
-            <th colspan="12" style="text-align: center; font-size: 14px; font-weight: bold;">
+            <th colspan="13" style="text-align: center; font-size: 14px; font-weight: bold;">
                 Unit Assignments Report - {{ now()->format('d M Y h:i A') }}
             </th>
         </tr>
@@ -13,6 +13,7 @@
                     <th style="background-color: #f2f2f2; font-weight: bold;">Lot No</th>
                 @endif
                 <th style="background-color: #f2f2f2; font-weight: bold;">Design No</th>
+                <th style="background-color: #f2f2f2; font-weight: bold;">Season</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Order No</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Total Quantity</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Lot Date</th>
@@ -22,6 +23,7 @@
                     <th style="background-color: #f2f2f2; font-weight: bold;">Lot No</th>
                 @endif
                 <th style="background-color: #f2f2f2; font-weight: bold;">Design No</th>
+                <th style="background-color: #f2f2f2; font-weight: bold;">Season</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Order No</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Assigned Qty</th>
                 <th style="background-color: #f2f2f2; font-weight: bold;">Receive Qty</th>
@@ -70,6 +72,7 @@
                     <td>{{ $item->lot_no ?? '-' }}@if(!empty($item->has_rework)) (Rework)@endif</td>
                 @endif
                 <td>{{ $item->design_number ?? '-' }}</td>
+                <td>{{ $item->season_name ?? '-' }}</td>
                 <td>
                     @if($type === 'cutting' || $item->transaction_type === 'cutting_lot')
                         {{ $item->orderMain->sku ?? '-' }}
@@ -97,7 +100,7 @@
             $colspanOffset = ($type === 'cutting') ? 1 : 0;
         @endphp
         <tr style="background-color: #f9f9f9; font-weight: bold;">
-            <td colspan="{{ ($productionStatus ? 4 : 5) - $colspanOffset }}" style="text-align: right; font-weight: bold;">Grand Total:</td>
+            <td colspan="{{ ($productionStatus ? 5 : 6) - $colspanOffset }}" style="text-align: right; font-weight: bold;">Grand Total:</td>
             <td style="font-weight: bold;">{{ number_format($totalAssigned) }}</td>
             @if(!$productionStatus)
                 <td style="font-weight: bold;">{{ number_format($totalReceived) }}</td>

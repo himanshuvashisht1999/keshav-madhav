@@ -11,6 +11,7 @@
             <th>Total Pcs</th>
             <th>Dispatch Pcs</th>
             <th>Status</th>
+            <th>Season</th>
         </tr>
     </thead>
     <tbody>
@@ -39,6 +40,7 @@
                 <td>{{ $total }}</td>
                 <td>{{ $packed }}</td>
                 <td>{{ $statusText }}</td>
+                <td>{{ implode(', ', orderSetSeasonNames($order->OrderProductSets)) ?: '-' }}</td>
             </tr>
         @endforeach
     </tbody>

@@ -382,6 +382,7 @@ class ReportController extends Controller
         $lotRows = \App\Models\OrderLot::query()
             ->when($lotSel, fn($q) => $q->whereIn('lot_no', $lotSel))
             ->when($request->order_id, fn($q) => $q->where('order_main_id', $request->order_id))
+            ->tap(fn($q) => filterLotsBySeason($q, $request->product_season_id))
             ->get(['lot_no', 'order_main_id']);
         $lotNos = $lotRows->pluck('lot_no')->all();
         $counts = self::lotCounts($this->service, $lotRows, $response['completedOrders']);
@@ -398,6 +399,7 @@ class ReportController extends Controller
         ];
         $response['lotNos'] = $this->service->lot_numbers();
         $response['lotSel'] = $lotSel;
+        $response['seasons'] = \App\Models\ProductSeason::where('status', '!=', 3)->orderBy('name')->get();
 
         return view('owner.reports.lots', $response);
     }

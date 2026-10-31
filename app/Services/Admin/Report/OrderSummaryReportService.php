@@ -12,7 +12,7 @@ class OrderSummaryReportService
 {
     public function indexList($request)
     {
-        $query = OrderMain::with(['customer', 'OrderProductSets', 'orderLots'])
+        $query = OrderMain::with(['customer', 'OrderProductSets.season', 'orderLots'])
             ->select('order_main.*')->orderBy('id', 'desc');
 
         return DataTables::of($query)
@@ -50,6 +50,7 @@ class OrderSummaryReportService
                 if ($request->filled('customer_id')) {
                     $q->where('master_customer_id', $request->customer_id);
                 }
+                filterOrdersBySeason($q, $request->get('product_season_id'));
             })
             ->editColumn('created_at', function ($row) {
                 return date('d M, Y', strtotime($row->created_at));
@@ -65,6 +66,9 @@ class OrderSummaryReportService
                     return $sets->sum('total_quantity');
                 })->toArray();
                 return $designs;
+            })
+            ->addColumn('season', function ($row) {
+                return seasonBadges(orderSetSeasonNames($row->OrderProductSets));
             })
             ->addColumn('lots', function ($row) {
                 $orderLots = $row->orderLots ? $row->orderLots->pluck('lot_no') : collect();
@@ -99,7 +103,7 @@ class OrderSummaryReportService
             ->addColumn('action', function ($row) {
                 return '<a href="' . route('admin.report.order-summary.view', ['id' => $row->id]) . '" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> View Summary</a>';
             })
-            ->rawColumns(['action', 'status', 'lots'])
+            ->rawColumns(['action', 'status', 'lots', 'season'])
             ->make(true);
     }
 
@@ -115,7 +119,8 @@ class OrderSummaryReportService
             'orderProductSets.lots.stageMasterUnit',
             'orderProductSets.product_set_details',
             'orderProductSets.order_cutting_stage.vendor',
-            'orderProductSets.order_cutting_stage.customer'
+            'orderProductSets.order_cutting_stage.customer',
+            'orderProductSets.season'
         ])->find($id);
 
         if (!$order)
@@ -159,6 +164,7 @@ class OrderSummaryReportService
             ->withSum('fabricRollAssigningsDetail as lot_quantity', 'quantity')
             ->with([
                 'orderProductSet.orderMain.customer',
+                'orderProductSet.season',
                 'stageMasterUnit'
             ])
             ->when($searchOrder, function ($q) use ($searchOrder, $orderSku) {
@@ -183,7 +189,7 @@ class OrderSummaryReportService
                   });
             })
             ->whereNotIn('lot_no', $existingLotNos)
-            ->with(['orderProductSet.orderMain.customer'])
+            ->with(['orderProductSet.orderMain.customer', 'orderProductSet.season'])
             ->get();
 
         $result = collect();
@@ -217,6 +223,7 @@ class OrderSummaryReportService
                 'lot_no' => $lot->lot_no,
                 'lot_quantity' => (int)($lot->lot_quantity ?? 0),
                 'design_number' => $lot->orderProductSet?->design_number ?? 'N/A',
+                'season' => $lot->orderProductSet?->season?->name,
                 'cutting_master' => $cuttingMaster,
                 'start_time' => $timing ? $timing->start_date : null,
                 'end_time' => $timing ? $timing->end_date : null,
@@ -242,6 +249,7 @@ class OrderSummaryReportService
                 'lot_no' => $ol->lot_no,
                 'lot_quantity' => (int)($qty ?? 0),
                 'design_number' => $ol->orderProductSet?->design_number ?? 'N/A',
+                'season' => $ol->orderProductSet?->season?->name,
                 'cutting_master' => $cuttingMaster,
                 'start_time' => $timing ? $timing->start_date : null,
                 'end_time' => $timing ? $timing->end_date : null,

@@ -114,7 +114,8 @@
             </td>
             <td style="width: 33%;">
                 <strong>Fabric:</strong> {{ $lot->orderProductSet->fabric->name ?? '-' }}<br>
-                <strong>Pattern:</strong> {{ $lot->orderProductSet->master_design_pattern->name ?? '-' }}
+                <strong>Pattern:</strong> {{ $lot->orderProductSet->master_design_pattern->name ?? '-' }}<br>
+                <strong>Season:</strong> {{ $lot->orderProductSet->season->name ?? '-' }}
             </td>
             <td style="width: 34%; text-align: right;">
                 <strong>Current Stage:</strong> {{ $lot->last_current_stage ?? 'N/A' }}<br>

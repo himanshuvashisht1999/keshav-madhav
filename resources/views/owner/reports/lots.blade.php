@@ -5,7 +5,8 @@
 @section('content')
     @php
         $orderSel = request('order_id');
-        $filterCount = ($orderSel ? 1 : 0) + (count($lotSel) ? 1 : 0);
+        $seasonSel = (string) request('product_season_id', '');
+        $filterCount = ($orderSel ? 1 : 0) + (count($lotSel) ? 1 : 0) + ($seasonSel !== '' ? 1 : 0);
     @endphp
 
     @include('owner.common.page_head', [
@@ -45,6 +46,16 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label>Season</label>
+                <select name="product_season_id" class="form-control">
+                    <option value="">All seasons</option>
+                    @foreach($seasons as $season)
+                        <option value="{{ $season->id }}" {{ $seasonSel === (string) $season->id ? 'selected' : '' }}>{{ $season->name }}</option>
+                    @endforeach
+                    <option value="none" {{ $seasonSel === 'none' ? 'selected' : '' }}>No season</option>
+                </select>
+            </div>
             <div class="ow-filter-actions">
                 <button class="ow-btn"><i class="fas fa-search"></i> Apply</button>
                 <a class="ow-btn is-outline" href="{{ route('owner.lots') }}">Reset</a>
@@ -60,6 +71,7 @@
                     <th>Lot</th>
                     <th>Order</th>
                     <th>Customer</th>
+                    <th>Season</th>
                     <th>Lot date</th>
                     <th>Stage now</th>
                     <th class="num">Pcs cut</th>
@@ -69,7 +81,7 @@
             </thead>
             <tbody id="lots-rows">
                 @if($data->isEmpty())
-                    <tr><td colspan="8" class="ow-empty">No lots found</td></tr>
+                    <tr><td colspan="9" class="ow-empty">No lots found</td></tr>
                 @else
                     @include('owner.reports.partials.lots_list', ['data' => $data])
                 @endif
@@ -78,7 +90,7 @@
                 <tfoot>
                     <tr>
                         <td>Total</td>
-                        <td colspan="4">{{ number_format($totals['lots']) }} lots{{ $data->total() > $data->count() ? ' (all pages)' : '' }}</td>
+                        <td colspan="5">{{ number_format($totals['lots']) }} lots{{ $data->total() > $data->count() ? ' (all pages)' : '' }}</td>
                         <td class="num">{{ number_format($totals['pieces']) }}</td>
                         <td class="num">{{ number_format($totals['packed']) }}</td>
                         <td class="num">{{ number_format($totals['dispatched']) }}</td>

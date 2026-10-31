@@ -12,6 +12,13 @@
             <div class="erp-report-meta">
                 Date : {{ now()->format('d M Y h:i A') }}
             </div>
+            <select id="filter_season" class="form-control form-control-sm erp-filter-select" style="width: 150px;" title="Season">
+                <option value="">All seasons</option>
+                @foreach($seasons as $season)
+                    <option value="{{ $season->id }}">{{ $season->name }}</option>
+                @endforeach
+                <option value="none">No season</option>
+            </select>
             <button type="button" class="btn-erp btn-erp-primary" onclick="loadDesigns()">
                 <i class="fas fa-sync-alt mr-1"></i> Refresh
             </button>
@@ -141,7 +148,7 @@
     let isLotLoading = false;
 
     function clearAllFilters() {
-        $('#filter_customer, #filter_order, #filter_design, #filter_lot').val('');
+        $('#filter_customer, #filter_order, #filter_design, #filter_lot, #filter_season').val('');
         activeCustomer = null;
         activeOrder = null;
         activeDesign = null;
@@ -157,7 +164,18 @@
         loadCustomers();
         loadOrders();
         loadDesigns();
-        
+
+        // Season narrows every panel: customers, orders, designs (order sets) and lots
+        $('#filter_season').on('change', function () {
+            activeCustomer = null;
+            activeOrder = null;
+            activeDesign = null;
+            activeLot = null;
+            loadCustomers();
+            loadOrders();
+            loadDesigns();
+        });
+
         let typingTimerCustomer;
         $('#filter_customer').on('keyup', function () {
             clearTimeout(typingTimerCustomer);
@@ -235,8 +253,9 @@
         $.ajax({
             url: "{{ route('admin.reports.design-wip.api.customers') }}",
             type: "GET",
-            data: { 
+            data: {
                 search: $('#filter_customer').val(),
+                product_season_id: $('#filter_season').val(),
                 page: customerPage
             },
             success: function(res) {
@@ -312,6 +331,7 @@
             data: { 
                 search: $('#filter_order').val(),
                 customer_id: activeCustomer,
+                product_season_id: $('#filter_season').val(),
                 page: orderPage
             },
             success: function(res) {
@@ -393,6 +413,7 @@
             design_no: $('#filter_design').val(),
             customer_id: activeCustomer,
             order_id: activeOrder,
+            product_season_id: $('#filter_season').val(),
             page: designPage
         };
         
@@ -428,6 +449,9 @@
                                             </div>
                                             <div style="font-size: 10px; font-weight: 600; color: #6b7280; margin-top: 2px; white-space: normal; word-break: break-word; line-height: 1.3;">
                                                 <span style="color: #4b5563;">Colors:</span> ${item.colors || '-'}
+                                            </div>
+                                            <div style="font-size: 10px; font-weight: 600; color: #6b7280; margin-top: 2px; line-height: 1.3;">
+                                                <span style="color: #4b5563;">Season:</span> ${item.season ? $('<span>').text(item.season).html() : '-'}
                                             </div>
                                         </div>
                                     </div>
@@ -497,6 +521,7 @@
                 order_id: activeOrder,
                 customer_id: activeCustomer,
                 search: $('#filter_lot').val(),
+                product_season_id: $('#filter_season').val(),
                 page: lotPage
             },
             success: function(res) {

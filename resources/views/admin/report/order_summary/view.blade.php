@@ -37,37 +37,43 @@
     <div class="erp-card mb-2" style="border-top: 3.5px solid var(--erp-yellow-bright);">
         <div class="erp-card-body p-3">
             <div class="row">
-                <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                <div class="col-lg col-md-4 col-sm-6 mb-2">
                     <div style="font-size: var(--erp-font-xs); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase;">Customer</div>
                     <div class="font-weight-bold" style="font-size: var(--erp-font-md); color: var(--erp-text-heading);">
                         {{ $order->customer->name ?? 'N/A' }}
                     </div>
                 </div>
-                <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                <div class="col-lg col-md-4 col-sm-6 mb-2">
                     <div style="font-size: var(--erp-font-xs); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase;">PO Number</div>
                     <div class="font-weight-bold" style="font-size: var(--erp-font-md); color: var(--erp-text-heading);">
                         {{ $order->po_number ?? '-' }}
                     </div>
                 </div>
-                <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                <div class="col-lg col-md-4 col-sm-6 mb-2">
                     <div style="font-size: var(--erp-font-xs); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase;">Order Date</div>
                     <div class="font-weight-bold" style="font-size: var(--erp-font-md); color: var(--erp-text-heading);">
                         {{ date('d M, Y', strtotime($order->created_at)) }}
                     </div>
                 </div>
-                <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                <div class="col-lg col-md-4 col-sm-6 mb-2">
                     <div style="font-size: var(--erp-font-xs); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase;">Exp. Delivery Date</div>
                     <div class="font-weight-bold" style="font-size: var(--erp-font-md); color: var(--erp-text-heading);">
                         {{ date('d M, Y', strtotime($order->expected_delivery_date)) }}
                     </div>
                 </div>
-                <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                <div class="col-lg col-md-4 col-sm-6 mb-2">
                     <div style="font-size: var(--erp-font-xs); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase;">Order Type</div>
                     <div class="font-weight-bold" style="font-size: var(--erp-font-md); color: var(--erp-text-heading);">
                         {{ ucfirst($order->order_type) ?? '-' }}
                     </div>
                 </div>
-                <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
+                <div class="col-lg col-md-4 col-sm-6 mb-2">
+                    <div style="font-size: var(--erp-font-xs); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase;">Season</div>
+                    <div class="font-weight-bold" style="font-size: var(--erp-font-md); color: var(--erp-text-heading);">
+                        {!! seasonBadges(orderSetSeasonNames($order->orderProductSets)) !!}
+                    </div>
+                </div>
+                <div class="col-lg col-md-4 col-sm-6 mb-2">
                     <div style="font-size: var(--erp-font-xs); font-weight: 700; color: var(--erp-text-muted); text-transform: uppercase;">Order File</div>
                     @if($order->corporate_order_file)
                         <button class="btn-erp btn-erp-primary mt-1" data-toggle="modal" data-target="#fileViewModal" data-file="{{ asset('assets/products/' . $order->corporate_order_file) }}" style="font-size: 11px !important; padding: 2px 8px !important;">
@@ -100,6 +106,7 @@
                         <th>Fabric</th>
                         <th style="width: 90px;">Fitting</th>
                         <th style="width: 90px;">Pattern</th>
+                        <th style="width: 90px;" class="text-center">Season</th>
                         <th style="width: 130px;" class="text-center">Assignment / PO</th>
                         <th style="width: 110px;" class="text-center">Start Date</th>
                         <th style="width: 110px;" class="text-center">Exp. End Date</th>
@@ -119,7 +126,8 @@
                             <td>{{ $setData->fabric->name ?? "-" }}</td>
                             <td>{{ $setData->master_product_fitting->name ?? "-" }}</td>
                             <td>{{ $setData->master_design_pattern->name ?? "-" }}</td>
-                            
+                            <td class="text-center">{!! seasonBadges(array_filter([$setData->season->name ?? null])) !!}</td>
+
                             @php 
                                 $cuttingStage = $setData->order_cutting_stage; 
                                 $poText = '-';
@@ -156,7 +164,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="14" class="text-center text-muted py-3">
+                            <td colspan="15" class="text-center text-muted py-3">
                                 No Product Data Available
                             </td>
                         </tr>
@@ -165,7 +173,7 @@
                 @if($order->orderProductSets->count())
                     <tfoot>
                         <tr class="bg-light font-weight-bold">
-                            <td colspan="12" class="text-right">Total:</td>
+                            <td colspan="13" class="text-right">Total:</td>
                             <td class="text-right">{{ $order->orderProductSets->sum('set_quantity') }}</td>
                             <td class="text-right text-primary font-weight-bold">{{ $order->orderProductSets->sum('total_quantity') }}</td>
                         </tr>
@@ -208,6 +216,7 @@
                                     <th style="width: 45px;" class="text-center">#</th>
                                     <th>Lot No</th>
                                     <th>Design No</th>
+                                    <th style="width: 100px;" class="text-center">Season</th>
                                     <th>Current Stage</th>
                                     <th style="width: 120px;" class="text-right">Lot Quantity</th>
                                     <th style="width: 80px;" class="text-center">Action</th>
@@ -219,6 +228,7 @@
                                         <td class="text-center font-weight-bold">{{ $index + 1 }}</td>
                                         <td class="font-weight-bold">{{ $row['lot_no'] }}</td>
                                         <td>{{ $row['design_number'] ?? 'N/A' }}</td>
+                                        <td class="text-center">{!! seasonBadges(array_filter([$row['season'] ?? null])) !!}</td>
                                         <td>{{ $row['last_current_stage'] ?? 'N/A' }}</td>
                                         <td class="text-right font-weight-bold" style="color: var(--erp-green-primary);">{{ $row['lot_quantity'] ?? '0' }}</td>
                                         <td class="text-center">
@@ -229,14 +239,14 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted py-3">No Lot Data Available</td>
+                                        <td colspan="7" class="text-center text-muted py-3">No Lot Data Available</td>
                                     </tr>
                                 @endforelse
                             </tbody>
                             @if(count($lotsData) > 0)
                                 <tfoot>
                                     <tr class="bg-light font-weight-bold">
-                                        <td colspan="4" class="text-right">Total:</td>
+                                        <td colspan="5" class="text-right">Total:</td>
                                         <td class="text-right font-weight-bold" style="color: var(--erp-green-primary);">{{ collect($lotsData)->sum('lot_quantity') }}</td>
                                         <td></td>
                                     </tr>

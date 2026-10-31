@@ -35,6 +35,10 @@
                     <div>{{ $lot->orderProductSet->orderMain->customer->name ?? '-' }}</div>
                 </div>
                 <div class="info-card">
+                    <label>Season</label>
+                    <div>{!! seasonBadges(lotSeasonNames($data['lots_data'])) !!}</div>
+                </div>
+                <div class="info-card">
                     <label>Report date</label>
                     <div>{{ now()->format('d M Y') }}</div>
                 </div>

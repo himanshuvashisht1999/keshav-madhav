@@ -39,25 +39,25 @@ class LotLedgerController extends Controller
         $sheet->setTitle('Lot Ledger Summary');
 
         // Header Title
-        $sheet->mergeCells('A1:F1');
+        $sheet->mergeCells('A1:G1');
         $sheet->setCellValue('A1', 'SNAPKID - Lot Production Ledger Summary');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setARGB('FF1E3C72');
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         // Date
-        $sheet->mergeCells('A2:F2');
+        $sheet->mergeCells('A2:G2');
         $sheet->setCellValue('A2', 'Generated on: ' . date('d M Y, h:i A'));
         $sheet->getStyle('A2')->getFont()->setSize(10)->getColor()->setARGB('FF666666');
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         // Headers
-        $headers = ['Lot No', 'Order SKU', 'Customer', 'Fabric', 'Total Quantity', 'Current Stage'];
-        $cols = ['A', 'B', 'C', 'D', 'E', 'F'];
+        $headers = ['Lot No', 'Order SKU', 'Customer', 'Fabric', 'Total Quantity', 'Current Stage', 'Season'];
+        $cols = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
         foreach ($headers as $idx => $h) {
             $sheet->setCellValue($cols[$idx] . '4', $h);
         }
 
-        $headerRange = 'A4:F4';
+        $headerRange = 'A4:G4';
         $sheet->getStyle($headerRange)->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
         $sheet->getStyle($headerRange)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF1E3C72');
         $sheet->getStyle($headerRange)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
@@ -75,6 +75,7 @@ class LotLedgerController extends Controller
             $sheet->setCellValue('D' . $row, $lot->orderProductSet->fabric->name ?? '-');
             $sheet->setCellValue('E' . $row, $qty);
             $sheet->setCellValue('F' . $row, $lot->last_current_stage ?? 'N/A');
+            $sheet->setCellValue('G' . $row, $lot->orderProductSet->season->name ?? '-');
 
             $row++;
         }
@@ -83,12 +84,12 @@ class LotLedgerController extends Controller
         $sheet->setCellValue('A' . $row, 'Total');
         $sheet->mergeCells('A' . $row . ':D' . $row);
         $sheet->setCellValue('E' . $row, $totalQty);
-        $sheet->getStyle('A' . $row . ':F' . $row)->getFont()->setBold(true);
-        $sheet->getStyle('A' . $row . ':F' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
+        $sheet->getStyle('A' . $row . ':G' . $row)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $row . ':G' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
 
         $sheet->getStyle('E5:E' . $row)->getNumberFormat()->setFormatCode('#,##0');
 
-        foreach (range('A', 'F') as $col) {
+        foreach (range('A', 'G') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
@@ -109,14 +110,19 @@ class LotLedgerController extends Controller
             'orderProductSet.fabric',
             'orderProductSet.master_design_pattern',
             'orderProductSet.master_product_fitting',
-            'orderProductSet.colors'
+            'orderProductSet.colors',
+            'orderProductSet.season'
         ])
         ->when($searchLot, function ($q) use ($searchLot) {
-            $q->where('lot_no', 'like', "%{$searchLot}%")
-              ->orWhereHas('orderMain', function($q2) use ($searchLot) {
-                  $q2->where('sku', 'like', "%{$searchLot}%");
-              });
+            // in brackets, so the season filter below applies to both matches
+            $q->where(function ($sq) use ($searchLot) {
+                $sq->where('lot_no', 'like', "%{$searchLot}%")
+                  ->orWhereHas('orderMain', function($q2) use ($searchLot) {
+                      $q2->where('sku', 'like', "%{$searchLot}%");
+                  });
+            });
         })
+        ->tap(fn ($q) => filterLotsBySeason($q, $request->product_season_id))
         ->orderBy('id', 'desc');
 
         $lots = $paginate ? $query->paginate(20)->withQueryString() : $query->get();
@@ -133,8 +139,9 @@ class LotLedgerController extends Controller
 
         $pageTotalAssigned = $lots->sum('lot_quantity');
         $totalLotsCount = $lots instanceof \Illuminate\Pagination\LengthAwarePaginator ? $lots->total() : $lots->count();
+        $seasons = \App\Models\ProductSeason::where('status', '!=', 3)->orderBy('name')->get();
 
-        return compact('lots', 'searchLot', 'pageTotalAssigned', 'totalLotsCount');
+        return compact('lots', 'searchLot', 'pageTotalAssigned', 'totalLotsCount', 'seasons');
     }
 
     public function show(Request $request, $lot_no)
@@ -168,7 +175,7 @@ class LotLedgerController extends Controller
 
         // Subtitle
         $sheet->mergeCells('A2:E2');
-        $sheet->setCellValue('A2', 'Order SKU: ' . ($lot->orderMain->sku ?? '-') . ' | Customer: ' . ($lot->orderMain->customer->name ?? '-') . ' | Stage: ' . ($lot->last_current_stage ?? 'N/A') . ' | Fabric: ' . ($lot->orderProductSet->fabric->name ?? '-'));
+        $sheet->setCellValue('A2', 'Order SKU: ' . ($lot->orderMain->sku ?? '-') . ' | Customer: ' . ($lot->orderMain->customer->name ?? '-') . ' | Stage: ' . ($lot->last_current_stage ?? 'N/A') . ' | Fabric: ' . ($lot->orderProductSet->fabric->name ?? '-') . ' | Season: ' . ($lot->orderProductSet->season->name ?? '-'));
         $sheet->getStyle('A2')->getFont()->setSize(10)->getColor()->setARGB('FF666666');
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 

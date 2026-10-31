@@ -26,7 +26,7 @@
     <div class="erp-card mb-2 p-2">
         <form method="GET" action="{{ url()->current() }}" class="mb-0">
             <div class="form-row align-items-end">
-                <div class="col-md-4 col-sm-6 mb-1">
+                <div class="col-md-3 col-sm-6 mb-1">
                     <label class="small text-muted font-weight-bold mb-1">Order no</label>
                     <select name="order_id" id="order_no" class="form-control form-control-sm select2 erp-filter-select"
                         onchange="changeOrderId(this.value)">
@@ -39,7 +39,7 @@
                     </select>
                 </div>
 
-                <div class="col-md-5 col-sm-6 mb-1">
+                <div class="col-md-4 col-sm-6 mb-1">
                     <label class="small text-muted font-weight-bold mb-1">Lot no</label>
                     <select name="lot_no[]" id="lot_no" class="form-control form-control-sm select2 erp-filter-select" multiple data-placeholder="Select lot(s)">
                         @php
@@ -53,7 +53,18 @@
                     </select>
                 </div>
 
-                <div class="col-md-3 col-sm-12 mb-1 d-flex gap-1">
+                <div class="col-md-2 col-sm-6 mb-1">
+                    <label class="small text-muted font-weight-bold mb-1">Season</label>
+                    <select name="product_season_id" id="product_season_id" class="form-control form-control-sm erp-filter-select">
+                        <option value="">All seasons</option>
+                        @foreach($seasons as $season)
+                            <option value="{{ $season->id }}" {{ (string) request('product_season_id') === (string) $season->id ? 'selected' : '' }}>{{ $season->name }}</option>
+                        @endforeach
+                        <option value="none" {{ request('product_season_id') === 'none' ? 'selected' : '' }}>No season</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3 col-sm-6 mb-1 d-flex gap-1">
                     <button type="submit" class="btn-erp btn-erp-primary btn-sm flex-fill" title="Apply filter">
                         <i class="fas fa-filter mr-1"></i> Apply
                     </button>
@@ -80,6 +91,7 @@
                             <th>Lot no</th>
                             <th>Order no</th>
                             <th>Customer name</th>
+                            <th class="text-center">Season</th>
                             <th>Current stage</th>
                             <th class="text-right">Lot quantity</th>
                             <th class="text-center" style="width: 90px;">Action</th>
@@ -96,6 +108,7 @@
                                     <td><strong>{{ $row['lot_no'] }}</strong></td>
                                     <td><code>{{ $row['order_no'] }}</code></td>
                                     <td>{{ $row['customer_name'] }}</td>
+                                    <td class="text-center">{!! seasonBadges(array_filter([$row['season'] ?? null])) !!}</td>
                                     <td>
                                         <span class="badge badge-light border text-dark font-weight-bold px-2">
                                             <i class="fas fa-layer-group text-success mr-1"></i>{{ $row['last_current_stage'] ?? 'N/A' }}
@@ -114,7 +127,7 @@
                             @endisset
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
+                                <td colspan="9" class="text-center text-muted py-4">
                                     No data found
                                 </td>
                             </tr>

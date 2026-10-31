@@ -3649,12 +3649,16 @@ class AgentOrderController extends Controller
     {
         $query = $this->buildDispatchesQuery($request);
 
-        $totalGrandTotal = (float) (clone $query)->sum('grand_total');
+        // totals across all filtered dispatches, not just this page
+        $totals = (clone $query)->reorder()
+            ->selectRaw('COALESCE(SUM(grand_total), 0) as grand_total, COALESCE(SUM(dispatch_pcs), 0) as pcs, COALESCE(SUM(dispatch_meter), 0) as meter')
+            ->first();
+        $totalGrandTotal = (float) $totals->grand_total;
+        $totalDispatchPcs = (int) $totals->pcs;
+        $totalDispatchMeter = (float) $totals->meter;
 
         $dispatches = $query->paginate(20)->withQueryString();
         $totalDispatchesCount = $dispatches->total();
-        $pageGrandTotal = (float) $dispatches->sum('grand_total');
-        $avgGrandTotal = $totalDispatchesCount > 0 ? ($totalGrandTotal / $totalDispatchesCount) : 0;
 
         $shops = DB::table('master_customers')
             ->where('status', '!=', 3)
@@ -3670,8 +3674,8 @@ class AgentOrderController extends Controller
             'agents',
             'totalGrandTotal',
             'totalDispatchesCount',
-            'pageGrandTotal',
-            'avgGrandTotal'
+            'totalDispatchPcs',
+            'totalDispatchMeter'
         ));
     }
 

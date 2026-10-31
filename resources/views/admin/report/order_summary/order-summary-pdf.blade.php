@@ -294,6 +294,10 @@
                                     <td class="info-label">Exp. Delivery</td>
                                     <td class="info-val">: {{ date('d M Y', strtotime($order->expected_delivery_date)) }}</td>
                                 </tr>
+                                <tr>
+                                    <td class="info-label">Season</td>
+                                    <td class="info-val">: {{ implode(', ', orderSetSeasonNames($order->orderProductSets)) ?: '-' }}</td>
+                                </tr>
                             </table>
                         </div>
                     </div>
@@ -311,6 +315,7 @@
                     <th>SET SIZE</th>
                     <th style="width: 9%;">LOT NO'S</th>
                     <th style="width: 9%;">COLOUR</th>
+                    <th style="width: 8%;">SEASON</th>
                     <th style="width: 11%;">FABRIC</th>
                     <th style="width: 12%;">CUTTING MASTER</th>
                     <th style="width: 8%;">SET QTY</th>
@@ -325,6 +330,7 @@
                         <td>{{ $set->size_measurement->name ?? '-' }}</td>
                         <td class="text-center">{{ $set->lots->pluck('lot_no')->unique()->implode(', ') ?: '-' }}</td>
                         <td class="text-center">{{ $set->colors->name ?? '-' }}</td>
+                        <td class="text-center">{{ $set->season->name ?? '-' }}</td>
                         <td>{{ $set->fabric->name ?? '-' }}</td>
                         <td class="text-center">
                             {{ $set->lots->map(function ($lot) {
@@ -338,7 +344,7 @@
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="7" class="text-right" style="text-transform: uppercase;">TOTAL:</td>
+                    <td colspan="8" class="text-right" style="text-transform: uppercase;">TOTAL:</td>
                     <td class="text-right">{{ $order->orderProductSets->sum('set_quantity') }}</td>
                     <td class="text-right">{{ $order->orderProductSets->sum('total_quantity') }} Pcs</td>
                 </tr>
@@ -354,6 +360,7 @@
                         <th style="width: 6%;">#</th>
                         <th>LOT NO</th>
                         <th>DESIGN NO</th>
+                        <th style="width: 15%;">SEASON</th>
                         <th style="width: 15%;">QUANTITY</th>
                     </tr>
                 </thead>
@@ -363,6 +370,7 @@
                             <td class="text-center">{{ $i + 1 }}</td>
                             <td class="text-center font-weight-bold">{{ $lot['lot_no'] }}</td>
                             <td class="text-center">{{ $lot['design_number'] ?? 'N/A' }}</td>
+                            <td class="text-center">{{ $lot['season'] ?? '-' }}</td>
                             <td class="text-right font-weight-bold">{{ $lot['lot_quantity'] }} Pcs</td>
                         </tr>
                     @endforeach

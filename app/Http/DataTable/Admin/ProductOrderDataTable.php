@@ -82,7 +82,7 @@ class ProductOrderDataTable
 
     public function indexListOrder($request)
     {
-        $queue = OrderMain::query()->with('OrderProductSets.product')->where('order_main.status', '!=', 0);
+        $queue = OrderMain::query()->with(['OrderProductSets.product', 'OrderProductSets.season'])->where('order_main.status', '!=', 0);
 
         // Capture filtered query to calculate total sum across all filtered records
         $summary_query = clone $queue;
@@ -146,11 +146,15 @@ class ProductOrderDataTable
                 }
                 return '<a href="javascript:void(0)" class="view-designs font-weight-bold text-primary" data-id="' . $queue->id . '" title="View All Order Sets">' . htmlspecialchars($display) . '</a>';
             })
+            ->addColumn('season', function ($queue) {
+                return seasonBadges(orderSetSeasonNames($queue->OrderProductSets));
+            })
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
 
                 $view = '<a href="' . route('admin.product_order.indexOrderSet', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-view" data-toggle="tooltip" data-placement="top" title="View Sets"><i class="fas fa-eye"></i></a>';
                 $report = '<a href="' . route('admin.report.order-summary.view', ['id' => $parameter]) . '" class="erp-action-btn erp-btn-pdf" data-toggle="tooltip" data-placement="top" title="Order Summary"><i class="fas fa-chart-bar"></i></a>';
+                $season = '<a href="javascript:void(0);" class="erp-action-btn erp-btn-edit season-btn" data-id="' . $parameter . '" data-sku="' . e($queue->sku) . '" data-toggle="tooltip" data-placement="top" title="Update Season"><i class="fas fa-leaf"></i></a>';
 
                 $edit = '';
                 $delete = '';
@@ -160,10 +164,10 @@ class ProductOrderDataTable
                     $delete = '<a href="javascript:void(0);" onclick="deleteOrder(' . $parameter . ')" class="erp-action-btn erp-btn-delete" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fas fa-trash"></i></a>';
                 }
 
-                return '<div class="d-flex align-items-center justify-content-center">' . $view . ' ' . $edit . ' ' . $report . ' ' . $delete . '</div>';
+                return '<div class="d-flex align-items-center justify-content-center">' . $view . ' ' . $edit . ' ' . $season . ' ' . $report . ' ' . $delete . '</div>';
             })
 
-            ->rawColumns(['action', 'master_customer_id', 'total_pcs', 'dispatch_pcs', 'created_at', 'status', 'design_number'])
+            ->rawColumns(['action', 'master_customer_id', 'total_pcs', 'dispatch_pcs', 'created_at', 'status', 'design_number', 'season'])
             ->with('total_pieces_sum', number_format($total_pieces_sum))
             ->make(true);
     }
@@ -213,6 +217,7 @@ class ProductOrderDataTable
         if ($request->has('status') && !empty($request->status)) {
             $query->where('status', $request->get('status'));
         }
+        filterOrdersBySeason($query, $request->get('product_season_id'));
 
         if ($request->has('assignment_status') && !empty($request->assignment_status)) {
             if ($request->assignment_status == 'assigned') {
@@ -230,7 +235,7 @@ class ProductOrderDataTable
     public function indexListOrderSet($request)
     {
         // dd($request->all());
-        $queue = OrderProductSet::query()->where('order_main_id', $request->get('id'));
+        $queue = OrderProductSet::query()->with('season')->where('order_main_id', $request->get('id'));
 
         return DataTables::of($queue)->addIndexColumn()
             ->filter(function ($query) use ($request) {
@@ -254,6 +259,13 @@ class ProductOrderDataTable
                     } elseif ($request->assigned_filter === 'pending') {
                         $query->whereNull('stage_master_unit_id');
                     }
+                }
+
+                // Season of the set, 'none' = without season
+                if ($request->product_season_id === 'none') {
+                    $query->whereNull('product_season_id');
+                } elseif ($request->filled('product_season_id')) {
+                    $query->where('product_season_id', (int) $request->product_season_id);
                 }
 
             })
@@ -322,6 +334,10 @@ class ProductOrderDataTable
                 return $queue->total_quantity;
             })
 
+            ->addColumn('season', function ($queue) {
+                return seasonBadges(array_filter([$queue->season->name ?? null]));
+            })
+
             ->addColumn('action', function ($queue) {
                 $parameter = $queue->id;
 
@@ -341,7 +357,7 @@ class ProductOrderDataTable
                 return '<div class="d-flex align-items-center justify-content-center">' . $view . '</div>';
             })
 
-            ->rawColumns(['select', 'action', 'design_number', 'size_set', 'size_group', 'assign_to', 'total_qty', 'status'])
+            ->rawColumns(['select', 'action', 'design_number', 'size_set', 'size_group', 'assign_to', 'total_qty', 'status', 'season'])
             ->make(true);
     }
 

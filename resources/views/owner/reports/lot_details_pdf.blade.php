@@ -196,7 +196,10 @@
                     {{-- same unit rule as the lot page: slip unit, else cutting master, else the order line's unit --}}
                     <div>{{ $lot_first?->productionSlipDigitization?->getUnitMaster?->name ?? ($lot_first?->cutting_master?->name ?? ($lot_first?->orderProductSet?->stage_master_unit?->name ?? '-')) }}</div>
                 </td>
-                <td></td>
+                <td>
+                    <label>Season</label>
+                    <div>{{ implode(', ', lotSeasonNames($data['lots_data'])) ?: '-' }}</div>
+                </td>
                 <td></td>
             </tr>
         </table>

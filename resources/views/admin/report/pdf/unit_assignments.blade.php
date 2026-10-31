@@ -65,6 +65,7 @@
                         <th>Lot No</th>
                     @endif
                     <th>Design No</th>
+                    <th>Season</th>
                     <th>Order No</th>
                     <th>Total Quantity</th>
                     <th>Lot Date</th>
@@ -74,6 +75,7 @@
                         <th>Lot No</th>
                     @endif
                     <th>Design No</th>
+                    <th>Season</th>
                     <th>Order No</th>
                     <th>Assigned Qty</th>
                     <th>Receive Qty</th>
@@ -122,6 +124,7 @@
                         <td>{{ $item->lot_no ?? '-' }}@if(!empty($item->has_rework)) (Rework)@endif</td>
                     @endif
                     <td>{{ $item->design_number ?? '-' }}</td>
+                    <td>{{ $item->season_name ?? '-' }}</td>
                     <td>
                         @if($type === 'cutting' || $item->transaction_type === 'cutting_lot')
                             {{ $item->orderMain->sku ?? '-' }}
@@ -149,7 +152,7 @@
                 $colspanOffset = ($type === 'cutting') ? 1 : 0;
             @endphp
             <tr class="footer-total">
-                <td colspan="{{ ($productionStatus ? 4 : 5) - $colspanOffset }}" style="text-align: right;">Grand Total:</td>
+                <td colspan="{{ ($productionStatus ? 5 : 6) - $colspanOffset }}" style="text-align: right;">Grand Total:</td>
                 <td>{{ number_format($totalAssigned) }}</td>
                 @if(!$productionStatus)
                     <td>{{ number_format($totalReceived) }}</td>

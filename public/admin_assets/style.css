@@ -4042,15 +4042,17 @@ body.km-admin .erp-page .quantity-control .btn-minus:hover { background: var(--e
 body.km-admin .erp-page .quantity-control .btn { font-weight: 800; line-height: 1; }
 
 /* Filter bars with many fields (add class "erp-filter-grid"): fields sit in a tidy grid
-   and wrap to a second row instead of being squeezed into one line. */
-.erp-filter-bar.erp-filter-grid > .row {
+   and wrap to a second row instead of being squeezed into one line. Works with or without a <form> around the row. */
+.erp-filter-bar.erp-filter-grid > .row,
+.erp-filter-bar.erp-filter-grid > form > .row {
     display: grid !important;
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 8px 10px;
     margin: 0 !important;
     align-items: end;
 }
-.erp-filter-bar.erp-filter-grid > .row > [class*="col"] {
+.erp-filter-bar.erp-filter-grid > .row > [class*="col"],
+.erp-filter-bar.erp-filter-grid > form > .row > [class*="col"] {
     width: auto !important;
     max-width: none !important;
     flex: none !important;
@@ -4060,20 +4062,26 @@ body.km-admin .erp-page .quantity-control .btn { font-weight: 800; line-height: 
 }
 .erp-filter-bar.erp-filter-grid .fg-span-2 { grid-column: span 2; }
 .erp-filter-bar.erp-filter-grid .fg-actions { grid-column: span 2; justify-self: end; }
+/* buttons in one cell, when they close a row that has only one cell left */
+.erp-filter-bar.erp-filter-grid .fg-actions.fg-actions-1 { grid-column: span 1; }
 .erp-filter-bar.erp-filter-grid .erp-filter-label {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 @media (max-width: 1199px) {
-    .erp-filter-bar.erp-filter-grid > .row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .erp-filter-bar.erp-filter-grid > .row,
+    .erp-filter-bar.erp-filter-grid > form > .row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .erp-filter-bar.erp-filter-grid .fg-span-2 { grid-column: span 3; }
-    .erp-filter-bar.erp-filter-grid .fg-actions { grid-column: span 3; }
+    .erp-filter-bar.erp-filter-grid .fg-actions,
+    .erp-filter-bar.erp-filter-grid .fg-actions.fg-actions-1 { grid-column: span 3; }
 }
 @media (max-width: 575px) {
-    .erp-filter-bar.erp-filter-grid > .row { grid-template-columns: minmax(0, 1fr); }
+    .erp-filter-bar.erp-filter-grid > .row,
+    .erp-filter-bar.erp-filter-grid > form > .row { grid-template-columns: minmax(0, 1fr); }
     .erp-filter-bar.erp-filter-grid .fg-span-2,
-    .erp-filter-bar.erp-filter-grid .fg-actions { grid-column: span 1; }
+    .erp-filter-bar.erp-filter-grid .fg-actions,
+    .erp-filter-bar.erp-filter-grid .fg-actions.fg-actions-1 { grid-column: span 1; }
     .erp-filter-bar.erp-filter-grid .fg-actions { justify-self: stretch; }
 }
 

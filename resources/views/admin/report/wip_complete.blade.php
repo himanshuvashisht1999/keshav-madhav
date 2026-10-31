@@ -22,7 +22,7 @@
         <div class="card-body p-3" id="filter-form-body">
             <form action="{{ route('admin.report.wip-complete') }}" method="GET">
                 <div class="row align-items-end">
-                    <div class="col-md-3 mb-2">
+                    <div class="col-md-2 mb-2">
                         <label class="erp-form-label">Customer</label>
                         {{-- a new customer starts with no order / design / lot chosen (the old choices belong to the previous customer) --}}
                         <select name="customer_id" class="form-control select2" onchange="$(this.form).find('select[multiple]').val([]); this.form.submit()">
@@ -35,8 +35,19 @@
                         </select>
                     </div>
 
+                    <div class="col-md-2 mb-2">
+                        <label class="erp-form-label">Season</label>
+                        <select name="product_season_id" class="form-control" onchange="this.form.submit()">
+                            <option value="">All seasons</option>
+                            @foreach($seasons as $season)
+                                <option value="{{ $season->id }}" {{ (string) request('product_season_id') === (string) $season->id ? 'selected' : '' }}>{{ $season->name }}</option>
+                            @endforeach
+                            <option value="none" {{ request('product_season_id') === 'none' ? 'selected' : '' }}>No season</option>
+                        </select>
+                    </div>
+
                     @if($selectedCustomer)
-                        <div class="col-md-3 mb-2">
+                        <div class="col-md-2 mb-2">
                             <label class="erp-form-label">Orders</label>
                             <div id="parent-orders" style="width: 100%;">
                                 <select name="order_ids[]" class="form-control select2" multiple data-placeholder="All Orders" style="width: 100%;">
@@ -109,6 +120,7 @@
                                     <th>Order Number</th>
                                     <th>Order Date</th>
                                     <th>Design Number</th>
+                                    <th class="text-center">Season</th>
                                     <th>Lot Number</th>
                                     <th class="text-right">Lot Quantity</th>
                                     <th class="text-center">Lot Status</th>
@@ -124,6 +136,7 @@
                                         <td>{{ $row['order']->sku ?? '-' }}</td>
                                         <td>{{ $row['order']->created_at ? $row['order']->created_at->format('d M, Y') : '-' }}</td>
                                         <td>{{ $row['set']->design_number ?? '-' }}</td>
+                                        <td class="text-center">{!! seasonBadges(array_filter([$row['set']->season->name ?? null])) !!}</td>
                                         <td>
                                             <strong>{{ $row['lot']->lot_no }}</strong>
                                             <a href="{{ route('admin.report.lots.lot-details', $row['lot']->lot_no) }}" target="_blank" class="erp-action-btn erp-btn-view" title="View Lot Details">

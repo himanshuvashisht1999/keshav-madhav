@@ -11,7 +11,8 @@
             <div style="font-size: 11.5px; color: var(--erp-text-muted);">
                 Order SKU: <strong style="color: var(--erp-text-heading);">{{ $lot->orderMain->sku ?? '-' }}</strong> | 
                 Customer: <strong style="color: var(--erp-text-heading);">{{ $lot->orderMain->customer->name ?? '-' }}</strong> | 
-                Fabric: <strong style="color: var(--erp-text-heading);">{{ $lot->orderProductSet->fabric->name ?? '-' }}</strong>
+                Fabric: <strong style="color: var(--erp-text-heading);">{{ $lot->orderProductSet->fabric->name ?? '-' }}</strong> |
+                Season: <strong style="color: var(--erp-text-heading);">{{ $lot->orderProductSet->season->name ?? '-' }}</strong>
             </div>
         </div>
         <div class="erp-header-actions">

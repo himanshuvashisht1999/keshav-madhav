@@ -1864,4 +1864,66 @@ class ProductOrderService
         }
     }
 
+    /**
+     * Season of an order's sets (Orders list > Season button): the ticked sets, or all sets of the order.
+     * Each set and all its cutting assignments get the same season, as the cutting slip and worker app read both.
+     * Season 'none' clears it (an empty choice is refused, so a missed dropdown never wipes seasons).
+     */
+    public function updateSetsSeason(Request $request)
+    {
+        $orderMainId = (int) $request->order_main_id;
+        $seasonInput = trim((string) $request->product_season_id);
+        $applyAll = $request->boolean('apply_all');
+
+        if ($seasonInput === '') {
+            return ['status' => false, 'message' => 'Please choose a season.'];
+        }
+        $seasonId = $seasonInput === 'none' ? null : (int) $seasonInput;
+
+        if ($seasonId !== null && !\App\Models\ProductSeason::where('id', $seasonId)->where('status', 1)->exists()) {
+            return ['status' => false, 'message' => 'Please choose a valid season.'];
+        }
+
+        $orderSetIds = OrderProductSet::where('order_main_id', $orderMainId)->pluck('id');
+        if ($orderSetIds->isEmpty()) {
+            return ['status' => false, 'message' => 'No sets found for this order.'];
+        }
+
+        if ($applyAll) {
+            $setIds = $orderSetIds;
+        } else {
+            $setIds = collect((array) $request->set_ids)->map(fn ($id) => (int) $id)->filter()->unique()->values();
+            if ($setIds->isEmpty()) {
+                return ['status' => false, 'message' => 'Please tick at least one set.'];
+            }
+            // only sets of this order
+            if ($setIds->diff($orderSetIds)->isNotEmpty()) {
+                return ['status' => false, 'message' => 'Some ticked sets do not belong to this order. Please reopen the window and try again.'];
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            OrderProductSet::whereIn('id', $setIds)->update(['product_season_id' => $seasonId]);
+            OrderCuttingStage::whereIn('set_product_id', $setIds)->update(['product_season_id' => $seasonId]);
+
+            DB::commit();
+
+            $seasonName = $seasonId ? \App\Models\ProductSeason::where('id', $seasonId)->value('name') : null;
+            $count = $setIds->count();
+            return [
+                'status' => true,
+                'message' => $seasonName
+                    ? "Season {$seasonName} saved for {$count} set(s)."
+                    : "Season removed from {$count} set(s).",
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return [
+                'status' => false,
+                'message' => 'Failed to update season: ' . $e->getMessage()
+            ];
+        }
+    }
+
 }

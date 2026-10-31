@@ -41,12 +41,22 @@
                 <label class="erp-filter-label"><i class="fas fa-tshirt mr-1"></i> Design Number</label>
                 <input type="text" class="form-control erp-input" id="design_number" placeholder="Filter Design No..." autocomplete="off">
             </div>
-            <div class="col-md-3 col-sm-6 mb-1">
+            <div class="col-md-2 col-sm-6 mb-1">
                 <label class="erp-filter-label"><i class="fas fa-tasks mr-1"></i> Assignment Filter</label>
                 <select class="form-control erp-input" id="assigned_filter">
                     <option value="">-- ALL SETS --</option>
                     <option value="pending">Pending</option>
                     <option value="assigned">Assigned</option>
+                </select>
+            </div>
+            <div class="col-md-2 col-sm-6 mb-1">
+                <label class="erp-filter-label"><i class="fas fa-leaf mr-1"></i> Season</label>
+                <select class="form-control erp-input" id="product_season_filter">
+                    <option value="">-- ALL SEASONS --</option>
+                    @foreach($filterSeasons as $season)
+                        <option value="{{ $season->id }}">{{ $season->name }}</option>
+                    @endforeach
+                    <option value="none">No Season</option>
                 </select>
             </div>
             <div class="col-auto mb-1 ml-auto">
@@ -77,6 +87,7 @@
                         <th style="width: 80px;" class="text-right">Set Qty</th>
                         <th style="width: 80px;" class="text-right">Pcs / Set</th>
                         <th style="width: 90px;" class="text-right font-weight-bold">Total Qty</th>
+                        <th style="width: 90px;" class="text-center">Season</th>
                         <th style="width: 100px;" class="text-center">Status</th>
                         <th style="width: 130px;" class="text-center">Assign To</th>
                         <th style="width: 80px;" class="text-center">Action</th>
@@ -89,7 +100,7 @@
                         <th id="set_qty_total" class="text-right"></th>
                         <th class="text-right">Total Qty:</th>
                         <th id="total_qty_total" class="text-right text-primary font-weight-bold"></th>
-                        <th colspan="3"></th>
+                        <th colspan="4"></th>
                     </tr>
                 </tfoot>
             </table>
@@ -486,6 +497,7 @@ $(document).ready(function () {
                 d.bar_code = $('#bar_code').val();
                 d.design_number = $('#design_number').val();
                 d.assigned_filter = $('#assigned_filter').val();
+                d.product_season_id = $('#product_season_filter').val();
                 d.start = 0;
                 d.length = -1;
             }
@@ -501,6 +513,7 @@ $(document).ready(function () {
             {data: 'set_quantity', className: 'text-right'},
             {data: 'no_of_pcs', className: 'text-right'},
             {data: 'total_qty', className: 'text-right font-weight-bold'},
+            {data: 'season', orderable: false, searchable: false, className: 'text-center'},
             {data: 'status', className: 'text-center'},
             {data: 'assign_to', className: 'text-center'},
             {data: 'action', searchable: false, className: 'text-center'}
@@ -523,12 +536,13 @@ $(document).ready(function () {
     }
 
     $('#bar_code, #design_number').on('keyup', reloadTable);
-    $('#assigned_filter').on('change', reloadTable);
+    $('#assigned_filter, #product_season_filter').on('change', reloadTable);
 
     $('#btnResetOrderSetFilter').on('click', function () {
         $('#bar_code').val('');
         $('#design_number').val('');
         $('#assigned_filter').val('');
+        $('#product_season_filter').val('');
         reloadTable();
     });
 

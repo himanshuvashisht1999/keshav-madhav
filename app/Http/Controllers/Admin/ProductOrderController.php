@@ -40,21 +40,28 @@ class ProductOrderController extends Controller
     public function indexOrder()
     {
         $response['customers'] = $this->service->customers();
+        $response['seasons'] = \App\Models\ProductSeason::where('status', 1)->orderBy('name')->get();
+        // filter also lists inactive seasons that sets may still carry (deleted ones are status 3)
+        $response['filterSeasons'] = \App\Models\ProductSeason::where('status', '!=', 3)->orderBy('name')->get();
         return view('admin.product_order.index-order', $response);
     }
 
     public function getOrderSets($id)
     {
-        $orderSets = \App\Models\OrderProductSet::with(['colors', 'size_measurement', 'product'])
+        $orderSets = \App\Models\OrderProductSet::with(['colors', 'size_measurement', 'product', 'season'])
             ->where('order_main_id', $id)
+            ->orderBy('id')
             ->get();
-            
+
         $data = $orderSets->map(function($set) {
             return [
+                'id' => $set->id,
                 'design_number' => $set->design_number ?? ($set->product->design_number ?? '-'),
                 'size_set' => $set->size_measurement->name ?? '-',
                 'color' => $set->colors->name ?? '-',
                 'quantity' => $set->total_quantity ?? 0,
+                'season_id' => $set->product_season_id,
+                'season' => $set->season->name ?? null,
             ];
         });
 
@@ -72,7 +79,7 @@ class ProductOrderController extends Controller
     public function exportOrders(Request $request)
     {
         $query = \App\Models\OrderMain::query()
-            ->with('customer')
+            ->with(['customer', 'OrderProductSets.season'])
             ->where('order_main.status', '!=', 0);
 
         $query->orderBy('order_main.id', 'desc');
@@ -118,6 +125,7 @@ class ProductOrderController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->get('status'));
         }
+        filterOrdersBySeason($query, $request->get('product_season_id'));
         if ($request->filled('assignment_status')) {
             if ($request->assignment_status == 'assigned') {
                 $query->whereHas('OrderProductSets')->whereDoesntHave('OrderProductSets', function ($q) {
@@ -150,6 +158,7 @@ class ProductOrderController extends Controller
             $sheet->setCellValue('H1', 'Total Pcs');
             $sheet->setCellValue('I1', 'Dispatch Pcs');
             $sheet->setCellValue('J1', 'Status');
+            $sheet->setCellValue('K1', 'Season');
 
             $row = 2;
             foreach ($orders as $key => $order) {
@@ -175,6 +184,7 @@ class ProductOrderController extends Controller
                 $sheet->setCellValue('H' . $row, $total);
                 $sheet->setCellValue('I' . $row, $packed);
                 $sheet->setCellValue('J' . $row, $statusText);
+                $sheet->setCellValue('K' . $row, implode(', ', orderSetSeasonNames($order->OrderProductSets)) ?: '-');
                 $row++;
             }
 
@@ -203,6 +213,7 @@ class ProductOrderController extends Controller
         // dd( $response['fabrics']);
         $response['fittings'] = $this->service->fittings();
         $response['seasons'] = \App\Models\ProductSeason::where('status', 1)->orderBy('name')->get();
+        $response['filterSeasons'] = \App\Models\ProductSeason::where('status', '!=', 3)->orderBy('name')->get();
         $response['vendors'] = \App\Models\Vendor::where('status', 1)->get();
         $response['customers'] = \App\Models\MasterCustomer::where('status', 1)->get();
         return view('admin.product_order.index-order-set', $response);
@@ -488,6 +499,11 @@ class ProductOrderController extends Controller
     public function updateAssignedFabrics(Request $request)
     {
         $response = $this->service->updateAssignedFabrics($request);
+        return response()->json($response);
+    }
+    public function updateSetsSeason(Request $request)
+    {
+        $response = $this->service->updateSetsSeason($request);
         return response()->json($response);
     }
     public function createPO(Request $request)

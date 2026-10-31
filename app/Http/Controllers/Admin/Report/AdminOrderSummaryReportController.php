@@ -22,7 +22,8 @@ class AdminOrderSummaryReportController extends Controller
     public function index()
     {
         $customers = Customer::where('status', 1)->get();
-        return view('admin.report.order_summary.index', compact('customers'));
+        $seasons = \App\Models\ProductSeason::where('status', '!=', 3)->orderBy('name')->get();
+        return view('admin.report.order_summary.index', compact('customers', 'seasons'));
     }
 
     public function indexList(Request $request)

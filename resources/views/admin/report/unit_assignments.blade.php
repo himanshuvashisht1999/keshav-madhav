@@ -122,7 +122,18 @@
                     </select>
                 </div>
 
-                <div class="col-md-3 col-sm-6 mb-1">
+                <div class="col-md-2 col-sm-6 mb-1">
+                    <label class="small text-muted font-weight-bold mb-1">Season</label>
+                    <select name="product_season_id" class="form-control form-control-sm select2 erp-filter-select">
+                        <option value="">All seasons</option>
+                        @foreach($seasons as $season)
+                            <option value="{{ $season->id }}" {{ (string) request('product_season_id') === (string) $season->id ? 'selected' : '' }}>{{ $season->name }}</option>
+                        @endforeach
+                        <option value="none" {{ request('product_season_id') === 'none' ? 'selected' : '' }}>No season</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 col-sm-6 mb-1">
                     <label class="small text-muted font-weight-bold mb-1">Pending qty range</label>
                     <div class="input-group input-group-sm">
                         <input type="number" step="any" name="min_pending_qty" value="{{ request()->has('min_pending_qty') ? request('min_pending_qty') : ($min_pending_qty ?? 1) }}" class="form-control erp-filter-input" placeholder="Min">
@@ -133,7 +144,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-3 col-sm-12 mb-1 d-flex gap-1">
+                <div class="col-md-2 col-sm-12 mb-1 d-flex gap-1">
                     <button type="submit" class="btn-erp btn-erp-primary btn-sm flex-fill" title="Apply filters">
                         <i class="fas fa-filter mr-1"></i> Apply
                     </button>
@@ -161,6 +172,7 @@
                                 <th>Unit person</th>
                                 <th>Order no</th>
                                 <th>Design no</th>
+                                <th class="text-center">Season</th>
                                 <th class="text-right">Assigned qty</th>
                                 <th class="text-right">Receive qty</th>
                                 <th class="text-right">Pending qty</th>
@@ -197,6 +209,7 @@
                                     </td>
                                     <td><code>{{ $item->orderMain->sku ?? '-' }}</code></td>
                                     <td>{{ $item->design_number ?? '-' }}</td>
+                                    <td class="text-center">{!! seasonBadges(array_filter([$item->season_name ?? null])) !!}</td>
                                     <td class="text-right font-weight-bold">{{ $assignedVal }} pcs</td>
                                     <td class="text-right font-weight-bold text-success">{{ $receivedVal }} pcs</td>
                                     <td class="text-right font-weight-bold text-danger">{{ $pendingVal }} pcs</td>
@@ -222,7 +235,7 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <th colspan="3" class="text-right">Grand total</th>
+                                <th colspan="4" class="text-right">Grand total</th>
                                 <th class="text-right">{{ number_format($totalAssigned) }} pcs</th>
                                 <th class="text-right text-success">{{ number_format($totalReceived) }} pcs</th>
                                 <th class="text-right text-danger">{{ number_format($totalPending) }} pcs</th>
@@ -241,6 +254,7 @@
                                 @endif
                                 <th>Lot no</th>
                                 <th>Design no</th>
+                                <th class="text-center">Season</th>
                                 @if(!$productionStatus)
                                     <th>Sent by</th>
                                 @endif
@@ -307,6 +321,7 @@
                                         @endif
                                     </td>
                                     <td>{{ $item->design_number ?? '-' }}</td>
+                                    <td class="text-center">{!! seasonBadges(array_filter([$item->season_name ?? null])) !!}</td>
                                     @if(!$productionStatus)
                                         <td>
                                             {{ $item->getFromUnitMaster->name ?? $item->getUnitMaster->name ?? '-' }}
@@ -371,7 +386,7 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <th colspan="{{ $productionStatus ? 3 : 6 }}" class="text-right">Grand total</th>
+                                <th colspan="{{ $productionStatus ? 4 : 7 }}" class="text-right">Grand total</th>
                                 @if($productionStatus)
                                     <th class="text-right">{{ number_format($totalAssignedOther) }} pcs</th>
                                 @else
@@ -379,7 +394,8 @@
                                     <th class="text-right text-success">{{ number_format($totalReceivedOther) }} pcs</th>
                                     <th class="text-right text-danger">{{ number_format($totalPendingOther) }} pcs</th>
                                 @endif
-                                <th colspan="4"></th>
+                                {{-- dates, status and action after the totals --}}
+                                <th colspan="{{ $productionStatus ? 3 : 5 }}"></th>
                             </tr>
                         </tfoot>
                     </table>

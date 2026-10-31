@@ -445,20 +445,25 @@ class ReportService
      * Chosen orders / designs / lots that do not belong to the customer are dropped (a stale filter used to empty the page).
      * Returns the filter options, the filters actually applied and the rows [order, set, lot].
      */
-    public function wipCompleteLots($customerId, $orderIds = [], $designNos = [], $lotNos = []): array
+    public function wipCompleteLots($customerId, $orderIds = [], $designNos = [], $lotNos = [], $season = null): array
     {
         $orders = OrderMain::when($customerId, fn($q) => $q->where('master_customer_id', $customerId))
-            ->with(['OrderProductSets' => fn($q) => $q->has('orderLots'), 'OrderProductSets.orderLots'])
+            ->with(['OrderProductSets' => fn($q) => $q->has('orderLots'), 'OrderProductSets.orderLots', 'OrderProductSets.season'])
             ->latest()
             ->get();
 
+        // season of the order line ('none' = without season); the choices and rows keep only matching lines
+        $seasonOk = fn($set) => $season === null || $season === ''
+            || ($season === 'none' ? $set->product_season_id === null : (int) $set->product_season_id === (int) $season);
+
         $options = ['orders' => [], 'designs' => [], 'lots' => []];
         foreach ($orders as $order) {
-            if ($order->OrderProductSets->isEmpty()) {
+            $sets = $order->OrderProductSets->filter($seasonOk);
+            if ($sets->isEmpty()) {
                 continue;
             }
             $options['orders'][$order->id] = $order->sku;
-            foreach ($order->OrderProductSets as $set) {
+            foreach ($sets as $set) {
                 if (!empty($set->design_number)) {
                     $options['designs'][$set->design_number][$order->id] = $order->id;
                 }
@@ -480,6 +485,9 @@ class ReportService
                 continue;
             }
             foreach ($order->OrderProductSets as $set) {
+                if (!$seasonOk($set)) {
+                    continue;
+                }
                 if (!empty($designNos) && !in_array($set->design_number, $designNos)) {
                     continue;
                 }
@@ -1926,10 +1934,11 @@ class ReportService
     {
         $searchLot = $request->lot_no;
         $searchOrder = $request->order_id;
+        $searchSeason = $request->product_season_id; // season of the lot's order set, 'none' = without season
 
         $query = \App\Models\OrderLot::with([
             'orderMain.customer',
-            'orderProductSet'
+            'orderProductSet.season'
         ])
             ->when($searchLot, function ($q) use ($searchLot) {
                 if (is_array($searchLot)) {
@@ -1941,6 +1950,7 @@ class ReportService
             ->when($searchOrder, function ($q) use ($searchOrder) {
                 $q->where('order_main_id', $searchOrder);
             })
+            ->tap(fn ($q) => filterLotsBySeason($q, $searchSeason))
             ->orderBy('id', 'desc');
 
         $lots = $query->paginate(15)->withQueryString();
@@ -1958,6 +1968,7 @@ class ReportService
                 'order_no' => $lot->orderMain->sku ?? '',
                 'customer_name' => $lot->orderMain->customer->name ?? '',
                 'lot_no' => $lot->lot_no,
+                'season' => $lot->orderProductSet->season->name ?? null,
                 'lot_quantity' => $f['pieces'] ?? 0,
                 'status' => $lot->status,
                 'is_printing' => $lot->is_printing,
@@ -2131,6 +2142,7 @@ class ReportService
             'orderProductSet.master_product_fitting',
             'orderProductSet.master_design_pattern',
             'orderProductSet.fabric',
+            'orderProductSet.season',
             'productionSlipDigitization.fromStage',
             'productionSlipDigitization.getUnitMaster',
         ])
@@ -2147,6 +2159,7 @@ class ReportService
                 'orderProductSet.master_product_fitting',
                 'orderProductSet.master_design_pattern',
                 'orderProductSet.fabric',
+                'orderProductSet.season',
                 'cutting_master'
             ])->where('lot_no', $lot_no)->first();
             
@@ -2438,6 +2451,8 @@ class ReportService
 
                 $assignments[] = $item;
             }
+
+            $assignments = $this->withSeasons($assignments, $request->get('product_season_id'));
 
             $minPendingQty = $request->has('min_pending_qty') ? $request->get('min_pending_qty') : 1;
             if ($minPendingQty !== null && $minPendingQty !== '') {
@@ -2958,6 +2973,8 @@ class ReportService
 
         } // Close else {
 
+        $assignments = $this->withSeasons($assignments, $request->get('product_season_id'));
+
         $stages = \App\Models\MasterProductStage::where('status', 1)->orderBy('sequence', 'asc')->get();
         // Return only unit persons for the selected stage, or all if none
         $unitsQuery = \App\Models\StageMasterUnit::with('masterStage')->where('status', 1);
@@ -3044,6 +3061,44 @@ class ReportService
         ];
     }
 
+    /**
+     * Season of each Unit Assignments task (->season_id, ->season_name), from its order set: a cutting task's own set,
+     * a lot row's set, or for stage / printing / godam moves the set of their lot. Read in two queries.
+     * With a season filter ('none' = without season) only the matching tasks are kept.
+     */
+    private function withSeasons(array $items, $seasonFilter): array
+    {
+        $setIdOf = function ($item) {
+            if ($item instanceof \App\Models\OrderCuttingStage) return $item->set_product_id;
+            if ($item instanceof \App\Models\OrderLot) return $item->order_products_set_id;
+            return null;
+        };
+        $lotNos = collect($items)->filter(fn($i) => $setIdOf($i) === null && !empty($i->lot_no))->pluck('lot_no')->unique()->values();
+        $setOfLot = $lotNos->isEmpty() ? collect() : \DB::table('order_lots')->whereIn('lot_no', $lotNos->all())
+            ->whereNotNull('order_products_set_id')->orderBy('id')->pluck('order_products_set_id', 'lot_no');
+
+        $setIdFor = fn($item) => $setIdOf($item) ?? (!empty($item->lot_no) ? $setOfLot->get($item->lot_no) : null);
+
+        $setIds = collect($items)->map($setIdFor)->filter()->unique()->values();
+        $seasonOfSet = $setIds->isEmpty() ? collect() : \DB::table('order_products_sets as s')
+            ->leftJoin('product_seasons as p', 'p.id', '=', 's.product_season_id')
+            ->whereIn('s.id', $setIds->all())->get(['s.id', 's.product_season_id', 'p.name'])->keyBy('id');
+
+        foreach ($items as $item) {
+            $setId = $setIdFor($item);
+            $set = $setId ? $seasonOfSet->get($setId) : null;
+            $item->season_id = $set->product_season_id ?? null;
+            $item->season_name = $set->name ?? null;
+        }
+
+        if ($seasonFilter === null || $seasonFilter === '') {
+            return $items;
+        }
+        return array_values(array_filter($items, fn($item) => $seasonFilter === 'none'
+            ? $item->season_id === null
+            : (int) $item->season_id === (int) $seasonFilter));
+    }
+
     public function closeUnitAssignment($type, $id)
     {
         $record = $this->findAssignmentRecordForAdmin($type, $id);
@@ -3085,8 +3140,10 @@ class ReportService
 
     public function designWipApiCustomers(Request $request)
     {
-        $query = \App\Models\MasterCustomer::whereHas('orders', function($q) {
+        $season = $request->get('product_season_id');
+        $query = \App\Models\MasterCustomer::whereHas('orders', function($q) use ($season) {
             $q->whereHas('OrderProductSets');
+            filterOrdersBySeason($q, $season);
         });
 
         if ($request->filled('search')) {
@@ -3105,6 +3162,7 @@ class ReportService
     public function designWipApiOrders(Request $request)
     {
         $query = \App\Models\OrderMain::whereHas('OrderProductSets');
+        filterOrdersBySeason($query, $request->get('product_season_id'));
 
         if ($request->filled('customer_id')) {
             $query->where('master_customer_id', $request->customer_id);
@@ -3129,7 +3187,14 @@ class ReportService
 
     public function designWipApiDesigns(Request $request)
     {
-        $query = \App\Models\OrderProductSet::with('product.series', 'size_measurement', 'colors');
+        $query = \App\Models\OrderProductSet::with('product.series', 'size_measurement', 'colors', 'season');
+
+        // season of the set, 'none' = without season
+        if ($request->get('product_season_id') === 'none') {
+            $query->whereNull('product_season_id');
+        } elseif ($request->filled('product_season_id')) {
+            $query->where('product_season_id', (int) $request->product_season_id);
+        }
 
         if ($request->filled('order_id')) {
             $query->where('order_main_id', $request->order_id);
@@ -3194,7 +3259,8 @@ class ReportService
                 'lot_count' => $lotCount,
                 'total_qty' => $actualTotalQty,
                 'sizes' => $sizes,
-                'colors' => $colors
+                'colors' => $colors,
+                'season' => $set->season->name ?? null,
             ];
         }
 
@@ -3235,6 +3301,7 @@ class ReportService
             // Global lot search
             $lotQuery = \App\Models\OrderLot::whereNotNull('lot_no')
                                             ->where('lot_no', 'like', '%' . $request->search . '%');
+            filterLotsBySeason($lotQuery, $request->get('product_season_id'));
             if ($request->filled('order_id')) {
                 $lotQuery->where('order_main_id', $request->order_id);
             } elseif ($request->filled('customer_id')) {

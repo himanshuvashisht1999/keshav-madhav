@@ -85,6 +85,7 @@ class PartyLedgerService
                     'created_at' => $d->created_at,
                     'type' => 'Sale',
                     'ref' => 'Dispatch #' . $d->id,
+                    'bill_no' => $d->bill_no ?: '-',
                     'debit' => (float) $d->grand_total,
                     'credit' => 0,
                     'description' => $shopName($d->master_customer_id, 'Shop') . ' - Sales Dispatch: ' . ($d->remark ?? '-'),
@@ -104,6 +105,7 @@ class PartyLedgerService
                     'created_at' => $od->created_at,
                     'type' => 'Order Dispatch',
                     'ref' => 'OD #' . ($od->sku ?? $od->id),
+                    'bill_no' => $od->bill_number ?: '-',
                     'debit' => (float) $od->total_amount,
                     'credit' => 0,
                     'description' => $shopName($od->customer_id, 'Customer') . ' - Regular Order Dispatch',
@@ -125,6 +127,7 @@ class PartyLedgerService
                     'created_at' => $r->created_at,
                     'type' => 'Sale Return',
                     'ref' => 'Return #' . $r->id,
+                    'bill_no' => ($r->dispatch->bill_no ?? null) ?: '-', // bill of the returned dispatch
                     'debit' => 0,
                     'credit' => (float) $r->grand_total,
                     'description' => $shopName($r->dispatch->master_customer_id ?? null, 'Shop') . ' - Sales Return',
@@ -191,6 +194,7 @@ class PartyLedgerService
                     'created_at' => $ip->created_at,
                     'type' => 'Inventory Purchase',
                     'ref' => 'InvPur #' . $ip->id,
+                    'bill_no' => $ip->bill_no ?: '-',
                     'debit' => 0,
                     'credit' => (float) $ip->total_amount,
                     'description' => $shopName($ip->customer_id, 'Customer') . ' - Inventory Purchase: ' . ($ip->remarks ?? '-'),
@@ -365,6 +369,7 @@ class PartyLedgerService
                     'created_at' => $d->created_at,
                     'type' => 'Sale',
                     'ref' => 'Dispatch #' . $d->id,
+                    'bill_no' => $d->bill_no ?: '-',
                     'debit' => (float) $d->grand_total,
                     'credit' => 0,
                     'description' => 'Sales Dispatch: ' . ($d->remark ?? '-'),
@@ -384,6 +389,7 @@ class PartyLedgerService
                         'created_at' => $od->created_at,
                         'type' => 'Order Dispatch',
                         'ref' => 'OD #' . ($od->sku ?? $od->id),
+                        'bill_no' => $od->bill_number ?: '-',
                         'debit' => (float) $od->total_amount,
                         'credit' => 0,
                         'description' => 'Regular Order Dispatch',
@@ -393,7 +399,7 @@ class PartyLedgerService
             }
 
             // 3. Sales Returns - CREDIT
-            $salesReturns = AgentOrderReturn::whereHas('dispatch', function ($q) use ($id, $partyIdField, $type) {
+            $salesReturns = AgentOrderReturn::with('dispatch')->whereHas('dispatch', function ($q) use ($id, $partyIdField, $type) {
                 $q->where($partyIdField, $id)->where('party_type', $type);
             })
                 ->orderBy('id')
@@ -405,6 +411,7 @@ class PartyLedgerService
                     'created_at' => $r->created_at,
                     'type' => 'Sale Return',
                     'ref' => 'Return #' . $r->id,
+                    'bill_no' => ($r->dispatch->bill_no ?? null) ?: '-', // bill of the returned dispatch
                     'debit' => 0,
                     'credit' => (float) $r->grand_total,
                     'description' => 'Sales Return',
@@ -475,6 +482,7 @@ class PartyLedgerService
                     'created_at' => $ip->created_at,
                     'type' => 'Inventory Purchase',
                     'ref' => 'InvPur #' . $ip->id,
+                    'bill_no' => $ip->bill_no ?: '-',
                     'debit' => 0,
                     'credit' => (float) $ip->total_amount,
                     'description' => 'Inventory Purchase: ' . ($ip->remarks ?? '-'),

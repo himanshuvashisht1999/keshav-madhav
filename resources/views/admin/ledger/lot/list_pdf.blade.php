@@ -92,10 +92,11 @@
             <tr>
                 <th style="width: 15%;">Lot No</th>
                 <th style="width: 15%;">Order SKU</th>
-                <th style="width: 25%;">Customer</th>
-                <th style="width: 20%;">Fabric</th>
+                <th style="width: 20%;">Customer</th>
+                <th style="width: 15%;">Fabric</th>
                 <th style="width: 12%; text-align: right;">Total Qty</th>
                 <th style="width: 13%;">Current Stage</th>
+                <th style="width: 10%;">Season</th>
             </tr>
         </thead>
         <tbody>
@@ -112,10 +113,11 @@
                     <td>{{ $lot->orderProductSet->fabric->name ?? '-' }}</td>
                     <td class="text-right font-weight-bold">{{ number_format($qty) }}</td>
                     <td>{{ $lot->last_current_stage ?? 'N/A' }}</td>
+                    <td>{{ $lot->orderProductSet->season->name ?? '-' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center" style="padding: 15px;">No lots found.</td>
+                    <td colspan="7" class="text-center" style="padding: 15px;">No lots found.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -123,7 +125,7 @@
             <tr style="background-color: #f0f8e7; font-weight: bold;">
                 <td colspan="4" class="text-right font-weight-bold">Total:</td>
                 <td class="text-right font-weight-bold" style="color: #05421c;">{{ number_format($totalQty) }}</td>
-                <td></td>
+                <td colspan="2"></td>
             </tr>
         </tfoot>
     </table>

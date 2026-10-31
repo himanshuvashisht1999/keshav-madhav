@@ -104,6 +104,16 @@
                     <label class="erp-filter-label"><i class="fas fa-search text-muted mr-1"></i> Search Lot / Order SKU</label>
                     <input type="text" name="search" class="form-control erp-filter-input" placeholder="Search by Lot Number or Order SKU..." value="{{ $searchLot ?? request('search') }}">
                 </div>
+                <div class="col-md-2 col-sm-12 mb-1">
+                    <label class="erp-filter-label"><i class="fas fa-leaf text-muted mr-1"></i> Season</label>
+                    <select name="product_season_id" class="form-control erp-filter-input">
+                        <option value="">All seasons</option>
+                        @foreach($seasons as $season)
+                            <option value="{{ $season->id }}" {{ (string) request('product_season_id') === (string) $season->id ? 'selected' : '' }}>{{ $season->name }}</option>
+                        @endforeach
+                        <option value="none" {{ request('product_season_id') === 'none' ? 'selected' : '' }}>No season</option>
+                    </select>
+                </div>
                 <div class="col-md-3 col-sm-12 mb-1 d-flex">
                     <button type="submit" class="btn-erp btn-erp-primary mr-2" style="height: 31px;">
                         <i class="fas fa-filter mr-1"></i> Apply Filter
@@ -126,6 +136,7 @@
                         <th style="width: 130px;">Lot No</th>
                         <th>Order SKU & Customer</th>
                         <th>Fabric & Garment Spec</th>
+                        <th class="text-center" style="width: 100px;">Season</th>
                         <th class="text-center" style="width: 140px;">Current Stage</th>
                         <th class="text-right" style="width: 140px;">Total Assigned (Pcs)</th>
                         <th class="text-center" style="width: 110px;">Status</th>
@@ -153,6 +164,7 @@
                                     <small class="text-muted"><i class="fas fa-tag mr-1"></i> Pattern: {{ $lot->orderProductSet->master_design_pattern->name }}</small>
                                 @endif
                             </td>
+                            <td class="text-center">{!! seasonBadges(array_filter([$lot->orderProductSet->season->name ?? null])) !!}</td>
                             <td class="text-center">
                                 <span class="badge" style="background: var(--erp-bg-header); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: 11px; padding: 3px 7px;">
                                     {{ $lot->last_current_stage ?? 'N/A' }}
@@ -180,7 +192,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center py-5 text-muted">
+                            <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="fas fa-industry fa-3x mb-2 text-secondary" style="opacity: 0.4;"></i>
                                 <p class="font-weight-bold mb-0">No production lots found.</p>
                             </td>
@@ -190,7 +202,7 @@
                 @if($lots->count() > 0)
                 <tfoot>
                     <tr class="erp-table-grand-total">
-                        <td colspan="5" class="text-right font-weight-bold" style="letter-spacing: 0.5px;">PAGE SUB-TOTAL (ASSIGNED QUANTITY):</td>
+                        <td colspan="6" class="text-right font-weight-bold" style="letter-spacing: 0.5px;">PAGE SUB-TOTAL (ASSIGNED QUANTITY):</td>
                         <td class="text-right font-weight-bold grand-total-val">{{ number_format($pageTotalAssigned ?? 0, 0) }} Pcs</td>
                         <td colspan="2"></td>
                     </tr>
