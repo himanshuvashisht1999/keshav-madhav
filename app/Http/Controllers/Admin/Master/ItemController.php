@@ -32,6 +32,9 @@ class ItemController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.item.index')->with('error', 'Item not found.');
+        }
         return view('admin.master.item.edit',$response);
     }
     public function update(ItemUpdateRequest $request){

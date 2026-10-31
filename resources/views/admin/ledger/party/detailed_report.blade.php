@@ -39,6 +39,11 @@
 
     @include('admin.ledger.partials.balance_mismatch')
 
+    @if(!empty($partyNotice))
+        {{-- the chosen party is not in this list: no parties are shown (not every party) --}}
+        <div class="alert alert-warning small py-2 mb-2"><i class="fas fa-exclamation-triangle mr-1"></i> {{ $partyNotice }}</div>
+    @endif
+
     <!-- Summary Metrics Strip (Exact Fabric Module Standard) -->
     <div class="row mb-2">
         <div class="col-lg col-md-4 col-sm-6 mb-1">
@@ -136,6 +141,10 @@
             </div>
         </div>
     </div>
+
+    @if(!empty($agentNote))
+        <div class="small text-muted mb-2">{{ $agentNote }}</div>
+    @endif
 
     <!-- Compact ERP Filter Bar -->
     <div class="erp-filter-bar mb-2">
@@ -245,6 +254,9 @@
                     <label class="erp-filter-label"><i class="fas fa-user-tag mr-1"></i> Party Selection</label>
                     <select name="selected_party" class="form-control select2 erp-input" style="width: 100%;">
                         <option value="">All Filtered Parties ({{ $parties->count() }})</option>
+                        @if(!empty($partyNotice))
+                            <option value="{{ request('selected_party') }}" selected>Chosen party (not in this list)</option>
+                        @endif
                         @foreach($parties as $p)
                             @php $pKey = $p->party_type . '_' . $p->id; @endphp
                             <option value="{{ $pKey }}" {{ (string)($selectedParty ?? request('selected_party')) === (string)$pKey ? 'selected' : '' }}>
@@ -287,6 +299,9 @@
                         <span class="badge ml-2" style="background: var(--erp-green-light); color: var(--erp-green-primary); border: 1px solid var(--erp-green-border); font-size: var(--erp-font-xs);">
                             {{ strtoupper($dp->party->party_type) }}
                         </span>
+                        @if((int) ($dp->party->status ?? 1) !== 1)
+                            <span class="erp-badge-status {{ (int) ($dp->party->status ?? 1) === 3 ? 'erp-badge-status-danger' : 'erp-badge-status-secondary' }} ml-2">{{ (int) ($dp->party->status ?? 1) === 3 ? 'Deleted' : 'Inactive' }}</span>
+                        @endif
                         @if(!empty($dp->party->phone))
                             <small class="text-muted font-weight-normal ml-2"><i class="fas fa-phone-alt mr-1"></i>{{ $dp->party->phone }}</small>
                         @endif

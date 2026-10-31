@@ -45,6 +45,9 @@ class CommitteeController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.master.committee.index')->with('error', 'Committee not found.');
+        }
         return view('admin.payment.master.committee.edit', $response);
     }
 

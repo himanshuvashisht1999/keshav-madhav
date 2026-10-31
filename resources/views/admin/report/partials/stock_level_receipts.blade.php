@@ -23,14 +23,18 @@
                 </tr>
             </thead>
             <tbody>
-                @php $sr = ($data->currentPage() - 1) * $data->perPage() + 1; @endphp
+                @php
+                    $sr = ($data->currentPage() - 1) * $data->perPage() + 1;
+                    // a roll moved to another selected warehouse is still inside the selection
+                    $whSet = array_map('intval', array_filter((array) request('warehouse_id'), fn($v) => $v !== null && $v !== ''));
+                @endphp
                 @forelse($data as $row)
-                @php 
-                    $filterWh = request('warehouse_id');
-                    if (is_array($filterWh)) $filterWh = reset($filterWh);
-                    $returnedQty = $row->returns ? $row->returns->sum('return_meter') : 0; 
+                @php
+                    $returnedQty = $row->returns ? $row->returns->sum('return_meter') : 0;
                     $receivingWh = $row->fabric_receipt->cutting_master?->cutting_master_name ?? $row->master_fabric_warehouse?->cutting_master_name;
-                    $isTransferredOut = $filterWh && $row->fabric_receipt && $row->fabric_receipt->master_fabric_warehouse_id == $filterWh && $row->master_fabric_warehouse_id != $filterWh;
+                    $isTransferredOut = !empty($whSet) && $row->fabric_receipt
+                        && in_array((int) $row->fabric_receipt->master_fabric_warehouse_id, $whSet, true)
+                        && !in_array((int) $row->master_fabric_warehouse_id, $whSet, true);
                     $displayRemaining = $isTransferredOut ? 0.00 : $row->remaining_quantity;
                 @endphp
                 <tr>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\AgentOrder;
 use App\Models\AgentOrderItem;
@@ -24,6 +25,8 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class AgentOrderController extends Controller
 {
+    private static ?bool $returnPlaceColumns = null;
+
     private function stock(): InventoryStockService
     {
         return app(InventoryStockService::class);
@@ -1191,8 +1194,14 @@ class AgentOrderController extends Controller
                 )
                 ->get();
 
-            $items = $itemsRaw->map(function ($item) {
+            // Opening this page saves a better rack only on lines still waiting to be picked in an open order.
+            // Dispatched or picked lines keep their saved rack: it is where the boxes were taken from,
+            // and returns / un-picking put boxes back there. The page shows that saved rack for them.
+            $orderOpen = in_array($order->status, ['pending', 'partially_dispatched'], true);
+
+            $items = $itemsRaw->map(function ($item) use ($orderOpen) {
                 $itemRackId = $item->item_rack_id ?? null;
+                $saveRack = $orderOpen && empty($item->dispatched_at) && (int) $item->scanned_box_qty === 0;
                 $inventoryInfo = null;
                 $currentRackValid = false;
                 $currentRackDispatchable = false;
@@ -1247,12 +1256,13 @@ class AgentOrderController extends Controller
                 });
 
                 // Auto-update to a dispatchable warehouse if current rack is not dispatchable (or invalid) but dispatchable stock is present
-                if ((!$currentRackValid || !$currentRackDispatchable) && $dispatchableLocation) {
+                // (only lines that can still be re-picked; the others keep showing their saved rack)
+                if ($saveRack && (!$currentRackValid || !$currentRackDispatchable) && $dispatchableLocation) {
                     $inventoryInfo = $dispatchableLocation;
                     DB::table('agent_order_items')
                         ->where('id', $item->id)
                         ->update(['rack_id' => $dispatchableLocation->rack_id, 'updated_at' => now()]);
-                } elseif (!$currentRackValid && $allLocations->isNotEmpty()) {
+                } elseif ($saveRack && !$currentRackValid && $allLocations->isNotEmpty()) {
                     $inventoryInfo = $allLocations->first();
                     if ($inventoryInfo && isset($inventoryInfo->rack_id)) {
                         DB::table('agent_order_items')
@@ -1288,6 +1298,7 @@ class AgentOrderController extends Controller
                     'available_locations' => $allLocations,
                     'has_stock' => $allLocations->isNotEmpty(),
                     'current_rack_valid' => $currentRackValid,
+                    'can_change_rack' => $saveRack, // the rack select is offered only then; other lines show their saved rack as text
                 ];
             });
         }
@@ -1301,6 +1312,20 @@ class AgentOrderController extends Controller
             'item_id' => 'required|integer',
             'rack_id' => 'required|integer'
         ]);
+
+        // Same rule as the order page: only a line still waiting to be picked in an open order can change rack.
+        // Dispatched or picked lines keep their saved rack (returns and un-picking put boxes back there).
+        $line = DB::table('agent_order_items')
+            ->join('agent_orders', 'agent_order_items.agent_order_id', '=', 'agent_orders.id')
+            ->where('agent_order_items.id', $request->item_id)
+            ->select('agent_order_items.dispatched_at', 'agent_order_items.scanned_box_qty', 'agent_orders.status')
+            ->first();
+        if (!$line) {
+            return response()->json(['success' => false, 'message' => 'This order line was not found.'], 422);
+        }
+        if (!in_array($line->status, ['pending', 'partially_dispatched'], true) || !empty($line->dispatched_at) || (int) $line->scanned_box_qty !== 0) {
+            return response()->json(['success' => false, 'message' => 'Location not changed: boxes of this line are already picked or dispatched (or the order is closed), so it keeps its saved rack. Please reload the page.'], 422);
+        }
 
         DB::table('agent_order_items')
             ->where('id', $request->item_id)
@@ -4932,8 +4957,11 @@ class AgentOrderController extends Controller
             if ($type === 'standard') {
                 $row = $this->returnTargetRow($item);
                 $this->stock()->add($row, (int) $qty);
-                $line['domestic_inventory_id'] = $row->id;
-                $line['rack_id'] = $row->rack_id;
+                // Where the boxes were put is saved only when the database has those columns (stock migration of 15 Oct)
+                if ($this->returnLinesKeepPlace()) {
+                    $line['domestic_inventory_id'] = $row->id;
+                    $line['rack_id'] = $row->rack_id;
+                }
             } else {
                 $roll = FabricReceiptDetail::find($item->fabric_receipt_detail_id);
                 if ($roll) {
@@ -4946,15 +4974,24 @@ class AgentOrderController extends Controller
         return [$items_to_save, $total_amount];
     }
 
-    /** Stock row returned boxes of a dispatched line go back to: where it was picked from (last pick), else the line's rack. */
-    private function returnTargetRow($item): DomesticInventory
+    /** True when return lines have the rack / stock row columns (added by migration 2026_10_15_100000). */
+    private function returnLinesKeepPlace(): bool
+    {
+        return self::$returnPlaceColumns ??= Schema::hasColumns('agent_order_return_items', ['domestic_inventory_id', 'rack_id']);
+    }
+
+    /**
+     * Stock row returned boxes of a dispatched line go back to: where it was picked from (last pick), else the line's rack.
+     * With $make false the row is only looked up, never made (null when there is none).
+     */
+    private function returnTargetRow($item, bool $make = true): ?DomesticInventory
     {
         $pcs = $this->stock()->linePcsPerBox($item);
         if ($this->stock()->picksEnabled()) {
             $pick = DB::table('agent_order_item_picks')->where('agent_order_item_id', $item->id)->orderByDesc('id')->first();
             if ($pick) {
                 return $this->stock()->lockRow($pick->domestic_inventory_id)
-                    ?: $this->stock()->rowAt($item->product_id, $item->color_id, $item->size_set_id, $pick->rack_id, $pick->pcs_per_box);
+                    ?: $this->returnRowAt($item, $pick->rack_id, $pick->pcs_per_box, $make);
             }
         }
         $rackId = $item->rack_id;
@@ -4962,7 +4999,20 @@ class AgentOrderController extends Controller
             $rackId = DomesticInventory::where('product_id', $item->product_id)->where('color_id', $item->color_id)->where('size_set_id', $item->size_set_id)
                 ->whereNotNull('rack_id')->orderByDesc('total_boxes')->value('rack_id');
         }
-        return $this->stock()->rowAt($item->product_id, $item->color_id, $item->size_set_id, $rackId, $pcs);
+        return $this->returnRowAt($item, $rackId, $pcs, $make);
+    }
+
+    /** The item's row in this rack with this pieces-per-box: made when missing ($make), else only found (same choice as rowAt). */
+    private function returnRowAt($item, $rackId, $pcsPerBox, bool $make): ?DomesticInventory
+    {
+        if ($make) {
+            return $this->stock()->rowAt($item->product_id, $item->color_id, $item->size_set_id, $rackId, $pcsPerBox);
+        }
+        return DomesticInventory::where('product_id', $item->product_id)->where('color_id', $item->color_id)->where('size_set_id', $item->size_set_id)
+            ->when($rackId, fn($q) => $q->where('rack_id', $rackId), fn($q) => $q->whereNull('rack_id'))
+            ->where('quantity', (int) $pcsPerBox)
+            ->orderByRaw('CASE WHEN order_main_id = 0 THEN 0 ELSE 1 END')->orderBy('id')
+            ->lockForUpdate()->first();
     }
 
     /**
@@ -4976,9 +5026,14 @@ class AgentOrderController extends Controller
             $qty = (int) round($retItem->quantity);
             $row = $this->stock()->lockRow($retItem->domestic_inventory_id ?? null);
             if (!$row && $original) {
-                // returns saved before the place was recorded: the stock row of that item that still has the boxes
-                $row = DomesticInventory::where('barcode', $original->barcode)->where('total_boxes', '>=', $qty)
-                    ->orderBy('id')->lockForUpdate()->first();
+                // return line saved without its place: first the row a return of this line puts boxes in
+                // (same rule, only looked up), so the boxes come back from the rack they were put on
+                $row = $this->returnTargetRow($original, false);
+                if (!$row || (int) $row->total_boxes < $qty) {
+                    // not there any more: the stock row of that item that still has the boxes
+                    $row = DomesticInventory::where('barcode', $original->barcode)->where('total_boxes', '>=', $qty)
+                        ->orderBy('id')->lockForUpdate()->first();
+                }
             }
             $label = $original ? "{$original->design_number} / {$original->color_name} / {$original->size_set_name}" : "line #{$retItem->item_id}";
             if (!$row || (int) $row->total_boxes < $qty) {
@@ -5232,6 +5287,8 @@ class AgentOrderController extends Controller
                 'dispatch' => $dispatch ? $dispatch->toArray() : null,
             ]);
 
+            // Lines first, then the return itself (lines left behind would still count as returned)
+            $return->items()->delete();
             $return->delete();
             DB::commit();
 

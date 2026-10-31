@@ -181,13 +181,16 @@
             </td>
         </tr>
     </table>
+    @if(!empty($agentNote))
+        <p style="font-size: 8.5px; color: #555; margin: -6px 0 10px;">{{ $agentNote }}</p>
+    @endif
 
     @if($viewMode === 'party_wise')
         @foreach($detailedParties as $dp)
             <table class="data-table">
                 <tr class="party-header-row">
                     <td colspan="8">
-                        {{ $dp->party->name }} ({{ ucfirst($dp->party->party_type) }})
+                        {{ $dp->party->name }} ({{ ucfirst($dp->party->party_type) }}{{ (int) ($dp->party->status ?? 1) === 1 ? '' : ((int) ($dp->party->status ?? 1) === 3 ? ', Deleted' : ', Inactive') }})
                         &nbsp;|&nbsp; Phone: {{ $dp->party->phone ?? '-' }}
                         &nbsp;|&nbsp; Opening: ₹ {{ number_format(abs($dp->opening_balance), 2) }} {{ $dp->opening_balance >= 0 ? 'CR' : 'DR' }}
                         &nbsp;|&nbsp; Closing: ₹ {{ number_format(abs($dp->closing_balance), 2) }} {{ $dp->closing_balance >= 0 ? 'CR' : 'DR' }}

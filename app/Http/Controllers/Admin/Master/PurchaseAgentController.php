@@ -46,6 +46,9 @@ class PurchaseAgentController extends Controller
     public function edit(Request $request)
     {
         $data = $this->service->edit($request);
+        if (!$data) {
+            return redirect()->route('admin.master.purchase-agent.index')->with('error', 'Purchase agent not found.');
+        }
         return view('admin.master.purchase_agent.edit', compact('data'));
     }
 

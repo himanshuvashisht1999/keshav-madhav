@@ -35,6 +35,9 @@ class MasterSeriesController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.series.index')->with('error', 'Series not found.');
+        }
         return view('admin.master.series.edit', $response);
     }
     public function update(SeriesUpdateRequest $request){

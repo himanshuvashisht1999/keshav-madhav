@@ -52,6 +52,9 @@ class ConsumableVoucherController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.voucher.consumable.index')->with('error', 'Voucher not found.');
+        }
         $response['consumableGoods'] = ConsumableGood::where('status', 1)->get();
         return view('admin.payment.voucher.consumable.edit', $response);
     }

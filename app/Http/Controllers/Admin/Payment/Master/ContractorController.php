@@ -52,6 +52,9 @@ class ContractorController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.master.contractor.index')->with('error', 'Contractor not found.');
+        }
         return view('admin.payment.master.contractor.edit', $response);
     }
 

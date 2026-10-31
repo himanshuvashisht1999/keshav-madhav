@@ -36,6 +36,9 @@ class MasterFittingController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.fitting.index')->with('error', 'Fitting not found.');
+        }
         return view('admin.master.fitting.edit',$response);
     }
     public function update(MasterFittingUpdateRequest $request){

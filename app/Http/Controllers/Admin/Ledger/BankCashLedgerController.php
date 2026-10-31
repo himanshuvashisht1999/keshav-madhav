@@ -68,7 +68,9 @@ class BankCashLedgerController extends Controller
     {
         $data = $this->getLedgerData($request, $type, $id);
         $pdf = \PDF::loadView('admin.ledger.bank_cash.download', $data);
-        $name = str_replace(' ', '_', $data['party']->name) . '_Ledger_' . date('Y-m-d') . '.pdf';
+        // no '/' or '\' in the file name (a bank named like 'A/C' would make the download fail with HTTP 500)
+        $accountName = $data['party']->name ?? $data['party']->bank_name ?? '';
+        $name = (trim((string) preg_replace('/[^\pL\pN._-]+/u', '_', (string) $accountName), '_.') ?: 'Account') . '_Ledger_' . date('Y-m-d') . '.pdf';
         return $pdf->download($name);
     }
 
@@ -422,6 +424,11 @@ class BankCashLedgerController extends Controller
 
     private function getLedgerData(Request $request, $type, $id)
     {
+        // only real dates reach the statement, swapped if reversed (a date like 'abc' gave an error page, reversed dates an empty statement)
+        [$start, $end] = $this->listPeriod($request);
+        foreach (['start_date' => $start, 'end_date' => $end] as $key => $value) {
+            $value ? $request->query->set($key, $value) : $request->query->remove($key);
+        }
         return app(\App\Services\Ledger\BankLedgerService::class)->build($request, $type, $id);
     }
 }

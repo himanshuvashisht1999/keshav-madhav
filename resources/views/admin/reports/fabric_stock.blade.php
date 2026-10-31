@@ -8,9 +8,6 @@
             <i class="fas fa-layer-group text-primary mr-2"></i> Fabric Stock Report
         </div>
         <div class="erp-header-actions">
-            <button type="button" class="btn-erp btn-erp-outline" id="btnExportExcelTop" title="Export Excel">
-                <i class="fas fa-file-excel text-success"></i> Excel
-            </button>
         </div>
     </div>
 
@@ -98,31 +95,6 @@
 
         $('#sku').on('change', function (e) {
             oTable.draw();
-        });
-
-        function exportExcel() {
-            var data = {
-                id: $('#id').val(),
-                sku: $('#sku').val(),
-                _token: '{{ csrf_token() }}'
-            };
-
-            var form = $('<form>', {
-                action: '{{ route("admin.reports.fabricStockSkuExcel") }}',
-                method: 'POST',
-                target: '_blank'
-            }).append($.map(data, function(v, k) {
-                return $('<input>', { type: 'hidden', name: k, value: v });
-            }));
-
-            $('body').append(form);
-            form.submit();
-            form.remove();
-        }
-
-        $('#btnExportExcelTop, #generateExcel').on('click', function (e) {
-            e.preventDefault();
-            exportExcel();
         });
     });
 </script>

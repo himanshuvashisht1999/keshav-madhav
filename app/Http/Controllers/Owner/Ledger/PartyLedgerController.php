@@ -3,227 +3,215 @@
 namespace App\Http\Controllers\Owner\Ledger;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdjustmentMaster;
+use App\Models\SalesAgent;
+use App\Services\Ledger\PartyLedgerService;
 use Illuminate\Http\Request;
-use App\Models\Vendor;
-use App\Models\MasterCustomer;
-use App\Models\AgentOrderDispatch;
-use App\Models\AgentOrderReturn;
-use App\Models\FabricReceipt;
-use App\Models\FabricReturn;
-use App\Models\Payment;
-use DB;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
+/**
+ * Owner Party Ledger (read only). Shows the same parties and the same figures as the admin
+ * Party Ledger (Admin\Ledger\PartyLedgerController::getPartyListData): opening, period debit,
+ * period credit and closing of every party, from PartyLedgerService::listFigures (the records of
+ * each statement added up per party type, so every party of the list takes about a second, with or without dates).
+ * Every active party is listed, and an inactive or deleted party too while its closing balance is not 0.
+ */
 class PartyLedgerController extends Controller
 {
+    use OwnerLedgerHelpers;
+
     public function index(Request $request)
     {
+        $typeId = $request->query('type_id');
         $search = $request->query('search');
-        $typeId = $request->query('type_id'); // Adjustment Master ID or 'sales_agent'
+        [$startDate, $endDate] = $this->listPeriod($request);
+        $dated = $startDate || $endDate;
 
-        $masters = \App\Models\AdjustmentMaster::whereNotIn('name', ['Bank Account', 'Cash Master'])->where('status', 1)->get();
-        $parties = collect();
+        $masters = AdjustmentMaster::whereNotIn('name', ['Bank Account', 'Cash Master'])->where('status', 1)->get();
 
-        if ($typeId) {
-            if ($typeId === 'sales_agent') {
-                $items = \App\Models\SalesAgent::where('status', 1)
-                    ->when($search, function ($q) use ($search) {
-                        $q->where('name', 'LIKE', "%$search%");
-                    })
-                    ->get()
-                    ->map(function ($v) {
-                        $v->party_type = 'sales_agent';
-                        $v->master_id_val = 'sales_agent';
-                        $v->balance = $v->shops()->sum('balance');
-                        return $v;
-                    });
-                $parties = $parties->concat($items);
-            } else {
-                $master = \App\Models\AdjustmentMaster::find($typeId);
-                if ($master) {
-                    $modelName = $master->model_name;
-                    if (class_exists($modelName)) {
-                        $items = $modelName::where('status', 1)
-                            ->when($search, function ($q) use ($search, $modelName) {
-                                if ($modelName == 'App\Models\BankAccount') {
-                                    $q->where('bank_name', 'LIKE', "%$search%");
-                                } else {
-                                    $q->where('name', 'LIKE', "%$search%");
-                                }
-                            })
-                            ->get()
-                            ->map(function ($v) use ($master) {
-                                $v->party_type = strtolower($master->name);
-                                $v->master_id_val = $master->id;
-                                if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
-                                return $v;
-                            });
-                        $parties = $parties->concat($items);
-                    }
-                }
-            }
-        } else {
-            // Default to ALL masters items (might be too many, but let's see)
-            foreach ($masters as $master) {
-                $modelName = $master->model_name;
-                if (class_exists($modelName)) {
-                    $items = $modelName::where('status', 1)
-                        ->when($search, function ($q) use ($search, $modelName) {
-                            if ($modelName == 'App\Models\BankAccount') {
-                                $q->where('bank_name', 'LIKE', "%$search%");
-                            } else {
-                                $q->where('name', 'LIKE', "%$search%");
-                            }
-                        })
-                        ->limit(100) // Safety limit for "All" view
-                        ->get()
-                        ->map(function ($v) use ($master) {
-                            $v->party_type = strtolower($master->name);
-                            $v->master_id_val = $master->id;
-                            if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
-                            return $v;
-                        });
-                    $parties = $parties->concat($items);
-                }
-            }
-
-            // Also load Sales Agents in ALL view
-            $agentItems = \App\Models\SalesAgent::where('status', 1)
-                ->when($search, function ($q) use ($search) {
-                    $q->where('name', 'LIKE', "%$search%");
-                })
-                ->limit(100)
-                ->get()
-                ->map(function ($v) {
-                    $v->party_type = 'sales_agent';
-                    $v->master_id_val = 'sales_agent';
-                    $v->balance = $v->shops()->sum('balance');
-                    return $v;
-                });
-            $parties = $parties->concat($agentItems);
+        // Bank and cash accounts have their own ledger page
+        $picked = $typeId && $typeId !== 'sales_agent' ? AdjustmentMaster::find($typeId) : null;
+        if ($picked && in_array($picked->name, ['Bank Account', 'Cash Master'])) {
+            return redirect()->route('owner.bank-cash-ledger.index', $request->query());
         }
 
-        // Sort by name, then page it (the list page loads more rows as you scroll)
-        $parties = $this->paginateParties($parties->sortBy('name')->values(), $request);
+        // Customer type / Vendor type only filter their own type, as on the admin list (the hidden select of another type is ignored)
+        $customerType = $picked && ($picked->model_name === 'App\Models\MasterCustomer' || strtolower($picked->name) === 'customer')
+            ? $request->query('customer_type', $request->query('type')) : null;
+        $vendorType = $picked && ($picked->model_name === 'App\Models\Vendor' || strtolower($picked->name) === 'vendor')
+            ? $request->query('vendor_type', $request->query('purchase_agent_id')) : null;
+        $parties = $this->partyList($typeId, $search, $customerType, $vendorType, $masters);
+
+        app(PartyLedgerService::class)->fillListFigures($parties, $startDate, $endDate);
+        $parties = $parties->filter(fn($p) => (int) ($p->status ?? 1) === 1 || abs((float) $p->balance) >= 0.005);
+        $parties = $this->applyClosingFilters($parties, $request)->sortBy('name')->values();
+
+        $perPage = $this->listPerPage();
+        $page = min(max(1, (int) $request->query('page', 1)), max(1, (int) ceil($parties->count() / $perPage)));
+        $rows = new LengthAwarePaginator($parties->forPage($page, $perPage)->values(), $parties->count(), $perPage, $page, [
+            'path' => $request->url(),
+            'query' => $request->query(),
+        ]);
 
         if ($request->ajax()) {
             return response()->json([
-                'html' => view('owner.party-ledger.partials.ledger_list', compact('parties'))->render(),
-                'next_page' => $parties->hasMorePages() ? $parties->currentPage() + 1 : null,
+                'html' => view('owner.party-ledger.partials.ledger_list', [
+                    'parties' => $rows, 'startDate' => $startDate, 'endDate' => $endDate,
+                ])->render(),
+                'next_page' => $rows->hasMorePages() ? $rows->currentPage() + 1 : null,
             ]);
         }
 
-        return view('owner.party-ledger.index', compact('parties', 'masters'));
-    }
+        // Totals of the whole filtered list (every party, not only this page), each shop counted once: with
+        // "All types" a sales agent adds only its shops that are not listed on their own (same rule as admin).
+        $money = app(PartyLedgerService::class)->totalsRows($parties, !$typeId, $startDate, $endDate,
+            fn($party) => $this->applyClosingFilters(collect([$party]), $request)->isNotEmpty());
+        $summary = [
+            'count' => $parties->count(),
+            'agent_note' => !$typeId && $parties->contains('party_type', 'sales_agent'),
+            'not_active' => $parties->filter(fn($p) => (int) ($p->status ?? 1) !== 1)->count(),
+            'debit' => (float) abs($money->where('balance', '<', 0)->sum('balance')),
+            'credit' => (float) $money->where('balance', '>', 0)->sum('balance'),
+            'net' => (float) $money->sum('balance'),
+            'dated' => $dated,
+            'opening' => $dated ? (float) $money->sum('opening_balance') : null,
+            'period_debit' => $dated ? (float) $money->sum('period_debit') : null,
+            'period_credit' => $dated ? (float) $money->sum('period_credit') : null,
+        ];
 
-    private function paginateParties($parties, Request $request, int $perPage = 50)
-    {
-        $page = max(1, (int) $request->query('page', 1));
-        return new \Illuminate\Pagination\LengthAwarePaginator(
-            $parties->forPage($page, $perPage)->values(),
-            $parties->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
+        $selectedMaster = $masters->firstWhere('id', $typeId);
+        $purchaseAgents = ($selectedMaster && $selectedMaster->model_name === 'App\Models\Vendor')
+            ? \App\Models\PurchaseAgent::where('status', 1)->orderBy('name')->get(['id', 'name'])
+            : collect();
+
+        return view('owner.party-ledger.index', [
+            'parties' => $rows,
+            'masters' => $masters,
+            'summary' => $summary,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'typeId' => $typeId,
+            'selectedMaster' => $selectedMaster,
+            'customerType' => $customerType,
+            'vendorType' => $vendorType,
+            'purchaseAgents' => $purchaseAgents,
+        ]);
     }
 
     public function show(Request $request, $type, $id)
     {
-        $data = $this->getLedgerData($request, $type, $id);
-        return view('owner.party-ledger.show', $data);
+        $data = $this->ledger($request, $type, $id);
+        $transactions = collect($data['transactions']);
+        [$entries, $broughtForward] = $this->statementPage($transactions, $request, (float) $data['openingBalAmount']);
+
+        return view('owner.party-ledger.show', $data + [
+            'entries' => $entries,
+            'broughtForward' => $broughtForward,
+            'periodDebit' => (float) ($data['periodTotalDebit'] ?? $transactions->sum('debit')),
+            'periodCredit' => (float) ($data['periodTotalCredit'] ?? $transactions->sum('credit')),
+            'pdfTooBig' => $this->pdfRefusal($transactions->count(), $data['startDate'], $data['endDate']) !== null,
+        ]);
     }
 
     public function download(Request $request, $type, $id)
     {
-        $data = $this->getLedgerData($request, $type, $id);
+        $data = $this->ledger($request, $type, $id);
+        $refusal = $this->pdfRefusal(count($data['transactions']), $data['startDate'], $data['endDate']);
+        if ($refusal) {
+            return redirect()
+                ->route('owner.party-ledger.show', array_merge($request->query(), ['type' => $data['type'], 'id' => $id]))
+                ->with('error', $refusal);
+        }
         $pdf = \PDF::loadView('owner.party-ledger.download', $data);
-        $name = str_replace(' ', '_', $data['party']->name) . '_Ledger_' . date('Y-m-d') . '.pdf';
-        return $pdf->download($name);
+        return $pdf->download($this->pdfFileName($data['party']->name));
     }
 
-    private function getLedgerData(Request $request, $type, $id)
+    /** The statement of one party: the same calculation as the admin statement. */
+    private function ledger(Request $request, $type, $id): array
     {
-        $data = app(\App\Services\Ledger\PartyLedgerService::class)->build($request, $type, $id);
-        // Same numbers as the admin ledger; the owner panel has no detail pages to link to
-        foreach ($data['transactions'] as $tx) {
-            $tx->view_url = '#';
-        }
-        foreach ($data['groupedLedgers'] ?? [] as $group) {
-            $groupTx = is_array($group) ? ($group['transactions'] ?? []) : ($group->transactions ?? []);
-            foreach ($groupTx as $tx) {
-                $tx->view_url = '#';
-            }
+        $this->cleanPeriod($request);
+        $data = app(PartyLedgerService::class)->build($request, $type, $id);
+        // a bank account (reached through its type) has no name column
+        if (empty($data['party']->name) && !empty($data['party']->bank_name)) {
+            $data['party']->name = $data['party']->bank_name;
         }
         return $data;
     }
 
-    private function applyLedgerFilters($transactions, Request $request)
+    /**
+     * The parties of the list: same masters, search and customer / vendor type filters as the
+     * admin list, any status (index() keeps the active ones and those with a balance).
+     */
+    private function partyList($typeId, $search, $customerType, $vendorType, Collection $masters): Collection
     {
-        $transactionType = $request->query('transaction_type');
-        $adjustmentType = $request->query('adjustment_type');
-        $refNo = $request->query('ref_no');
-        $debitValue = $request->query('debit_value');
-        $creditValue = $request->query('credit_value');
+        $parties = collect();
+        $agents = function () use ($search) {
+            return SalesAgent::query()
+                ->when($search, fn($q) => $q->where('name', 'LIKE', "%$search%"))
+                ->get()
+                ->map(function ($v) {
+                    $v->party_type = 'sales_agent';
+                    $v->master_id_val = 'sales_agent';
+                    return $v;
+                });
+        };
 
-        if (!$transactionType && !$adjustmentType && !$refNo && $debitValue === null && $creditValue === null) {
-            return $transactions;
+        if ($typeId) {
+            if ($typeId === 'sales_agent') {
+                return $agents();
+            }
+            $master = AdjustmentMaster::find($typeId);
+            return $master ? $this->masterParties($master, $search, $customerType, $vendorType) : $parties;
         }
 
-        return $transactions->filter(function ($tx) use ($transactionType, $adjustmentType, $refNo, $debitValue, $creditValue) {
-            // 1. Transaction Type filter
-            if ($transactionType && $transactionType !== 'all') {
-                $matchType = false;
-                if (strcasecmp($tx->type, $transactionType) === 0) {
-                    $matchType = true;
-                } elseif (strcasecmp($transactionType, 'payment') === 0 && (strcasecmp($tx->type, 'payment') === 0 || $tx->debit > 0)) {
-                    $matchType = true;
-                } elseif (strcasecmp($transactionType, 'receipt') === 0 && (strcasecmp($tx->type, 'receipt') === 0 || $tx->credit > 0)) {
-                    $matchType = true;
-                } elseif (strcasecmp($transactionType, 'adjustment') === 0 && (stripos($tx->type, 'adjustment') !== false || stripos($tx->ref ?? '', 'adj') !== false || stripos($tx->description ?? '', 'adjustment') !== false)) {
-                    $matchType = true;
-                }
-                if (!$matchType) return false;
-            }
+        foreach ($masters as $master) {
+            $parties = $parties->concat($this->masterParties($master, $search, $customerType, $vendorType));
+        }
+        return $parties->concat($agents());
+    }
 
-            // 2. Adjustment filter: 1. Payment (Debit / Paid), 2. Receipt (Credit / Received)
-            if ($adjustmentType && $adjustmentType !== 'all') {
-                if ($adjustmentType === 'payment') {
-                    if (!($tx->debit > 0)) return false;
-                } elseif ($adjustmentType === 'receipt') {
-                    if (!($tx->credit > 0)) return false;
-                }
-            }
+    private function masterParties(AdjustmentMaster $master, $search, $customerType, $vendorType): Collection
+    {
+        $modelName = $master->model_name;
+        if (!$modelName || !class_exists($modelName)) {
+            return collect();
+        }
+        $isCustomer = ($modelName === 'App\Models\MasterCustomer' || strtolower($master->name) === 'customer');
+        $isVendor = ($modelName === 'App\Models\Vendor' || strtolower($master->name) === 'vendor');
 
-            // 3. Ref No filter
-            if ($refNo && trim($refNo) !== '') {
-                $refSearch = trim($refNo);
-                $txRef = (string)($tx->ref ?? '');
-                if (stripos($txRef, $refSearch) === false && stripos((string)($tx->description ?? ''), $refSearch) === false) {
-                    return false;
+        return $modelName::query()
+            ->when($search, function ($q) use ($search, $modelName) {
+                $q->where($modelName === 'App\Models\BankAccount' ? 'bank_name' : 'name', 'LIKE', "%$search%");
+            })
+            ->when($isCustomer && !empty($customerType), function ($q) use ($customerType) {
+                if ($customerType == 'direct') {
+                    $q->where('subtype', 'direct');
+                } elseif ($customerType == 'agent') {
+                    $q->where('subtype', 'agent');
+                } else {
+                    $q->where('type', $customerType);
                 }
-            }
-
-            // 4. Debit Value filter
-            if ($debitValue !== null && trim($debitValue) !== '') {
-                $val = floatval(preg_replace('/[^0-9.]/', '', $debitValue));
-                if ($val > 0) {
-                    $exact = abs($tx->debit - $val) < 0.01;
-                    $partial = str_contains((string)$tx->debit, trim($debitValue));
-                    if (!$exact && !$partial) return false;
+            })
+            ->when($isVendor && !empty($vendorType), function ($q) use ($vendorType) {
+                if ($vendorType === 'direct') {
+                    $q->where(fn($sub) => $sub->whereNull('purchase_agent_id')->orWhere('purchase_agent_id', 0));
+                } elseif ($vendorType === 'agent') {
+                    $q->whereNotNull('purchase_agent_id')->where('purchase_agent_id', '!=', 0);
+                } elseif (str_starts_with($vendorType, 'pa_')) {
+                    $q->where('purchase_agent_id', (int) substr($vendorType, 3));
+                } elseif (is_numeric($vendorType)) {
+                    $q->where('purchase_agent_id', (int) $vendorType);
                 }
-            }
-
-            // 5. Credit Value filter
-            if ($creditValue !== null && trim($creditValue) !== '') {
-                $val = floatval(preg_replace('/[^0-9.]/', '', $creditValue));
-                if ($val > 0) {
-                    $exact = abs($tx->credit - $val) < 0.01;
-                    $partial = str_contains((string)$tx->credit, trim($creditValue));
-                    if (!$exact && !$partial) return false;
+            })
+            ->get()
+            ->map(function ($v) use ($master) {
+                $v->party_type = strtolower($master->name);
+                $v->master_id_val = $master->id;
+                if (!isset($v->name) && isset($v->bank_name)) {
+                    $v->name = $v->bank_name;
                 }
-            }
-
-            return true;
-        })->values();
+                return $v;
+            });
     }
 }

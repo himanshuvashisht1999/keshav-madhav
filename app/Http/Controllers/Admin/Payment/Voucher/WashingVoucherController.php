@@ -51,6 +51,9 @@ class WashingVoucherController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.voucher.washing.index')->with('error', 'Voucher not found.');
+        }
         $response['washingMasters'] = WashingMaster::where('status', 1)->get();
         $response['lots'] = FabricRollAssigning::select('id', 'lot_no')->groupBy('lot_no')->get();
         return view('admin.payment.voucher.washing.edit', $response);

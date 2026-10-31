@@ -31,6 +31,9 @@ class ItemReceiptController extends Controller {
     }
     public function detail(Request $request){
         $response['data'] = $this->service->view($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.item_receipt.index')->with('error', 'Item receipt not found.');
+        }
         $response['vendors'] = $this->service->vendors();
         $response['items'] = $this->service->items();
 
@@ -48,6 +51,9 @@ class ItemReceiptController extends Controller {
     
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.item_receipt.index')->with('error', 'Item receipt not found.');
+        }
         $response['vendors'] = $this->service->vendors();
 
         return view('admin.item_receipt.edit',$response);
@@ -63,6 +69,9 @@ class ItemReceiptController extends Controller {
     }
     public function view(Request $request){
         $response['data'] = $this->service->view($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.item_receipt.index')->with('error', 'Item receipt not found.');
+        }
         return view('admin.item_receipt.view',$response);
     }
     public function delete(Request $request){

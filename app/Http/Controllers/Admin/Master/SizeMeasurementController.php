@@ -42,6 +42,9 @@ class SizeMeasurementController extends Controller {
     public function edit(Request $request){
         $response['sizes'] = $this->SizeService->getSizes();
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.size-measurement.index')->with('error', 'Size measurement not found.');
+        }
         $response['selectedSizes'] = explode(",",$response['data']->size_group);
         $response['customers'] = $this->ProductOrderService->customers();
         // dd($response['data'], $response['customers']);

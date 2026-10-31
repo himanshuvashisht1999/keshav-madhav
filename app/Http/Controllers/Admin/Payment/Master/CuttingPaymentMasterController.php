@@ -41,6 +41,9 @@ class CuttingPaymentMasterController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.master.cutting_payment.index')->with('error', 'Cutting payment not found.');
+        }
         return view('admin.payment.master.cutting_payment.edit', $response);
     }
 

@@ -1,287 +1,159 @@
 @extends('owner.layouts.app')
 
-@section('title', 'Bank & Cash Ledger')
-
-@section('styles')
-<style>
-    :root {
-        --glass-bg: rgba(255, 255, 255, 0.95);
-        --glass-border: rgba(255, 255, 255, 0.2);
-        --card-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
-    }
-
-    body {
-        background: #f8fafc;
-    }
-
-    .app-header {
-        background: var(--primary-gradient);
-        padding: 40px 20px 60px;
-        border-radius: 0 0 40px 40px;
-        color: white;
-        margin-bottom: -30px;
-        position: relative;
-        z-index: 1;
-    }
-
-    .app-header h1 {
-        font-size: 26px;
-        font-weight: 900;
-        letter-spacing: -0.5px;
-        margin-bottom: 5px;
-    }
-
-    .breadcrumb-custom {
-        display: flex;
-        gap: 8px;
-        font-size: 12px;
-        opacity: 0.8;
-        margin-bottom: 20px;
-        align-items: center;
-    }
-
-    .breadcrumb-custom a {
-        color: white;
-        text-decoration: none;
-    }
-
-    .search-container {
-        position: relative;
-        z-index: 10;
-        padding: 0 20px;
-    }
-
-    .search-box {
-        background: white;
-        border-radius: 20px;
-        padding: 15px 20px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        box-shadow: var(--card-shadow);
-        border: 1px solid rgba(0,0,0,0.05);
-        margin-bottom: 12px;
-    }
-
-    .search-box input, .search-box select {
-        border: none;
-        outline: none;
-        width: 100%;
-        font-size: 14px;
-        font-weight: 500;
-        color: #1e293b;
-        background: transparent;
-    }
-
-    .filter-select-wrapper {
-        border-left: 1px solid #e2e8f0;
-        padding-left: 12px;
-        min-width: 130px;
-    }
-
-    .ledger-card {
-        background: var(--glass-bg);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1px solid var(--glass-border);
-        border-radius: 24px;
-        padding: 20px;
-        margin-bottom: 16px;
-        box-shadow: var(--card-shadow);
-        transition: transform 0.2s;
-        text-decoration: none !important;
-        display: block;
-    }
-
-    .ledger-card:active {
-        transform: scale(0.98);
-    }
-
-    .party-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 15px;
-    }
-
-    .party-name {
-        font-size: 18px;
-        font-weight: 800;
-        color: #0f172a;
-        margin-bottom: 4px;
-    }
-
-    .party-phone {
-        font-size: 12px;
-        color: #64748b;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .type-badge {
-        font-size: 10px;
-        padding: 5px 10px;
-        border-radius: 10px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Vibrant Type Colors */
-    .party-type-customer { background: #e0e7ff; color: #4338ca; }
-    .party-type-vendor { background: #ffedd5; color: #c2410c; }
-    .party-type-sales_agent { background: #fce7f3; color: #be185d; }
-    .party-type-default { background: #f1f5f9; color: #475569; }
-
-    .balance-box {
-        background: #f8fafc;
-        border-radius: 16px;
-        padding: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .balance-label {
-        font-size: 11px;
-        color: #64748b;
-        text-transform: uppercase;
-        font-weight: 800;
-        letter-spacing: 0.5px;
-        margin-bottom: 2px;
-    }
-
-    .balance-amount {
-        font-size: 20px;
-        font-weight: 900;
-    }
-
-    .balance-dr { color: #dc2626; }
-    .balance-cr { color: #16a34a; }
-
-    .cr-dr-badge {
-        font-size: 11px;
-        font-weight: 800;
-        padding: 2px 6px;
-        border-radius: 6px;
-        margin-left: 6px;
-    }
-
-    .badge-dr { background: #fee2e2; color: #dc2626; }
-    .badge-cr { background: #dcfce7; color: #16a34a; }
-
-    .empty-state {
-        padding: 60px 20px;
-        text-align: center;
-        color: #94a3b8;
-    }
-
-    .empty-state i {
-        font-size: 48px;
-        margin-bottom: 16px;
-        opacity: 0.3;
-    }
-</style>
-@endsection
+@section('title', 'Bank & Cash')
 
 @section('content')
-<div class="responsive-app-view">
-    <div class="app-header">
-        <div class="breadcrumb-custom">
-            <a href="{{ route('owner.dashboard') }}">Home</a>
-            <i class="fas fa-chevron-right" style="font-size: 8px;"></i>
-            <span>{{ $pageTitle ?? 'Bank & Cash Ledger' }}</span>
-        </div>
-        <h1>{{ $pageTitle ?? 'Bank & Cash Ledger' }}</h1>
-        @if(isset($pageSubtitle))
-            <p style="font-size: 13px; opacity: 0.9; margin: 0;">{{ $pageSubtitle }}</p>
-        @endif
-    </div>
+    @php
+        // Same sign rule as the ledger: negative = Dr (money in the account / in hand), positive = Cr (owed to the bank: OD, CC, loan)
+        $drcr = fn($v) => '₹ ' . number_format(abs((float) $v), 2) . ' ' . ((float) $v >= 0 ? 'Cr' : 'Dr');
+        $filterCount = collect([request('search'), $typeId, $startDate, $endDate, request('balance_type'), request('min_closing'), request('max_closing')])
+            ->filter(fn($v) => (string) $v !== '')->count();
+        $fmtDate = fn($d) => \Carbon\Carbon::parse($d)->format('d M Y');
+        if ($startDate && $endDate) {
+            $periodText = $fmtDate($startDate) . ' to ' . $fmtDate($endDate);
+        } elseif ($startDate) {
+            $periodText = 'From ' . $fmtDate($startDate);
+        } elseif ($endDate) {
+            $periodText = 'Up to ' . $fmtDate($endDate);
+        } else {
+            $periodText = null;
+        }
+    @endphp
 
-    @if(!isset($pageTitle))
-    <div class="search-container">
-        <form action="{{ route('owner.bank-cash-ledger.index') }}" method="GET" id="filterForm">
-            <div class="search-box">
-                <i class="fas fa-search text-muted"></i>
-                <input type="text" name="search" placeholder="Search party..." value="{{ request('search') }}" onchange="document.getElementById('filterForm').submit()">
-                
-                <div class="filter-select-wrapper">
-                    <select name="type_id" onchange="document.getElementById('filterForm').submit()">
-                        <option value="">All Types</option>
-                        @foreach($masters as $m)
-                            <option value="{{ $m->id }}" {{ request('type_id') == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+    @include('owner.common.page_head', [
+        'title' => 'Bank & Cash',
+        'sub' => ($periodText ? 'Period: ' . $periodText . ' · ' : 'Balance today · ') . 'Dr = money held, Cr = owed to the bank (OD / CC / loan)',
+        'back' => route('owner.dashboard'),
+        'actions' => '<a class="ow-btn is-outline is-sm" href="' . e(route('owner.party-ledger.index')) . '"><i class="fas fa-users"></i> Parties</a>',
+    ])
+
+    @include('owner.common.totals', ['totals' => [
+        ['label' => 'Accounts', 'value' => number_format($summary['count'])],
+        ['label' => 'Total Dr (money held)', 'value' => '₹ ' . number_format($summary['debit'], 2), 'tone' => 'word'],
+        ['label' => 'Total Cr (owed to bank)', 'value' => '₹ ' . number_format($summary['credit'], 2), 'tone' => 'red'],
+        ['label' => 'Net', 'value' => $drcr($summary['net'])],
+        ['label' => 'Opening', 'value' => $drcr($summary['opening']), 'tone' => 'light'],
+        ['label' => 'Debit (money in)', 'value' => '₹ ' . number_format($summary['period_debit'], 2), 'tone' => 'yellow'],
+        ['label' => 'Credit (money out)', 'value' => '₹ ' . number_format($summary['period_credit'], 2), 'tone' => 'yellow'],
+    ]])
+
+    <details class="ow-filters" {{ $filterCount ? 'open' : '' }}>
+        <summary><i class="fas fa-filter"></i> Filters @if($filterCount)<span class="ow-filter-count">{{ $filterCount }}</span>@endif</summary>
+        <form class="ow-filter-body" method="GET" action="{{ route('owner.bank-cash-ledger.index') }}">
+            <div>
+                <label>Account</label>
+                <input type="text" class="form-control" name="search" value="{{ request('search') }}" placeholder="Bank, name or number">
+            </div>
+            <div>
+                <label>Type</label>
+                <select name="type_id" class="form-control">
+                    <option value="">Bank and cash</option>
+                    @foreach($masters as $m)
+                        <option value="{{ $m->id }}" {{ (string) $typeId === (string) $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label>From</label>
+                <input type="date" class="form-control" name="start_date" value="{{ $startDate }}">
+            </div>
+            <div>
+                <label>To</label>
+                <input type="date" class="form-control" name="end_date" value="{{ $endDate }}">
+            </div>
+            <div>
+                <label>Balance</label>
+                <select name="balance_type" class="form-control">
+                    <option value="">Dr and Cr</option>
+                    <option value="debit" {{ request('balance_type') === 'debit' ? 'selected' : '' }}>Dr only</option>
+                    <option value="credit" {{ request('balance_type') === 'credit' ? 'selected' : '' }}>Cr only</option>
+                </select>
+            </div>
+            <div>
+                <label>Closing from ₹</label>
+                <input type="number" step="0.01" min="0" class="form-control" name="min_closing" value="{{ request('min_closing') }}">
+            </div>
+            <div>
+                <label>Closing up to ₹</label>
+                <input type="number" step="0.01" min="0" class="form-control" name="max_closing" value="{{ request('max_closing') }}">
+            </div>
+            <div class="ow-filter-actions">
+                <button class="ow-btn"><i class="fas fa-search"></i> Apply</button>
+                <a class="ow-btn is-outline" href="{{ route('owner.bank-cash-ledger.index') }}">Reset</a>
             </div>
         </form>
+    </details>
+
+    <div class="ow-scroll-hint"><i class="fas fa-arrows-alt-h"></i> Slide the table sideways to see every column</div>
+    <div class="ow-table-wrap">
+        <table class="erp-table sticky-first">
+            <thead>
+                <tr>
+                    <th>Account</th>
+                    <th>Type</th>
+                    <th>A/c no</th>
+                    <th class="num">Opening</th>
+                    <th class="num">Debit (in)</th>
+                    <th class="num">Credit (out)</th>
+                    <th class="num">Closing</th>
+                </tr>
+            </thead>
+            <tbody id="bank-rows">
+                @if($parties->isEmpty())
+                    <tr><td colspan="7" class="ow-empty">No bank or cash accounts found</td></tr>
+                @else
+                    @include('owner.bank-cash-ledger.partials.ledger_list', ['parties' => $parties, 'startDate' => $startDate, 'endDate' => $endDate])
+                @endif
+            </tbody>
+            @if($summary['count'] > 0)
+                <tfoot>
+                    <tr>
+                        <td>Total</td>
+                        <td colspan="2">{{ number_format($summary['count']) }} accounts</td>
+                        <td class="num">{{ $drcr($summary['opening']) }}</td>
+                        <td class="num">{{ number_format($summary['period_debit'], 2) }}</td>
+                        <td class="num">{{ number_format($summary['period_credit'], 2) }}</td>
+                        <td class="num">{{ $drcr($summary['net']) }}</td>
+                    </tr>
+                </tfoot>
+            @endif
+        </table>
     </div>
+
+    @if($parties->hasMorePages())
+        <div class="text-center mb-3">
+            <div class="small text-muted mb-1" id="bank-shown">Showing {{ number_format($parties->lastItem()) }} of {{ number_format($parties->total()) }} accounts</div>
+            <button type="button" class="ow-btn is-outline" id="bank-more" data-next="{{ $parties->currentPage() + 1 }}">
+                <i class="fas fa-chevron-down"></i> Load more
+            </button>
+        </div>
     @endif
+@endsection
 
-    <div class="container-fluid mt-4 pb-5">
-        <div id="ledger-container">
-            @include('owner.bank-cash-ledger.partials.ledger_list', ['parties' => $parties])
-        </div>
-        
-        <div id="loading-spinner" style="display: none; text-align: center; padding: 20px;">
-            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-        </div>
-        <div id="load-more-trigger" style="height: 10px;"></div>
-    </div>
-</div>
-
-
-@section('scripts')
+@push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        let currentPage = {{ $parties->currentPage() }};
-        let nextPage = {{ $parties->hasMorePages() ? $parties->currentPage() + 1 : 'null' }};
-        let isLoading = false;
-        
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && nextPage !== null && !isLoading) {
-                loadMoreData();
-            }
+    $(function () {
+        var total = {{ (int) $parties->total() }};
+        $('#bank-more').on('click', function () {
+            var $btn = $(this), next = $btn.data('next');
+            if (!next) { return; }
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading');
+            var url = new URL(window.location.href);
+            url.searchParams.set('page', next);
+            $.ajax({ url: url.toString(), headers: { 'X-Requested-With': 'XMLHttpRequest' }, dataType: 'json' })
+                .done(function (res) {
+                    $('#bank-rows').append(res.html);
+                    $('#bank-shown').text('Showing ' + $('#bank-rows tr').length.toLocaleString('en-IN') + ' of ' + total.toLocaleString('en-IN') + ' accounts');
+                    if (res.next_page) {
+                        $btn.data('next', res.next_page).prop('disabled', false).html('<i class="fas fa-chevron-down"></i> Load more');
+                    } else {
+                        $btn.parent().remove();
+                    }
+                })
+                .fail(function () {
+                    $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Try again');
+                });
         });
-        
-        const trigger = document.getElementById('load-more-trigger');
-        if (trigger) {
-            observer.observe(trigger);
-        }
-
-        function loadMoreData() {
-            isLoading = true;
-            document.getElementById('loading-spinner').style.display = 'block';
-            
-            let currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('page', nextPage);
-
-            fetch(currentUrl.toString(), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('ledger-container');
-                container.insertAdjacentHTML('beforeend', data.html);
-                
-                nextPage = data.next_page;
-                isLoading = false;
-                document.getElementById('loading-spinner').style.display = 'none';
-                
-                if (nextPage === null) {
-                    observer.unobserve(trigger);
-                }
-            })
-            .catch(error => {
-                console.error('Error loading more items:', error);
-                isLoading = false;
-                document.getElementById('loading-spinner').style.display = 'none';
-            });
-        }
     });
 </script>
-@endsection
+@endpush

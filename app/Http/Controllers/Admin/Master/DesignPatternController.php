@@ -32,6 +32,9 @@ class DesignPatternController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.design-pattern.index')->with('error', 'Design pattern not found.');
+        }
         // dd($response['parts_data']);
         return view('admin.master.design_pattern.edit',$response);
     }

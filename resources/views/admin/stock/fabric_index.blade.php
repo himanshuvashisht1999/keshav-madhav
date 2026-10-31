@@ -7,9 +7,6 @@
             <i class="fas fa-layer-group text-primary"></i> Available Fabric Stock
         </div>
         <div class="erp-header-actions">
-            <button id="generateExcelBtn" class="btn-erp btn-erp-outline">
-                <i class="fas fa-file-excel text-success"></i> Excel Report
-            </button>
         </div>
     </div>
 
@@ -94,26 +91,6 @@
         $('#btnResetFilter').on('click', function (e) {
             $('#sku').val('').trigger('change');
             oTable.draw();
-        });
-
-        $('#generateExcelBtn').on('click', function (e) {
-            e.preventDefault();
-            var data = {
-                sku: $('#sku').val(),
-                _token: '{{ csrf_token() }}'
-            };
-
-            var form = $('<form>', {
-                action: '{{ route("admin.reports.fabricStockSkuExcel") }}',
-                method: 'POST',
-                target: '_blank'
-            }).append($.map(data, function(v, k) {
-                return $('<input>', { type: 'hidden', name: k, value: v });
-            }));
-
-            $('body').append(form);
-            form.submit();
-            form.remove();
         });
     });
 </script>

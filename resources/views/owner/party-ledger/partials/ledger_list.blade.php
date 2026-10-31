@@ -1,42 +1,27 @@
-@forelse($parties as $party)
-    <a href="{{ route('owner.party-ledger.show', ['type' => $party->party_type, 'id' => $party->id]) }}" class="ledger-card">
-        <div class="party-header">
-            <div>
-                <div class="party-name">{{ $party->name }}</div>
-                <div class="party-phone">
-                    <i class="fas fa-phone-alt"></i> {{ $party->phone ?: 'No Phone' }}
-                </div>
-            </div>
-            @php
-                $typeClass = in_array($party->party_type, ['customer', 'vendor', 'sales_agent']) ? $party->party_type : 'default';
-            @endphp
-            <span class="type-badge party-type-{{ $typeClass }}">
-                {{ str_replace('_', ' ', $party->party_type) }}
-            </span>
-        </div>
-
-        <div class="balance-box">
-            <div>
-                <div class="balance-label">Current Balance</div>
-                @php 
-                    $bal = (float)$party->balance;
-                    $isCr = $bal >= 0;
-                @endphp
-                <div class="balance-amount {{ $isCr ? 'balance-cr' : 'balance-dr' }}">
-                    ₹ {{ number_format(abs($bal), 2) }}
-                    <span class="cr-dr-indicator {{ $isCr ? 'cr' : 'dr' }}">
-                        {{ $isCr ? 'Cr' : 'Dr' }}
-                    </span>
-                </div>
-            </div>
-            <div class="action-btn">
-                <i class="fas fa-chevron-right"></i>
-            </div>
-        </div>
-    </a>
-@empty
-    <div class="text-center py-5 opacity-50">
-        <i class="fas fa-book fa-3x mb-3 text-muted"></i>
-        <h6>No parties found in the ledger</h6>
-    </div>
-@endforelse
+{{-- Rows of the owner party list (also returned by "Load more"). Figures = PartyLedgerService, as the admin list. --}}
+@foreach($parties as $party)
+    @php
+        $open = (float) ($party->opening_balance ?? 0);
+        $bal = (float) ($party->balance ?? 0);
+        $url = route('owner.party-ledger.show', array_filter([
+            'type' => $party->party_type,
+            'id' => $party->id,
+            'start_date' => $startDate ?? null,
+            'end_date' => $endDate ?? null,
+        ]));
+    @endphp
+    <tr>
+        <td class="wrap">
+            <a href="{{ $url }}">{{ $party->name }}</a>
+            @if((int) ($party->status ?? 1) !== 1)
+                <span class="ow-badge {{ (int) ($party->status ?? 1) === 3 ? 'red' : 'grey' }}">{{ (int) ($party->status ?? 1) === 3 ? 'Deleted' : 'Inactive' }}</span>
+            @endif
+        </td>
+        <td><span class="ow-badge type">{{ ucwords(str_replace('_', ' ', $party->party_type)) }}</span></td>
+        <td>{{ $party->phone ?? '-' }}</td>
+        <td class="num">{{ number_format(abs($open), 2) }} {{ $open >= 0 ? 'Cr' : 'Dr' }}</td>
+        <td class="num">{{ number_format((float) ($party->period_debit ?? 0), 2) }}</td>
+        <td class="num">{{ number_format((float) ($party->period_credit ?? 0), 2) }}</td>
+        <td class="num {{ $bal < 0 ? 'ow-dr' : 'ow-cr' }}"><b>{{ number_format(abs($bal), 2) }} {{ $bal >= 0 ? 'Cr' : 'Dr' }}</b></td>
+    </tr>
+@endforeach

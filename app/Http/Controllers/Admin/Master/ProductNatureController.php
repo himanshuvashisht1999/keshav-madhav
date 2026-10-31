@@ -64,6 +64,9 @@ class ProductNatureController extends Controller {
     }
     public function edit(Request $request){
         $data = ProductNature::find($request->id);
+        if (!$data) {
+            return redirect()->route('admin.master.product-nature.index')->with('error', 'Product nature not found.');
+        }
         return view('admin.master.product-nature.edit', compact('data'));
     }
     public function update(Request $request){

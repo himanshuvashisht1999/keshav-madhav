@@ -1,217 +1,87 @@
 @extends('owner.layouts.app')
 
-@section('title', 'Roll Tracking')
-
-@section('styles')
-<style>
-    :root {
-        --accent-color: var(--text-main);
-    }
-
-    body {
-        background: #f1f5f9;
-    }
-
-    .app-header {
-        background: var(--primary-gradient);
-        padding: 30px 20px 60px;
-        color: white;
-    }
-
-    .roll-info-floating {
-        margin-top: -40px;
-        padding: 0 20px;
-    }
-
-    .info-card {
-        background: white;
-        border-radius: 24px;
-        padding: 24px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-        text-align: center;
-    }
-
-    .roll-id-big {
-        font-size: 32px;
-        font-weight: 900;
-        color: var(--text-main);
-        letter-spacing: -1px;
-    }
-
-    .fabric-name-sub {
-        font-size: 14px;
-        color: var(--text-muted);
-        font-weight: 700;
-        text-transform: uppercase;
-        margin-bottom: 15px;
-        display: block;
-    }
-
-    .ledger-container {
-        padding: 30px 20px;
-    }
-
-    .timeline {
-        position: relative;
-        padding-left: 45px;
-    }
-
-    .timeline::before {
-        content: '';
-        position: absolute;
-        left: 20px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: #e2e8f0;
-    }
-
-    .timeline-item {
-        position: relative;
-        margin-bottom: 30px;
-    }
-
-    .timeline-dot {
-        position: absolute;
-        left: -33px;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: white;
-        border: 3px solid var(--accent-color);
-        z-index: 1;
-    }
-
-    .timeline-item.negative .timeline-dot {
-        border-color: #ef4444;
-    }
-
-    .timeline-item.positive .timeline-dot {
-        border-color: #10b981;
-    }
-
-    .timeline-content {
-        background: white;
-        border-radius: 18px;
-        padding: 16px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-        border: 1px solid #f1f5f9;
-    }
-
-    .item-date {
-        font-size: 10px;
-        font-weight: 800;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        margin-bottom: 8px;
-        display: block;
-    }
-
-    .item-title {
-        font-size: 15px;
-        font-weight: 800;
-        color: var(--text-main);
-        margin-bottom: 6px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .item-qty {
-        font-weight: 900;
-    }
-
-    .qty-in { color: #10b981; }
-    .qty-out { color: #ef4444; }
-
-    .item-details {
-        font-size: 12px;
-        color: var(--text-muted);
-        line-height: 1.6;
-        padding: 10px;
-        background: #f8fafc;
-        border-radius: 12px;
-        margin-top: 10px;
-    }
-
-    .item-meta {
-        display: flex;
-        gap: 12px;
-        margin-top: 10px;
-        font-size: 11px;
-        font-weight: 700;
-    }
-
-    .meta-tag {
-        background: #f1f5f9;
-        padding: 4px 8px;
-        border-radius: 6px;
-    }
-</style>
-@endsection
+@section('title', 'Roll History')
 
 @section('content')
-<div class="responsive-app-view">
-    <div class="app-header">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <a href="{{ route('owner.report.stock.rolls') }}" class="text-white"><i class="fas fa-arrow-left"></i></a>
-            <span class="font-weight-bold" style="font-size: 14px; opacity: 0.8;">Tracking Detail</span>
-            <div style="width: 20px;"></div>
-        </div>
-        <div class="text-center pb-3">
-            <p class="mb-0 opacity-75" style="font-size: 12px;">Roll Lifecycle History</p>
-        </div>
-    </div>
+@php
+    $m = fn($v) => number_format((float) $v, 2);
+    $first = $rolls->first();
+    $tiles = [
+        ['label' => 'In (m)', 'value' => $m($totals->in)],
+        ['label' => 'Out (m)', 'value' => $m($totals->out), 'tone' => 'yellow'],
+        ['label' => 'Balance (m)', 'value' => $m($totals->balance), 'tone' => 'word'],
+        ['label' => 'Left in roll now (m)', 'value' => $m($totals->remaining), 'tone' => 'light'],
+    ];
+    if (abs($totals->gap) >= 0.01) {
+        $tiles[] = ['label' => 'Not explained (m)', 'value' => $m($totals->gap), 'tone' => 'red'];
+    }
+@endphp
 
-    <div class="roll-info-floating">
-        <div class="info-card">
-            <span class="fabric-name-sub">{{ $fabric->name ?? 'Unknown Fabric' }}</span>
-            <div class="roll-id-big">Roll #{{ $rollNo }}</div>
-            
-            <div class="d-flex justify-content-around mt-4">
-                <div>
-                    <div class="stat-value" style="font-size: 18px; font-weight: 900;">{{ number_format($data->where('qty', '>', 0)->sum('qty'), 1) }}m</div>
-                    <div class="stat-label" style="font-size: 10px; color: var(--text-muted); font-weight: 800;">TOTAL IN</div>
-                </div>
-                <div style="width: 1px; background: #f1f5f9;"></div>
-                <div>
-                    <div class="stat-value" style="font-size: 18px; font-weight: 900;">{{ number_format(abs($data->where('qty', '<', 0)->sum('qty')), 1) }}m</div>
-                    <div class="stat-label" style="font-size: 10px; color: var(--text-muted); font-weight: 800;">TOTAL OUT</div>
-                </div>
-            </div>
-        </div>
-    </div>
+@include('owner.common.page_head', [
+    'title' => 'Roll ' . ($rollNo ?: '-'),
+    'sub' => ($fabric->name ?? 'Unknown fabric') . ' | now at ' . ($first->master_fabric_warehouse?->cutting_master_name ?? '-'),
+    'back' => route('owner.report.stock.rolls', array_filter(['fabric_id' => $first->fabric_id])),
+    'actions' => null,
+])
+@include('owner.common.totals', ['totals' => $tiles])
 
-    <div class="ledger-container">
-        <div class="timeline">
-            @foreach($data as $item)
-            <div class="timeline-item {{ $item->qty < 0 ? 'negative' : 'positive' }}">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <span class="item-date">{{ \Carbon\Carbon::parse($item->date)->format('d M Y, h:i A') }}</span>
-                    <div class="item-title">
-                        {{ $item->type }}
-                        <span class="item-qty {{ $item->qty < 0 ? 'qty-out' : 'qty-in' }}">
-                            {{ $item->qty > 0 ? '+' : '' }}{{ number_format($item->qty, 1) }}m
-                        </span>
-                    </div>
-                    
-                    <div class="item-details">
-                        {{ $item->details }}
-                    </div>
-
-                    <div class="item-meta">
-                        @if($item->order_no && $item->order_no != '-')
-                            <span class="meta-tag"><i class="fas fa-file-invoice mr-1"></i> {{ $item->order_no }}</span>
-                        @endif
-                        @if($item->lot_no && $item->lot_no != '-')
-                            <span class="meta-tag"><i class="fas fa-layer-group mr-1"></i> Lot: {{ $item->lot_no }}</span>
-                        @endif
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        </div>
+@if($rolls->count() > 1)
+    <div class="ow-section">
+        This roll number came in {{ $rolls->count() }} times for this fabric. The history below joins them; open one roll:
+        @foreach($rolls as $r)
+            <a href="{{ route('owner.report.stock.rolls.tracking', ['frd_id' => $r->id]) }}">row {{ $r->id }} ({{ $r->shipment_number ?: 'no shipment no' }}, {{ $m($r->meter) }} m)</a>@if(!$loop->last), @endif
+        @endforeach
     </div>
+@endif
+
+@if(abs($totals->gap) >= 0.01)
+    <div class="ow-alert err">
+        In minus out is {{ $m($totals->balance) }} m but the roll shows {{ $m($totals->remaining) }} m left: {{ $m(abs($totals->gap)) }} m moved without a record shown here.
+    </div>
+@endif
+
+<div class="ow-table-wrap">
+    <table class="erp-table sticky-first">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th class="num">In (m)</th>
+                <th class="num">Out (m)</th>
+                <th class="num">Balance (m)</th>
+                <th>Ref / order no</th>
+                <th>Lot / shipment</th>
+                <th>Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($rows as $row)
+                <tr>
+                    <td>{{ \Carbon\Carbon::parse($row->date)->format('d M Y, h:i A') }}</td>
+                    <td><span class="ow-badge {{ $row->tone }}">{{ $row->type }}</span></td>
+                    <td class="num">{{ $row->in > 0 ? $m($row->in) : '-' }}</td>
+                    <td class="num {{ $row->out > 0 ? 'ow-dr' : '' }}">{{ $row->out > 0 ? $m($row->out) : '-' }}</td>
+                    <td class="num"><strong>{{ $m($row->balance) }}</strong></td>
+                    <td>{{ $row->ref }}</td>
+                    <td>{{ $row->lot }}</td>
+                    <td class="wrap">{{ $row->details }}</td>
+                </tr>
+            @empty
+                <tr><td colspan="8" class="ow-empty">No movements found for this roll</td></tr>
+            @endforelse
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>Total</td>
+                <td></td>
+                <td class="num">{{ $m($totals->in) }}</td>
+                <td class="num">{{ $m($totals->out) }}</td>
+                <td class="num">{{ $m($totals->balance) }}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
 </div>
 @endsection

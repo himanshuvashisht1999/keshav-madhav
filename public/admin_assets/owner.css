@@ -1,0 +1,170 @@
+/*
+ * Owner panel: phone-first layer on top of admin_assets/style.css.
+ * Same brand colours as the admin (dark green #05421c, sun yellow #fcee21, light green #8bc63e, wordmark green #36b54a).
+ * Lists are tables inside .ow-table-wrap (scroll sideways on a phone); every list page shows its totals in .ow-totals.
+ */
+:root {
+    --ow-green: var(--brand-dark-green, #05421c);
+    --ow-green-dark: #032b12;
+    --ow-yellow: var(--brand-yellow, #fcee21);
+    --ow-light: var(--brand-light-green, #8bc63e);
+    --ow-word: var(--brand-wordmark-green, #36b54a);
+    --ow-soft: #f1f8f3;
+    --ow-border: #dbe5de;
+    --ow-red: #b91c1c;
+    --ow-top: 54px;
+    --ow-bottom: 62px;
+}
+
+body.owner-app {
+    background: #f4f6f9 !important;
+    color: #1e293b;
+    margin: 0;
+}
+
+/* ---------- top bar ---------- */
+.ow-topbar {
+    position: fixed; top: 0; left: 0; right: 0; height: calc(var(--ow-top) + env(safe-area-inset-top, 0px)); z-index: 1030;
+    padding-top: env(safe-area-inset-top, 0px) !important; padding-left: calc(12px + env(safe-area-inset-left, 0px)) !important; padding-right: calc(12px + env(safe-area-inset-right, 0px)) !important;
+    background: var(--ow-green); color: #fff;
+    display: flex; align-items: center; gap: 10px; padding: 0 12px;
+    border-bottom: 3px solid var(--ow-yellow);
+}
+.ow-topbar .ow-brand { display: flex; align-items: center; gap: 8px; color: var(--ow-yellow); font-weight: 700; font-size: 16px; text-decoration: none; white-space: nowrap; }
+.ow-topbar .ow-brand img { height: 30px; width: auto; background: #fff; border-radius: 50%; padding: 2px; }
+.ow-topbar .ow-title { flex: 1; min-width: 0; color: #fff; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-left: 1px solid rgba(255,255,255,.25); padding-left: 10px; }
+.ow-topbar .ow-icon-btn { color: var(--ow-yellow); font-size: 18px; padding: 6px 8px; text-decoration: none; }
+.ow-topbar .ow-icon-btn:hover { color: #fff; }
+
+/* ---------- content ---------- */
+.ow-content { max-width: 1200px; margin: 0 auto; padding: calc(var(--ow-top) + env(safe-area-inset-top, 0px) + 10px) calc(10px + env(safe-area-inset-right, 0px)) calc(var(--ow-bottom) + env(safe-area-inset-bottom, 0px) + 16px) calc(10px + env(safe-area-inset-left, 0px)); }
+
+/* ---------- bottom nav ---------- */
+.ow-bottomnav {
+    position: fixed; left: 0; right: 0; bottom: 0; height: calc(var(--ow-bottom) + env(safe-area-inset-bottom, 0px)); z-index: 1030;
+    background: #fff; border-top: 1px solid var(--ow-border); box-shadow: 0 -2px 8px rgba(0,0,0,.05);
+    display: flex; justify-content: space-around; align-items: stretch;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.ow-bottomnav a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--ow-green); text-decoration: none; font-size: 10.5px; font-weight: 700; }
+.ow-bottomnav a i { font-size: 18px; }
+.ow-bottomnav a.active { background: var(--ow-yellow); color: var(--ow-green); border-top: 3px solid var(--ow-green); }
+
+/* ---------- page head ---------- */
+.ow-head { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid var(--ow-yellow); border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; }
+.ow-head .ow-back { color: var(--ow-green); font-size: 16px; text-decoration: none; padding-right: 2px; }
+.ow-head h1 { font-size: 16px; font-weight: 700; color: var(--ow-green); margin: 0; line-height: 1.25; }
+.ow-head .ow-sub { font-size: 11.5px; color: #64748b; margin-top: 1px; }
+.ow-head .ow-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.ow-head .ow-head-text { min-width: 0; }
+@media (max-width: 600px) {
+    .ow-head { flex-wrap: wrap; }
+    .ow-head .ow-head-text { flex: 1 1 0; }
+    .ow-head .ow-actions { flex: 1 1 100%; justify-content: flex-start; }
+}
+
+/* ---------- tab bar (under the totals) ---------- */
+.ow-tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 8px; padding-bottom: 2px; }
+.ow-tabs a, .ow-tabs button { flex: 0 0 auto; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 4px; border: 1px solid var(--ow-green); background: #fff; color: var(--ow-green); font-size: 12.5px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.ow-tabs a.active, .ow-tabs button.active { background: var(--ow-green); color: #fff; border-bottom: 3px solid var(--ow-yellow); }
+.ow-tabs a:hover { text-decoration: none; }
+.ow-muted-cell { font-weight: 400; color: #64748b; }
+.ow-arrow { font-size: 9px; color: #64748b; }
+.ow-small { font-size: 11px; font-weight: 400; color: #64748b; }
+.ow-row-sub td { border-top: 2px solid #94a3b8 !important; }
+
+/* ---------- totals strip (header totals of the filtered list) ---------- */
+.ow-totals { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; margin-bottom: 8px; scrollbar-width: thin; }
+.ow-total { flex: 0 0 auto; min-width: 112px; background: #fff; border: 1px solid var(--ow-border); border-top: 3px solid var(--ow-green); border-radius: 6px; padding: 6px 10px; }
+.ow-total .lbl { display: block; font-size: 10px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #64748b; white-space: nowrap; }
+.ow-total .val { display: block; font-size: 16px; font-weight: 700; color: var(--ow-green); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ow-total.is-yellow { border-top-color: var(--ow-yellow); }
+.ow-total.is-light { border-top-color: var(--ow-light); }
+.ow-total.is-red .val { color: var(--ow-red); }
+.ow-total.is-word .val { color: var(--ow-word); }
+
+/* ---------- filters ---------- */
+.ow-filters { background: #fff; border: 1px solid var(--ow-border); border-radius: 6px; margin-bottom: 8px; }
+.ow-filters > summary { list-style: none; cursor: pointer; padding: 8px 12px; font-weight: 700; font-size: 13px; color: var(--ow-green); display: flex; align-items: center; gap: 8px; }
+.ow-filters > summary::-webkit-details-marker { display: none; }
+.ow-filters > summary .ow-filter-count { background: var(--ow-yellow); color: var(--ow-green); border-radius: 10px; padding: 0 7px; font-size: 11px; }
+.ow-filters > summary::after { content: '\f078'; font-family: 'Font Awesome 5 Free'; font-weight: 900; margin-left: auto; font-size: 11px; transition: transform .15s; }
+.ow-filters[open] > summary::after { transform: rotate(180deg); }
+.ow-filters .ow-filter-body { border-top: 1px solid var(--ow-border); padding: 10px 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 10px; align-items: end; }
+.ow-filters label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--ow-green); margin-bottom: 2px; display: block; }
+.ow-filters .form-control, .ow-filters select { height: 34px; font-size: 13px; border-radius: 4px; border: 1px solid #cbd5e1; }
+.ow-filters .ow-filter-actions { display: flex; gap: 6px; }
+
+/* ---------- buttons ---------- */
+.ow-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 4px; font-size: 13px; font-weight: 700; border: 1px solid var(--ow-green); background: var(--ow-green); color: #fff !important; text-decoration: none !important; white-space: nowrap; cursor: pointer; }
+.ow-btn:hover { background: var(--ow-green-dark); }
+.ow-btn.is-outline { background: #fff; color: var(--ow-green) !important; }
+.ow-btn.is-outline:hover { background: var(--ow-soft); }
+.ow-btn.is-yellow { background: var(--ow-yellow); border-color: var(--ow-yellow); color: var(--ow-green) !important; }
+.ow-btn.is-sm { height: 28px; padding: 0 9px; font-size: 12px; }
+
+/* ---------- tables (scroll sideways on a phone) ---------- */
+.ow-table-wrap { background: #fff; border: 1px solid var(--ow-border); border-radius: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 10px; }
+.ow-table-wrap .erp-table { border: none !important; min-width: 100%; }
+.ow-table-wrap .erp-table th, .ow-table-wrap .erp-table td { white-space: nowrap; }
+.ow-table-wrap .erp-table td.wrap { white-space: normal; min-width: 160px; }
+.ow-table-wrap .erp-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.ow-table-wrap .erp-table tbody td { font-size: 13px !important; }
+.ow-table-wrap .erp-table a { color: var(--ow-green); font-weight: 700; }
+/* first column stays visible while the rest scrolls */
+.ow-table-wrap .erp-table.sticky-first thead th:first-child { position: sticky; left: 0; z-index: 2; background: var(--ow-green) !important; }
+.ow-table-wrap .erp-table.sticky-first tbody td:first-child,
+.ow-table-wrap .erp-table.sticky-first tfoot td:first-child { position: sticky; left: 0; z-index: 1; background: #fff; box-shadow: inset 0 1px 0 #cbd5e1, 1px 0 0 #cbd5e1; } /* inset line: Chromium drops the row border on sticky cells */
+.ow-table-wrap .erp-table.sticky-first tfoot td:first-child { background: var(--ow-soft); }
+/* on a phone the frozen column may take at most ~half the table, long names wrap */
+@media (max-width: 600px) {
+    .ow-table-wrap .erp-table.sticky-first thead th:first-child,
+    .ow-table-wrap .erp-table.sticky-first tbody td:first-child,
+    .ow-table-wrap .erp-table.sticky-first tfoot td:first-child { min-width: 110px; max-width: 45vw; white-space: normal; overflow-wrap: break-word; }
+}
+.ow-table-title { font-size: 13px; font-weight: 700; color: var(--ow-green); margin: 10px 2px 6px; display: flex; align-items: center; gap: 6px; }
+.ow-scroll-hint { font-size: 11px; color: #64748b; margin: -4px 2px 6px; }
+@media (min-width: 992px) { .ow-scroll-hint { display: none; } }
+
+/* ---------- badges, amounts ---------- */
+.ow-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; border: 1px solid transparent; }
+.ow-badge.green { background: var(--ow-soft); color: var(--ow-green); border-color: #c3e6cb; }
+.ow-badge.yellow { background: #fffde0; color: var(--ow-green); border-color: var(--ow-yellow); }
+.ow-badge.red { background: #fef2f2; color: var(--ow-red); border-color: #fecaca; }
+.ow-badge.grey { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+/* party type (Customer / Vendor ...): one plain style on every page; grey and red stay for status (Inactive / Deleted) */
+.ow-badge.type { background: #fff; color: var(--ow-green); border-color: var(--ow-border); }
+.ow-dr { color: var(--ow-red) !important; }
+.ow-cr { color: var(--ow-green) !important; }
+/* in tables the admin style.css forces the cell colour, so repeat with higher specificity */
+.ow-table-wrap .erp-table td.ow-dr, .ow-table-wrap .erp-table td .ow-dr { color: var(--ow-red) !important; }
+.ow-table-wrap .erp-table td.ow-cr, .ow-table-wrap .erp-table td .ow-cr { color: var(--ow-word) !important; }
+/* bank & cash balances: money held (Dr) is good, money used from the bank (Cr) is not; same colours as the Bank & Cash totals */
+.ow-table-wrap .erp-table td.ow-good { color: var(--ow-word) !important; }
+.ow-table-wrap .erp-table td.ow-bad { color: var(--ow-red) !important; }
+
+/* ---------- menu list (home page; a list, not cards) ---------- */
+.ow-menu { background: #fff; border: 1px solid var(--ow-border); border-radius: 6px; margin-bottom: 10px; }
+.ow-menu .ow-menu-title { font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #64748b; padding: 8px 12px; border-bottom: 1px solid var(--ow-border); background: var(--ow-soft); }
+.ow-menu a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid #eef2f0; color: #1e293b; text-decoration: none; }
+.ow-menu a:last-child { border-bottom: none; }
+.ow-menu a:hover { background: #fffde0; }
+.ow-menu a .ow-ico { width: 34px; height: 34px; border-radius: 6px; background: var(--ow-green); color: var(--ow-yellow); display: flex; align-items: center; justify-content: center; font-size: 15px; flex: 0 0 34px; }
+.ow-menu a .ow-txt { flex: 1; min-width: 0; }
+.ow-menu a .ow-txt b { display: block; font-size: 14px; color: var(--ow-green); }
+.ow-menu a .ow-txt small { display: block; font-size: 11.5px; color: #64748b; }
+.ow-menu a .fa-chevron-right { color: var(--ow-light); font-size: 12px; }
+
+/* ---------- misc ---------- */
+.ow-empty { text-align: center; color: #64748b; padding: 18px 8px !important; white-space: normal !important; }
+.ow-alert { border-radius: 6px; padding: 8px 12px; font-size: 13px; margin-bottom: 8px; }
+.ow-alert.ok { background: var(--ow-soft); border: 1px solid #c3e6cb; color: var(--ow-green); }
+.ow-alert.err { background: #fef2f2; border: 1px solid #fecaca; color: var(--ow-red); }
+.ow-section { background: #fff; border: 1px solid var(--ow-border); border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; }
+.ow-kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; font-size: 13px; }
+.ow-kv dt { color: #64748b; font-weight: 600; }
+.ow-kv dd { margin: 0; font-weight: 700; color: #1e293b; }
+.ow-content .pagination { flex-wrap: wrap; margin: 6px 0 12px; }
+.ow-content .page-item.active .page-link { background: var(--ow-green); border-color: var(--ow-green); color: #fff; }
+.ow-content .page-link { color: var(--ow-green); }
+.ow-loading { text-align: center; padding: 14px; color: #64748b; }

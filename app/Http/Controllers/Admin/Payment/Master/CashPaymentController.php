@@ -42,6 +42,9 @@ class CashPaymentController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.master.cash_payment.index')->with('error', 'Cash account not found.');
+        }
         return view('admin.payment.master.cash_payment.edit', $response);
     }
 

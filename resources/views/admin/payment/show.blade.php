@@ -19,14 +19,53 @@
                                     <i class="fas fa-receipt text-primary mr-2"></i> Payment Info
                                 </h3>
                                 <div class="card-tools">
-                                    <a href="{{ route('admin.payment.history.edit', $payment->id) }}" class="btn btn-sm btn-outline-primary border-pill px-3">
-                                        <i class="fas fa-edit mr-1"></i> Edit
-                                    </a>
+                                    @if($isJournalRow)
+                                        {{-- journal voucher lines are changed on their voucher: the ledgers read the voucher, not this row --}}
+                                        @if($journalVoucher)
+                                            <a href="{{ route('admin.payment.journal-voucher.show', $journalVoucher->id) }}" class="btn btn-sm btn-outline-primary border-pill px-3">
+                                                <i class="fas fa-external-link-alt mr-1"></i> Open Journal Voucher
+                                            </a>
+                                        @endif
+                                    @elseif($isBatchRow)
+                                        {{-- Payment Adjust rows are changed on their batch, so the bank and balances stay correct --}}
+                                        @if($batchId)
+                                            <a href="{{ route('admin.payment.adjustment.show', $batchId) }}" class="btn btn-sm btn-outline-primary border-pill px-3">
+                                                <i class="fas fa-external-link-alt mr-1"></i> Open in Payment Adjust
+                                            </a>
+                                        @endif
+                                    @else
+                                        <a href="{{ route('admin.payment.history.edit', $payment->id) }}" class="btn btn-sm btn-outline-primary border-pill px-3">
+                                            <i class="fas fa-edit mr-1"></i> Edit
+                                        </a>
+                                    @endif
                                 </div>
                             </div>
                             <div class="card-body">
+                                @php
+                                    // credit / received = money received from the party, debit / paid = money paid to it
+                                    $flow = strtolower((string) $payment->payment_type);
+                                    $isReceived = in_array($flow, ['credit', 'received']);
+                                    $isPaid = in_array($flow, ['debit', 'paid']);
+                                @endphp
+                                @if($isJournalRow)
+                                    <p class="small text-muted mb-3">
+                                        @if($journalVoucher)
+                                            Line of Journal Voucher <strong>{{ $journalVoucher->voucher_no }}</strong>. Change it on the Journal Voucher page so the ledgers show the change.
+                                        @else
+                                            Made by a Journal Voucher that no longer exists, so it cannot be changed here.
+                                        @endif
+                                    </p>
+                                @elseif($isBatchRow)
+                                    <p class="small text-muted mb-3">
+                                        @if($batchId)
+                                            Part of Payment Adjust batch <strong>{{ $batchId }}</strong>. Change it on the Payment Adjust page so the bank and balances stay correct.
+                                        @else
+                                            Made by Payment Adjust, but its batch no longer exists, so it cannot be changed here.
+                                        @endif
+                                    </p>
+                                @endif
                                 <div class="text-center mb-4">
-                                    <h5 class="text-muted small uppercase mb-1">Amount Paid</h5>
+                                    <h5 class="text-muted small uppercase mb-1">{{ $isReceived ? 'Amount Received' : ($isPaid ? 'Amount Paid' : 'Amount') }}</h5>
                                     <h2 class="text-primary font-weight-bold mb-0">₹{{ number_format($payment->amount, 2) }}</h2>
                                     <div class="mt-2">
                                         <span class="badge badge-soft-info p-2 px-3" style="background: #e1f5fe; color: #01579b; border-radius: 20px;">
@@ -37,13 +76,18 @@
                                                 <i class="fas fa-tag mr-1"></i> {{ $payment->paymentType->name }}
                                             </span>
                                         @endif
-                                        @if($payment->payment_type == 'received')
+                                        @if($isReceived)
                                             <span class="badge badge-success p-2 px-3 ml-1" style="border-radius: 20px;">
                                                 <i class="fas fa-arrow-down mr-1"></i> Received
                                             </span>
-                                        @else
+                                        @elseif($isPaid)
                                             <span class="badge badge-danger p-2 px-3 ml-1" style="border-radius: 20px;">
                                                 <i class="fas fa-arrow-up mr-1"></i> Paid
+                                            </span>
+                                        @else
+                                            {{-- e.g. a journal 'adjustment' line: neither paid nor received --}}
+                                            <span class="badge badge-secondary p-2 px-3 ml-1" style="border-radius: 20px;">
+                                                {{ ucwords(str_replace('_', ' ', $payment->payment_type)) }}
                                             </span>
                                         @endif
                                     </div>
@@ -236,8 +280,8 @@
                         @endif
 
                         <div class="mt-4">
-                            <a href="{{ route('admin.payment.history.index') }}" class="btn btn-outline-secondary px-4">
-                                <i class="fas fa-arrow-left mr-2"></i> Back to Payment History
+                            <a href="{{ $backUrl }}" class="btn btn-outline-secondary px-4">
+                                <i class="fas fa-arrow-left mr-2"></i> Back
                             </a>
                         </div>
                     </div>

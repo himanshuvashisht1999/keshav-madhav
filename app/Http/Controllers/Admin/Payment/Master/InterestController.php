@@ -42,6 +42,9 @@ class InterestController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.master.interest.index')->with('error', 'Interest not found.');
+        }
         return view('admin.payment.master.interest.edit', $response);
     }
 

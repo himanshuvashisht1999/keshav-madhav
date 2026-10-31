@@ -3,6 +3,7 @@
 namespace App\Services\Ledger;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use App\Models\Vendor;
 use App\Models\MasterCustomer;
 use App\Models\AgentOrderDispatch;
@@ -23,8 +24,17 @@ use DB;
  */
 class PartyLedgerService
 {
+    /** Note under the totals of a party list with "All types" when a sales agent is listed (admin and owner lists, PDF, Excel). */
+    public const AGENT_NOTE = 'A sales agent row is the total of its shops. The totals count each shop once: in its own row when the shop is listed, otherwise as part of its agent. With a Balance or Closing amount filter, only shops that pass it are counted, so the totals can differ from the agent rows.';
+
+    /** The same note for the detailed report (web, PDF, Excel). */
+    public const AGENT_NOTE_DETAILED = self::AGENT_NOTE . ' The mixed list counts the same way. In the party-wise view an agent\'s section shows its full statement (all its shops), while the totals still count each shop once.';
+
     public function build(Request $request, $type, $id)
     {
+        // The type comes from the URL: 'Customer' must give the same ledger as 'customer'
+        // (the checks below compare it exactly, while the master lookup ignores case).
+        $type = strtolower(trim((string) $type));
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
         $viewMode = $request->query('view_mode', 'mix');
@@ -41,8 +51,13 @@ class PartyLedgerService
 
         if ($type === 'sales_agent') {
             $party = \App\Models\SalesAgent::findOrFail($id);
-            $shops = \App\Models\MasterCustomer::where('sales_agent_id', $id)->get();
+            $shops = \App\Models\MasterCustomer::where('sales_agent_id', $id)->orderBy('id')->get();
             $customerIds = $shops->pluck('id')->toArray();
+            // Shop names come from this list (every record below belongs to one of these shops), not one query per row
+            $shopsById = $shops->keyBy('id');
+            $shopName = function ($shopId, $default) use ($shopsById) {
+                return ($shopId !== null && $shopsById->has($shopId)) ? ($shopsById[$shopId]->name ?? $default) : $default;
+            };
 
             $selectedCustomerId = $request->query('customer_id');
             if ($selectedCustomerId && in_array($selectedCustomerId, $customerIds)) {
@@ -60,6 +75,7 @@ class PartyLedgerService
             $dispatches = AgentOrderDispatch::whereIn('master_customer_id', $customerIds)
                 ->where('party_type', 'customer')
                 ->where('status', 'dispatched')
+                ->orderBy('id') // same row order with or without the ledger indexes
                 ->get();
 
             foreach ($dispatches as $d) {
@@ -71,13 +87,14 @@ class PartyLedgerService
                     'ref' => 'Dispatch #' . $d->id,
                     'debit' => (float) $d->grand_total,
                     'credit' => 0,
-                    'description' => ($d->shop->name ?? 'Shop') . ' - Sales Dispatch: ' . ($d->remark ?? '-'),
+                    'description' => $shopName($d->master_customer_id, 'Shop') . ' - Sales Dispatch: ' . ($d->remark ?? '-'),
                     'view_url' => route('admin.agent-orders.dispatches.show', $d->id)
                 ]);
             }
 
             // 2. Standard Order Dispatches - DEBIT
             $orderDispatches = \App\Models\OrderDispatch::whereIn('customer_id', $customerIds)
+                ->orderBy('id')
                 ->get();
 
             foreach ($orderDispatches as $od) {
@@ -89,15 +106,16 @@ class PartyLedgerService
                     'ref' => 'OD #' . ($od->sku ?? $od->id),
                     'debit' => (float) $od->total_amount,
                     'credit' => 0,
-                    'description' => ($od->customer->name ?? 'Customer') . ' - Regular Order Dispatch',
+                    'description' => $shopName($od->customer_id, 'Customer') . ' - Regular Order Dispatch',
                     'view_url' => route('admin.order-dispatch.view', ['id' => $od->id])
                 ]);
             }
 
             // 3. Sales Returns - CREDIT
-            $salesReturns = AgentOrderReturn::whereHas('dispatch', function ($q) use ($customerIds) {
+            $salesReturns = AgentOrderReturn::with('dispatch')->whereHas('dispatch', function ($q) use ($customerIds) {
                 $q->whereIn('master_customer_id', $customerIds)->where('party_type', 'customer');
             })
+                ->orderBy('id')
                 ->get();
 
             foreach ($salesReturns as $r) {
@@ -109,7 +127,7 @@ class PartyLedgerService
                     'ref' => 'Return #' . $r->id,
                     'debit' => 0,
                     'credit' => (float) $r->grand_total,
-                    'description' => ($r->dispatch->shop->name ?? 'Shop') . ' - Sales Return',
+                    'description' => $shopName($r->dispatch->master_customer_id ?? null, 'Shop') . ' - Sales Return',
                     'view_url' => route('admin.agent-orders.returns.show', $r->id)
                 ]);
             }
@@ -123,6 +141,7 @@ class PartyLedgerService
                 })
                 
                 
+                ->orderBy('id')
                 ->get();
 
             foreach ($payments as $p) {
@@ -132,15 +151,15 @@ class PartyLedgerService
                 if ($isCredit) {
                     $debit = 0;
                     $credit = (float) $p->amount;
-                    $desc = ($p->party->name ?? 'Customer') . ' - Payment Received (' . $p->payment_mode . ')';
+                    $desc = $shopName($p->party_id, 'Customer') . ' - Payment Received (' . $p->payment_mode . ')';
                 } elseif ($isDebit) {
                     $debit = (float) $p->amount;
                     $credit = 0;
-                    $desc = ($p->party->name ?? 'Customer') . ' - Payment Paid (' . $p->payment_mode . ')';
+                    $desc = $shopName($p->party_id, 'Customer') . ' - Payment Paid (' . $p->payment_mode . ')';
                 } else {
                     $debit = (float) $p->amount;
                     $credit = 0;
-                    $desc = ($p->party->name ?? 'Customer') . ' - Adjustment (' . $p->payment_mode . ')';
+                    $desc = $shopName($p->party_id, 'Customer') . ' - Adjustment (' . $p->payment_mode . ')';
                 }
 
                 $txType = $isCredit ? 'Receipt' : ($isDebit ? 'Payment' : 'Adjustment');
@@ -161,6 +180,7 @@ class PartyLedgerService
 
             // 5. Finished Goods Purchases (Inventory Purchase) - CREDIT
             $inventoryPurchases = \App\Models\DomesticInventoryPurchase::whereIn('customer_id', $customerIds)
+                ->orderBy('id')
                 ->get();
 
             foreach ($inventoryPurchases as $ip) {
@@ -173,7 +193,7 @@ class PartyLedgerService
                     'ref' => 'InvPur #' . $ip->id,
                     'debit' => 0,
                     'credit' => (float) $ip->total_amount,
-                    'description' => ($ip->customer->name ?? 'Customer') . ' - Inventory Purchase: ' . ($ip->remarks ?? '-'),
+                    'description' => $shopName($ip->customer_id, 'Customer') . ' - Inventory Purchase: ' . ($ip->remarks ?? '-'),
                     'view_url' => route('admin.inventory.purchase_history.show', ['id' => $ip->id])
                 ]);
             }
@@ -189,13 +209,14 @@ class PartyLedgerService
                     $q
                       ;
                 })
+                ->orderBy('id')
                 ->get();
 
             foreach ($vouchers as $v) {
                 $isCredit = strtolower($v->type) === 'credit';
                 
                 // Fetch the master customer name
-                $cName = \App\Models\MasterCustomer::find($v->master_id)->name ?? 'Customer';
+                $cName = $shopName($v->master_id, 'Customer');
 
                 $transactions->push((object) [
                     'customer_id' => $v->master_id,
@@ -215,6 +236,7 @@ class PartyLedgerService
             $openingBalances = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
                 ->whereIn('master_id', $customerIds)
                 ->where('financial_year', \App\Models\MasterOpeningBalance::openingKey())
+                ->orderBy('id')
                 ->get();
 
             foreach ($openingBalances as $ob) {
@@ -246,10 +268,8 @@ class PartyLedgerService
             if ($viewMode === 'party_wise') {
                 foreach ($shops as $shop) {
                     $shopOpeningAmt = 0;
-                    $shopOpening = \App\Models\MasterOpeningBalance::where('master_type', 'customer')
-                        ->where('master_id', $shop->id)
-                        ->where('financial_year', \App\Models\MasterOpeningBalance::openingKey())
-                        ->first();
+                    // same rows as loaded above for all shops (one opening row per party)
+                    $shopOpening = $openingBalances->firstWhere('master_id', $shop->id);
                     if ($shopOpening) {
                         $balanceType = strtolower(trim($shopOpening->balance_type));
                         if ($balanceType === 'debit') {
@@ -315,12 +335,7 @@ class PartyLedgerService
         }
 
         // Resolve Master
-        $master = \App\Models\AdjustmentMaster::where('name', 'LIKE', $type)->first();
-        if (!$master) {
-            // Fallback for direct names
-            if ($type === 'vendor') $master = \App\Models\AdjustmentMaster::where('name', 'Vendor')->first();
-            elseif ($type === 'customer') $master = \App\Models\AdjustmentMaster::where('name', 'Customer')->first();
-        }
+        $master = $this->ledgerMaster($type);
 
         if (!$master) abort(404, "Invalid Ledger Type");
 
@@ -341,6 +356,7 @@ class PartyLedgerService
             $dispatches = AgentOrderDispatch::where($partyIdField, $id)
                 ->where('party_type', $type)
                 ->where('status', 'dispatched')
+                ->orderBy('id') // same row order with or without the ledger indexes (as for sales agents)
                 ->get();
 
             foreach ($dispatches as $d) {
@@ -359,6 +375,7 @@ class PartyLedgerService
             // 2. Standard Order Dispatches - DEBIT
             if ($type === 'customer') {
                 $orderDispatches = \App\Models\OrderDispatch::where($directIdField, $id)
+                    ->orderBy('id')
                     ->get();
 
                 foreach ($orderDispatches as $od) {
@@ -379,6 +396,7 @@ class PartyLedgerService
             $salesReturns = AgentOrderReturn::whereHas('dispatch', function ($q) use ($id, $partyIdField, $type) {
                 $q->where($partyIdField, $id)->where('party_type', $type);
             })
+                ->orderBy('id')
                 ->get();
 
             foreach ($salesReturns as $r) {
@@ -407,6 +425,7 @@ class PartyLedgerService
         $payments = $paymentsQuery
             
             
+            ->orderBy('id')
             ->get();
 
         foreach ($payments as $p) {
@@ -446,6 +465,7 @@ class PartyLedgerService
 
         // 5. Finished Goods Purchases (Inventory Purchase) - CREDIT
             $inventoryPurchases = \App\Models\DomesticInventoryPurchase::where($directIdField, $id)
+                ->orderBy('id')
                 ->get();
 
             foreach ($inventoryPurchases as $ip) {
@@ -465,6 +485,7 @@ class PartyLedgerService
             // 6. Vendor Specific: Fabric Purchases (Inwards) - CREDIT
             if ($type === 'vendor') {
                 $receipts = FabricReceipt::where('vendor_id', $id)
+                    ->orderBy('id')
                     ->get();
 
                 foreach ($receipts as $r) {
@@ -489,6 +510,7 @@ class PartyLedgerService
                     ->orWhereHas('receipt', function ($q) use ($id) {
                         $q->where('vendor_id', $id);
                     })
+                    ->orderBy('id')
                     ->get();
 
                 foreach ($pReturns as $pr) {
@@ -508,9 +530,10 @@ class PartyLedgerService
     } else {
         // Generic Logic for other masters: Just fetch PaymentAdjustments
             $adjustments = \App\Models\PaymentAdjustment::where('adjustment_master_id', $master->id)
-                ->where('ref_id', $id)
+                ->where('ref_id', (string) $id) // ref_id is text: compare as text
                 
                 
+                ->orderBy('id')
                 ->get();
 
             foreach ($adjustments as $adj) {
@@ -539,6 +562,7 @@ class PartyLedgerService
             $payments = $paymentsQuery
                 
                 
+                ->orderBy('id')
                 ->get();
 
             foreach ($payments as $p) {
@@ -577,6 +601,7 @@ class PartyLedgerService
             // Voucher Specific Logic
             if (strtolower($master->name) === 'contractor') {
                 $contractorVouchers = \App\Models\ContractorVoucher::where('contractor_id', $id)
+                    ->orderBy('id')
                     ->get();
 
                 foreach ($contractorVouchers as $cv) {
@@ -594,6 +619,7 @@ class PartyLedgerService
                 }
             } elseif (strtolower($master->name) === 'washing master') {
                 $washingVouchers = \App\Models\WashingVoucher::where('washing_master_id', $id)
+                    ->orderBy('id')
                     ->get();
 
                 foreach ($washingVouchers as $wv) {
@@ -611,6 +637,7 @@ class PartyLedgerService
                 }
             } elseif (strtolower($master->name) === 'consumable good') {
                 $consumableVouchers = \App\Models\ConsumableVoucher::where('consumable_good_id', $id)
+                    ->orderBy('id')
                     ->get();
 
                 foreach ($consumableVouchers as $cv) {
@@ -638,6 +665,7 @@ class PartyLedgerService
                 $q
                   ;
             })
+            ->orderBy('id')
             ->get();
 
         foreach ($vouchers as $v) {
@@ -655,18 +683,10 @@ class PartyLedgerService
         }
 
         // 8. Opening Balance
-        $lookupType = str_replace(' ', '_', strtolower($type));
-        // Specific mapping overrides
-        if ($lookupType === 'machinery_account') $lookupType = 'machinery';
-        if ($lookupType === 'loan_account') $lookupType = 'loan';
-        if ($lookupType === 'hulayati_master') $lookupType = 'hulayati';
-        if ($lookupType === 'factory_head_master') $lookupType = 'factory_head';
-        if ($lookupType === 'salary_account') $lookupType = 'salary';     // SalaryService saves 'salary'
-        if ($lookupType === 'discount_account') $lookupType = 'discount'; // DiscountService saves 'discount'
-
-        $openingBalance = \App\Models\MasterOpeningBalance::whereIn('master_type', [$type, $lookupType, str_replace('_', ' ', $lookupType)])
+        $openingBalance = \App\Models\MasterOpeningBalance::whereIn('master_type', $this->openingTypes($type))
             ->where('master_id', $id)
             ->where('financial_year', \App\Models\MasterOpeningBalance::openingKey())
+            ->orderBy('id') // the same row as listFigures() if there were ever two
             ->first();
 
         $openingBalAmount = 0;
@@ -722,6 +742,262 @@ class PartyLedgerService
             'openingBalAmount', 'viewMode', 'groupedLedgers', 'availableTypes',
             'periodTotalDebit', 'periodTotalCredit', 'closingBalance'
         );
+    }
+
+    /**
+     * Opening, period debit, period credit and closing of many parties of one type at once, for the party
+     * lists, their totals and exports. The same records, signs and date rules as build(), but each kind of
+     * record is added up with one grouped query instead of one full ledger per party (a list of every
+     * party took 10-15 s that way). Dates are Y-m-d or null, as on the list.
+     * Returns [party id => ['opening' => , 'debit' => , 'credit' => , 'closing' => ]].
+     */
+    public function listFigures($type, array $ids, $startDate = null, $endDate = null): array
+    {
+        $type = strtolower(trim((string) $type));
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        if (!$ids) {
+            return [];
+        }
+        $figures = [];
+        foreach ($ids as $id) {
+            $figures[$id] = ['opening' => 0.0, 'debit' => 0.0, 'credit' => 0.0, 'closing' => 0.0];
+        }
+
+        // Bank / cash accounts: their own calculator, one account at a time (the party lists do not show them)
+        if (in_array($type, ['bank account', 'cash master'])) {
+            $request = new Request(array_filter(['start_date' => $startDate, 'end_date' => $endDate]));
+            foreach ($ids as $id) {
+                $data = $this->build($request, $type, $id);
+                $figures[$id] = [
+                    'opening' => (float) $data['openingBalAmount'],
+                    'debit' => (float) collect($data['transactions'])->sum('debit'),
+                    'credit' => (float) collect($data['transactions'])->sum('credit'),
+                    'closing' => (float) $data['party']->balance,
+                ];
+            }
+            return $figures;
+        }
+
+        // A sales agent's ledger is the ledger of all its shops together
+        if ($type === 'sales_agent') {
+            $agentOfShop = MasterCustomer::whereIn('sales_agent_id', $ids)->pluck('sales_agent_id', 'id');
+            foreach ($this->listFigures('customer', $agentOfShop->keys()->all(), $startDate, $endDate) as $shopId => $shop) {
+                foreach ($shop as $key => $value) {
+                    $figures[$agentOfShop[$shopId]][$key] = round($figures[$agentOfShop[$shopId]][$key] + $value, 2);
+                }
+            }
+            return $figures;
+        }
+
+        $master = $this->ledgerMaster($type);
+        if (!$master) abort(404, "Invalid Ledger Type");
+        $modelName = $master->model_name;
+        $masterName = strtolower($master->name);
+
+        // Adds one kind of record: before the From date it goes into the opening, inside the period into debit / credit.
+        // A record without a date counts on today's date, as Carbon::parse(null) does in build().
+        $add = function ($query, string $partyColumn, string $date, string $debit, string $credit) use (&$figures, $startDate, $endDate) {
+            $date = "COALESCE($date, CURDATE())";
+            $inPeriod = '(' . ($startDate ? "$date >= ?" : '1') . ' AND ' . ($endDate ? "$date <= ?" : '1') . ')';
+            $periodBindings = array_values(array_filter([$startDate, $endDate]));
+            $rows = ($query instanceof \Illuminate\Database\Eloquent\Builder ? $query->toBase() : $query)
+                ->selectRaw(
+                    "$partyColumn as party_id,
+                    SUM(CASE WHEN " . ($startDate ? "$date < ?" : '0') . " THEN ($credit) - ($debit) ELSE 0 END) as before_net,
+                    SUM(CASE WHEN $inPeriod THEN $debit ELSE 0 END) as debit,
+                    SUM(CASE WHEN $inPeriod THEN $credit ELSE 0 END) as credit",
+                    array_merge($startDate ? [$startDate] : [], $periodBindings, $periodBindings)
+                )
+                ->groupBy($partyColumn)
+                ->get();
+            foreach ($rows as $row) {
+                $id = (int) $row->party_id;
+                if (isset($figures[$id])) {
+                    $figures[$id]['opening'] += (float) $row->before_net;
+                    $figures[$id]['debit'] += (float) $row->debit;
+                    $figures[$id]['credit'] += (float) $row->credit;
+                }
+            }
+        };
+        // payment_type 'received' / 'credit' is a credit, anything else a debit (as in build())
+        $paymentCredit = "CASE WHEN BINARY payments.payment_type IN ('received', 'credit') THEN payments.amount ELSE 0 END";
+        $paymentDebit = "CASE WHEN BINARY payments.payment_type IN ('received', 'credit') THEN 0 ELSE payments.amount END";
+        $payments = Payment::where('party_type', $modelName)
+            ->whereIn('party_id', $ids)
+            ->where(function ($q) {
+                $q->where('paymentable_type', '!=', \App\Models\JournalVoucher::class)
+                  ->orWhereNull('paymentable_type');
+            });
+
+        if ($masterName === 'customer' || $masterName === 'vendor') {
+            $isCustomer = $masterName === 'customer';
+            $partyIdField = $isCustomer ? 'master_customer_id' : 'master_vendor_id';
+            $directIdField = $isCustomer ? 'customer_id' : 'vendor_id';
+
+            $add(AgentOrderDispatch::whereIn($partyIdField, $ids)->where('party_type', $type)->where('status', 'dispatched'),
+                $partyIdField, 'DATE(dispatch_date)', 'grand_total', '0');
+            if ($type === 'customer') {
+                $add(\App\Models\OrderDispatch::whereIn($directIdField, $ids), $directIdField, 'DATE(dispatch_date)', 'total_amount', '0');
+            }
+            $add(AgentOrderReturn::join('agent_order_dispatches as d', 'd.id', '=', 'agent_order_returns.agent_order_dispatch_id')
+                    ->whereIn("d.$partyIdField", $ids)->where('d.party_type', $type),
+                "d.$partyIdField", 'agent_order_returns.return_date', '0', 'agent_order_returns.grand_total');
+            $add($payments, 'payments.party_id', 'payments.payment_date', $paymentDebit, $paymentCredit);
+            $add(\App\Models\DomesticInventoryPurchase::whereIn($directIdField, $ids),
+                $directIdField, 'COALESCE(purchase_date, DATE(created_at))', '0', 'total_amount');
+
+            if ($type === 'vendor') {
+                $add(FabricReceipt::whereIn('vendor_id', $ids), 'vendor_id', 'COALESCE(time, DATE(created_at))', '0', 'total_amount');
+                // a return belongs to its own vendor and to the vendor of its receipt (counted once per vendor)
+                $returns = FabricReturn::whereIn('vendor_id', $ids)
+                    ->select('fabric_returns.id', 'fabric_returns.vendor_id as party_id', 'fabric_returns.date', 'fabric_returns.total_amount')
+                    ->union(FabricReturn::join('fabric_receipts as fr', 'fr.id', '=', 'fabric_returns.fabric_receipt_id')
+                        ->whereIn('fr.vendor_id', $ids)
+                        ->select('fabric_returns.id', 'fr.vendor_id as party_id', 'fabric_returns.date', 'fabric_returns.total_amount'));
+                $add(DB::query()->fromSub($returns, 'r'), 'r.party_id', 'r.date', 'r.total_amount', '0');
+            }
+        } else {
+            // ref_id is text: compare as text, as build() does
+            $add(\App\Models\PaymentAdjustment::where('adjustment_master_id', $master->id)->whereIn('ref_id', array_map('strval', $ids)),
+                'ref_id', 'date',
+                "CASE WHEN BINARY type = 'credit' THEN 0 ELSE amount END",
+                "CASE WHEN BINARY type = 'credit' THEN amount ELSE 0 END");
+            $add($payments, 'payments.party_id', 'payments.payment_date', $paymentDebit, $paymentCredit);
+
+            $vouchers = [
+                'contractor' => [\App\Models\ContractorVoucher::class, 'contractor_id'],
+                'washing master' => [\App\Models\WashingVoucher::class, 'washing_master_id'],
+                'consumable good' => [\App\Models\ConsumableVoucher::class, 'consumable_good_id'],
+            ];
+            if (isset($vouchers[$masterName])) {
+                [$voucherModel, $column] = $vouchers[$masterName];
+                $add($voucherModel::whereIn($column, $ids), $column, 'voucher_date', '0', 'total_amount');
+            }
+        }
+
+        // Journal vouchers - applicable to all masters
+        $add(\App\Models\JournalVoucherItem::join('journal_vouchers as v', 'v.id', '=', 'journal_voucher_items.journal_voucher_id')
+                ->whereIn('journal_voucher_items.master_type', \App\Models\AdjustmentMaster::where('model_name', $modelName)->pluck('id'))
+                ->whereIn('journal_voucher_items.master_id', $ids),
+            'journal_voucher_items.master_id', 'v.date',
+            "CASE WHEN BINARY LOWER(journal_voucher_items.type) = 'credit' THEN 0 ELSE journal_voucher_items.amount END",
+            "CASE WHEN BINARY LOWER(journal_voucher_items.type) = 'credit' THEN journal_voucher_items.amount ELSE 0 END");
+
+        // Opening balance: one row per party (Debit = negative, Credit = positive)
+        $openings = \App\Models\MasterOpeningBalance::whereIn('master_type', $this->openingTypes($type))
+            ->whereIn('master_id', $ids)
+            ->where('financial_year', \App\Models\MasterOpeningBalance::openingKey())
+            ->orderBy('id')
+            ->get()
+            ->unique('master_id');
+        foreach ($openings as $ob) {
+            $amount = (float) $ob->amount;
+            $figures[(int) $ob->master_id]['opening'] += strtolower(trim($ob->balance_type)) === 'debit' ? -$amount : $amount;
+        }
+
+        foreach ($figures as $id => $f) {
+            $figures[$id] = [
+                'opening' => round($f['opening'], 2),
+                'debit' => round($f['debit'], 2),
+                'credit' => round($f['credit'], 2),
+                'closing' => round($f['opening'] + $f['credit'] - $f['debit'], 2),
+            ];
+        }
+        return $figures;
+    }
+
+    /**
+     * Sets opening_balance, period_debit, period_credit and balance (closing) on every party of a list,
+     * with listFigures() per party type (each party has ->party_type and ->id).
+     */
+    public function fillListFigures($parties, $startDate = null, $endDate = null)
+    {
+        foreach (collect($parties)->groupBy('party_type') as $type => $group) {
+            $figures = $this->listFigures($type, $group->pluck('id')->all(), $startDate, $endDate);
+            foreach ($group as $party) {
+                $f = $figures[(int) $party->id];
+                $party->opening_balance = $f['opening'];
+                $party->period_debit = $f['debit'];
+                $party->period_credit = $f['credit'];
+                $party->balance = $f['closing'];
+            }
+        }
+        return $parties;
+    }
+
+    /**
+     * Rows to add up for the totals of a party list (each with opening_balance, period_debit, period_credit
+     * and balance, as set by fillListFigures). One type: the rows as they are.
+     * "All types": a sales-agent row is the total of its shops. A shop listed on its own is counted in its own
+     * row; the agent stands for its other shops, added shop by shop and only when they pass the list's balance
+     * filters ($keep), so a "Dr only" list adds only shops in Dr.
+     */
+    public function totalsRows(Collection $parties, bool $allTypes, $startDate = null, $endDate = null, ?callable $keep = null): Collection
+    {
+        if (!$allTypes) {
+            return $parties->values();
+        }
+        $rows = $parties->where('party_type', '!=', 'sales_agent')->values();
+        foreach ($this->agentOtherShops($parties, $startDate, $endDate, $keep) as $shops) {
+            foreach ($shops as $shop) {
+                $rows->push($shop);
+            }
+        }
+        return $rows;
+    }
+
+    /**
+     * [sales agent id => shop rows] for the agent rows of a list: the agent's shops that are not rows of the
+     * list themselves, with their figures for the period, kept only when they pass $keep (the balance filters).
+     */
+    public function agentOtherShops(Collection $parties, $startDate = null, $endDate = null, ?callable $keep = null): array
+    {
+        $agentIds = $parties->where('party_type', 'sales_agent')->pluck('id')->all();
+        if (!$agentIds) {
+            return [];
+        }
+        $listed = $parties->where('party_type', 'customer')->pluck('id')->all();
+        $shops = MasterCustomer::whereIn('sales_agent_id', $agentIds)->whereNotIn('id', $listed)->orderBy('id')
+            ->get(['id', 'name', 'sales_agent_id', 'status']);
+        $shops->each(function ($shop) {
+            $shop->party_type = 'customer';
+        });
+        $this->fillListFigures($shops, $startDate, $endDate);
+
+        $otherShops = [];
+        foreach ($shops as $shop) {
+            if (!$keep || $keep($shop)) {
+                $otherShops[$shop->sales_agent_id][] = $shop;
+            }
+        }
+        return $otherShops;
+    }
+
+    /** The master of a ledger type (the type in the URL is the master name), the same for a statement and a list. */
+    private function ledgerMaster(string $type)
+    {
+        $master = \App\Models\AdjustmentMaster::where('name', 'LIKE', $type)->first();
+        if (!$master) {
+            // Fallback for direct names
+            if ($type === 'vendor') $master = \App\Models\AdjustmentMaster::where('name', 'Vendor')->first();
+            elseif ($type === 'customer') $master = \App\Models\AdjustmentMaster::where('name', 'Customer')->first();
+        }
+        return $master;
+    }
+
+    /** master_type values a party's opening balance row can be saved under for a ledger type. */
+    private function openingTypes(string $type): array
+    {
+        $lookupType = str_replace(' ', '_', strtolower($type));
+        // Specific mapping overrides
+        if ($lookupType === 'machinery_account') $lookupType = 'machinery';
+        if ($lookupType === 'loan_account') $lookupType = 'loan';
+        if ($lookupType === 'hulayati_master') $lookupType = 'hulayati';
+        if ($lookupType === 'factory_head_master') $lookupType = 'factory_head';
+        if ($lookupType === 'salary_account') $lookupType = 'salary';     // SalaryService saves 'salary'
+        if ($lookupType === 'discount_account') $lookupType = 'discount'; // DiscountService saves 'discount'
+
+        return [$type, $lookupType, str_replace('_', ' ', $lookupType)];
     }
 
     private function applyLedgerFilters($transactions, Request $request)

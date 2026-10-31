@@ -112,7 +112,7 @@ class OrderSummaryReportService
             'orderProductSets.fabric.receiptDetails',
             'orderProductSets.master_design_pattern',
             'orderProductSets.master_product_fitting',
-            'orderProductSets.lots',
+            'orderProductSets.lots.stageMasterUnit',
             'orderProductSets.product_set_details',
             'orderProductSets.order_cutting_stage.vendor',
             'orderProductSets.order_cutting_stage.customer'
@@ -188,12 +188,27 @@ class OrderSummaryReportService
 
         $result = collect();
 
+        // Current stage of every lot in one batch from the lot records (ReportService::lotProgress = lotFacts,
+        // the same figures as the Sales Order report: "Dispatched" once all cut pieces have left packing).
+        $allLotNos = $lots->pluck('lot_no')->merge($orderLots->pluck('lot_no'))->filter()->unique()->values();
+        $facts = app(\App\Services\Admin\ReportService::class)->lotProgress($allLotNos);
+        $stageOf = function ($lotNo) use ($facts) {
+            $key = \App\Services\Admin\ReportService::lotKeyOf($lotNo);
+            return isset($facts[$key]) ? $facts[$key]['stage_name'] : 'N/A';
+        };
+        // Cutting plan (stage 3) of each lot: the first row per lot, read once for all lots
+        $cuttingTimings = \App\Models\OrderLotStageTiming::whereIn('lot_no', $allLotNos->all())
+            ->where('master_stage_id', 3)
+            ->orderBy('id')
+            ->get()
+            ->groupBy(fn($t) => \App\Services\Admin\ReportService::lotKeyOf($t->lot_no))
+            ->map->first();
+        $timingOf = fn($lotNo) => $cuttingTimings[\App\Services\Admin\ReportService::lotKeyOf($lotNo)] ?? null;
+
         foreach ($lots as $lot) {
             $om = $lot->orderProductSet?->orderMain ?? $orderMain;
             $cuttingMaster = $lot->stageMasterUnit->name ?? 'N/A';
-            $timing = \App\Models\OrderLotStageTiming::where('lot_no', $lot->lot_no)
-                ->where('master_stage_id', 3)
-                ->first();
+            $timing = $timingOf($lot->lot_no);
 
             $result->push([
                 'order_id' => $om->id ?? null,
@@ -206,7 +221,7 @@ class OrderSummaryReportService
                 'start_time' => $timing ? $timing->start_date : null,
                 'end_time' => $timing ? $timing->end_date : null,
                 'status' => $timing ? $timing->status : 0,
-                'last_current_stage' => function_exists('getLastCurrentStage') ? getLastCurrentStage($lot->lot_no) : 'N/A',
+                'last_current_stage' => $stageOf($lot->lot_no),
             ]);
         }
 
@@ -218,9 +233,7 @@ class OrderSummaryReportService
                 ->first();
             $qty = $roll ? $roll->roll_qty : ($ol->orderProductSet->total_quantity ?? 0);
             $cuttingMaster = $roll?->stageMasterUnit?->name ?? 'N/A';
-            $timing = \App\Models\OrderLotStageTiming::where('lot_no', $ol->lot_no)
-                ->where('master_stage_id', 3)
-                ->first();
+            $timing = $timingOf($ol->lot_no);
 
             $result->push([
                 'order_id' => $om->id ?? null,
@@ -233,7 +246,7 @@ class OrderSummaryReportService
                 'start_time' => $timing ? $timing->start_date : null,
                 'end_time' => $timing ? $timing->end_date : null,
                 'status' => $timing ? $timing->status : 0,
-                'last_current_stage' => function_exists('getLastCurrentStage') ? getLastCurrentStage($ol->lot_no) : 'N/A',
+                'last_current_stage' => $stageOf($ol->lot_no),
             ]);
         }
 

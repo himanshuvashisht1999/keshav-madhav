@@ -46,6 +46,9 @@ class BankAccountController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.master.bank_account.index')->with('error', 'Bank account not found.');
+        }
         return view('admin.payment.master.bank_account.edit', $response);
     }
 

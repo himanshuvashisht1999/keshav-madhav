@@ -27,21 +27,13 @@ class DashboardController extends Controller
                 ->groupBy('month')->pluck('count', 'month')->toArray(),
         ];
 
-        // Pending Payments Totals
-        $agentOrders = \App\Models\AgentOrder::get()->filter(function ($order) {
-            return $order->balance_amount > 0;
-        });
-        $corporateDispatches = \App\Models\OrderDispatch::whereHas('orderMain', function ($q) {
-            $q->where('order_type', 'corporate');
-        })->get()->filter(function ($dispatch) {
-            return $dispatch->balance_amount > 0;
-        });
-        $total_receivable = $agentOrders->sum('balance_amount') + $corporateDispatches->sum('balance_amount');
-
-        $fabricReceipts = \App\Models\FabricReceipt::get()->filter(function ($receipt) {
-            return $receipt->balance_amount > 0;
-        });
-        $total_payable = $fabricReceipts->sum('balance_amount');
+        // Receivable / payable from the party balances (= the party ledger, checked daily by balances:check).
+        // Payments are booked against the customer / vendor, never against an order, dispatch or fabric bill,
+        // so the old per-bill balance_amount ignored every payment.
+        // Sign rule: balance = credit - debit; a customer below 0 owes us, a vendor above 0 is owed by us.
+        // Every status counts: an inactive or deleted party that still has a balance is still owed (as the owner Home).
+        $total_receivable = -(float) \App\Models\MasterCustomer::where('balance', '<', 0)->sum('balance');
+        $total_payable = (float) \App\Models\Vendor::where('balance', '>', 0)->sum('balance');
 
         return view('admin.dashboard', compact(
             'total_users',

@@ -65,6 +65,9 @@ class ProductionGoodsController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.production-goods.index')->with('error', 'Product not found.');
+        }
         $existing_size_ids = $response['data'] ? $response['data']->variants->pluck('master_size_measurement_id')->filter()->unique()->toArray() : [];
         $response['sizes'] = $this->service->sizes($existing_size_ids);
         $response['fabrics'] = $this->service->fabrics();
@@ -81,6 +84,9 @@ class ProductionGoodsController extends Controller {
     }
     public function view(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.production-goods.index')->with('error', 'Product not found.');
+        }
         $existing_size_ids = $response['data'] ? $response['data']->variants->pluck('master_size_measurement_id')->filter()->unique()->toArray() : [];
         $response['sizes'] = $this->service->sizes($existing_size_ids);
         $response['fabrics'] = $this->service->fabrics();

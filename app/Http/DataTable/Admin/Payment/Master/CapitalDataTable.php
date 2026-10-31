@@ -33,7 +33,8 @@ class CapitalDataTable
             ->where('name', 'like', '%' . $searchValue . '%')
             ->select('capital_masters.*');
 
-        if ($rowperpage != -1) {
+        // page only for a real length: none (link opened directly) or -1 (All) lists every row
+        if ($rowperpage > 0) {
             $query->skip($start)->take($rowperpage);
         }
 

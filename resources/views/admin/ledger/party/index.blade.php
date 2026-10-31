@@ -123,6 +123,10 @@
         </div>
     </div>
 
+    @if(!empty($agentNote))
+        <div class="small text-muted mb-2">{{ $agentNote }}</div>
+    @endif
+
     <!-- Compact ERP Filter Bar -->
     <div class="erp-filter-bar">
         <form action="{{ route('admin.ledger.party.index') }}" method="GET" class="m-0">
@@ -258,7 +262,12 @@
                                 {{ $parties instanceof \Illuminate\Pagination\LengthAwarePaginator ? ($parties->firstItem() + $loop->index) : $loop->iteration }}
                             </td>
                             <td>
-                                <div class="font-weight-bold" style="color: var(--erp-text-heading);">{{ $party->name }}</div>
+                                <div class="font-weight-bold" style="color: var(--erp-text-heading);">
+                                    {{ $party->name }}
+                                    @if((int) ($party->status ?? 1) !== 1)
+                                        <span class="erp-badge-status {{ (int) ($party->status ?? 1) === 3 ? 'erp-badge-status-danger' : 'erp-badge-status-secondary' }} ml-1">{{ (int) ($party->status ?? 1) === 3 ? 'Deleted' : 'Inactive' }}</span>
+                                    @endif
+                                </div>
                                 @if(isset($party->address) && $party->address)
                                     <small class="text-muted"><i class="fas fa-map-marker-alt mr-1"></i> {{ \Illuminate\Support\Str::limit($party->address, 50) }}</small>
                                 @endif

@@ -53,6 +53,9 @@ class MasterColorController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.colors.index')->with('error', 'Color not found.');
+        }
         return view('admin.master.colors.edit',$response);
     }
     public function update(MasterColorsUpdateRequest $request){

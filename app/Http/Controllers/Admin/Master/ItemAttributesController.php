@@ -34,6 +34,9 @@ class ItemAttributesController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.item-attributes.index')->with('error', 'Item attribute not found.');
+        }
         return view('admin.master.item-attributes.edit',$response);
     }
     public function update(ItemAttributesUpdateRequest $request){

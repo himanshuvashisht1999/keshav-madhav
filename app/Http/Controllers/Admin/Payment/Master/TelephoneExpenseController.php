@@ -45,6 +45,9 @@ class TelephoneExpenseController extends Controller
     {
         $id = $request->id;
         $data = $this->service->find($id);
+        if (!$data) {
+            return redirect()->route('admin.payment.master.telephone_expense.index')->with('error', 'Telephone expense not found.');
+        }
         return view('admin.payment.master.telephone_expense.edit', compact('data'));
     }
 

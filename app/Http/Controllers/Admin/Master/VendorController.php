@@ -56,6 +56,9 @@ class VendorController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.vendor.index')->with('error', 'Vendor not found.');
+        }
         $response['items'] = $this->service->items();
         $response['purchase_agents'] = $this->service->purchaseAgents();
         return view('admin.master.vendor.edit',$response);

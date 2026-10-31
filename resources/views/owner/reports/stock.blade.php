@@ -2,395 +2,337 @@
 
 @section('title', 'Fabric Stock')
 
-@section('styles')
-<style>
-    :root {
-        --glass-bg: rgba(255, 255, 255, 0.9);
-        --glass-border: rgba(255, 255, 255, 0.2);
-        --card-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
-    }
-
-    body {
-        background: #fdf2ff;
-        background-image: radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 0.03) 0, transparent 50%), 
-                          radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 0.03) 0, transparent 50%), 
-                          radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 0.03) 0, transparent 50%);
-    }
-
-    .app-header {
-        background: var(--primary-gradient);
-        padding: 40px 20px 60px;
-        border-radius: 0 0 40px 40px;
-        color: white;
-        margin-bottom: -30px;
-        position: relative;
-        z-index: 1;
-    }
-
-    .app-header h1 {
-        font-size: 26px;
-        font-weight: 900;
-        letter-spacing: -0.5px;
-        margin-bottom: 5px;
-    }
-
-    .breadcrumb-custom {
-        display: flex;
-        gap: 8px;
-        font-size: 12px;
-        opacity: 0.8;
-        margin-bottom: 20px;
-        align-items: center;
-    }
-
-    .breadcrumb-custom a {
-        color: white;
-        text-decoration: none;
-    }
-
-    .search-container {
-        position: relative;
-        z-index: 10;
-        padding: 0 20px;
-    }
-
-    .search-box {
-        background: white;
-        border-radius: 20px;
-        padding: 15px 20px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        box-shadow: var(--card-shadow);
-        border: 1px solid rgba(0,0,0,0.05);
-    }
-
-    .search-box input {
-        border: none;
-        outline: none;
-        width: 100%;
-        font-size: 15px;
-        font-weight: 500;
-        color: var(--text-main);
-    }
-
-    .stock-card {
-        background: var(--glass-bg);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1px solid var(--glass-border);
-        border-radius: 24px;
-        padding: 20px;
-        margin-bottom: 16px;
-        box-shadow: var(--card-shadow);
-        transition: transform 0.2s;
-        text-decoration: none !important;
-        display: block;
-    }
-
-    .stock-card:active {
-        transform: scale(0.98);
-    }
-
-    .fabric-title {
-        font-size: 18px;
-        font-weight: 800;
-        color: var(--text-main);
-        margin-bottom: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .vendor-badge {
-        font-size: 10px;
-        background: rgba(99, 102, 241, 0.1);
-        color: var(--text-main);
-        padding: 4px 10px;
-        border-radius: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-
-    .stat-item {
-        text-align: center;
-    }
-
-    .stat-label {
-        font-size: 9px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        font-weight: 800;
-        letter-spacing: 0.5px;
-        display: block;
-        margin-bottom: 4px;
-    }
-
-    .stat-value {
-        font-size: 14px;
-        font-weight: 900;
-        color: var(--text-main);
-    }
-
-    .stat-value.remaining {
-        color: var(--text-main);
-    }
-
-    .wh-badge {
-        background: #f1f5f9;
-        color: var(--text-main);
-        padding: 6px 12px;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 15px;
-    }
-
-    .action-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 15px;
-        padding-top: 15px;
-        border-top: 1px solid rgba(0,0,0,0.05);
-    }
-
-    .btn-action {
-        padding: 8px 16px;
-        border-radius: 14px;
-        font-size: 12px;
-        font-weight: 800;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.2s;
-    }
-
-    .btn-receipts {
-        background: #ecfdf5;
-        color: #059669;
-    }
-
-    .btn-usages {
-        background: #fff7ed;
-        color: var(--text-main);
-    }
-
-    .empty-state {
-        padding: 60px 20px;
-        text-align: center;
-        color: var(--text-muted);
-    }
-
-    .empty-state i {
-        font-size: 48px;
-        margin-bottom: 20px;
-        opacity: 0.3;
-    }
-
-    .fab-container {
-        position: fixed;
-        bottom: 30px;
-        right: 20px;
-        z-index: 100;
-    }
-
-    .fab {
-        width: 56px;
-        height: 56px;
-        background: var(--primary-gradient);
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 20px;
-        box-shadow: 0 10px 25px rgba(168, 85, 247, 0.4);
-        text-decoration: none !important;
-    }
-</style>
-@endsection
-
 @section('content')
-<div class="responsive-app-view">
-    <div class="app-header">
-        <div class="breadcrumb-custom">
-            <a href="{{ route('owner.dashboard') }}">Home</a>
-            <i class="fas fa-chevron-right" style="font-size: 8px;"></i>
-            <a href="{{ route('owner.stock') }}">Stock</a>
-            @if(isset($fabric))
-                <i class="fas fa-chevron-right" style="font-size: 8px;"></i>
-                <span>{{ $fabric->name }}</span>
-            @endif
-        </div>
-        <h1>Fabric Stock</h1>
-        <p class="mb-0 opacity-75">Real-time inventory management</p>
-    </div>
+@php
+    $m = fn($v) => number_format((float) $v, 2);
+    $t = $totals;
+    $whSel = array_values(array_filter(array_map('strval', (array) request('warehouse_id')), fn($v) => $v !== ''));
+    $whNames = $warehouses->whereIn('id', $whSel)->pluck('cutting_master_name')->implode(', ');
+    $fabricId = request('fabric_id');
+    $fabricName = isset($fabric) && $fabric ? $fabric->name : 'Fabric not found';
+    // with a warehouse filter, moves from / to other warehouses are Received / Issued; moves between chosen ones are not
+    // (so the figures can differ from the warehouse's row on the warehouse list, where moves have their own columns)
+    $moveNote = !count($whSel) ? '' : (count($whSel) > 1
+        ? '. Moves from / to other warehouses count as Received / Issued here (the warehouse list shows them as Moved in / out); moves between the chosen ones do not.'
+        : '. Moves from / to other warehouses count as Received / Issued here (the warehouse list shows them as Moved in / out).');
+@endphp
 
-    <div class="search-container">
-        @if($level === 'fabrics')
-        <form action="{{ route('owner.stock') }}" method="GET">
-            <div class="search-box">
-                <i class="fas fa-search text-muted"></i>
-                <input type="text" name="search" placeholder="Search fabrics..." value="{{ request('search') }}">
-                <input type="hidden" name="warehouse_id" value="{{ request('warehouse_id') }}">
+{{-- ============ Level 1: fabrics ============ --}}
+@if($level === 'fabrics')
+    @php
+        $vendorSel = array_values(array_filter(array_map('strval', (array) request('vendor_id')), fn($v) => $v !== ''));
+        $nFilters = (request()->filled('search') ? 1 : 0) + (count($whSel) ? 1 : 0) + (count($vendorSel) ? 1 : 0)
+            + (request()->filled('qty_from') ? 1 : 0) + (request()->filled('qty_to') ? 1 : 0);
+    @endphp
+    @include('owner.common.page_head', [
+        'title' => 'Fabric Stock',
+        'sub' => $whNames ? 'At ' . $whNames . ' (metres)' . $moveNote : 'All warehouses (metres)',
+        'back' => route('owner.dashboard'),
+        'actions' => '<a class="ow-btn is-outline is-sm" href="' . route('owner.report.stock.rolls') . '"><i class="fas fa-barcode"></i> Rolls</a>'
+            . '<a class="ow-btn is-outline is-sm" href="' . route('owner.ready-stock.index') . '"><i class="fas fa-boxes"></i> Ready stock</a>',
+    ])
+    @include('owner.common.totals', ['totals' => [
+        ['label' => 'Fabrics', 'value' => number_format($data->total())],
+        ['label' => 'Received (m)', 'value' => $m($t->sum_received)],
+        ['label' => 'Issued (m)', 'value' => $m($t->sum_issued), 'tone' => 'yellow'],
+        ['label' => 'In stock (m)', 'value' => $m($t->sum_remaining), 'tone' => 'word'],
+    ]])
+
+    <details class="ow-filters" {{ $nFilters ? 'open' : '' }}>
+        <summary><i class="fas fa-filter"></i> Filters @if($nFilters)<span class="ow-filter-count">{{ $nFilters }}</span>@endif</summary>
+        <form class="ow-filter-body" method="GET" action="{{ route('owner.stock') }}">
+            <div>
+                <label>Fabric name</label>
+                <input type="text" class="form-control" name="search" value="{{ request('search') }}" placeholder="Name...">
+            </div>
+            <div>
+                <label>Warehouse</label>
+                <select class="form-control select2" name="warehouse_id[]" multiple data-allow-clear="1" data-placeholder="All">
+                    @foreach($warehouses as $wh)
+                        <option value="{{ $wh->id }}" {{ in_array((string) $wh->id, $whSel, true) ? 'selected' : '' }}>{{ $wh->cutting_master_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label>Supplier</label>
+                <select class="form-control select2" name="vendor_id[]" multiple data-allow-clear="1" data-placeholder="All">
+                    @foreach($vendors as $v)
+                        <option value="{{ $v->id }}" {{ in_array((string) $v->id, $vendorSel, true) ? 'selected' : '' }}>{{ $v->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label>In stock from (m)</label>
+                <input type="number" step="0.01" class="form-control" name="qty_from" value="{{ request('qty_from') }}" placeholder="0.00">
+            </div>
+            <div>
+                <label>In stock to (m)</label>
+                <input type="number" step="0.01" class="form-control" name="qty_to" value="{{ request('qty_to') }}" placeholder="Any">
+            </div>
+            <div class="ow-filter-actions">
+                <button class="ow-btn"><i class="fas fa-search"></i> Apply</button>
+                <a class="ow-btn is-outline" href="{{ route('owner.stock') }}">Reset</a>
             </div>
         </form>
-        <div class="mt-3 px-1">
-            <a href="{{ route('owner.report.stock.rolls') }}" class="btn btn-block btn-primary shadow-sm" style="border-radius: 15px; font-weight: 800; padding: 12px; background: var(--primary-gradient); border: none;">
-                <i class="fas fa-list-ul mr-2"></i> View Stock by Roll Number
-            </a>
-        </div>
-        @else
-        <div class="search-box justify-content-between">
-            <div class="d-flex align-items-center gap-2">
-                <i class="fas fa-arrow-left text-muted" onclick="history.back()"></i>
-                <span class="font-weight-bold" style="font-size: 14px;">Back to Summary</span>
-            </div>
-            <a href="{{ route('owner.stock') }}" class="text-primary font-weight-bold" style="font-size: 12px;">Reset</a>
-        </div>
-        @endif
-    </div>
+    </details>
 
-    <div class="container-fluid mt-4 pb-5">
-        @if($level === 'fabrics')
-            <div id="stock-container" data-has-more="{{ method_exists($data, 'hasMorePages') && $data->hasMorePages() ? 'true' : 'false' }}" data-current-page="{{ method_exists($data, 'currentPage') ? $data->currentPage() : 1 }}">
+    <div class="ow-table-wrap">
+        <table class="erp-table sticky-first">
+            <thead>
+                <tr>
+                    <th>Fabric</th>
+                    <th>Supplier</th>
+                    <th class="num">Received (m)</th>
+                    <th class="num">Issued (m)</th>
+                    <th class="num">In stock (m)</th>
+                </tr>
+            </thead>
+            <tbody id="stock-rows">
                 @include('owner.reports.partials.stock_fabrics_list', ['data' => $data])
-            </div>
-            
-            @if($data->isEmpty())
-                <div class="empty-state">
-                    <i class="fas fa-box-open"></i>
-                    <p>No fabrics found in stock</p>
-                </div>
-            @endif
-
-        @elseif($level === 'warehouses')
-            <div class="wh-badge">
-                <i class="fas fa-info-circle"></i> Showing stock by warehouse
-            </div>
-            @foreach($data as $row)
-                <div class="stock-card">
-                    <div class="fabric-title">
-                        {{ $row->master_fabric_warehouse?->cutting_master_name ?: 'Unknown' }}
-                    </div>
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <span class="stat-label">Received</span>
-                            <span class="stat-value">{{ number_format($row->total_received, 1) }}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Stock</span>
-                            <span class="stat-value remaining">{{ number_format($row->total_remaining, 1) }}</span>
-                        </div>
-                    </div>
-                    <div class="action-row">
-                        <a href="{{ route('owner.stock', ['fabric_id' => $fabric->id, 'warehouse_id' => $row->master_fabric_warehouse_id, 'type' => 'receipts']) }}" class="btn-action btn-receipts">
-                            <i class="fas fa-file-import"></i> Shipments
-                        </a>
-                        <a href="{{ route('owner.stock', ['fabric_id' => $fabric->id, 'warehouse_id' => $row->master_fabric_warehouse_id, 'type' => 'usages']) }}" class="btn-action btn-usages">
-                            <i class="fas fa-industry"></i> Usages
-                        </a>
-                    </div>
-                </div>
-            @endforeach
-
-        @elseif($level === 'receipts')
-            <div class="wh-badge">
-                <i class="fas fa-ship"></i> Shipment History
-            </div>
-            <div id="stock-container" data-has-more="{{ method_exists($data, 'hasMorePages') && $data->hasMorePages() ? 'true' : 'false' }}" data-current-page="{{ method_exists($data, 'currentPage') ? $data->currentPage() : 1 }}">
-                @include('owner.reports.partials.stock_receipts_list', ['data' => $data])
-            </div>
-
-        @elseif($level === 'usages')
-            <div class="wh-badge">
-                <i class="fas fa-history"></i> Usage Records
-            </div>
-            <div id="stock-container" data-has-more="{{ method_exists($data, 'hasMorePages') && $data->hasMorePages() ? 'true' : 'false' }}" data-current-page="{{ method_exists($data, 'currentPage') ? $data->currentPage() : 1 }}">
-                @include('owner.reports.partials.stock_usages_list', ['data' => $data])
-            </div>
-        @endif
-        
-        <div id="loading-spinner" style="display: none; text-align: center; padding: 20px;">
-            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-        </div>
-        <div id="load-more-trigger" style="height: 10px;"></div>
+                @if($data->isEmpty())
+                    <tr><td colspan="5" class="ow-empty">No fabric stock found</td></tr>
+                @endif
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>Total ({{ number_format($data->total()) }})</td>
+                    <td></td>
+                    <td class="num">{{ $m($t->sum_received) }}</td>
+                    <td class="num">{{ $m($t->sum_issued) }}</td>
+                    <td class="num">{{ $m($t->sum_remaining) }}</td>
+                </tr>
+            </tfoot>
+        </table>
     </div>
+    @include('owner.reports.partials.stock_load_more', ['paginator' => $data, 'target' => 'stock-rows'])
 
-    <div class="fab-container">
-        <a href="{{ route('owner.report.stock.rolls') }}" class="fab">
-            <i class="fas fa-barcode"></i>
-        </a>
-    </div>
-</div>
-
-
-@endsection
-
-@section('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const container = document.getElementById('stock-container');
-        if (!container) return; // For warehouse level where there is no pagination
-        
-        let hasMore = container.dataset.hasMore === 'true';
-        let currentPage = parseInt(container.dataset.currentPage);
-        let nextPage = hasMore ? currentPage + 1 : null;
-        let isLoading = false;
-        
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && nextPage !== null && !isLoading) {
-                loadMoreData();
+{{-- ============ Level 2: warehouses of one fabric ============ --}}
+@elseif($level === 'warehouses')
+    @php
+        $movedIn = round((float) ($t->sum_moved_in ?? 0), 2);
+        $movedOut = round((float) ($t->sum_moved_out ?? 0), 2);
+        $tiles = [
+            ['label' => 'Warehouses', 'value' => number_format($data->count())],
+            ['label' => 'Received (m)', 'value' => $m($t->sum_received)],
+            ['label' => 'Issued (m)', 'value' => $m($t->sum_issued), 'tone' => 'yellow'],
+            ['label' => 'In stock (m)', 'value' => $m($t->sum_remaining), 'tone' => 'word'],
+        ];
+        if ($movedIn == $movedOut) {
+            if ($movedIn != 0) {
+                $tiles[] = ['label' => 'Moved between warehouses (m)', 'value' => $m($movedIn), 'tone' => 'light'];
             }
-        });
-        
-        const trigger = document.getElementById('load-more-trigger');
-        if (trigger) {
-            observer.observe(trigger);
+        } else {
+            $tiles[] = ['label' => 'Moved in (m)', 'value' => $m($movedIn), 'tone' => 'light'];
+            $tiles[] = ['label' => 'Moved out (m)', 'value' => $m($movedOut), 'tone' => 'light'];
         }
+    @endphp
+    @include('owner.common.page_head', [
+        'title' => $fabricName,
+        'sub' => 'Stock by warehouse (metres). Received = from suppliers. Moves between warehouses have their own columns and are not Received or Issued.',
+        'back' => route('owner.stock'),
+        'actions' => '<a class="ow-btn is-outline is-sm" href="' . route('owner.stock', ['fabric_id' => $fabricId, 'type' => 'receipts']) . '">Shipments</a>'
+            . '<a class="ow-btn is-outline is-sm" href="' . route('owner.stock', ['fabric_id' => $fabricId, 'type' => 'usages']) . '">Usages</a>'
+            . '<a class="ow-btn is-outline is-sm" href="' . route('owner.report.stock.rolls', ['fabric_id' => $fabricId]) . '">Rolls</a>',
+    ])
+    @include('owner.common.totals', ['totals' => $tiles])
 
-        function loadMoreData() {
-            isLoading = true;
-            document.getElementById('loading-spinner').style.display = 'block';
-            
-            let currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('page', nextPage);
+    <div class="ow-table-wrap">
+        <table class="erp-table sticky-first">
+            <thead>
+                <tr>
+                    <th>Warehouse</th>
+                    <th class="num">Received (m)</th>
+                    <th class="num">Moved in (m)</th>
+                    <th class="num">Moved out (m)</th>
+                    <th class="num">Issued (m)</th>
+                    <th class="num">In stock (m)</th>
+                    <th>Shipments</th>
+                    <th>Usages</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($data as $row)
+                    <tr>
+                        <td><a href="{{ route('owner.stock', ['fabric_id' => $fabricId, 'warehouse_id' => [$row->master_fabric_warehouse_id], 'type' => 'receipts']) }}">{{ $row->cutting_master_name ?: '-' }}</a></td>
+                        <td class="num">{{ $m($row->total_received) }}</td>
+                        <td class="num">{{ $m($row->total_moved_in) }}</td>
+                        <td class="num">{{ $m($row->total_moved_out) }}</td>
+                        <td class="num">{{ $m($row->total_issued) }}</td>
+                        <td class="num"><strong>{{ $m($row->total_remaining) }}</strong></td>
+                        <td><a href="{{ route('owner.stock', ['fabric_id' => $fabricId, 'warehouse_id' => [$row->master_fabric_warehouse_id], 'type' => 'receipts']) }}">Shipments</a></td>
+                        <td><a href="{{ route('owner.stock', ['fabric_id' => $fabricId, 'warehouse_id' => [$row->master_fabric_warehouse_id], 'type' => 'usages']) }}">Usages</a></td>
+                    </tr>
+                @empty
+                    <tr><td colspan="8" class="ow-empty">No stock found for this fabric</td></tr>
+                @endforelse
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>Total ({{ number_format($data->count()) }})</td>
+                    <td class="num">{{ $m($t->sum_received) }}</td>
+                    <td class="num">{{ $m($movedIn) }}</td>
+                    <td class="num">{{ $m($movedOut) }}</td>
+                    <td class="num">{{ $m($t->sum_issued) }}</td>
+                    <td class="num">{{ $m($t->sum_remaining) }}</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
 
-            fetch(currentUrl.toString(), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.html) {
-                    container.insertAdjacentHTML('beforeend', data.html);
-                }
-                
-                nextPage = data.next_page;
-                isLoading = false;
-                document.getElementById('loading-spinner').style.display = 'none';
-                
-                if (nextPage === null) {
-                    observer.unobserve(trigger);
-                }
-            })
-            .catch(error => {
-                console.error('Error loading more items:', error);
-                isLoading = false;
-                document.getElementById('loading-spinner').style.display = 'none';
-            });
+{{-- ============ Level 3: shipments (rolls received) of one fabric ============ --}}
+@elseif($level === 'receipts')
+    @php
+        $nFilters = (count($whSel) ? 1 : 0) + (request()->filled('qty_from') ? 1 : 0) + (request()->filled('qty_to') ? 1 : 0);
+    @endphp
+    @include('owner.common.page_head', [
+        'title' => $fabricName,
+        'sub' => 'Shipments' . ($whNames ? ' at ' . $whNames . ' (received there or lying there now)' : ', all warehouses') . ' - metres' . ($whNames ? $moveNote : ''),
+        'back' => route('owner.stock', ['fabric_id' => $fabricId]),
+        'actions' => '<a class="ow-btn is-outline is-sm" href="' . route('owner.stock', array_filter(['fabric_id' => $fabricId, 'warehouse_id' => $whSel, 'type' => 'usages'])) . '">Usages</a>',
+    ])
+    @include('owner.common.totals', ['totals' => [
+        ['label' => 'Rolls', 'value' => number_format($data->total())],
+        ['label' => 'Received (m)', 'value' => $m($t->sum_received)],
+        ['label' => 'Issued (m)', 'value' => $m($t->sum_issued), 'tone' => 'yellow'],
+        ['label' => 'In stock (m)', 'value' => $m($t->sum_remaining), 'tone' => 'word'],
+    ]])
+
+    <details class="ow-filters" {{ $nFilters ? 'open' : '' }}>
+        <summary><i class="fas fa-filter"></i> Filters @if($nFilters)<span class="ow-filter-count">{{ $nFilters }}</span>@endif</summary>
+        <form class="ow-filter-body" method="GET" action="{{ route('owner.stock') }}">
+            <input type="hidden" name="fabric_id" value="{{ $fabricId }}">
+            <input type="hidden" name="type" value="receipts">
+            <div>
+                <label>Warehouse</label>
+                <select class="form-control select2" name="warehouse_id[]" multiple data-allow-clear="1" data-placeholder="All">
+                    @foreach($warehouses as $wh)
+                        <option value="{{ $wh->id }}" {{ in_array((string) $wh->id, $whSel, true) ? 'selected' : '' }}>{{ $wh->cutting_master_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label>Left in roll from (m)</label>
+                <input type="number" step="0.01" class="form-control" name="qty_from" value="{{ request('qty_from') }}" placeholder="0.00">
+            </div>
+            <div>
+                <label>Left in roll to (m)</label>
+                <input type="number" step="0.01" class="form-control" name="qty_to" value="{{ request('qty_to') }}" placeholder="Any">
+            </div>
+            <div class="ow-filter-actions">
+                <button class="ow-btn"><i class="fas fa-search"></i> Apply</button>
+                <a class="ow-btn is-outline" href="{{ route('owner.stock', ['fabric_id' => $fabricId, 'type' => 'receipts']) }}">Reset</a>
+            </div>
+        </form>
+    </details>
+
+    <div class="ow-table-wrap">
+        <table class="erp-table sticky-first">
+            <thead>
+                <tr>
+                    <th>Roll no</th>
+                    <th>Date</th>
+                    <th>Received at</th>
+                    <th>Now at</th>
+                    <th>Supplier</th>
+                    <th>Bill no</th>
+                    <th>Shipment no</th>
+                    <th class="num">Rate (₹/m)</th>
+                    <th class="num">Amount (₹)</th>
+                    <th class="num">Received (m)</th>
+                    <th class="num">Returned (m)</th>
+                    <th class="num">In stock (m)</th>
+                </tr>
+            </thead>
+            <tbody id="stock-rows">
+                @include('owner.reports.partials.stock_receipts_list', ['data' => $data])
+                @if($data->isEmpty())
+                    <tr><td colspan="12" class="ow-empty">No shipments found</td></tr>
+                @endif
+            </tbody>
+        </table>
+    </div>
+    @include('owner.reports.partials.stock_load_more', ['paginator' => $data, 'target' => 'stock-rows'])
+
+{{-- ============ Level 4: usages (metres out) of one fabric ============ --}}
+@elseif($level === 'usages')
+    @php
+        $nFilters = count($whSel) ? 1 : 0;
+        $typeOrder = ['Cutting (Production)' => 'Cutting', 'Direct Sale' => 'Sales', 'Vendor Return' => 'Vendor returns', 'Stock Disposal' => 'Disposals', 'Transfer Out' => 'Transfers out'];
+        $tiles = [
+            ['label' => 'Entries', 'value' => number_format($usage_count)],
+            ['label' => 'Listed (m)', 'value' => $m($usage_meter), 'tone' => 'yellow'],
+        ];
+        foreach ($typeOrder as $key => $label) {
+            if (!empty($usage_by_type[$key])) {
+                $tiles[] = ['label' => $label . ' (m)', 'value' => $m($usage_by_type[$key]), 'tone' => 'light'];
+            }
         }
-    });
-</script>
+        foreach ($usage_by_type as $key => $meter) {
+            if (!isset($typeOrder[$key]) && $meter) {
+                $tiles[] = ['label' => $key . ' (m)', 'value' => $m($meter), 'tone' => 'light'];
+            }
+        }
+        if ($usage_customer_returns > 0) {
+            $tiles[] = ['label' => 'Customer returns (m)', 'value' => $m($usage_customer_returns), 'tone' => 'light'];
+            $tiles[] = ['label' => 'Net used (m)', 'value' => $m($usage_meter - $usage_customer_returns), 'tone' => 'yellow'];
+        }
+        $tiles[] = ['label' => 'Received (m)', 'value' => $m($t->sum_received)];
+        $tiles[] = ['label' => 'Issued (m)', 'value' => $m($t->sum_issued), 'tone' => 'yellow'];
+        $tiles[] = ['label' => 'In stock (m)', 'value' => $m($t->sum_remaining), 'tone' => 'word'];
+    @endphp
+    @include('owner.common.page_head', [
+        'title' => $fabricName,
+        'sub' => 'Metres out' . ($whNames ? ' of rolls lying at ' . $whNames . ' now (rows follow the roll\'s current warehouse, so they may not equal Issued)' . $moveNote : ', all warehouses') . ($usage_customer_returns > 0 ? ($whNames ? ' ' : '. ') . 'Customer returns put metres back: Net used = Listed - Customer returns.' : ''),
+        'back' => route('owner.stock', ['fabric_id' => $fabricId]),
+        'actions' => '<a class="ow-btn is-outline is-sm" href="' . route('owner.stock', array_filter(['fabric_id' => $fabricId, 'warehouse_id' => $whSel, 'type' => 'receipts'])) . '">Shipments</a>',
+    ])
+    @include('owner.common.totals', ['totals' => $tiles])
+
+    <details class="ow-filters" {{ $nFilters ? 'open' : '' }}>
+        <summary><i class="fas fa-filter"></i> Filters @if($nFilters)<span class="ow-filter-count">{{ $nFilters }}</span>@endif</summary>
+        <form class="ow-filter-body" method="GET" action="{{ route('owner.stock') }}">
+            <input type="hidden" name="fabric_id" value="{{ $fabricId }}">
+            <input type="hidden" name="type" value="usages">
+            <div>
+                <label>Warehouse</label>
+                <select class="form-control select2" name="warehouse_id[]" multiple data-allow-clear="1" data-placeholder="All">
+                    @foreach($warehouses as $wh)
+                        <option value="{{ $wh->id }}" {{ in_array((string) $wh->id, $whSel, true) ? 'selected' : '' }}>{{ $wh->cutting_master_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="ow-filter-actions">
+                <button class="ow-btn"><i class="fas fa-search"></i> Apply</button>
+                <a class="ow-btn is-outline" href="{{ route('owner.stock', ['fabric_id' => $fabricId, 'type' => 'usages']) }}">Reset</a>
+            </div>
+        </form>
+    </details>
+
+    <div class="ow-table-wrap">
+        <table class="erp-table sticky-first">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Roll no</th>
+                    <th>Lot / kind</th>
+                    <th>Order / doc no</th>
+                    <th>Design / detail</th>
+                    <th>Colour / party</th>
+                    <th>Unit</th>
+                    <th class="num">Metres</th>
+                </tr>
+            </thead>
+            <tbody id="stock-rows">
+                @include('owner.reports.partials.stock_usages_list', ['data' => $data])
+                @if($data->isEmpty())
+                    <tr><td colspan="9" class="ow-empty">No usages found</td></tr>
+                @endif
+            </tbody>
+        </table>
+    </div>
+    @include('owner.reports.partials.stock_load_more', ['paginator' => $data, 'target' => 'stock-rows'])
+@endif
 @endsection

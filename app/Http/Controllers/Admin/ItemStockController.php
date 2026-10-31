@@ -33,6 +33,9 @@ class ItemStockController extends Controller
         } else {
             $response['items'] = $this->itemAttributeValueService->getItemAttributeValueBySku($request);
         }
+        if (!$response['items']) {
+            return redirect()->route('admin.item_stock.itemIndex')->with('error', 'Item not found.');
+        }
         return view('admin.item_stock.index', $response);
     }
     public function indexList(Request $request){
@@ -41,11 +44,17 @@ class ItemStockController extends Controller
     public function view(Request $request)
     {
         $response['data'] = $this->service->view($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.item_stock.itemIndex')->with('error', 'Item stock not found.');
+        }
         return view('admin.item_stock.view', $response);
     }
     public function detail(Request $request)
     {
         $response['data'] = $this->service->view($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.item_stock.itemIndex')->with('error', 'Item stock not found.');
+        }
         return view('admin.item_stock.detail', $response);
     }
     

@@ -132,14 +132,26 @@
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-link p-0 delay-link font-weight-bold {{ $lot['isDelayed']=='Yes' ? 'text-danger' : 'text-success' }}"
-                                              style="text-decoration: underline; font-size: 11px;"
-                                              data-lot="{{ $lot['lot_no'] }}"
-                                              data-allowed="{{ $lot['allowed_till_datetime'] }}"
-                                              data-current="{{ $lot['current_datetime'] }}"
-                                              data-status="{{ $lot['isDelayed'] }}">
-                                            {{ $lot['isDelayed'] == 'Yes' ? 'Delayed' : 'On Time' }}
-                                        </button>
+                                        @if($lot['order_done'] && $lot['lot_no'] !== '-' && !in_array($lot['stage_name'], ['Dispatched', 'Packed (stock)'], true))
+                                            {{-- order marked Completed and lot not fully sent: not in production, so never delayed (same tag as the owner Lots page) --}}
+                                            <button type="button" class="delay-link erp-badge-status erp-badge-status-neutral"
+                                                  style="cursor: pointer;"
+                                                  data-lot="{{ $lot['lot_no'] }}"
+                                                  data-allowed="{{ $lot['allowed_till_datetime'] }}"
+                                                  data-current="{{ $lot['current_datetime'] }}"
+                                                  data-status="Done">
+                                                Order completed
+                                            </button>
+                                        @else
+                                            <button type="button" class="btn btn-link p-0 delay-link font-weight-bold {{ $lot['isDelayed']=='Yes' ? 'text-danger' : 'text-success' }}"
+                                                  style="text-decoration: underline; font-size: 11px;"
+                                                  data-lot="{{ $lot['lot_no'] }}"
+                                                  data-allowed="{{ $lot['allowed_till_datetime'] }}"
+                                                  data-current="{{ $lot['current_datetime'] }}"
+                                                  data-status="{{ $lot['isDelayed'] }}">
+                                                {{ $lot['isDelayed'] == 'Yes' ? 'Delayed' : 'On Time' }}
+                                            </button>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -210,10 +222,13 @@
             $('#modalAllowed').text(formatDateTime($(this).data('allowed')));
             $('#modalCurrent').text(formatDateTime($(this).data('current')));
 
+            var status = $(this).data('status');
             $('#modalStatus').html(
-                $(this).data('status') === 'Yes'
+                status === 'Yes'
                     ? '<span class="erp-badge-status erp-badge-status-danger">Delayed</span>'
-                    : '<span class="erp-badge-status erp-badge-status-closed">On Time</span>'
+                    : (status === 'Done'
+                        ? '<span class="erp-badge-status erp-badge-status-neutral">Order completed</span>'
+                        : '<span class="erp-badge-status erp-badge-status-closed">On Time</span>')
             );
 
             $('#delayModal').modal('show');

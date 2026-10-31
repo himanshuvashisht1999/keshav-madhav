@@ -7,7 +7,7 @@
         body {
             font-family: DejaVu Sans, sans-serif;
             font-size: 11px;
-            color: var(--text-main);
+            color: #1e293b;
             margin: 0;
             padding: 0;
         }
@@ -47,7 +47,7 @@
             display: block;
             font-size: 9px;
             text-transform: uppercase;
-            color: var(--text-muted);
+            color: #000;
             font-weight: bold;
             margin-bottom: 4px;
         }
@@ -67,7 +67,7 @@
         }
         table th {
             background: #f0f8e7;
-            color: var(--text-muted);
+            color: #000;
             font-size: 10px;
             font-weight: bold;
             text-transform: uppercase;
@@ -77,16 +77,15 @@
         }
         .stage-card {
             border: 1px solid #f0f8e7;
-            border-left: 5px solid var(--text-muted);
             padding: 10px;
             margin-bottom: 12px;
             background: #fff;
             page-break-inside: avoid;
         }
-        .st-progress { border-left-color: var(--text-main); background: #eff6ff; }
+        .st-progress { background: #fffde0; }
         .st-completed { border-left-color: #15803d; background: #f0fdf4; }
         .st-delayed { border-left-color: #dc2626; background: #fef2f2; }
-        .st-waiting { border-left-color: var(--text-muted); background: #f6faf1; }
+        .st-waiting { background: #f6faf1; }
 
         .status-pill {
             float: right;
@@ -97,13 +96,13 @@
             text-transform: uppercase;
             font-weight: bold;
         }
-        .sp-progress { background: var(--text-main); }
+        .sp-progress { background: #05421c; }
         .sp-completed { background: #15803d; }
         .sp-delayed { background: #dc2626; }
-        .sp-waiting { background: var(--text-muted); }
+        .sp-waiting { background: #64748b; }
 
         .stage-title { font-weight: bold; font-size: 12px; margin-bottom: 5px; }
-        .stage-unit { font-size: 9px; color: var(--text-main); margin-bottom: 8px; }
+        .stage-unit { font-size: 9px; color: #000; margin-bottom: 8px; }
         
         .metric-table {
             width: 100%;
@@ -119,7 +118,7 @@
         }
         .metric-label {
             font-size: 8px;
-            color: var(--text-muted);
+            color: #000;
             display: block;
             margin-bottom: 2px;
             text-transform: uppercase;
@@ -192,7 +191,8 @@
                 </td>
                 <td>
                     <label>Main Unit</label>
-                    <div>{{ $lot_first->productionSlipDigitization->getUnitMaster->name ?? '-' }}</div>
+                    {{-- same unit rule as the lot page: slip unit, else cutting master, else the order line's unit --}}
+                    <div>{{ $lot_first?->productionSlipDigitization?->getUnitMaster?->name ?? ($lot_first?->cutting_master?->name ?? ($lot_first?->orderProductSet?->stage_master_unit?->name ?? '-')) }}</div>
                 </td>
                 <td></td>
                 <td></td>
@@ -260,11 +260,12 @@
 
                 $remaining = (int)$d['remaining_quantity'];
                 $total = (int)$d['quantity'];
+                // same rule as the lot page: a planned stage that no piece has reached is not printed
+                if ($total === 0) continue;
                 $eta = Carbon::parse($d['time_allocation']);
                 $completed = $d['completed_time'] ? Carbon::parse($d['completed_time']) : null;
 
-                if ($total === 0) $status = 'waiting';
-                elseif ($remaining === 0) $status = ($completed && $completed->gt($eta)) ? 'delayed' : 'completed';
+                if ($remaining === 0) $status = ($completed && $completed->gt($eta)) ? 'delayed' : 'completed';
                 elseif (now()->gt($eta)) $status = 'delayed';
                 else $status = 'progress';
             @endphp
@@ -273,7 +274,7 @@
                 <span class="status-pill sp-{{ $status }}">{{ $status }}</span>
                 <div class="stage-title">{{ $stage->name }}</div>
                 <div class="stage-unit">
-                    Unit: {{ $status == 'waiting' ? 'Not Assigned' : ($d['unit_name'] ?? 'N/A') }}
+                    Unit: {{ $d['unit_name'] ?? 'N/A' }}
                 </div>
                 
                 <table class="metric-table">
@@ -300,7 +301,8 @@
                         <td style="width: 2%;"></td>
                         <td style="width: 20%;">
                             <span class="metric-label">Completed</span>
-                            <span class="metric-value">{{ $completed ? $completed->format('d M') : '-' }}</span>
+                            {{-- a completed date only once no piece is left at the stage (same rule as the lot page) --}}
+                            <span class="metric-value">{{ ($remaining == 0 && $completed) ? $completed->format('d M') : '-' }}</span>
                         </td>
                     </tr>
                 </table>

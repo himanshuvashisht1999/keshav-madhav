@@ -51,6 +51,9 @@ class WashingMasterController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.master.washing_master.index')->with('error', 'Washing master not found.');
+        }
         return view('admin.payment.master.washing_master.edit', $response);
     }
 

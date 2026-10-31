@@ -1,286 +1,154 @@
 @extends('owner.layouts.app')
 
-@section('title', 'Production Lots')
-
-@section('styles')
-<style>
-    :root {
-        --accent-glow: 0 10px 30px rgba(245, 158, 11, 0.15);
-    }
-
-    body {
-        background: #fffcf5;
-    }
-
-    .app-header {
-        background: var(--primary-gradient);
-        padding: 40px 20px 60px;
-        border-radius: 0 0 40px 40px;
-        color: white;
-        margin-bottom: -30px;
-        position: relative;
-    }
-
-    .app-header h1 {
-        font-size: 26px;
-        font-weight: 900;
-        letter-spacing: -0.5px;
-    }
-
-    .filter-section {
-        position: relative;
-        z-index: 10;
-        padding: 0 20px;
-    }
-
-    .filter-card {
-        background: white;
-        border-radius: 24px;
-        padding: 20px;
-        box-shadow: 0 12px 40px rgba(0,0,0,0.06);
-        border: 1px solid rgba(0,0,0,0.02);
-    }
-
-    .lot-card {
-        background: white;
-        border-radius: 24px;
-        padding: 20px;
-        margin-bottom: 16px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.03);
-        border: 1px solid #fff4e5;
-        transition: transform 0.2s;
-        display: block;
-        text-decoration: none !important;
-        color: inherit;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .lot-card::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 6px;
-        background: var(--primary-gradient);
-        opacity: 0.3;
-    }
-
-    .lot-id {
-        font-size: 18px;
-        font-weight: 900;
-        color: var(--text-main);
-        margin-bottom: 5px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .qty-tag {
-        background: #fef3c7;
-        color: #92400e;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 13px;
-        font-weight: 800;
-    }
-
-    .order-info {
-        font-size: 13px;
-        color: var(--text-muted);
-        font-weight: 600;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .customer-name {
-        font-size: 14px;
-        font-weight: 700;
-        color: var(--text-main);
-        padding: 10px;
-        background: #f8fafc;
-        border-radius: 12px;
-        display: block;
-    }
-
-    .action-link {
-        margin-top: 15px;
-        text-align: right;
-        font-weight: 800;
-        font-size: 13px;
-        color: var(--text-main);
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 5px;
-    }
-
-    .form-label-custom {
-        font-size: 11px;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: var(--text-muted);
-        margin-bottom: 8px;
-        display: block;
-    }
-
-    .select2-container--default .select2-selection--single {
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        height: 45px;
-        padding: 8px;
-    }
-</style>
-@endsection
+@section('title', 'Lots')
 
 @section('content')
-<div class="responsive-app-view">
-    <div class="app-header">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <a href="{{ route('owner.dashboard') }}" class="text-white opacity-75"><i class="fas fa-home"></i></a>
-            <span class="font-weight-bold opacity-50" style="font-size: 12px;">REPORT RJ 4</span>
-        </div>
-        <h1>Production Lots</h1>
-        <p class="mb-0 opacity-75">Tracking batch status & progress</p>
-    </div>
+    @php
+        $orderSel = request('order_id');
+        $filterCount = ($orderSel ? 1 : 0) + (count($lotSel) ? 1 : 0);
+    @endphp
 
-    <div class="filter-section">
-        <div class="filter-card">
-            <form method="GET" action="{{ route('owner.lots') }}">
-                <div class="row g-2">
-                    <div class="col-12 mb-3">
-                        <label class="form-label-custom">Order Number</label>
-                        <select name="order_id" id="order_no" class="form-control select2" onchange="changeOrderId(this.value)">
-                            <option value="">All Orders</option>
-                            @foreach(collect($lotNos)->unique('order_id') as $row)
-                                <option value="{{ $row['order_id'] }}" {{ request('order_id') == $row['order_id'] ? 'selected' : '' }}>
-                                    {{ $row['order_no'] }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-12 mb-3">
-                        <label class="form-label-custom">Lot Number</label>
-                        <select name="lot_no" id="lot_no" class="form-control select2">
-                            <option value="">All Lots</option>
-                            @foreach($lotNos as $row)
-                                <option value="{{ $row['lot_no'] }}" {{ request('lot_no') == $row['lot_no'] ? 'selected' : '' }}>
-                                    {{ $row['lot_no'] }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="d-flex gap-2 mt-2">
-                    <button type="submit" class="btn btn-warning btn-block py-3 font-weight-bold text-white" style="border-radius: 14px; flex: 2; background: var(--primary-gradient); border: none;">
-                        Search Lots
-                    </button>
-                    <a href="{{ route('owner.lots') }}" class="btn btn-light py-3 px-4" style="border-radius: 14px; flex: 1;">
-                        <i class="fas fa-undo"></i>
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
+    @include('owner.common.page_head', [
+        'title' => 'Lots',
+        'sub' => 'Every production lot, newest first: pieces cut, packed, sent and where the lot is now',
+        'back' => route('owner.dashboard'),
+        'actions' => '<a class="ow-btn is-outline is-sm" href="' . route('owner.reports.unit-assignments') . '"><i class="fas fa-industry"></i> Unit Assignments</a>',
+    ])
 
-    <div class="container-fluid mt-5 pb-5">
-        <div class="d-flex justify-content-between align-items-center mb-4 px-2">
-            <span class="text-muted font-weight-bold" style="font-size: 13px;">{{ $data->total() }} ACTIVE LOTS</span>
-        </div>
+    @include('owner.common.totals', ['totals' => array_values(array_filter([
+        ['label' => 'Lots', 'value' => number_format($totals['lots'])],
+        ['label' => 'Pieces cut', 'value' => number_format($totals['pieces'])],
+        ['label' => 'Packed', 'value' => number_format($totals['packed']), 'tone' => 'light'],
+        ['label' => 'Dispatched', 'value' => number_format($totals['dispatched']), 'tone' => 'word'],
+        $totals['in_stock'] > 0 ? ['label' => 'Packed to stock', 'value' => number_format($totals['in_stock']), 'tone' => 'light'] : null,
+        ['label' => 'Lots in production', 'value' => number_format($totals['in_production']), 'tone' => 'yellow'],
+        ['label' => 'Delayed lots', 'value' => number_format($totals['delayed']), 'tone' => $totals['delayed'] > 0 ? 'red' : null],
+    ]))])
 
-        <div id="lots-container">
-            @include('owner.reports.partials.lots_list', ['data' => $data])
-        </div>
-
-        @if($data->isEmpty())
-            <div class="text-center py-5 opacity-25">
-                <i class="fas fa-layer-group fa-4x mb-3"></i>
-                <p class="h5 font-weight-bold">No active lots found</p>
+    <details class="ow-filters" {{ $filterCount ? 'open' : '' }}>
+        <summary><i class="fas fa-filter"></i> Filters @if($filterCount)<span class="ow-filter-count">{{ $filterCount }}</span>@endif</summary>
+        <form class="ow-filter-body" method="GET" action="{{ route('owner.lots') }}">
+            <div>
+                <label>Order</label>
+                <select name="order_id" id="order_no" class="form-control select2" data-allow-clear="1" data-placeholder="All orders">
+                    <option value=""></option>
+                    @foreach(collect($lotNos)->filter(fn($r) => !empty($r['order_id']))->unique('order_id')->sortBy('order_no') as $row)
+                        <option value="{{ $row['order_id'] }}" {{ (string) $orderSel === (string) $row['order_id'] ? 'selected' : '' }}>{{ $row['order_no'] }}</option>
+                    @endforeach
+                </select>
             </div>
-        @endif
+            <div>
+                <label>Lot</label>
+                <select name="lot_no[]" id="lot_no" class="form-control select2" multiple data-placeholder="All lots">
+                    @foreach($lotNos as $row)
+                        <option value="{{ $row['lot_no'] }}" data-order="{{ $row['order_id'] }}" {{ in_array((string) $row['lot_no'], $lotSel, true) ? 'selected' : '' }}>{{ $row['lot_no'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="ow-filter-actions">
+                <button class="ow-btn"><i class="fas fa-search"></i> Apply</button>
+                <a class="ow-btn is-outline" href="{{ route('owner.lots') }}">Reset</a>
+            </div>
+        </form>
+    </details>
 
-        <div id="loading-spinner" style="display: none; text-align: center; padding: 20px;">
-            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-        </div>
-        <div id="load-more-trigger" style="height: 10px;"></div>
+    <div class="ow-scroll-hint"><i class="fas fa-arrows-alt-h"></i> Slide the table sideways to see every column</div>
+    <div class="ow-table-wrap">
+        <table class="erp-table sticky-first">
+            <thead>
+                <tr>
+                    <th>Lot</th>
+                    <th>Order</th>
+                    <th>Customer</th>
+                    <th>Lot date</th>
+                    <th>Stage now</th>
+                    <th class="num">Pcs cut</th>
+                    <th class="num">Packed</th>
+                    <th class="num">Dispatched</th>
+                </tr>
+            </thead>
+            <tbody id="lots-rows">
+                @if($data->isEmpty())
+                    <tr><td colspan="8" class="ow-empty">No lots found</td></tr>
+                @else
+                    @include('owner.reports.partials.lots_list', ['data' => $data])
+                @endif
+            </tbody>
+            @if($data->total() > 0)
+                <tfoot>
+                    <tr>
+                        <td>Total</td>
+                        <td colspan="4">{{ number_format($totals['lots']) }} lots{{ $data->total() > $data->count() ? ' (all pages)' : '' }}</td>
+                        <td class="num">{{ number_format($totals['pieces']) }}</td>
+                        <td class="num">{{ number_format($totals['packed']) }}</td>
+                        <td class="num">{{ number_format($totals['dispatched']) }}</td>
+                    </tr>
+                </tfoot>
+            @endif
+        </table>
     </div>
-</div>
 
+    @if($data->hasMorePages())
+        <div class="text-center mb-3" id="lots-more-box">
+            <div class="small text-muted mb-1" id="lots-shown">Showing {{ number_format($data->lastItem()) }} of {{ number_format($data->total()) }} lots</div>
+            <button type="button" class="ow-btn is-outline" id="lots-more" data-next="{{ $data->currentPage() + 1 }}">
+                <i class="fas fa-chevron-down"></i> Load more
+            </button>
+        </div>
+    @endif
 
+    <p class="small text-muted mb-3">
+        Lots in production = lots not yet fully dispatched or put in stock; lots of orders marked Completed are left out
+        (tagged Order completed). Delayed lots = lots in production whose current stage is past its planned end.
+    </p>
+@endsection
 
+@push('scripts')
 <script>
-    const lotData = @json($lotNos);
-    const lotSelect = $('#lot_no');
+    $(function () {
+        // Lot list follows the chosen order (options keep their order id in data-order)
+        var $lot = $('#lot_no');
+        var allLots = $lot.find('option').map(function () {
+            return { value: this.value, order: String($(this).data('order') || ''), text: $(this).text() };
+        }).get();
 
-    function unique(arr) { return [...new Set(arr)]; }
-
-    function fillLotDropdown(lots) {
-        lotSelect.empty().append(`<option value="">All Lots</option>`);
-        lots.forEach(lot => {
-            lotSelect.append(`<option value="${lot}">${lot}</option>`);
-        });
-        lotSelect.trigger('change');
-    }
-
-    function changeOrderId(selectedOrderId) {
-        if (!selectedOrderId) {
-            const allLots = unique(lotData.map(i => i.lot_no));
-            fillLotDropdown(allLots);
-            return;
-        }
-        const filteredLots = unique(lotData.filter(i => i.order_id == selectedOrderId).map(i => i.lot_no));
-        fillLotDropdown(filteredLots);
-    }
-
-    $(document).ready(function() {
-        if ($.fn.select2) {
-            $('.select2').select2();
-        }
-
-        let currentPage = {{ $data->currentPage() }};
-        let nextPage = {{ $data->hasMorePages() ? $data->currentPage() + 1 : 'null' }};
-        let isLoading = false;
-        
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && nextPage !== null && !isLoading) {
-                loadMoreData();
-            }
-        });
-        
-        const trigger = document.getElementById('load-more-trigger');
-        if (trigger) {
-            observer.observe(trigger);
-        }
-
-        function loadMoreData() {
-            isLoading = true;
-            $('#loading-spinner').show();
-            
-            let currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('page', nextPage);
-
-            $.ajax({
-                url: currentUrl.toString(),
-                type: 'GET',
-                success: function(response) {
-                    $('#lots-container').append(response.html);
-                    nextPage = response.next_page;
-                    isLoading = false;
-                    $('#loading-spinner').hide();
-                    
-                    if (nextPage === null) {
-                        observer.unobserve(trigger);
-                    }
-                },
-                error: function() {
-                    isLoading = false;
-                    $('#loading-spinner').hide();
-                }
+        $('#order_no').on('change', function () {
+            var orderId = String($(this).val() || '');
+            var keep = ($lot.val() || []);
+            $lot.empty();
+            allLots.forEach(function (o) {
+                if (orderId && o.order !== orderId) { return; }
+                var opt = new Option(o.text, o.value, false, keep.indexOf(o.value) !== -1);
+                $(opt).attr('data-order', o.order);
+                $lot.append(opt);
             });
-        }
+            $lot.trigger('change');
+        });
+        if ($('#order_no').val()) { $('#order_no').trigger('change'); }
+
+        // Load more: appends the next page's rows (totals above already cover every lot of the filter)
+        var total = {{ (int) $data->total() }};
+        $('#lots-more').on('click', function () {
+            var $btn = $(this), next = $btn.data('next');
+            if (!next) { return; }
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading');
+            var url = new URL(window.location.href);
+            url.searchParams.set('page', next);
+            $.ajax({ url: url.toString(), headers: { 'X-Requested-With': 'XMLHttpRequest' }, dataType: 'json' })
+                .done(function (res) {
+                    $('#lots-rows').append(res.html);
+                    var shown = $('#lots-rows tr').length;
+                    $('#lots-shown').text('Showing ' + shown.toLocaleString('en-IN') + ' of ' + total.toLocaleString('en-IN') + ' lots');
+                    if (res.next_page) {
+                        $btn.data('next', res.next_page).prop('disabled', false).html('<i class="fas fa-chevron-down"></i> Load more');
+                    } else {
+                        $('#lots-more').remove();
+                    }
+                })
+                .fail(function () {
+                    $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Try again');
+                });
+        });
     });
 </script>
-@endsection
+@endpush

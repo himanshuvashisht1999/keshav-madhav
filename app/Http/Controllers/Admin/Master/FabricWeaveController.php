@@ -32,6 +32,9 @@ class FabricWeaveController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.fabric_weave.index')->with('error', 'Fabric weave not found.');
+        }
         return view('admin.master.fabric_weave.edit',$response);
     }
     public function update(FabricWeaveUpdateRequest $request){

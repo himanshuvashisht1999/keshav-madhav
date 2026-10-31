@@ -28,11 +28,17 @@ class WarehouseController extends Controller {
 
     public function view(Request $request){
         $response['data'] = $this->service->view($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.warehouse.index')->with('error', 'Order not found.');
+        }
         return view('admin.warehouse.view',$response);
     }
 
     public function produce(Request $request){
         $response['data'] = $this->service->produce($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.warehouse.index')->with('error', 'Order not found.');
+        }
         return view('admin.warehouse.produce',$response);
     }
     public function productStatusHoverData(Request $request){

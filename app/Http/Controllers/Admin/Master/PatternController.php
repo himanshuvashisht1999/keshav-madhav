@@ -36,6 +36,9 @@ class PatternController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.pattern.index')->with('error', 'Pattern not found.');
+        }
         $response['parts_data'] = $this->service->editParts($request);
         // dd($response['parts_data']);
         return view('admin.master.pattern.edit',$response);

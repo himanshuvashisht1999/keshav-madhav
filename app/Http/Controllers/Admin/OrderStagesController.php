@@ -20,6 +20,9 @@ class OrderStagesController extends Controller {
     public function index(Request $request){
         $response['product_stage'] = $this->service->product_stage();
         $response['stage_data'] = $this->service->stage_data($request);
+        if (!$response['stage_data']) {
+            return redirect()->route('admin.dashboard')->with('error', 'Stage not found.');
+        }
         return view('admin.order_stages.index',$response);
     }
     public function indexList(Request $request){

@@ -46,7 +46,6 @@ class BalanceReconciler
                 'ledger_type' => strtolower($master->name),
                 'model' => $model,
                 'table' => $table,
-                'has_status' => Schema::hasColumn($table, 'status'),
             ];
         }
         return array_values($types);
@@ -61,13 +60,9 @@ class BalanceReconciler
         $mismatches = [];
         $partyLedger = app(PartyLedgerService::class);
 
+        // Every status, deleted (3) too: a deleted party that still owes money is counted on Home and Pending Payments
         foreach ($this->accountTypes() as $t) {
-            $query = $t['model']::query();
-            if ($t['has_status']) {
-                $query->where('status', '!=', 3);
-            }
-
-            foreach ($query->orderBy('id')->get() as $rec) {
+            foreach ($t['model']::query()->orderBy('id')->get() as $rec) {
                 $checked++;
                 $data = $partyLedger->build(Request::create('/', 'GET'), $t['ledger_type'], $rec->id);
                 $ledger = round((float) $data['party']->balance, 2);

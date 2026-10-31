@@ -64,6 +64,9 @@ class FabricTypeController extends Controller {
     }
     public function edit(Request $request){
         $data = FabricType::find($request->id);
+        if (!$data) {
+            return redirect()->route('admin.master.fabric-type.index')->with('error', 'Fabric type not found.');
+        }
         return view('admin.master.fabric-type.edit', compact('data'));
     }
     public function update(Request $request){

@@ -32,6 +32,9 @@ class MasterMaterialController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.materials.index')->with('error', 'Material not found.');
+        }
         return view('admin.master.materials.edit',$response);
     }
     public function update(MasterMaterialsUpdateRequest $request){

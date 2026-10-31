@@ -127,6 +127,9 @@ class PurchaseOrderController extends Controller
     public function view(Request $request)
     {
         $response['data'] = $this->service->view($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.purchase_order.index')->with('error', 'Purchase order not found.');
+        }
         $response['vendors'] = $this->service->vendors();
         $response['fabrics'] = $this->service->fabrics();
         $response['general_setting'] = $this->service->general_setting();

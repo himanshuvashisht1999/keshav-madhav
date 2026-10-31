@@ -1,344 +1,80 @@
 @extends('owner.layouts.app')
 
+@section('title', 'Order Summary')
+
 @section('content')
-    <style>
-        /* APP LIST STYLES */
-        .app-container {
-                padding: 15px;
-            }
+    @php
+        $filterKeys = ['order_no', 'po_number', 'design_number', 'lot_no', 'customer_id', 'status'];
+        $nFilters = collect($filterKeys)->filter(fn($k) => request()->filled($k))->count();
+    @endphp
 
-            .order-card {
-                background: white;
-                border: 1px solid #f1f5f9;
-                border-radius: 16px;
-                padding: 18px;
-                margin-bottom: 16px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-                transition: transform 0.2s ease;
-            }
+    @include('owner.common.page_head', [
+        'title' => 'Order Summary',
+        'sub' => 'Ordered, packed and dispatched pieces of every order',
+        'back' => route('owner.dashboard'),
+        'actions' => null,
+    ])
 
-            .order-card:active {
-                transform: scale(0.98);
-                background: #fdfdfd;
-            }
+    @include('owner.common.totals', ['totals' => [
+        ['label' => 'Orders', 'value' => number_format($totals['orders'])],
+        ['label' => 'Total pcs', 'value' => number_format($totals['total'])],
+        ['label' => 'Packed', 'value' => number_format($totals['packed']), 'tone' => 'light'],
+        ['label' => 'Dispatched', 'value' => number_format($totals['dispatched']), 'tone' => 'word'],
+        ['label' => 'To stock', 'value' => number_format($totals['to_stock']), 'tone' => 'light'],
+        ['label' => 'Remaining', 'value' => number_format($totals['remaining']), 'tone' => $totals['remaining'] > 0 ? 'yellow' : null],
+        ['label' => 'Completed orders', 'value' => number_format($totals['completed']), 'tone' => 'word'],
+    ]])
 
-            .card-header-top {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 15px;
-            }
+    <nav class="ow-tabs">
+        <a class="active" href="{{ route('owner.order-summary.index') }}"><i class="fas fa-file-invoice"></i> Order Summary</a>
+        <a href="{{ route('owner.orders') }}"><i class="fas fa-layer-group"></i> Sales Orders (lots)</a>
+    </nav>
 
-            .sku-label {
-                font-size: 15px;
-                font-weight: 800;
-                color: var(--text-main);
-            }
-
-            .status-pill {
-                padding: 4px 10px;
-                border-radius: 20px;
-                font-size: 10px;
-                font-weight: 800;
-                letter-spacing: 0.5px;
-            }
-
-            .sp-active {
-                background: #dcfce7;
-                color: #166534;
-            }
-
-            .sp-closed {
-                background: #f1f5f9;
-                color: var(--text-muted);
-            }
-
-            .sp-partial {
-                background: #fef9c3;
-                color: #854d0e;
-            }
-
-            .card-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr 1fr;
-                gap: 15px;
-                padding-bottom: 15px;
-                border-bottom: 1px solid #f1f5f9;
-                margin-bottom: 15px;
-            }
-
-            .info-item label {
-                display: block;
-                font-size: 10px;
-                color: var(--text-muted);
-                text-transform: uppercase;
-                font-weight: 700;
-                margin-bottom: 2px;
-            }
-
-            .info-item .value {
-                font-size: 14px;
-                font-weight: 700;
-                color: var(--text-main);
-            }
-
-            .progress-value {
-                color: var(--primary);
-                font-weight: 900;
-                font-size: 13px;
-            }
-
-            .card-action {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .date-text {
-                font-size: 11px;
-                color: var(--text-muted);
-                font-weight: 600;
-            }
-
-            .btn-view-app {
-                background: var(--primary);
-                color: white !important;
-                padding: 8px 16px;
-                border-radius: 10px;
-                font-size: 12px;
-                font-weight: 700;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                text-decoration: none !important;
-                box-shadow: 0 4px 10px rgba(111, 66, 193, 0.2);
-            }
-        /* DESKTOP STYLES */
-        @media (min-width: 992px) {
-            .desktop-p {
-                padding: 25px;
-            }
-
-            .table-card {
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-                border: none;
-            }
-        }
-    </style>
-
-    <!-- MOBILE CONTENT -->
-    <div class="mobile-only">
-        <div class="app-container" style="padding-top: 20px;">
-            <h5 class="mb-4 font-weight-bold" style="color: var(--text-main);">Order Summary</h5>
-
-            <!-- Mobile Filters -->
-            <div class="card mb-3" style="border-radius: 12px; border: 1px solid #f1f5f9;">
-                <div class="card-body p-3">
-                    <form action="{{ route('owner.order-summary.index') }}" method="GET">
-                        <div class="mb-2">
-                            <label class="small font-weight-bold text-muted mb-1 d-block">Order SKU</label>
-                            <input type="text" name="order_no" class="form-control" style="border-radius: 8px; font-size: 13px;"
-                                placeholder="Search Order SKU..." value="{{ request('order_no') }}">
-                        </div>
-                        <div class="mb-2">
-                            <label class="small font-weight-bold text-muted mb-1 d-block">Design Number</label>
-                            <input type="text" name="design_number" class="form-control" style="border-radius: 8px; font-size: 13px;"
-                                placeholder="Search Design No..." value="{{ request('design_number') }}">
-                        </div>
-                        <div class="mb-3">
-                            <label class="small font-weight-bold text-muted mb-1 d-block">Customer</label>
-                            <select name="customer_id" class="form-control" style="border-radius: 8px; font-size: 13px;">
-                                <option value="">All Customers</option>
-                                @foreach($customers as $customer)
-                                    <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
-                                        {{ $customer->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-sm flex-fill" style="border-radius: 8px;">Search</button>
-                            <a href="{{ route('owner.order-summary.index') }}" class="btn btn-light btn-sm flex-fill" style="border-radius: 8px;">Reset</a>
-                        </div>
-                    </form>
-                </div>
+    <details class="ow-filters" {{ $nFilters ? 'open' : '' }}>
+        <summary><i class="fas fa-filter"></i> Filters @if($nFilters)<span class="ow-filter-count">{{ $nFilters }}</span>@endif</summary>
+        <form class="ow-filter-body" method="GET" action="{{ route('owner.order-summary.index') }}">
+            <div>
+                <label>Order no</label>
+                <input type="text" class="form-control" name="order_no" value="{{ request('order_no') }}" placeholder="Any part">
             </div>
-
-            <div id="orders-container-mobile">
-                @include('owner.reports.partials.order_summary_mobile', ['salesOrders' => $salesOrders])
+            <div>
+                <label>PO no</label>
+                <input type="text" class="form-control" name="po_number" value="{{ request('po_number') }}" placeholder="Any part">
             </div>
-        </div>
-    </div>
-
-    <!-- DESKTOP CONTENT -->
-    <div class="desktop-only desktop-p">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 style="font-weight: 800; color: var(--text-main);">Order Manifest Reports</h2>
-        </div>
-
-        <!-- Desktop Filters -->
-        <div class="card mb-4" style="border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-            <div class="card-body p-4">
-                <form action="{{ route('owner.order-summary.index') }}" method="GET">
-                    <div class="row align-items-end">
-                        <div class="col-md-3">
-                            <label class="small font-weight-bold text-muted mb-2 d-block">ORDER SKU</label>
-                            <input type="text" name="order_no" class="form-control" value="{{ request('order_no') }}" placeholder="Enter SKU..." style="height: 38px;">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="small font-weight-bold text-muted mb-2 d-block">DESIGN NO</label>
-                            <input type="text" name="design_number" class="form-control" value="{{ request('design_number') }}" placeholder="Enter Design No..." style="height: 38px;">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="small font-weight-bold text-muted mb-2 d-block">CUSTOMER</label>
-                            <select name="customer_id" class="form-control select2">
-                                <option value="">All Customers</option>
-                                @foreach($customers as $customer)
-                                    <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
-                                        {{ $customer->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary px-4 mr-2" style="border-radius: 8px; height: 38px;">Search</button>
-                            <a href="{{ route('owner.order-summary.index') }}" class="btn btn-outline-secondary px-4" style="border-radius: 8px; height: 38px; line-height: 24px;">Reset</a>
-                        </div>
-                    </div>
-                </form>
+            <div>
+                <label>Design no</label>
+                <input type="text" class="form-control" name="design_number" value="{{ request('design_number') }}" placeholder="Any part">
             </div>
-        </div>
-
-        <div class="card table-card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="bg-light">
-                            <tr>
-                                <th>Date</th>
-                                <th>Order No</th>
-                                <th>Customer</th>
-                                <th>Design No</th>
-                                <th>Total Pcs</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="orders-container-desktop">
-                            @include('owner.reports.partials.order_summary_desktop', ['salesOrders' => $salesOrders])
-                        </tbody>
-                    </table>
-                </div>
+            <div>
+                <label>Lot no</label>
+                <input type="text" class="form-control" name="lot_no" value="{{ request('lot_no') }}" placeholder="Any part">
             </div>
-        </div>
-    </div>
-    
-    <div id="loading-spinner" style="display: none; text-align: center; padding: 20px;">
-        <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-    </div>
-    <div id="load-more-trigger" style="height: 10px;"></div>
-
-    <!-- Designs Modal -->
-    <div class="modal fade" id="designsModal" tabindex="-1" role="dialog" aria-labelledby="designsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
-            <div class="modal-content" style="border-radius: 16px; max-height: 85vh;">
-                <div class="modal-header">
-                    <h5 class="modal-title font-weight-bold" id="designsModalLabel">Design Numbers</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body p-0" style="overflow-y: auto;">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="bg-light" style="position: sticky; top: 0; z-index: 1;">
-                                <tr>
-                                    <th class="px-4">Design Number</th>
-                                    <th class="px-4">Quantity</th>
-                                </tr>
-                            </thead>
-                            <tbody id="designsModalBody">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer border-top-0">
-                    <button type="button" class="btn btn-secondary" style="border-radius: 8px;" data-dismiss="modal">Close</button>
-                </div>
+            <div>
+                <label>Customer</label>
+                <select class="form-control select2" name="customer_id" data-allow-clear="1" data-placeholder="All">
+                    <option value=""></option>
+                    @foreach($customers as $c)
+                        <option value="{{ $c->id }}" {{ (string) request('customer_id') === (string) $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                    @endforeach
+                </select>
             </div>
-        </div>
-    </div>
-@endsection
-@section('scripts')
-    <script>
-        $(document).ready(function() {
-            if ($.fn.select2) {
-                $('.select2').select2({
-                    placeholder: "Select Customer",
-                    allowClear: true
-                });
-            }
+            <div>
+                <label>Status</label>
+                <select class="form-control" name="status">
+                    <option value="">All</option>
+                    <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                    <option value="partial" {{ request('status') === 'partial' ? 'selected' : '' }}>Partial</option>
+                    <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                </select>
+            </div>
+            <div class="ow-filter-actions">
+                <button class="ow-btn"><i class="fas fa-search"></i> Apply</button>
+                <a class="ow-btn is-outline" href="{{ route('owner.order-summary.index') }}">Reset</a>
+            </div>
+        </form>
+    </details>
 
-            let currentPage = {{ $salesOrders->currentPage() }};
-            let nextPage = {{ $salesOrders->hasMorePages() ? $salesOrders->currentPage() + 1 : 'null' }};
-            let isLoading = false;
-            
-            const observer = new IntersectionObserver((entries) => {
-                if (entries[0].isIntersecting && nextPage !== null && !isLoading) {
-                    loadMoreData();
-                }
-            });
-            
-            const trigger = document.getElementById('load-more-trigger');
-            if (trigger) {
-                observer.observe(trigger);
-            }
-
-            function loadMoreData() {
-                isLoading = true;
-                $('#loading-spinner').show();
-                
-                let currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.set('page', nextPage);
-
-                $.ajax({
-                    url: currentUrl.toString(),
-                    type: 'GET',
-                    success: function(response) {
-                        $('#orders-container-mobile').append(response.html_mobile);
-                        $('#orders-container-desktop').append(response.html_desktop);
-                        nextPage = response.next_page;
-                        isLoading = false;
-                        $('#loading-spinner').hide();
-                        
-                        if (nextPage === null) {
-                            observer.unobserve(trigger);
-                        }
-                    },
-                    error: function() {
-                        isLoading = false;
-                        $('#loading-spinner').hide();
-                    }
-                });
-            }
-        });
-
-        function showDesignsModal(designs) {
-            const tbody = document.getElementById('designsModalBody');
-            tbody.innerHTML = '';
-            
-            for (const [designNo, quantity] of Object.entries(designs)) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="px-4 font-weight-bold">${designNo}</td>
-                    <td class="px-4">${quantity} Pcs</td>
-                `;
-                tbody.appendChild(tr);
-            }
-            
-            $('#designsModal').modal('show');
-        }
-    </script>
+    <div class="ow-scroll-hint"><i class="fas fa-arrows-alt-h"></i> Swipe the table sideways to see all columns</div>
+    @include('owner.reports.partials.order_summary_table', ['orders' => $orders])
+    {{ $orders->links() }}
 @endsection

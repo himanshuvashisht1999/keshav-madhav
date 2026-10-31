@@ -17,8 +17,8 @@
             </div>
         </div>
         <div class="erp-header-actions">
-            @if(Route::has('admin.fabric_receipt.return'))
-            <a href="{{ route('admin.fabric_receipt.return') }}" class="btn-erp btn-erp-primary">
+            @if(Route::has('admin.fabric_return.create'))
+            <a href="{{ route('admin.fabric_return.create') }}" class="btn-erp btn-erp-primary">
                 <i class="fas fa-plus mr-1"></i> Create fabric return
             </a>
             @endif

@@ -116,19 +116,20 @@
             </tr>
         </thead>
         <tbody>
-            @php $totalBalance = 0; $totalOpening = 0; $totalDebit = 0; $totalCredit = 0; @endphp
+            {{-- totals come from the controller (PartyLedgerService::totalsRows: each shop counted once) --}}
             @forelse($parties->values() as $idx => $p)
                 @php
                     $bal = (float)$p->balance;
                     $open = (float)($p->opening_balance ?? 0);
-                    $totalBalance += $bal;
-                    $totalOpening += $open;
-                    $totalDebit += (float)($p->period_debit ?? 0);
-                    $totalCredit += (float)($p->period_credit ?? 0);
                 @endphp
                 <tr>
                     <td class="text-center">{{ $idx + 1 }}</td>
-                    <td class="font-weight-bold">{{ $p->name ?? '-' }}</td>
+                    <td class="font-weight-bold">
+                        {{ $p->name ?? '-' }}
+                        @if((int) ($p->status ?? 1) !== 1)
+                            <span style="font-weight: normal; color: #666;">({{ (int) ($p->status ?? 1) === 3 ? 'Deleted' : 'Inactive' }})</span>
+                        @endif
+                    </td>
                     <td>{{ ucfirst($p->party_type ?? '-') }}</td>
                     <td>{{ $p->phone ?? '-' }}</td>
                     <td class="text-right {{ $open >= 0 ? 'badge-cr' : 'badge-dr' }}">
@@ -160,6 +161,9 @@
             </tr>
         </tfoot>
     </table>
+    @if(!empty($agentNote))
+        <p style="font-size: 9px; margin: 4px 0 0;">{{ $agentNote }}</p>
+    @endif
 
     <div class="footer">
         Generated on {{ date('d M Y, h:i A') }} | @include('admin.pdf.partials.brand_name', ['name' => 'SNAPKID', 'height' => 10]) ERP

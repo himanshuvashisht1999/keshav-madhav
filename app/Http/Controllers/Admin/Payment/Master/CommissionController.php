@@ -45,6 +45,9 @@ class CommissionController extends Controller
     {
         $id = $request->id;
         $data = $this->service->find($id);
+        if (!$data) {
+            return redirect()->route('admin.payment.master.commission.index')->with('error', 'Commission not found.');
+        }
         return view('admin.payment.master.commission.edit', compact('data'));
     }
 

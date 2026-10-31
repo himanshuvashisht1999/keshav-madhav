@@ -1,12 +1,12 @@
 <table border="1">
     <thead>
         <tr>
-            <th colspan="5" style="font-size:16px;font-weight:bold">
+            <th colspan="7" style="font-size:16px;font-weight:bold">
                 Fabric Stock by Warehouse : {{ $fabric->name }}
             </th>
         </tr>
         <tr>
-            <td colspan="5">
+            <td colspan="7">
                 Exported At: {{ $exportedAt->format('d M Y h:i A') }}
             </td>
         </tr>
@@ -14,6 +14,8 @@
             <th>Sr No</th>
             <th>Warehouse</th>
             <th align="right">Total Received</th>
+            <th align="right">Moved In</th>
+            <th align="right">Moved Out</th>
             <th align="right">Total Issued</th>
             <th align="right">Remaining Qty</th>
         </tr>
@@ -25,6 +27,8 @@
             <td>{{ $sr++ }}</td>
             <td>{{ $row->master_fabric_warehouse?->cutting_master_name ?? 'Unknown' }}</td>
             <td align="right">{{ number_format($row->total_received, 2) }}</td>
+            <td align="right">{{ number_format($row->total_moved_in, 2) }}</td>
+            <td align="right">{{ number_format($row->total_moved_out, 2) }}</td>
             <td align="right">{{ number_format($row->total_issued, 2) }}</td>
             <td align="right" style="font-weight:bold">{{ number_format($row->total_remaining, 2) }}</td>
         </tr>

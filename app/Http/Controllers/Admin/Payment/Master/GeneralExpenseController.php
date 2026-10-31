@@ -45,6 +45,9 @@ class GeneralExpenseController extends Controller
     {
         $id = $request->id;
         $data = $this->service->find($id);
+        if (!$data) {
+            return redirect()->route('admin.payment.master.general_expense.index')->with('error', 'General expense not found.');
+        }
         return view('admin.payment.master.general_expense.edit', compact('data'));
     }
 

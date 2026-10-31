@@ -32,6 +32,9 @@ class MasterFabricWarehouseController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.fabric_warehouse.index')->with('error', 'Fabric warehouse not found.');
+        }
         return view('admin.master.fabric_warehouse.edit',$response);
     }
     public function update(MasterFabricWarehouseUpdateRequest $request){

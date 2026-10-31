@@ -52,6 +52,9 @@ class ConsumableGoodController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.master.consumable_good.index')->with('error', 'Consumable good not found.');
+        }
         return view('admin.payment.master.consumable_good.edit', $response);
     }
 

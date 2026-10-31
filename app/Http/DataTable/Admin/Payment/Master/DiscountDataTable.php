@@ -33,8 +33,8 @@ class DiscountDataTable
             ->orderBy($columnName, $columnSortOrder)
             ->where('name', 'like', '%' . $searchValue . '%')
             ->select('discount_masters.*')
-            ->skip($start)
-            ->take($rowperpage)
+            // page only for a real length: none (link opened directly) or -1 (All) lists every row (OFFSET without LIMIT is invalid SQL)
+            ->when($rowperpage > 0, fn ($q) => $q->skip($start)->take($rowperpage))
             ->get();
 
         $data_arr = array();

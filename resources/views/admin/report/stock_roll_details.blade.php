@@ -61,6 +61,12 @@
                                     <span class="erp-badge-status erp-badge-status-closed"><i class="fas fa-truck-loading mr-1"></i> Shipping</span>
                                 @elseif(str_contains($row->type, 'Production'))
                                     <span class="erp-badge-status erp-badge-status-open"><i class="fas fa-cut mr-1"></i> Production</span>
+                                @elseif(str_contains($row->type, 'Return to Vendor'))
+                                    <span class="erp-badge-status erp-badge-status-neutral"><i class="fas fa-undo mr-1"></i> Return to vendor</span>
+                                @elseif(str_contains($row->type, 'Disposal'))
+                                    <span class="erp-badge-status erp-badge-status-delayed"><i class="fas fa-trash-alt mr-1"></i> {{ $row->type }}</span>
+                                @elseif($row->type === 'Sales Return')
+                                    <span class="erp-badge-status erp-badge-status-closed"><i class="fas fa-undo-alt mr-1"></i> Sales return</span>
                                 @else
                                     <span class="erp-badge-status erp-badge-status-neutral"><i class="fas fa-shopping-bag mr-1"></i> Agent sales</span>
                                 @endif
@@ -86,6 +92,7 @@
                 </tfoot>
             </table>
         </div>
+        <div class="px-3 py-2 small text-muted border-top">Sales returns put the returned metres back on the roll they were sold from (returns that were deleted are not counted).</div>
     </div>
 
 </div>

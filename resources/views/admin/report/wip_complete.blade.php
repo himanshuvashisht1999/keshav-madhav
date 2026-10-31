@@ -24,7 +24,8 @@
                 <div class="row align-items-end">
                     <div class="col-md-3 mb-2">
                         <label class="erp-form-label">Customer</label>
-                        <select name="customer_id" class="form-control select2" onchange="this.form.submit()">
+                        {{-- a new customer starts with no order / design / lot chosen (the old choices belong to the previous customer) --}}
+                        <select name="customer_id" class="form-control select2" onchange="$(this.form).find('select[multiple]').val([]); this.form.submit()">
                             <option value="">-- Select Customer --</option>
                             @foreach($customers as $customer)
                                 <option value="{{ $customer->id }}" {{ $selectedCustomer == $customer->id ? 'selected' : '' }}>
@@ -130,28 +131,33 @@
                                             </a>
                                         </td>
                                         <td class="text-right font-weight-bold">{{ number_format($row['lot_quantity'] ?? 0) }}</td>
+                                        @php
+                                            // status and stage from the lot's records (lotFacts, as Sales Order / Order Tracking); order_lots.status is never updated
+                                            $facts = $row['facts'];
+                                            $isDone = $facts && (int) $facts['stage_id'] === 12;
+                                            $isLate = $facts && $facts['is_delayed'] === 'Yes';
+                                        @endphp
                                         <td class="text-center">
-                                            @if($row['lot']->status == 0) <span class="erp-badge-status erp-badge-status-warning">Pending</span>
-                                            @elseif($row['lot']->status == 1) <span class="erp-badge-status erp-badge-status-info">Processing</span>
-                                            @elseif($row['lot']->status == 2) <span class="erp-badge-status erp-badge-status-success">Completed</span>
-                                            @else <span class="erp-badge-status erp-badge-status-danger">Cancelled</span>
+                                            @if($isDone) <span class="erp-badge-status erp-badge-status-success">Completed</span>
+                                            @elseif($isLate) <span class="erp-badge-status erp-badge-status-danger" title="Planned to finish {{ $facts['stage_name'] }} by {{ $facts['allowed_till'] ? \Carbon\Carbon::parse($facts['allowed_till'])->format('d M Y') : '-' }}">Late</span>
+                                            @else <span class="erp-badge-status erp-badge-status-info">Running</span>
                                             @endif
                                         </td>
-                                        <td>{{ getLastCurrentStage($row['lot']->lot_no) }}</td>
+                                        <td>{{ $facts['stage_name'] ?? '-' }}</td>
 
                                         <!-- STAGE WISE STATUS -->
                                         @foreach($master_stages as $stage)
                                             @php
-                                                $d = getLotDetails($row['lot']->lot_no, $stage->id);
+                                                $d = $row['stages'][$stage->id] ?? null;
                                             @endphp
                                             <td style="font-size: 11px; min-width: 160px; vertical-align: top;">
                                                 @if($d && $d['time_allocation'])
                                                     <div style="font-weight: 600; color: #111827; margin-bottom: 2px;">
-                                                        In: <span style="color: var(--brand-dark-green, #05421c); font-weight: 700;">{{ $d['quantity'] }}</span> | 
-                                                        Out: <span style="color: #16a34a; font-weight: 700;">{{ $d['quantity'] - $d['remaining_quantity'] }}</span>
+                                                        In: <span style="color: var(--brand-dark-green, #05421c); font-weight: 700;">{{ $d['quantity'] }}</span> |
+                                                        Out: <span style="color: #16a34a; font-weight: 700;">{{ $d['done'] }}</span>
                                                     </div>
                                                     <div style="font-size: 10px; color: #d97706; font-weight: 600; margin-bottom: 4px;">WIP: {{ $d['remaining_quantity'] }}</div>
-                                                    <div style="color: #64748b; font-size: 10px;">Unit: <span style="font-weight: 600; color: #374151;">{{ $d['unit_name'] ?? '-' }}</span></div>
+                                                    <div style="color: #64748b; font-size: 10px;">Unit: <span style="font-weight: 600; color: #374151;">{{ $d['unit_name'] ?? '-' }}@if(($d['unit_count'] ?? 0) > 1) +{{ $d['unit_count'] - 1 }} more @endif</span></div>
                                                     <div style="color: #64748b; font-size: 10px;">Start: {{ $d['start_date'] ? \Carbon\Carbon::parse($d['start_date'])->format('d M y') : '-' }}</div>
                                                     @php
                                                         $rem = (int)$d['remaining_quantity'];
@@ -212,19 +218,6 @@
                 });
             });
         }
-
-        // Auto-hide filters on table scroll down
-        let isScrollingDown = false;
-        $('.auto-scroll-table').on('scroll', function() {
-            let scrollTop = $(this).scrollTop();
-            if (scrollTop > 80 && !isScrollingDown) {
-                $('#filter-form-body').slideUp(200);
-                isScrollingDown = true;
-            } else if (scrollTop < 20 && isScrollingDown) {
-                $('#filter-form-body').slideDown(200);
-                isScrollingDown = false;
-            }
-        });
     });
 </script>
 @endsection

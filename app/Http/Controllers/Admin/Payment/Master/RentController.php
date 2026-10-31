@@ -45,6 +45,9 @@ class RentController extends Controller
     {
         $id = $request->id;
         $data = $this->service->find($id);
+        if (!$data) {
+            return redirect()->route('admin.payment.master.rent.index')->with('error', 'Rent not found.');
+        }
         return view('admin.payment.master.rent.edit', compact('data'));
     }
 

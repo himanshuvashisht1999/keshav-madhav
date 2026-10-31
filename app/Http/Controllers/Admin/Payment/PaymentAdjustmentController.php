@@ -107,221 +107,273 @@ class PaymentAdjustmentController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        try {
+            $this->validateBatch($request);
+            if ($request->payment_mode === 'adjustment') {
+                // "No bank / cash" is only kept when editing a credit made by Reports > Outflows (dispose)
+                throw new \RuntimeException('Choose Bank or Cash. Nothing was saved.');
+            }
+            // all or nothing: a line that cannot be saved stops the whole entry, so nothing is half saved
+            DB::transaction(fn() => $this->saveBatch($request), 3); // retried if two saves lock the same rows
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['adjustment' => $e->getMessage()])->with('error', $e->getMessage())->withInput();
+        }
+
+        return redirect()->route('admin.payment.adjustment.index')->with('success', 'Multiple payment adjustments recorded and distributed.');
+    }
+
+    /** Same checks as before; a failure is shown in the error popup (admin pages do not show $errors). */
+    private function validateBatch(Request $request): void
+    {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'adjustment_master_id' => 'required|array',
             'ref_id' => 'required|array',
             'type' => 'required',
-            'payment_mode' => 'required',
+            'payment_mode' => 'required|in:bank,cash,adjustment',
             'payment_account_id' => 'required',
             'amount' => 'required|array',
+            'amount.*' => 'nullable|numeric',
             'date' => 'required|date',
             'total_expected_amount' => 'required|numeric',
         ]);
+        if ($validator->fails()) {
+            throw new \RuntimeException($validator->errors()->first());
+        }
+    }
 
+    /**
+     * Saves one adjustment batch. Must run inside a transaction (store / update).
+     * Every line must be saved: a line whose party is not found (for example the master type does not
+     * match the party) stops the save instead of being skipped. The bank / cash account moves by exactly
+     * the amounts saved, so it always agrees with the ledger. Rows that are changed are locked first.
+     */
+    private function saveBatch(Request $request): void
+    {
         $totalExpected = (float) $request->total_expected_amount;
-        $totalActual = array_sum($request->amount);
+        $totalActual = array_sum(array_map('floatval', (array) $request->amount));
 
         if (abs($totalExpected - $totalActual) > 0.01) {
-            return back()->withErrors(['total_expected_amount' => 'Sum (' . number_format($totalActual, 2) . ') != Expected (' . number_format($totalExpected, 2) . ')'])->withInput();
+            throw new \RuntimeException('Sum (' . number_format($totalActual, 2) . ') != Expected (' . number_format($totalExpected, 2) . ')');
         }
 
         $batchId = 'BAT-' . strtoupper(uniqid());
         $type = $request->type;
         $mode = $request->payment_mode;
-        $accountId = $request->payment_account_id;
+        $accountId = $mode === 'adjustment' ? 0 : $request->payment_account_id; // dispose credit: no bank / cash moves
+        $savedTotal = 0;
+        $line = 0;
 
-        foreach ($request->adjustment_master_id as $key => $masterId) {
-            $rawRefIds = $request->ref_id[$key];
-            $amountToDistribute = floatval($request->amount[$key]);
+        foreach ((array) $request->adjustment_master_id as $key => $masterId) {
+            $line++;
+            $rawRefIds = $request->ref_id[$key] ?? '';
+            $amountToDistribute = floatval($request->amount[$key] ?? 0);
             $remarks = $request->remarks[$key] ?? '';
 
             $master = AdjustmentMaster::find($masterId);
-            if ($master && class_exists($master->model_name)) {
-                $model = $master->model_name;
-                $refIds = explode(',', $rawRefIds);
+            if (!$master || !class_exists($master->model_name)) {
+                throw new \RuntimeException("Line {$line}: choose the master type again. Nothing was saved.");
+            }
+            if ($amountToDistribute < 0) {
+                // a negative line was saved but never moved the party balance, so the two drifted apart
+                throw new \RuntimeException("Line {$line} ({$master->name}): the amount cannot be less than 0. Nothing was saved.");
+            }
+            $model = $master->model_name;
+            $refIds = explode(',', (string) $rawRefIds);
+            if (!array_filter($refIds, fn($r) => trim($r) !== '')) {
+                throw new \RuntimeException("Line {$line} ({$master->name}): choose the party. Nothing was saved.");
+            }
 
-                foreach ($refIds as $refId) {
-                    $refId = trim($refId);
-                    if (!$refId)
-                        continue;
+            foreach ($refIds as $refId) {
+                $refId = trim($refId);
+                if (!$refId)
+                    continue;
 
-                    $actualModel = $model;
-                    $actualId = $refId;
+                $actualModel = $model;
+                $actualId = $refId;
 
-                    // Handle Prefixed IDs for Corporate/Domestic Dispatches
-                    if ($model == 'App\Models\AgentOrder' || $model == 'App\Models\MasterCustomer') {
-                        if (str_starts_with($refId, 'OD:')) {
-                            $actualModel = 'App\Models\OrderDispatch';
-                            $actualId = substr($refId, 3);
-                        } elseif (str_starts_with($refId, 'AOD:')) {
-                            $actualModel = 'App\Models\AgentOrderDispatch';
-                            $actualId = substr($refId, 4);
-                        } elseif (str_starts_with($refId, 'OR:')) {
-                            $actualModel = 'App\Models\OrderMain';
-                            $actualId = substr($refId, 3);
-                        }
+                // Handle Prefixed IDs for Corporate/Domestic Dispatches
+                if ($model == 'App\Models\AgentOrder' || $model == 'App\Models\MasterCustomer') {
+                    if (str_starts_with($refId, 'OD:')) {
+                        $actualModel = 'App\Models\OrderDispatch';
+                        $actualId = substr($refId, 3);
+                    } elseif (str_starts_with($refId, 'AOD:')) {
+                        $actualModel = 'App\Models\AgentOrderDispatch';
+                        $actualId = substr($refId, 4);
+                    } elseif (str_starts_with($refId, 'OR:')) {
+                        $actualModel = 'App\Models\OrderMain';
+                        $actualId = substr($refId, 3);
                     }
+                }
 
-                    $item = $actualModel::find($actualId);
-                    if ($item) {
-                        $currentAmount = $amountToDistribute;
+                $item = $actualModel::lockForUpdate()->find($actualId);
+                if (!$item) {
+                    // before, such a line was skipped while the bank still moved by its amount
+                    throw new \RuntimeException("Line {$line}: {$master->name} #{$refId} was not found, so this line cannot be saved. Pick the party again (the master type must match the party). Nothing was saved.");
+                }
 
-                        // Handle Distribution (Waterfall) - only if multiple selected
-                        if (($model == 'App\Models\FabricReceipt' || $model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch' || $actualModel == 'App\Models\AgentOrderDispatch') && count($refIds) > 1) {
-                            $balance = floatval($item->balance_amount ?? 0);
+                $currentAmount = $amountToDistribute;
 
-                            // If we have remaining money, give it to this item based on its balance
-                            if ($amountToDistribute > 0 && $balance > 0) {
-                                $currentAmount = min($amountToDistribute, $balance);
-                            } else {
-                                $currentAmount = 0;
-                            }
-                        }
+                // Handle Distribution (Waterfall) - only if multiple selected
+                if (($model == 'App\Models\FabricReceipt' || $model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch' || $actualModel == 'App\Models\AgentOrderDispatch') && count($refIds) > 1) {
+                    $balance = floatval($item->balance_amount ?? 0);
 
-                        $amountToDistribute -= $currentAmount;
+                    // If we have remaining money, give it to this item based on its balance
+                    if ($amountToDistribute > 0 && $balance > 0) {
+                        $currentAmount = min($amountToDistribute, $balance);
+                    } else {
+                        $currentAmount = 0;
+                    }
+                }
 
-                        // Create Adjustment Record (Always created, even if amount is 0)
-                        PaymentAdjustment::create([
-                            'batch_id' => $batchId,
-                            'adjustment_master_id' => $masterId,
-                            'ref_id' => $refId,
-                            'type' => $type,
-                            'payment_mode' => $mode,
-                            'payment_account_id' => $accountId,
+                $amountToDistribute -= $currentAmount;
+                $savedTotal += round($currentAmount, 2); // the amount column keeps 2 decimals
+
+                // Create Adjustment Record (Always created, even if amount is 0)
+                PaymentAdjustment::create([
+                    'batch_id' => $batchId,
+                    'adjustment_master_id' => $masterId,
+                    'ref_id' => $refId,
+                    'type' => $type,
+                    'payment_mode' => $mode,
+                    'payment_account_id' => $accountId,
+                    'amount' => $currentAmount,
+                    'date' => $request->date,
+                    'remarks' => $remarks
+                ]);
+
+                // Financial Logic: Only apply if amount distributed is > 0
+                if ($currentAmount > 0) {
+                    if ($model == 'App\Models\Vendor') {
+                        \App\Models\Payment::create([
+                            'payment_category' => 'fabric_shipment',
+                            'payment_type' => $type,
+                            'party_type' => \App\Models\Vendor::class,
+                            'party_id' => $item->id,
+                            'paymentable_type' => \App\Models\Vendor::class,
+                            'paymentable_id' => $item->id,
                             'amount' => $currentAmount,
-                            'date' => $request->date,
-                            'remarks' => $remarks
+                            'payment_date' => $request->date,
+                            'payment_mode' => 'Adjustment',
+                            'reference_id' => $batchId,
+                            'remarks' => '[Vendor-Adj] ' . $remarks,
+                            'created_by' => \Auth::id(),
                         ]);
 
-                        // Financial Logic: Only apply if amount distributed is > 0
-                        if ($currentAmount > 0) {
-                            if ($model == 'App\Models\Vendor') {
-                                \App\Models\Payment::create([
-                                    'payment_category' => 'fabric_shipment',
-                                    'payment_type' => $type,
-                                    'party_type' => \App\Models\Vendor::class,
-                                    'party_id' => $item->id,
-                                    'paymentable_type' => \App\Models\Vendor::class,
-                                    'paymentable_id' => $item->id,
-                                    'amount' => $currentAmount,
-                                    'payment_date' => $request->date,
-                                    'payment_mode' => 'Adjustment',
-                                    'reference_id' => $batchId,
-                                    'remarks' => '[Vendor-Adj] ' . $remarks,
-                                    'created_by' => \Auth::id(),
-                                ]);
+                        if ($type == 'debit')
+                            $item->balance -= $currentAmount;
+                        else
+                            $item->balance += $currentAmount;
+                        $item->save();
+                    } elseif ($model == 'App\Models\Employee') {
+                        \App\Models\Payment::create([
+                            'payment_category' => 'employee_salary',
+                            'payment_type' => $type,
+                            'party_type' => \App\Models\Employee::class,
+                            'party_id' => $item->id,
+                            'paymentable_type' => \App\Models\Employee::class,
+                            'paymentable_id' => $item->id,
+                            'amount' => $currentAmount,
+                            'payment_date' => $request->date,
+                            'payment_mode' => 'Adjustment',
+                            'reference_id' => $batchId,
+                            'remarks' => '[Salary-Adj] ' . $remarks,
+                            'created_by' => Auth::id(),
+                        ]);
+                    } elseif ($model == 'App\Models\MasterCustomer') {
+                        \App\Models\Payment::create([
+                            'payment_category' => 'domestic_order',
+                            'payment_type' => $type,
+                            'party_type' => \App\Models\MasterCustomer::class,
+                            'party_id' => $item->id,
+                            'paymentable_type' => \App\Models\MasterCustomer::class,
+                            'paymentable_id' => $item->id,
+                            'amount' => $currentAmount,
+                            'payment_date' => $request->date,
+                            'payment_mode' => 'Adjustment',
+                            'reference_id' => $batchId,
+                            'remarks' => '[Customer-Adj] ' . $remarks,
+                            'created_by' => Auth::id(),
+                        ]);
 
-                                if ($type == 'debit')
+                        if ($type == 'credit')
+                            $item->balance += $currentAmount;
+                        else
+                            $item->balance -= $currentAmount;
+                        $item->save();
+                    } else {
+                        // Update Master Item Balance (regular flow)
+                        if (isset($item->balance) || isset($item->amount)) {
+                            if (isset($item->balance)) {
+                                if ($type == 'debit') {
                                     $item->balance -= $currentAmount;
-                                else
+                                } else {
                                     $item->balance += $currentAmount;
-                                $item->save();
-                            } elseif ($model == 'App\Models\Employee') {
-                                \App\Models\Payment::create([
-                                    'payment_category' => 'employee_salary',
-                                    'payment_type' => $type,
-                                    'party_type' => \App\Models\Employee::class,
-                                    'party_id' => $item->id,
-                                    'paymentable_type' => \App\Models\Employee::class,
-                                    'paymentable_id' => $item->id,
-                                    'amount' => $currentAmount,
-                                    'payment_date' => $request->date,
-                                    'payment_mode' => 'Adjustment',
-                                    'reference_id' => $batchId,
-                                    'remarks' => '[Salary-Adj] ' . $remarks,
-                                    'created_by' => Auth::id(),
-                                ]);
-                            } elseif ($model == 'App\Models\MasterCustomer') {
-                                \App\Models\Payment::create([
-                                    'payment_category' => 'domestic_order',
-                                    'payment_type' => $type,
-                                    'party_type' => \App\Models\MasterCustomer::class,
-                                    'party_id' => $item->id,
-                                    'paymentable_type' => \App\Models\MasterCustomer::class,
-                                    'paymentable_id' => $item->id,
-                                    'amount' => $currentAmount,
-                                    'payment_date' => $request->date,
-                                    'payment_mode' => 'Adjustment',
-                                    'reference_id' => $batchId,
-                                    'remarks' => '[Customer-Adj] ' . $remarks,
-                                    'created_by' => Auth::id(),
-                                ]);
+                                }
+                            } elseif (isset($item->amount)) {
+                                if ($type == 'debit') {
+                                    $item->amount -= $currentAmount;
+                                } else {
+                                    $item->amount += $currentAmount;
+                                }
+                            }
+                            $item->save();
+                        }
 
+                        // Handle linked models (FabricReceipt -> Vendor, AgentOrder -> Customer)
+                        if ($model == 'App\Models\FabricReceipt' && isset($item->vendor_id)) {
+                            $vendor = \App\Models\Vendor::lockForUpdate()->find($item->vendor_id);
+                            if ($vendor) {
                                 if ($type == 'credit')
-                                    $item->balance += $currentAmount;
+                                    $vendor->balance += $currentAmount;
                                 else
-                                    $item->balance -= $currentAmount;
-                                $item->save();
-                            } else {
-                                // Update Master Item Balance (regular flow)
-                                if (isset($item->balance) || isset($item->amount)) {
-                                    $isSpecial = in_array($masterId, [1, 12, 19, 26, 27, 28, 29, 30]); // Committee, Bank, Hulayati, Machinery, Loan, Factory Head, Discount, Salary
+                                    $vendor->balance -= $currentAmount;
+                                $vendor->save();
+                            }
+                        } elseif (($model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch' || $actualModel == 'App\Models\OrderMain' || $actualModel == 'App\Models\AgentOrderDispatch')) {
+                            $partyId = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch')
+                                ? ($item->master_customer_id ?? $item->customer_id)
+                                : ($actualModel == 'App\Models\OrderDispatch' ? $item->customer_id : $item->master_customer_id);
 
-                                    if (isset($item->balance)) {
-                                        if ($type == 'debit') {
-                                            $item->balance -= $currentAmount;
-                                        } else {
-                                            $item->balance += $currentAmount;
-                                        }
-                                    } elseif (isset($item->amount)) {
-                                        if ($type == 'debit') {
-                                            $item->amount -= $currentAmount;
-                                        } else {
-                                            $item->amount += $currentAmount;
-                                        }
-                                    }
-                                    $item->save();
-                                }
-
-                                // Handle linked models (FabricReceipt -> Vendor, AgentOrder -> Customer)
-                                if ($model == 'App\Models\FabricReceipt' && isset($item->vendor_id)) {
-                                    $vendor = \App\Models\Vendor::find($item->vendor_id);
-                                    if ($vendor) {
-                                        if ($type == 'credit')
-                                            $vendor->balance += $currentAmount;
-                                        else
-                                            $vendor->balance -= $currentAmount;
-                                        $vendor->save();
-                                    }
-                                } elseif (($model == 'App\Models\AgentOrder' || $actualModel == 'App\Models\OrderDispatch' || $actualModel == 'App\Models\OrderMain' || $actualModel == 'App\Models\AgentOrderDispatch')) {
-                                    $partyId = ($actualModel == 'App\Models\AgentOrder' || $actualModel == 'App\Models\AgentOrderDispatch')
-                                        ? ($item->master_customer_id ?? $item->customer_id)
-                                        : ($actualModel == 'App\Models\OrderDispatch' ? $item->customer_id : $item->master_customer_id);
-
-                                    $customer = \App\Models\MasterCustomer::find($partyId);
-                                    if ($customer) {
-                                        if ($type == 'credit')
-                                            $customer->balance += $currentAmount;
-                                        else
-                                            $customer->balance -= $currentAmount;
-                                        $customer->save();
-                                    }
-                                }
+                            $customer = \App\Models\MasterCustomer::lockForUpdate()->find($partyId);
+                            if ($customer) {
+                                if ($type == 'credit')
+                                    $customer->balance += $currentAmount;
+                                else
+                                    $customer->balance -= $currentAmount;
+                                $customer->save();
                             }
                         }
                     }
                 }
             }
+
+            // several shipments / dispatches in one line: the amount may not be more than their open balances
+            if ($amountToDistribute > 0.01) {
+                throw new \RuntimeException("Line {$line} ({$master->name}): the amount is " . number_format($amountToDistribute, 2) . ' more than the open balance of the selected entries. Nothing was saved.');
+            }
         }
 
-        // Update Global Account Balance (Single aggregate update)
+        if (abs($savedTotal - $totalActual) > 0.01) {
+            throw new \RuntimeException('The saved lines (' . number_format($savedTotal, 2) . ') do not add up to the total (' . number_format($totalActual, 2) . '). Nothing was saved.');
+        }
+
+        // Update Global Account Balance (Single aggregate update): by exactly what was saved
         $account = null; // no bank / cash account (e.g. a debit charged from Reports > Outflows)
         if ($mode == 'bank' && $accountId) {
-            $account = BankAccount::find($accountId);
+            $account = BankAccount::lockForUpdate()->find($accountId);
         } elseif ($accountId) {
-            $account = CashPayment::find($accountId);
+            $account = CashPayment::lockForUpdate()->find($accountId);
         }
 
         if ($account) {
+            $savedTotal = round($savedTotal, 2);
             // For To Account, the type is reverse of the Party type
             if ($type == 'credit')
-                $account->balance -= $totalActual;
+                $account->balance -= $savedTotal;
             else
-                $account->balance += $totalActual;
+                $account->balance += $savedTotal;
             $account->save();
         }
-
-        return redirect()->route('admin.payment.adjustment.index')->with('success', 'Multiple payment adjustments recorded and distributed.');
     }
 
     public function getSubMasters(Request $request)
@@ -586,8 +638,20 @@ class PaymentAdjustmentController extends Controller
     {
         DB::beginTransaction();
         try {
-            $this->reverseAdjustmentBatch($batchId);
-            $this->store($request);
+            $this->validateBatch($request);
+            $oldMode = $this->batchRows($batchId)->lockForUpdate()->value('payment_mode');
+            if ($oldMode !== null && ($oldMode === 'adjustment') !== ($request->payment_mode === 'adjustment')) {
+                throw new \RuntimeException($oldMode === 'adjustment'
+                    ? 'this credit came from Reports > Outflows (dispose); no money moved, so it must stay "No bank / cash".'
+                    : '"No bank / cash" is only for credits made by Reports > Outflows (dispose). Choose Bank or Cash.');
+            }
+            if (!$this->reverseAdjustmentBatch($batchId)) {
+                // its edit page no longer exists, so go to the list (back() would show a 404 page)
+                DB::rollBack();
+                return redirect()->route('admin.payment.adjustment.index')->with('error', 'Not saved: this entry was already changed or deleted (maybe in another tab or by a double click). Nothing was changed. Open it again from the list.');
+            }
+            // a refused new version rolls everything back, so the old entry stays as it was
+            $this->saveBatch($request);
             DB::commit();
             return redirect()->route('admin.payment.adjustment.index')->with('success', 'Adjustment updated successfully.');
         } catch (\Exception $e) {
@@ -600,7 +664,11 @@ class PaymentAdjustmentController extends Controller
     {
         DB::beginTransaction();
         try {
-            $this->reverseAdjustmentBatch($batchId);
+            if (!$this->reverseAdjustmentBatch($batchId)) {
+                // already deleted (double click / another tab): reverse nothing a second time
+                DB::rollBack();
+                return redirect()->route('admin.payment.adjustment.index')->with('error', 'This adjustment was already deleted. Nothing was changed.');
+            }
             DB::commit();
             return redirect()->route('admin.payment.adjustment.index')->with('success', 'Adjustment batch deleted and balances reversed.');
         } catch (\Exception $e) {
@@ -609,14 +677,17 @@ class PaymentAdjustmentController extends Controller
         }
     }
 
+    /** Rows of a batch (a row without a batch id is shown as unique_<id>). */
+    private function batchRows($batchId)
+    {
+        return str_starts_with($batchId, 'unique_')
+            ? PaymentAdjustment::where('id', str_replace('unique_', '', $batchId))
+            : PaymentAdjustment::where('batch_id', $batchId);
+    }
+
     private function reverseAdjustmentBatch($batchId)
     {
-        if (str_starts_with($batchId, 'unique_')) {
-            $id = str_replace('unique_', '', $batchId);
-            $adjustments = PaymentAdjustment::where('id', $id)->get();
-        } else {
-            $adjustments = PaymentAdjustment::where('batch_id', $batchId)->get();
-        }
+        $adjustments = $this->batchRows($batchId)->lockForUpdate()->get();
 
         if ($adjustments->isEmpty())
             return false;
@@ -650,10 +721,10 @@ class PaymentAdjustmentController extends Controller
                     }
                 }
 
-                $item = $actualModel::find($actualId);
+                $item = $actualModel::lockForUpdate()->find($actualId);
                 if ($item) {
                     if ($model == 'App\Models\FabricReceipt') {
-                        $vendor = \App\Models\Vendor::find($item->vendor_id);
+                        $vendor = \App\Models\Vendor::lockForUpdate()->find($item->vendor_id);
                         if ($vendor) {
                             if ($type == 'debit')
                                 $vendor->balance += $amount;
@@ -672,7 +743,7 @@ class PaymentAdjustmentController extends Controller
                             ? ($item->master_customer_id ?? $item->customer_id)
                             : ($actualModel == 'App\Models\OrderDispatch' ? $item->customer_id : $item->master_customer_id);
 
-                        $customer = \App\Models\MasterCustomer::find($partyId);
+                        $customer = \App\Models\MasterCustomer::lockForUpdate()->find($partyId);
                         if ($customer) {
                             if ($type == 'credit')
                                 $customer->balance -= $amount;
@@ -714,9 +785,9 @@ class PaymentAdjustmentController extends Controller
         // Reverse Global Account Balance
         $account = null; // no bank / cash account (e.g. a debit charged from Reports > Outflows)
         if ($mode == 'bank' && $accountId) {
-            $account = BankAccount::find($accountId);
+            $account = BankAccount::lockForUpdate()->find($accountId);
         } elseif ($accountId) {
-            $account = CashPayment::find($accountId);
+            $account = CashPayment::lockForUpdate()->find($accountId);
         }
 
         if ($account) {

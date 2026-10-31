@@ -18,6 +18,12 @@ class AdminMiddleware
     public function handle(Request $request, Closure $next)
     {
         if (Auth::guard('admin')->check()) {
+            // the owner login (role 3) opens the owner panel only, never the admin pages
+            if ((int) Auth::guard('admin')->user()->role_id === 3) {
+                return $request->expectsJson()
+                    ? response()->json(['message' => 'The owner login opens the owner panel only.'], 403)
+                    : redirect()->route('owner.dashboard')->with('error', 'The owner login opens the owner panel only.');
+            }
             Auth::shouldUse('admin');
             return $next($request);
         }

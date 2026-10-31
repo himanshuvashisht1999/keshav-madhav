@@ -307,6 +307,9 @@ class ProductOrderController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.product_order.index')->with('error', 'Order not found.');
+        }
         $response['products'] = $this->service->products();
         return view('admin.product_order.edit', $response);
     }
@@ -341,6 +344,9 @@ class ProductOrderController extends Controller
     public function view(Request $request)
     {
         $response['data'] = $this->service->view($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.product_order.index')->with('error', 'Order not found.');
+        }
         return view('admin.product_order.view', $response);
     }
     public function delete(Request $request)
@@ -378,11 +384,17 @@ class ProductOrderController extends Controller
     public function produce(Request $request)
     {
         $response['data'] = $this->service->produce($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.product_order.index')->with('error', 'Order not found.');
+        }
         return view('admin.product_order.produce', $response);
     }
     public function issueFabric(Request $request)
     {
         $response['data'] = $this->service->issueFabric($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.product_order.index')->with('error', 'Order product not found.');
+        }
         $response['sub_stages_cutting'] = $this->service->sub_stages_cutting();
         return view('admin.product_order.issue_fabric', $response);
     }
@@ -398,6 +410,9 @@ class ProductOrderController extends Controller
     public function issueSlip(Request $request)
     {
         $orderProduct = OrderProduct::with('order')->where('id', $request->id)->first();
+        if (!$orderProduct) {
+            return redirect()->route('admin.product_order.index')->with('error', 'Order product not found.');
+        }
         $order = $orderProduct->order;
         $issuedRecords = OrderProductDetailStock::where('order_product_id', $orderProduct->id)
             ->with('stock')
@@ -753,6 +768,9 @@ class ProductOrderController extends Controller
 
     public function viewCuttingSlip(Request $request)
     {
+        if (!is_numeric($request->id) || !OrderProductSet::whereKey($request->id)->exists()) {
+            return redirect()->route('admin.product_order.indexOrder')->with('error', 'Cutting slip not found.');
+        }
         $slip_data = $this->buildCmpoData($request->id);
         $response = [
             'header' => $slip_data['cmpoHeader'],

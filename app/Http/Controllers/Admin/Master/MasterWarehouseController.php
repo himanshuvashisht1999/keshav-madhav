@@ -32,6 +32,9 @@ class MasterWarehouseController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.warehouse.index')->with('error', 'Warehouse not found.');
+        }
         return view('admin.master.warehouse.edit',$response);
     }
     public function update(MasterWarehouseUpdateRequest $request){

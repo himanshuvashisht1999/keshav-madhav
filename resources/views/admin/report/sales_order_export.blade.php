@@ -45,7 +45,8 @@
                     <td>{{ $lot['pieces_in_lot'] }}</td>
                     <td>{{ $lot['dispatched'] ?? 0 }}</td>
                     <td>{{ $lot['stage_name'] }}</td>
-                    <td>{{ $lot['isDelayed'] }}</td>
+                    {{-- order marked Completed and lot not fully sent: tagged, never delayed (same rule as the screen) --}}
+                    <td>{{ $lot['order_done'] && $lot['lot_no'] !== '-' && !in_array($lot['stage_name'], ['Dispatched', 'Packed (stock)'], true) ? 'Order completed' : $lot['isDelayed'] }}</td>
                     <td>{{ $lot['allowed_till_datetime'] }}</td>
                 </tr>
 

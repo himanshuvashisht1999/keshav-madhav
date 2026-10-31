@@ -58,6 +58,13 @@ class ReportService
     //         dd($order_ids);
 //    }
 
+    /**
+     * Sales Order report (admin page and export, owner Sales Orders): one row per lot of each order.
+     * order_done = the order is marked Completed (status 3). A lot of a Completed order is not in production, so it
+     * is never delayed (same rule as the owner Lots page and Home): isDelayed 'No'. plan_missed keeps the lot's own
+     * figure (its current stage is past its planned end). delay_status Yes / No filters on isDelayed; any other
+     * value is ignored.
+     */
     public function salesOrder(Request $request)
     {
         // Built from the real lot records (order_lots, roll sheets, stage moves, packing cartons).
@@ -66,6 +73,7 @@ class ReportService
         $lots = $this->reportLots($orders->pluck('id'), $request);
         $facts = $this->lotFacts($lots->flatten()->pluck('lot_no'));
         $now = now()->toDateTimeString();
+        $delayFilter = in_array($request->delay_status, ['Yes', 'No'], true) ? $request->delay_status : null;
 
         $result = [];
         foreach ($orders as $order) {
@@ -75,11 +83,12 @@ class ReportService
                 'customer' => $order->customer->name ?? '',
                 'order_no' => $order->sku,
                 'total_pcs_in_order' => (int) ($totals[$order->id] ?? 0),
+                'order_done' => (int) $order->status === 3,
             ];
             $orderLots = $lots[$order->id] ?? collect();
 
             if ($orderLots->isEmpty()) {
-                if ($request->filled('lot_no') || $request->delay_status === 'Yes') {
+                if ($request->filled('lot_no') || $delayFilter === 'Yes') {
                     continue;
                 }
                 $result[] = $base + [
@@ -88,6 +97,7 @@ class ReportService
                     'dispatched' => 0,
                     'stage_name' => 'Not Issued',
                     'isDelayed' => 'No',
+                    'plan_missed' => 'No',
                     'allowed_till_datetime' => null,
                     'current_datetime' => $now,
                 ];
@@ -96,7 +106,9 @@ class ReportService
 
             foreach ($orderLots as $lot) {
                 $f = $facts[self::lotKey($lot->lot_no)];
-                if ($request->filled('delay_status') && $request->delay_status !== $f['is_delayed']) {
+                // a lot of a Completed order is not delayed (not in production any more)
+                $isDelayed = $base['order_done'] ? 'No' : $f['is_delayed'];
+                if ($delayFilter && $delayFilter !== $isDelayed) {
                     continue;
                 }
                 $result[] = $base + [
@@ -104,7 +116,8 @@ class ReportService
                     'pieces_in_lot' => $f['pieces'],
                     'dispatched' => $f['dispatched'] + $f['in_stock'],
                     'stage_name' => $f['stage_name'],
-                    'isDelayed' => $f['is_delayed'],
+                    'isDelayed' => $isDelayed,
+                    'plan_missed' => $f['is_delayed'],
                     'allowed_till_datetime' => $f['allowed_till'],
                     'current_datetime' => $now,
                 ];
@@ -153,6 +166,17 @@ class ReportService
             ->orderBy('id')
             ->get(['id', 'order_main_id', 'order_products_set_id', 'lot_no'])
             ->groupBy('order_main_id');
+    }
+
+    /** lotFacts() for other pages (owner panel, WIP Complete): facts of each lot, keyed by lotKeyOf($lotNo). */
+    public function lotProgress($lotNos): array
+    {
+        return $this->lotFacts($lotNos);
+    }
+
+    public static function lotKeyOf($lotNo): string
+    {
+        return self::lotKey($lotNo);
     }
 
     private static function lotKey($lotNo): string
@@ -251,6 +275,251 @@ class ReportService
         unset($f);
 
         return $facts;
+    }
+
+    /**
+     * Stage figures of many lots at once, keyed [lotKeyOf($lotNo)][$stageId]. Each entry holds exactly what
+     * getLotDetails($lotNo, $stageId) returns (unit_name, quantity = In, remaining_quantity = WIP, done,
+     * time_allocation, completed_time, start_date) plus unit_count (how many units received pieces at the stage).
+     * A fixed number of grouped queries per 500 lots instead of ~5 queries per lot and stage.
+     * $stageIds defaults to master_stages().
+     */
+    public function lotStageFigures($lotNos, $stageIds = null): array
+    {
+        // one entry per lot key (lot numbers match case-insensitively, like the database)
+        $lotNos = collect($lotNos)->map(fn($l) => (string) $l)->filter(fn($l) => $l !== '')
+            ->unique(fn($l) => self::lotKey($l))->values()->all();
+        $stageIds = collect($stageIds ?? $this->master_stages()->pluck('id'))->map(fn($s) => (int) $s)->unique()->values()->all();
+        if (!$lotNos || !$stageIds) {
+            return [];
+        }
+
+        // receipts of a stage come from one table, its sends from several (same tables as getLotDetails)
+        $tables = ['stage' => 'order_stage_transactions', 'godam' => 'order_godam_stage_transactions',
+            'printing' => 'order_printing_stage_transactions', 'p2s' => 'order_printing_to_stiching_transactions'];
+        $receiptTable = fn($s) => $s === 1 ? 'printing' : ($s === 13 ? 'godam' : 'stage');
+        $sendTables = fn($s) => $s === 1 ? ['p2s', 'godam', 'printing', 'stage'] : ['stage', 'godam'];
+        $isReverse = function ($r) {
+            if ($r->type == 2) {
+                return true;
+            }
+            return $r->from_stage_id && $r->to_stage_id
+                && $r->from_stage_id >= 4 && $r->from_stage_id <= 12 && $r->to_stage_id >= 4 && $r->to_stage_id <= 12
+                && $r->from_stage_id > $r->to_stage_id;
+        };
+        // unit-to-unit transfer inside one stage: neither a receipt nor a send (as getLotDetails)
+        $sameStage = fn($r) => $r->from_stage_id !== null && $r->to_stage_id !== null && (int) $r->from_stage_id === (int) $r->to_stage_id;
+
+        $moves = [];    // [lotKey][table][] = group (from, to, type, unit, qty, first_id)
+        $packed = [];   // [lotKey] => packed pcs (packing_items)
+        $outflow = [];  // [lotKey] => debit / dead / sampling / damage pcs (non-packing outflows)
+        $timings = [];  // [lotKey][stageId] => OrderLotStageTiming
+        $sets = [];     // [lotKey] => order lines whose design number is the lot no (stage 3 only)
+        $unitIds = [];
+
+        foreach (array_chunk($lotNos, 500) as $chunk) {
+            foreach ($tables as $k => $table) {
+                \DB::table($table)->whereIn('lot_no', $chunk)
+                    ->groupBy('lot_no', 'from_stage_id', 'to_stage_id', 'type', 'sub_stage_id_to')
+                    ->selectRaw('lot_no, from_stage_id, to_stage_id, type, sub_stage_id_to, SUM(quantity) as qty, MIN(id) as first_id')
+                    ->get()
+                    ->each(function ($r) use (&$moves, &$unitIds, $k) {
+                        $moves[self::lotKey($r->lot_no)][$k][] = $r;
+                        if ($r->sub_stage_id_to) {
+                            $unitIds[(int) $r->sub_stage_id_to] = true;
+                        }
+                    });
+            }
+            if (in_array(11, $stageIds, true)) {
+                \DB::table('packing_items')->whereIn('lot_no', $chunk)->groupBy('lot_no')
+                    ->selectRaw('lot_no, SUM(quantity) as qty')->get()
+                    ->each(function ($r) use (&$packed) { $packed[self::lotKey($r->lot_no)] = ($packed[self::lotKey($r->lot_no)] ?? 0) + (int) $r->qty; });
+                \DB::table('production_outflow_inventories')->whereIn('lot_no', $chunk)->whereNotIn('type', ['packing', 'packing_divert'])
+                    ->groupBy('lot_no')->selectRaw('lot_no, SUM(quantity) as qty')->get()
+                    ->each(function ($r) use (&$outflow) { $outflow[self::lotKey($r->lot_no)] = ($outflow[self::lotKey($r->lot_no)] ?? 0) + (int) $r->qty; });
+            }
+            \App\Models\OrderLotStageTiming::whereIn('lot_no', $chunk)->whereIn('master_stage_id', $stageIds)->orderBy('id')
+                ->get(['id', 'lot_no', 'master_stage_id', 'unit_id', 'start_date', 'end_date', 'complete_date'])
+                ->each(function ($t) use (&$timings, &$unitIds) {
+                    $key = self::lotKey($t->lot_no);
+                    if (!isset($timings[$key][(int) $t->master_stage_id])) {
+                        $timings[$key][(int) $t->master_stage_id] = $t;
+                    }
+                    if ($t->unit_id) {
+                        $unitIds[(int) $t->unit_id] = true;
+                    }
+                });
+            if (in_array(3, $stageIds, true)) {
+                OrderProductSet::whereIn('design_number', $chunk)->orderBy('id')
+                    ->get(['id', 'design_number', 'total_quantity', 'remain_total_quantity', 'stage_master_unit_id'])
+                    ->each(function ($s) use (&$sets, &$unitIds) {
+                        $sets[self::lotKey($s->design_number)][] = $s;
+                        if ($s->stage_master_unit_id) {
+                            $unitIds[(int) $s->stage_master_unit_id] = true;
+                        }
+                    });
+            }
+        }
+        $unitNames = $unitIds ? \App\Models\StageMasterUnit::whereIn('id', array_keys($unitIds))->pluck('name', 'id')->all() : [];
+
+        $result = [];
+        foreach ($lotNos as $lotNo) {
+            $key = self::lotKey($lotNo);
+            foreach ($stageIds as $s) {
+                $unitName = '-';
+                $unitCount = 0;
+                if ($s === 3) {
+                    $records = collect($sets[$key] ?? []);
+                    $first = $records->first();
+                    $unitName = ($first && $first->stage_master_unit_id ? ($unitNames[(int) $first->stage_master_unit_id] ?? null) : null) ?? '-';
+                    $unitCount = $records->pluck('stage_master_unit_id')->filter()->unique()->count();
+                    $totalQuantity = $records->sum('total_quantity');
+                    $remainingQuantity = $records->sum('remain_total_quantity');
+                } else {
+                    $in1 = $inAll = $outT2 = $outAll = 0;
+                    $firstId = null;
+                    $units = [];
+                    foreach ($moves[$key][$receiptTable($s)] ?? [] as $r) {
+                        if ($r->to_stage_id === null || (int) $r->to_stage_id !== $s) {
+                            continue;
+                        }
+                        // the stage's unit is the unit of its first receipt (lowest id), as getLotDetails
+                        if ($firstId === null || (int) $r->first_id < $firstId) {
+                            $firstId = (int) $r->first_id;
+                            $unitName = ($r->sub_stage_id_to ? ($unitNames[(int) $r->sub_stage_id_to] ?? null) : null) ?? '-';
+                        }
+                        if ($r->sub_stage_id_to) {
+                            $units[(int) $r->sub_stage_id_to] = true;
+                        }
+                        if ($sameStage($r)) {
+                            continue;
+                        }
+                        $inAll += (int) $r->qty;
+                        if (!$isReverse($r)) {
+                            $in1 += (int) $r->qty;
+                        }
+                    }
+                    $unitCount = count($units);
+                    foreach ($sendTables($s) as $t) {
+                        foreach ($moves[$key][$t] ?? [] as $r) {
+                            if ($r->from_stage_id === null || (int) $r->from_stage_id !== $s || $sameStage($r)) {
+                                continue;
+                            }
+                            $outAll += (int) $r->qty;
+                            if ($isReverse($r)) {
+                                $outT2 += (int) $r->qty;
+                            }
+                        }
+                    }
+                    if ($s === 11) {
+                        $outAll += ($packed[$key] ?? 0) + ($outflow[$key] ?? 0);
+                    }
+                    $totalQuantity = max(0, $in1 - $outT2);
+                    $remainingQuantity = max(0, $inAll - $outAll);
+                }
+
+                $timing = $timings[$key][$s] ?? null;
+                if ($unitName === '-' && $timing && $timing->unit_id) {
+                    $unitName = $unitNames[(int) $timing->unit_id] ?? '-';
+                }
+
+                $result[$key][$s] = [
+                    'unit_name' => $unitName,
+                    'unit_count' => $unitCount,
+                    'quantity' => $totalQuantity,
+                    'remaining_quantity' => $remainingQuantity,
+                    'done' => max(0, $totalQuantity - $remainingQuantity),
+                    'time_allocation' => $timing->end_date ?? null,
+                    'completed_time' => $timing->complete_date ?? null,
+                    'start_date' => $timing->start_date ?? null,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Lots of the WIP Complete report (admin and owner). Orders of the customer (all customers when none is given)
+     * that have lots, newest first, then each order line and its lots, as the report always listed them.
+     * Chosen orders / designs / lots that do not belong to the customer are dropped (a stale filter used to empty the page).
+     * Returns the filter options, the filters actually applied and the rows [order, set, lot].
+     */
+    public function wipCompleteLots($customerId, $orderIds = [], $designNos = [], $lotNos = []): array
+    {
+        $orders = OrderMain::when($customerId, fn($q) => $q->where('master_customer_id', $customerId))
+            ->with(['OrderProductSets' => fn($q) => $q->has('orderLots'), 'OrderProductSets.orderLots'])
+            ->latest()
+            ->get();
+
+        $options = ['orders' => [], 'designs' => [], 'lots' => []];
+        foreach ($orders as $order) {
+            if ($order->OrderProductSets->isEmpty()) {
+                continue;
+            }
+            $options['orders'][$order->id] = $order->sku;
+            foreach ($order->OrderProductSets as $set) {
+                if (!empty($set->design_number)) {
+                    $options['designs'][$set->design_number][$order->id] = $order->id;
+                }
+                foreach ($set->orderLots as $lot) {
+                    $options['lots'][$lot->lot_no] = ['order_id' => $order->id, 'design' => $set->design_number];
+                }
+            }
+        }
+
+        // keep only choices that exist for this customer (same loose match as the filter below)
+        $keep = fn($chosen, $available) => array_values(array_filter((array) $chosen, fn($v) => $v !== null && $v !== '' && in_array($v, $available)));
+        $orderIds = $keep($orderIds, array_keys($options['orders']));
+        $designNos = $keep($designNos, array_map('strval', array_keys($options['designs'])));
+        $lotNos = $keep($lotNos, array_map('strval', array_keys($options['lots'])));
+
+        $rows = [];
+        foreach ($orders as $order) {
+            if (!empty($orderIds) && !in_array($order->id, $orderIds)) {
+                continue;
+            }
+            foreach ($order->OrderProductSets as $set) {
+                if (!empty($designNos) && !in_array($set->design_number, $designNos)) {
+                    continue;
+                }
+                foreach ($set->orderLots as $lot) {
+                    if (!empty($lotNos) && !in_array($lot->lot_no, $lotNos)) {
+                        continue;
+                    }
+                    $rows[] = ['order' => $order, 'set' => $set, 'lot' => $lot];
+                }
+            }
+        }
+
+        // a lot is listed only when it has roll sheets or a cutting entry with its order line (what lotDetails() needed)
+        $lotKeys = array_map(fn($r) => (string) $r['lot']->lot_no, $rows);
+        $known = [];
+        foreach (array_chunk(array_values(array_unique($lotKeys)), 500) as $chunk) {
+            FabricRollAssigning::whereIn('lot_no', $chunk)->distinct()->pluck('lot_no')
+                ->each(function ($l) use (&$known) { $known[self::lotKey($l)] = true; });
+        }
+        $missing = array_values(array_filter(array_unique($lotKeys), fn($l) => !isset($known[self::lotKey($l)])));
+        if ($missing) {
+            $seen = [];
+            \App\Models\OrderCuttingStage::with('orderProductSet:id')->whereIn('lot_no', $missing)->orderBy('id')->get(['id', 'lot_no', 'set_product_id'])
+                ->each(function ($c) use (&$seen, &$known) {
+                    $key = self::lotKey($c->lot_no);
+                    if (!isset($seen[$key])) {
+                        $seen[$key] = true;
+                        if ($c->orderProductSet) {
+                            $known[$key] = true;
+                        }
+                    }
+                });
+        }
+        $rows = array_values(array_filter($rows, fn($r) => $r['lot']->lot_no && isset($known[self::lotKey($r['lot']->lot_no)])));
+
+        return [
+            'options' => $options,
+            'selected' => ['order_ids' => $orderIds, 'design_nos' => $designNos, 'lot_nos' => $lotNos],
+            'rows' => $rows,
+        ];
     }
 
     // public function getSalesOrderDetails($id)
@@ -473,24 +742,32 @@ class ReportService
 
             if ($request->filled('warehouse_id')) {
                 $whIds = array_map('intval', (array) $request->warehouse_id);
-                $whIdsString = implode(',', $whIds);
-                $query->selectRaw("
-                    (
-                        COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = fabrics.id AND fr.master_fabric_warehouse_id IN ({$whIdsString})), 0)
-                        +
-                        COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = fabrics.id AND ft.to_warehouse_id IN ({$whIdsString})), 0)
-                    ) as total_received")
-                ->selectRaw("COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = fabrics.id AND frd.master_fabric_warehouse_id IN ({$whIdsString})), 0) as total_remaining")
-                ->selectRaw("(
-                    (
-                        COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = fabrics.id AND fr.master_fabric_warehouse_id IN ({$whIdsString})), 0)
-                        +
-                        COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = fabrics.id AND ft.to_warehouse_id IN ({$whIdsString})), 0)
-                    ) 
-                    - 
-                    COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = fabrics.id AND frd.master_fabric_warehouse_id IN ({$whIdsString})), 0)
-                ) as total_issued")
-                ->groupBy('fabrics.id', 'fabrics.name', 'vendors.name');
+                // Per-fabric sums for the chosen warehouses, each computed once and joined on fabric_id
+                // (the old correlated subqueries ran 3 scans per fabric: 2-3 s per query).
+                // received = receipts booked at the warehouses + moves in from warehouses outside the choice;
+                // remaining = rolls lying there now. Moves between two chosen warehouses count in neither.
+                $whReceived = \DB::table('fabric_receipt_details as frd')
+                    ->join('fabric_receipts as fr', 'frd.fabric_receipt_id', '=', 'fr.id')
+                    ->whereIn('fr.master_fabric_warehouse_id', $whIds)
+                    ->groupBy('frd.fabric_id')
+                    ->select('frd.fabric_id', \DB::raw('SUM(frd.meter) as meter'));
+                $whTransferIn = \DB::table('fabric_transfer_items as fti')
+                    ->join('fabric_transfers as ft', 'fti.fabric_transfer_id', '=', 'ft.id')
+                    ->whereIn('ft.to_warehouse_id', $whIds)
+                    ->whereNotIn('ft.from_warehouse_id', $whIds)
+                    ->groupBy('fti.fabric_id')
+                    ->select('fti.fabric_id', \DB::raw('SUM(fti.meter) as meter'));
+                $whRemaining = \DB::table('fabric_receipt_details as frd')
+                    ->whereIn('frd.master_fabric_warehouse_id', $whIds)
+                    ->groupBy('frd.fabric_id')
+                    ->select('frd.fabric_id', \DB::raw('SUM(frd.remaining_quantity) as meter'));
+                $query->leftJoinSub($whReceived, 'wh_rec', 'wh_rec.fabric_id', '=', 'fabrics.id')
+                    ->leftJoinSub($whTransferIn, 'wh_tin', 'wh_tin.fabric_id', '=', 'fabrics.id')
+                    ->leftJoinSub($whRemaining, 'wh_rem', 'wh_rem.fabric_id', '=', 'fabrics.id')
+                    ->selectRaw('(COALESCE(MAX(wh_rec.meter), 0) + COALESCE(MAX(wh_tin.meter), 0)) as total_received')
+                    ->selectRaw('COALESCE(MAX(wh_rem.meter), 0) as total_remaining')
+                    ->selectRaw('((COALESCE(MAX(wh_rec.meter), 0) + COALESCE(MAX(wh_tin.meter), 0)) - COALESCE(MAX(wh_rem.meter), 0)) as total_issued')
+                    ->groupBy('fabrics.id', 'fabrics.name', 'vendors.name');
             } else {
                 $query->selectRaw('COALESCE(SUM(fabric_receipt_details.meter), 0) as total_received')
                     ->selectRaw('COALESCE(SUM(fabric_receipt_details.remaining_quantity), 0) as total_remaining')
@@ -516,7 +793,8 @@ class ReportService
                 ->when($request->filled('search'), function ($q) use ($request) {
                     $q->where('fabrics.name', 'LIKE', '%' . $request->search . '%');
                 })
-                ->orderBy('fabrics.name');
+                ->orderBy('fabrics.name')
+                ->orderBy('fabrics.id'); // same-name fabrics keep one order, so pages never repeat or skip a fabric
 
             $totalsQuery = clone $query;
             $totals = \DB::query()->fromSub($totalsQuery, 'sub')->selectRaw('
@@ -540,28 +818,25 @@ class ReportService
             $fabricId = (int) $request->fabric_id; // a number only: it is used inside raw SQL below
             $fabric = Fabric::find($fabricId);
 
+            // Received = metres from suppliers booked at the warehouse. Moves between warehouses are their own
+            // columns (each move is in at one row and out at another), so the row totals equal the fabric's own figures.
+            $receivedSql = "COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = {$fabricId} AND fr.master_fabric_warehouse_id = master_fabric_warehouse.id), 0)";
+            $movedInSql = "COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = {$fabricId} AND ft.to_warehouse_id = master_fabric_warehouse.id), 0)";
+            $movedOutSql = "COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = {$fabricId} AND ft.from_warehouse_id = master_fabric_warehouse.id), 0)";
+            $remainingSql = "(SELECT COALESCE(SUM(frd.remaining_quantity), 0) FROM fabric_receipt_details frd WHERE frd.fabric_id = {$fabricId} AND frd.master_fabric_warehouse_id = master_fabric_warehouse.id)";
+
             $query = \App\Models\MasterFabricWarehouse::query()
                 ->select([
                     'master_fabric_warehouse.id as master_fabric_warehouse_id',
                     'master_fabric_warehouse.cutting_master_name',
-                    \DB::raw("(
-                        COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = {$fabricId} AND fr.master_fabric_warehouse_id = master_fabric_warehouse.id), 0)
-                        +
-                        COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = {$fabricId} AND ft.to_warehouse_id = master_fabric_warehouse.id), 0)
-                    ) as total_received"),
-                    \DB::raw("(SELECT COALESCE(SUM(frd.remaining_quantity), 0) FROM fabric_receipt_details frd WHERE frd.fabric_id = {$fabricId} AND frd.master_fabric_warehouse_id = master_fabric_warehouse.id) as total_remaining"),
-                    \DB::raw("(
-                        (
-                            COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = {$fabricId} AND fr.master_fabric_warehouse_id = master_fabric_warehouse.id), 0)
-                            +
-                            COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = {$fabricId} AND ft.to_warehouse_id = master_fabric_warehouse.id), 0)
-                        ) 
-                        - 
-                        (SELECT COALESCE(SUM(frd.remaining_quantity), 0) FROM fabric_receipt_details frd WHERE frd.fabric_id = {$fabricId} AND frd.master_fabric_warehouse_id = master_fabric_warehouse.id)
-                    ) as total_issued")
+                    \DB::raw("{$receivedSql} as total_received"),
+                    \DB::raw("{$movedInSql} as total_moved_in"),
+                    \DB::raw("{$movedOutSql} as total_moved_out"),
+                    \DB::raw("{$remainingSql} as total_remaining"),
+                    \DB::raw("({$receivedSql} + {$movedInSql} - {$movedOutSql} - {$remainingSql}) as total_issued"),
                 ])
                 ->where('master_fabric_warehouse.status', 1)
-                ->having('total_received', '>', 0)
+                ->havingRaw('(total_received + total_moved_in) > 0') // the fabric came into this warehouse (same rows as before)
                 ->when($request->filled('qty_from'), function ($q) use ($request) {
                     $q->having('total_remaining', '>=', $request->qty_from);
                 })
@@ -575,6 +850,8 @@ class ReportService
             });
             $totals = (object) [
                 'sum_received' => $data->sum('total_received'),
+                'sum_moved_in' => $data->sum('total_moved_in'),
+                'sum_moved_out' => $data->sum('total_moved_out'),
                 'sum_issued' => $data->sum('total_issued'),
                 'sum_remaining' => $data->sum('total_remaining'),
             ];
@@ -612,26 +889,7 @@ class ReportService
                 ->orderBy('created_at', 'desc');
 
             if ($warehouseId) {
-                $whIds = array_map('intval', (array) $warehouseId);
-                $whIdsString = implode(',', $whIds);
-                $whStats = \DB::selectOne("
-                    SELECT 
-                        (
-                            COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = {$fabricId} AND fr.master_fabric_warehouse_id IN ({$whIdsString})), 0)
-                            +
-                            COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = {$fabricId} AND ft.to_warehouse_id IN ({$whIdsString})), 0)
-                        ) as total_received,
-                        COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = {$fabricId} AND frd.master_fabric_warehouse_id IN ({$whIdsString})), 0) as total_remaining
-                ");
-                $sumReceived = (float) ($whStats->total_received ?? 0);
-                $sumRemaining = (float) ($whStats->total_remaining ?? 0);
-                $sumIssued = $sumReceived - $sumRemaining;
-
-                $totals = (object) [
-                    'sum_received' => $sumReceived,
-                    'sum_remaining' => $sumRemaining,
-                    'sum_issued' => $sumIssued
-                ];
+                $totals = $this->stockTotalsAt($fabricId, (array) $warehouseId);
             } else {
                 $totalsQuery = clone $query;
                 $totals = (object) [
@@ -687,7 +945,7 @@ class ReportService
                 ]);
             }
 
-            // 2. Inter-Warehouse Transfers Out (Stock moved out of this warehouse)
+            // 2. Inter-Warehouse Transfers Out (Stock moved out of this warehouse; a move to another chosen warehouse stays inside)
             if ($warehouseId) {
                 $transfersOut = \DB::table('fabric_transfer_items')
                     ->join('fabric_transfers', 'fabric_transfer_items.fabric_transfer_id', '=', 'fabric_transfers.id')
@@ -695,6 +953,7 @@ class ReportService
                     ->leftJoin('fabric_receipt_details as frd', 'fabric_transfer_items.fabric_receipt_detail_id', '=', 'frd.id')
                     ->where('fabric_transfer_items.fabric_id', $fabricId)
                     ->whereIn('fabric_transfers.from_warehouse_id', (array) $warehouseId)
+                    ->whereNotIn('fabric_transfers.to_warehouse_id', (array) $warehouseId)
                     ->select([
                         'fabric_transfer_items.*',
                         'fabric_transfers.transfer_no',
@@ -726,6 +985,8 @@ class ReportService
             $disposalsQuery = \DB::table('stock_disposal_items')
                 ->join('stock_disposal_mains', 'stock_disposal_items.stock_disposal_main_id', '=', 'stock_disposal_mains.id')
                 ->join('fabric_receipt_details as frd', 'stock_disposal_items.item_id', '=', 'frd.id')
+                // item_id is a roll only for fabric disposals; for 'domestic' disposals it points to domestic_inventories
+                ->where('stock_disposal_mains.item_type', 'fabric')
                 ->where('frd.fabric_id', $fabricId);
 
             if ($warehouseId) {
@@ -787,9 +1048,9 @@ class ReportService
             }
 
             // 5. Agent Orders (Direct Sales)
+            // every agent fabric line: its metres leave the roll when the line is created (AgentOrderController), not at dispatch
             $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.vendor', 'order.shop', 'roll'])
-                ->where('fabric_id', $fabricId)
-                ->whereNotNull('agent_order_dispatch_id');
+                ->where('fabric_id', $fabricId);
 
             if ($warehouseId) {
                 $agentUsagesQuery->whereHas('roll', function ($q) use ($warehouseId) {
@@ -805,7 +1066,7 @@ class ReportService
                     'id' => 'agent_' . $a->id,
                     'created_at' => $a->created_at,
                     'roll_no' => $a->roll?->roll_number ?? '-',
-                    'lot_no' => 'Agent Order',
+                    'lot_no' => $a->agent_order_dispatch_id ? 'Agent Order' : 'Agent Order (not dispatched)',
                     'order_no' => $a->order?->sku ?? ('PO-' . $a->agent_order_id),
                     'meter' => $a->meter,
                     'type_badge' => 'Direct Sale',
@@ -821,26 +1082,7 @@ class ReportService
             $unifiedUsages = $unifiedUsages->sortByDesc('created_at')->values();
 
             if ($warehouseId) {
-                $whIds = array_map('intval', (array) $warehouseId);
-                $whIdsString = implode(',', $whIds);
-                $whStats = \DB::selectOne("
-                    SELECT 
-                        (
-                            COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = {$fabricId} AND fr.master_fabric_warehouse_id IN ({$whIdsString})), 0)
-                            +
-                            COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = {$fabricId} AND ft.to_warehouse_id IN ({$whIdsString})), 0)
-                        ) as total_received,
-                        COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = {$fabricId} AND frd.master_fabric_warehouse_id IN ({$whIdsString})), 0) as total_remaining
-                ");
-                $sumReceived = (float) ($whStats->total_received ?? 0);
-                $sumRemaining = (float) ($whStats->total_remaining ?? 0);
-                $sumIssued = $sumReceived - $sumRemaining;
-
-                $totals = (object) [
-                    'sum_received' => $sumReceived,
-                    'sum_remaining' => $sumRemaining,
-                    'sum_issued' => $sumIssued
-                ];
+                $totals = $this->stockTotalsAt($fabricId, (array) $warehouseId);
             } else {
                 $rollQuery = FabricReceiptDetail::where('fabric_id', $fabricId);
                 $totals = (object) [
@@ -880,6 +1122,30 @@ class ReportService
         }
 
         return ['level' => 'fabrics', 'data' => collect([])];
+    }
+
+    // Stock of one fabric at a set of warehouses. Received = receipts booked there + moves in from warehouses
+    // outside the set; In stock = rolls lying there now; Issued = the rest. Moves inside the set count in neither.
+    private function stockTotalsAt(int $fabricId, array $warehouseIds)
+    {
+        $whIdsString = implode(',', array_map('intval', $warehouseIds));
+        $whStats = \DB::selectOne("
+            SELECT
+                (
+                    COALESCE((SELECT SUM(frd.meter) FROM fabric_receipt_details frd JOIN fabric_receipts fr ON frd.fabric_receipt_id = fr.id WHERE frd.fabric_id = {$fabricId} AND fr.master_fabric_warehouse_id IN ({$whIdsString})), 0)
+                    +
+                    COALESCE((SELECT SUM(fti.meter) FROM fabric_transfer_items fti JOIN fabric_transfers ft ON fti.fabric_transfer_id = ft.id WHERE fti.fabric_id = {$fabricId} AND ft.to_warehouse_id IN ({$whIdsString}) AND ft.from_warehouse_id NOT IN ({$whIdsString})), 0)
+                ) as total_received,
+                COALESCE((SELECT SUM(frd.remaining_quantity) FROM fabric_receipt_details frd WHERE frd.fabric_id = {$fabricId} AND frd.master_fabric_warehouse_id IN ({$whIdsString})), 0) as total_remaining
+        ");
+        $sumReceived = (float) ($whStats->total_received ?? 0);
+        $sumRemaining = (float) ($whStats->total_remaining ?? 0);
+
+        return (object) [
+            'sum_received' => $sumReceived,
+            'sum_remaining' => $sumRemaining,
+            'sum_issued' => $sumReceived - $sumRemaining
+        ];
     }
 
     public function fabricReturn(Request $request)
@@ -1035,9 +1301,9 @@ class ReportService
             ];
         }
 
+        // all agent fabric lines (metres leave the roll when the line is created, dispatched or not)
         $agentUsagesQuery = \App\Models\AgentOrderFabricItem::with(['order.vendor', 'order.shop', 'roll'])
-            ->where('fabric_id', $fabricId)
-            ->whereNotNull('agent_order_dispatch_id');
+            ->where('fabric_id', $fabricId);
 
         if (!empty($warehouseId)) {
             $agentUsagesQuery->whereHas('roll', function ($q) use ($warehouseId) {
@@ -1679,12 +1945,12 @@ class ReportService
 
         $lots = $query->paginate(15)->withQueryString();
 
-        return $lots->through(function ($lot) {
+        // Pieces cut and current stage of the page's lots in a few batched queries (lotFacts: "Dispatched" once
+        // every cut piece has left packing) instead of ~7 queries per row with getLastCurrentStage().
+        $facts = $this->lotFacts($lots->getCollection()->pluck('lot_no')->all());
 
-            $quantity = \App\Models\FabricRollAssigning::where('lot_no', $lot->lot_no)
-                ->withSum('fabricRollAssigningsDetail as total', 'quantity')
-                ->get()
-                ->sum('total');
+        return $lots->through(function ($lot) use ($facts) {
+            $f = $facts[self::lotKey($lot->lot_no)] ?? null;
 
             return [
                 'id' => $lot->id,
@@ -1692,12 +1958,17 @@ class ReportService
                 'order_no' => $lot->orderMain->sku ?? '',
                 'customer_name' => $lot->orderMain->customer->name ?? '',
                 'lot_no' => $lot->lot_no,
-                'lot_quantity' => $quantity ?? 0,
+                'lot_quantity' => $f['pieces'] ?? 0,
                 'status' => $lot->status,
                 'is_printing' => $lot->is_printing,
                 'is_stitching' => $lot->is_stitching,
                 'date' => $lot->created_at->format('d M, Y'),
-                'last_current_stage' => getLastCurrentStage($lot->lot_no),
+                'last_current_stage' => $f['stage_name'] ?? 'Cutting',
+                'packed' => $f['packed'] ?? 0,
+                'dispatched' => $f['dispatched'] ?? 0,
+                'in_stock' => $f['in_stock'] ?? 0,
+                'is_delayed' => $f['is_delayed'] ?? 'No',
+                'allowed_till' => $f['allowed_till'] ?? null,
             ];
         });
     }
@@ -2061,7 +2332,7 @@ class ReportService
 
         if ($productionStatus) {
             $type = 'other';
-            $query = \App\Models\OrderLot::with(['orderMain.customer', 'orderProductSet.colors', 'orderProductSet.master_design_pattern', 'orderProductSet.order_cutting_stage.cutting_master'])
+            $query = \App\Models\OrderLot::with(['orderMain.customer', 'orderProductSet.colors', 'orderProductSet.master_design_pattern', 'orderProductSet.order_cutting_stage.cutting_master', 'orderProductSet.size_measurement'])
                 ->orderBy('id', 'asc');
 
             if ($productionStatus === 'not_printing') {
@@ -2104,6 +2375,18 @@ class ReportService
 
             $records = $query->get();
 
+            // pieces cut into each lot (roll sheets), one grouped query instead of one per lot
+            $piecesByLot = [];
+            foreach ($records->pluck('id')->chunk(500) as $idChunk) {
+                \DB::table('production_fabric_roll_assigning as r')
+                    ->join('production_fabric_roll_assigning_details as d', 'd.production_fabric_roll_assigning_id', '=', 'r.id')
+                    ->whereIn('r.order_lot_id', $idChunk->all())
+                    ->groupBy('r.order_lot_id')
+                    ->selectRaw('r.order_lot_id, SUM(d.quantity) as pcs')
+                    ->get()
+                    ->each(function ($r) use (&$piecesByLot) { $piecesByLot[$r->order_lot_id] = (int) $r->pcs; });
+            }
+
             foreach ($records as $item) {
                 $item->transaction_type = 'cutting_lot';
                 $item->design_number = $item->orderProductSet->design_number ?? '-';
@@ -2111,11 +2394,7 @@ class ReportService
                 $item->stage_master_unit = $item->orderProductSet->order_cutting_stage->cutting_master ?? null;
                 $item->order_type = ucfirst($item->orderMain->order_type ?? '-');
 
-                $rolls = \App\Models\FabricRollAssigning::where('order_lot_id', $item->id)->with('fabricRollAssigningsDetail')->get();
-                $totalPieces = 0;
-                foreach ($rolls as $roll) {
-                    $totalPieces += $roll->fabricRollAssigningsDetail->sum('quantity');
-                }
+                $totalPieces = $piecesByLot[$item->id] ?? 0;
 
                 $item->assigned_qty = $totalPieces;
                 $item->pending_qty = $totalPieces;
@@ -2218,7 +2497,7 @@ class ReportService
             if ($stageId == 3) {
                 $type = 'cutting';
 
-            $query = \App\Models\OrderCuttingStage::with(['orderMain.customer', 'productSet.fabric', 'productSet.colors', 'productSet.master_design_pattern', 'cutting_master'])
+            $query = \App\Models\OrderCuttingStage::with(['orderMain.customer', 'productSet.fabric', 'productSet.colors', 'productSet.master_design_pattern', 'productSet.size_measurement', 'cutting_master'])
                 ->where('is_po', 0)
                 ->where('to_assign_id', '>', 0)
                 ->orderBy('id', 'asc');
@@ -2465,7 +2744,7 @@ class ReportService
                 ->mapWithKeys(function ($i) { return [$i->lot_no . '_' . $i->responsible_unit_id => $i->sum_qty]; })
                 ->toArray();
 
-            $orderLots = \App\Models\OrderLot::with('orderProductSet.orderMain')
+            $orderLots = \App\Models\OrderLot::with(['orderProductSet.orderMain', 'orderProductSet.size_measurement'])
                 ->whereIn('lot_no', $lotNos)->get()->keyBy('lot_no');
                 
             $timings = \App\Models\OrderLotStageTiming::whereIn('lot_no', $lotNos)
@@ -2476,9 +2755,12 @@ class ReportService
                 
             $stageMasterUnits = \App\Models\StageMasterUnit::all()->keyBy('id');
 
+            // name of the chosen stage, read once (was one query per transaction)
+            $selectedStageName = $stageId ? optional(\App\Models\MasterProductStage::find($stageId))->name : null;
+
             foreach ($allTransactions as $item) {
                 $item->to_stage_name = $item->to_stage->name ?? 'Unknown';
-                if ($stageId && $item->to_stage_name != \App\Models\MasterProductStage::find($stageId)->name) {
+                if ($stageId && $item->to_stage_name != $selectedStageName) {
                     continue;
                 }
                 
@@ -2666,7 +2948,10 @@ class ReportService
             ->orderBy('name', 'asc')
             ->get();
         
-        $minPendingQty = $request->has('min_pending_qty') ? $request->get('min_pending_qty') : 1;
+        // The pending range (min defaults to 1) is for Pending / Delayed tasks only: Done tasks always have 0
+        // pending and "All tasks" includes them, so applying it there emptied Done tasks and hid them from All.
+        $usesPendingRange = in_array($view, ['open', 'delayed']);
+        $minPendingQty = $usesPendingRange ? ($request->has('min_pending_qty') ? $request->get('min_pending_qty') : 1) : '';
         if ($minPendingQty !== null && $minPendingQty !== '') {
             $minPending = (float) $minPendingQty;
             $assignments = array_values(array_filter($assignments, function ($item) use ($minPending) {
@@ -2675,14 +2960,14 @@ class ReportService
             }));
         }
 
-        if ($request->filled('max_pending_qty')) {
+        if ($usesPendingRange && $request->filled('max_pending_qty')) {
             $maxPending = (float) $request->max_pending_qty;
             $assignments = array_values(array_filter($assignments, function ($item) use ($maxPending) {
                 $pQty = (float) ($item->pending_qty ?? $item->quantity ?? 0);
                 return $pQty <= $maxPending;
             }));
         }
-        
+
         $totalPending = 0;
         foreach ($assignments as $item) {
             $qty = $item->pending_qty ?? $item->quantity ?? 0;

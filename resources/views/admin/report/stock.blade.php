@@ -138,7 +138,7 @@
     @if(isset($totals))
         <div class="row mb-2">
             @if(isset($totals->sum_received))
-            <div class="col-md-4 col-12 mb-1">
+            <div class="col-md col-12 mb-1">
                 <div class="erp-card p-2 mb-0 d-flex align-items-center justify-content-between" style="border-left: 4px solid var(--brand-dark-green, #05421c);">
                     <div>
                         <span class="small text-muted font-weight-bold text-uppercase" style="font-size: 11px;">Total received</span>
@@ -151,7 +151,7 @@
             </div>
             @endif
             @if(isset($totals->sum_issued))
-            <div class="col-md-4 col-12 mb-1">
+            <div class="col-md col-12 mb-1">
                 <div class="erp-card p-2 mb-0 d-flex align-items-center justify-content-between" style="border-left: 4px solid #f59e0b;">
                     <div>
                         <span class="small text-muted font-weight-bold text-uppercase" style="font-size: 11px;">Total issued</span>
@@ -164,7 +164,7 @@
             </div>
             @endif
             @if(isset($totals->sum_remaining))
-            <div class="col-md-4 col-12 mb-1">
+            <div class="col-md col-12 mb-1">
                 <div class="erp-card p-2 mb-0 d-flex align-items-center justify-content-between" style="border-left: 4px solid #10b981;">
                     <div>
                         <span class="small text-muted font-weight-bold text-uppercase" style="font-size: 11px;">Remaining qty</span>
@@ -176,7 +176,32 @@
                 </div>
             </div>
             @endif
+            @if(!empty($totals->sum_moved_in) || !empty($totals->sum_moved_out))
+            @php
+                $movedIn = round((float) ($totals->sum_moved_in ?? 0), 2);
+                $movedOut = round((float) ($totals->sum_moved_out ?? 0), 2);
+            @endphp
+            <div class="col-md col-12 mb-1">
+                <div class="erp-card p-2 mb-0 d-flex align-items-center justify-content-between" style="border-left: 4px solid var(--brand-light-green, #8bc63e);">
+                    <div>
+                        <span class="small text-muted font-weight-bold text-uppercase" style="font-size: 11px;">Moved between warehouses</span>
+                        <h4 class="m-0 font-weight-bold text-dark" style="font-size: 18px;">
+                            {{ $movedIn == $movedOut ? number_format($movedIn, 2) : 'In ' . number_format($movedIn, 2) . ' / out ' . number_format($movedOut, 2) }}
+                            <span class="small font-weight-normal text-muted">m</span>
+                        </h4>
+                    </div>
+                    <div class="rounded-circle p-2 bg-light text-success">
+                        <i class="fas fa-exchange-alt fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
+        @if($level === 'warehouses')
+            <p class="small text-muted mb-2">Received = fabric from suppliers booked at the warehouse. Moves between warehouses are shown in their own columns and are not counted as received or issued.</p>
+        @elseif(array_filter((array) request('warehouse_id')))
+            <p class="small text-muted mb-2">Received includes fabric moved in from other warehouses and issued includes fabric moved out to them, so they can differ from the warehouse's row on the warehouse level (where moves have their own columns).{{ count(array_filter((array) request('warehouse_id'))) > 1 ? ' Moves between the selected warehouses are not counted.' : '' }}</p>
+        @endif
     @endif
 
     {{-- Level Specific Content --}}

@@ -32,6 +32,9 @@ class FabricWidthController extends Controller {
     }
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.fabric_width.index')->with('error', 'Fabric width not found.');
+        }
         return view('admin.master.fabric_width.edit',$response);
     }
     public function update(FabricWidthUpdateRequest $request){

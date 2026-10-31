@@ -2,287 +2,209 @@
 
 @section('title', 'Party Ledger')
 
-@section('styles')
-<style>
-    :root {
-        --glass-bg: rgba(255, 255, 255, 0.95);
-        --glass-border: rgba(255, 255, 255, 0.2);
-        --card-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
-    }
-
-    body {
-        background: #f8fafc;
-    }
-
-    .app-header {
-        background: var(--primary-gradient);
-        padding: 40px 20px 60px;
-        border-radius: 0 0 40px 40px;
-        color: white;
-        margin-bottom: -30px;
-        position: relative;
-        z-index: 1;
-    }
-
-    .app-header h1 {
-        font-size: 26px;
-        font-weight: 900;
-        letter-spacing: -0.5px;
-        margin-bottom: 5px;
-    }
-
-    .breadcrumb-custom {
-        display: flex;
-        gap: 8px;
-        font-size: 12px;
-        opacity: 0.8;
-        margin-bottom: 20px;
-        align-items: center;
-    }
-
-    .breadcrumb-custom a {
-        color: white;
-        text-decoration: none;
-    }
-
-    .search-container {
-        position: relative;
-        z-index: 10;
-        padding: 0 20px;
-    }
-
-    .search-box {
-        background: white;
-        border-radius: 20px;
-        padding: 15px 20px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        box-shadow: var(--card-shadow);
-        border: 1px solid rgba(0,0,0,0.05);
-        margin-bottom: 12px;
-    }
-
-    .search-box input, .search-box select {
-        border: none;
-        outline: none;
-        width: 100%;
-        font-size: 14px;
-        font-weight: 500;
-        color: #1e293b;
-        background: transparent;
-    }
-
-    .filter-select-wrapper {
-        border-left: 1px solid #e2e8f0;
-        padding-left: 12px;
-        min-width: 130px;
-    }
-
-    .ledger-card {
-        background: var(--glass-bg);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1px solid var(--glass-border);
-        border-radius: 24px;
-        padding: 20px;
-        margin-bottom: 16px;
-        box-shadow: var(--card-shadow);
-        transition: transform 0.2s;
-        text-decoration: none !important;
-        display: block;
-    }
-
-    .ledger-card:active {
-        transform: scale(0.98);
-    }
-
-    .party-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 15px;
-    }
-
-    .party-name {
-        font-size: 18px;
-        font-weight: 800;
-        color: #0f172a;
-        margin-bottom: 4px;
-    }
-
-    .party-phone {
-        font-size: 12px;
-        color: #64748b;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .type-badge {
-        font-size: 10px;
-        padding: 5px 10px;
-        border-radius: 10px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Vibrant Type Colors */
-    .party-type-customer { background: #e0e7ff; color: #4338ca; }
-    .party-type-vendor { background: #ffedd5; color: #c2410c; }
-    .party-type-sales_agent { background: #fce7f3; color: #be185d; }
-    .party-type-default { background: #f1f5f9; color: #475569; }
-
-    .balance-box {
-        background: #f8fafc;
-        border-radius: 16px;
-        padding: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .balance-label {
-        font-size: 11px;
-        color: #64748b;
-        text-transform: uppercase;
-        font-weight: 800;
-        letter-spacing: 0.5px;
-        margin-bottom: 2px;
-    }
-
-    .balance-amount {
-        font-size: 20px;
-        font-weight: 900;
-    }
-
-    .balance-dr { color: #dc2626; }
-    .balance-cr { color: #16a34a; }
-
-    .cr-dr-badge {
-        font-size: 11px;
-        font-weight: 800;
-        padding: 2px 6px;
-        border-radius: 6px;
-        margin-left: 6px;
-    }
-
-    .badge-dr { background: #fee2e2; color: #dc2626; }
-    .badge-cr { background: #dcfce7; color: #16a34a; }
-
-    .empty-state {
-        padding: 60px 20px;
-        text-align: center;
-        color: #94a3b8;
-    }
-
-    .empty-state i {
-        font-size: 48px;
-        margin-bottom: 16px;
-        opacity: 0.3;
-    }
-</style>
-@endsection
-
 @section('content')
-<div class="responsive-app-view">
-    <div class="app-header">
-        <div class="breadcrumb-custom">
-            <a href="{{ route('owner.dashboard') }}">Home</a>
-            <i class="fas fa-chevron-right" style="font-size: 8px;"></i>
-            <span>{{ $pageTitle ?? 'Party Ledger' }}</span>
-        </div>
-        <h1>{{ $pageTitle ?? 'Party Ledger' }}</h1>
-        @if(isset($pageSubtitle))
-            <p style="font-size: 13px; opacity: 0.9; margin: 0;">{{ $pageSubtitle }}</p>
-        @endif
-    </div>
+    @php
+        // Ledger sign rule: negative = Dr (the party owes us / amount spent), positive = Cr (we owe the party)
+        $drcr = fn($v) => '₹ ' . number_format(abs((float) $v), 2) . ' ' . ((float) $v >= 0 ? 'Cr' : 'Dr');
+        $isCustomerSel = $selectedMaster && $selectedMaster->model_name === 'App\Models\MasterCustomer';
+        $isVendorSel = $selectedMaster && $selectedMaster->model_name === 'App\Models\Vendor';
+        $filterCount = collect([
+            request('search'), $typeId, $startDate, $endDate, request('balance_type'),
+            request('min_closing'), request('max_closing'),
+            $isCustomerSel ? $customerType : null, $isVendorSel ? $vendorType : null,
+        ])->filter(fn($v) => (string) $v !== '')->count();
+        $fmtDate = fn($d) => \Carbon\Carbon::parse($d)->format('d M Y');
+        if ($startDate && $endDate) {
+            $periodText = $fmtDate($startDate) . ' to ' . $fmtDate($endDate);
+        } elseif ($startDate) {
+            $periodText = 'From ' . $fmtDate($startDate);
+        } elseif ($endDate) {
+            $periodText = 'Up to ' . $fmtDate($endDate);
+        } else {
+            $periodText = null;
+        }
+    @endphp
 
-    @if(!isset($pageTitle))
-    <div class="search-container">
-        <form action="{{ route('owner.party-ledger.index') }}" method="GET" id="filterForm">
-            <div class="search-box">
-                <i class="fas fa-search text-muted"></i>
-                <input type="text" name="search" placeholder="Search party..." value="{{ request('search') }}" onchange="document.getElementById('filterForm').submit()">
-                
-                <div class="filter-select-wrapper">
-                    <select name="type_id" onchange="document.getElementById('filterForm').submit()">
-                        <option value="">All Types</option>
-                        <option value="sales_agent" {{ request('type_id') === 'sales_agent' ? 'selected' : '' }}>Sales Agent</option>
-                        @foreach($masters as $m)
-                            <option value="{{ $m->id }}" {{ request('type_id') == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-        </form>
-    </div>
+    @include('owner.common.page_head', [
+        'title' => 'Party Ledger',
+        'sub' => $periodText
+            ? 'Period: ' . $periodText . ' · closing on the To date · Dr = owes us, Cr = we owe'
+            : 'Balance of every party today · Dr = owes us (or spent), Cr = we owe',
+        'back' => route('owner.dashboard'),
+        'actions' => '<a class="ow-btn is-outline is-sm" href="' . e(route('owner.bank-cash-ledger.index')) . '"><i class="fas fa-university"></i> Bank &amp; Cash</a>',
+    ])
+
+    @include('owner.common.totals', ['totals' => array_values(array_filter([
+        ['label' => 'Parties', 'value' => number_format($summary['count'])],
+        ['label' => 'Total Dr (owed to us)', 'value' => '₹ ' . number_format($summary['debit'], 2), 'tone' => 'red'],
+        ['label' => 'Total Cr (we owe)', 'value' => '₹ ' . number_format($summary['credit'], 2), 'tone' => 'word'],
+        ['label' => 'Net', 'value' => $drcr($summary['net']), 'tone' => $summary['net'] < 0 ? 'red' : 'word'],
+        $summary['dated'] ? ['label' => 'Opening', 'value' => $drcr($summary['opening']), 'tone' => 'light'] : null,
+        $summary['dated'] ? ['label' => 'Period debit', 'value' => '₹ ' . number_format($summary['period_debit'], 2), 'tone' => 'yellow'] : null,
+        $summary['dated'] ? ['label' => 'Period credit', 'value' => '₹ ' . number_format($summary['period_credit'], 2), 'tone' => 'yellow'] : null,
+    ]))])
+
+    @if($summary['agent_note'])
+        <div class="small text-muted mb-2">{{ \App\Services\Ledger\PartyLedgerService::AGENT_NOTE }}</div>
     @endif
 
-    <div class="container-fluid mt-4 pb-5">
-        <div id="ledger-container">
-            @include('owner.party-ledger.partials.ledger_list', ['parties' => $parties])
-        </div>
-        
-        <div id="loading-spinner" style="display: none; text-align: center; padding: 20px;">
-            <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-        </div>
-        <div id="load-more-trigger" style="height: 10px;"></div>
+    <details class="ow-filters" {{ $filterCount ? 'open' : '' }}>
+        <summary><i class="fas fa-filter"></i> Filters @if($filterCount)<span class="ow-filter-count">{{ $filterCount }}</span>@endif</summary>
+        <form class="ow-filter-body" method="GET" action="{{ route('owner.party-ledger.index') }}">
+            <div>
+                <label>Party name</label>
+                <input type="text" class="form-control" name="search" value="{{ request('search') }}" placeholder="Search">
+            </div>
+            <div>
+                <label>Type</label>
+                <select name="type_id" id="pl-type" class="form-control select2" data-allow-clear="1" data-placeholder="All types">
+                    <option value=""></option>
+                    <option value="sales_agent" {{ $typeId === 'sales_agent' ? 'selected' : '' }}>Sales Agent</option>
+                    @foreach($masters as $m)
+                        <option value="{{ $m->id }}" data-model="{{ class_basename($m->model_name) }}" {{ (string) $typeId === (string) $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div id="pl-customer-type" style="{{ $isCustomerSel ? '' : 'display:none' }}">
+                <label>Customer type</label>
+                <select name="customer_type" class="form-control">
+                    <option value="">All</option>
+                    @foreach(['corporate' => 'Corporate', 'domestic' => 'Domestic', 'direct' => 'Domestic (Direct)', 'agent' => 'Domestic (Agent)'] as $k => $label)
+                        <option value="{{ $k }}" {{ $isCustomerSel && $customerType === $k ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div id="pl-vendor-type" style="{{ $isVendorSel ? '' : 'display:none' }}">
+                <label>Vendor type</label>
+                <select name="vendor_type" class="form-control">
+                    <option value="">All</option>
+                    <option value="direct" {{ $isVendorSel && $vendorType === 'direct' ? 'selected' : '' }}>Direct</option>
+                    <option value="agent" {{ $isVendorSel && $vendorType === 'agent' ? 'selected' : '' }}>Fabric Purchase Agent</option>
+                    @foreach($purchaseAgents as $pa)
+                        <option value="pa_{{ $pa->id }}" {{ $isVendorSel && ($vendorType === 'pa_' . $pa->id || (string) $vendorType === (string) $pa->id) ? 'selected' : '' }}>{{ $pa->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label>From</label>
+                <input type="date" class="form-control" name="start_date" value="{{ $startDate }}">
+            </div>
+            <div>
+                <label>To</label>
+                <input type="date" class="form-control" name="end_date" value="{{ $endDate }}">
+            </div>
+            <div>
+                <label>Balance</label>
+                <select name="balance_type" class="form-control">
+                    <option value="">Dr and Cr</option>
+                    <option value="debit" {{ request('balance_type') === 'debit' ? 'selected' : '' }}>Dr only (owes us)</option>
+                    <option value="credit" {{ request('balance_type') === 'credit' ? 'selected' : '' }}>Cr only (we owe)</option>
+                </select>
+            </div>
+            <div>
+                <label>Closing from ₹</label>
+                <input type="number" step="0.01" min="0" class="form-control" name="min_closing" value="{{ request('min_closing') }}">
+            </div>
+            <div>
+                <label>Closing up to ₹</label>
+                <input type="number" step="0.01" min="0" class="form-control" name="max_closing" value="{{ request('max_closing') }}">
+            </div>
+            <div class="ow-filter-actions">
+                <button class="ow-btn"><i class="fas fa-search"></i> Apply</button>
+                <a class="ow-btn is-outline" href="{{ route('owner.party-ledger.index') }}">Reset</a>
+            </div>
+        </form>
+    </details>
+    <div class="ow-scroll-hint"><i class="fas fa-arrows-alt-h"></i> Slide the table sideways to see every column</div>
+    <div class="ow-table-wrap">
+        <table class="erp-table sticky-first">
+            <thead>
+                <tr>
+                    <th>Party</th>
+                    <th>Type</th>
+                    <th>Phone</th>
+                    <th class="num">Opening</th>
+                    <th class="num">Debit</th>
+                    <th class="num">Credit</th>
+                    <th class="num">Closing</th>
+                </tr>
+            </thead>
+            <tbody id="party-rows">
+                @if($parties->isEmpty())
+                    <tr><td colspan="7" class="ow-empty">No parties found</td></tr>
+                @else
+                    @include('owner.party-ledger.partials.ledger_list', ['parties' => $parties, 'startDate' => $startDate, 'endDate' => $endDate])
+                @endif
+            </tbody>
+            @if($summary['count'] > 0)
+                <tfoot>
+                    <tr>
+                        <td>Total</td>
+                        <td colspan="2">{{ number_format($summary['count']) }} {{ $summary['count'] === 1 ? 'party' : 'parties' }}</td>
+                        @if($summary['dated'])
+                            <td class="num">{{ $drcr($summary['opening']) }}</td>
+                            <td class="num">{{ number_format($summary['period_debit'], 2) }}</td>
+                            <td class="num">{{ number_format($summary['period_credit'], 2) }}</td>
+                        @else
+                            <td colspan="3" class="num">closing of all parties</td>
+                        @endif
+                        <td class="num {{ $summary['net'] < 0 ? 'ow-dr' : 'ow-cr' }}">{{ $drcr($summary['net']) }}</td>
+                    </tr>
+                </tfoot>
+            @endif
+        </table>
     </div>
-</div>
 
+    @if($parties->hasMorePages())
+        <div class="text-center mb-3">
+            <div class="small text-muted mb-1" id="party-shown">Showing {{ number_format($parties->lastItem()) }} of {{ number_format($parties->total()) }} parties</div>
+            <button type="button" class="ow-btn is-outline" id="party-more" data-next="{{ $parties->currentPage() + 1 }}">
+                <i class="fas fa-chevron-down"></i> Load more
+            </button>
+        </div>
+    @endif
+    <p class="small text-muted mb-3">
+        Every active party is listed, and an inactive or deleted party too while its balance is not 0 (marked Inactive / Deleted, counted in the totals), as on the admin Party Ledger.
+        @if($summary['not_active'] > 0)
+            This list has {{ number_format($summary['not_active']) }} such {{ $summary['not_active'] === 1 ? 'party' : 'parties' }}.
+        @endif
+    </p>
+@endsection
 
-@section('scripts')
+@push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        let currentPage = {{ $parties->currentPage() }};
-        let nextPage = {{ $parties->hasMorePages() ? $parties->currentPage() + 1 : 'null' }};
-        let isLoading = false;
-        
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && nextPage !== null && !isLoading) {
-                loadMoreData();
-            }
+    $(function () {
+        // Customer / vendor type filters only apply to that party type (a hidden one is cleared, so it is not sent)
+        $('#pl-type').on('change', function () {
+            var model = String($(this).find('option:selected').data('model') || '');
+            $('#pl-customer-type').toggle(model === 'MasterCustomer');
+            $('#pl-vendor-type').toggle(model === 'Vendor');
+            if (model !== 'MasterCustomer') { $('#pl-customer-type select').val(''); }
+            if (model !== 'Vendor') { $('#pl-vendor-type select').val(''); }
         });
-        
-        const trigger = document.getElementById('load-more-trigger');
-        if (trigger) {
-            observer.observe(trigger);
-        }
 
-        function loadMoreData() {
-            isLoading = true;
-            document.getElementById('loading-spinner').style.display = 'block';
-            
-            let currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('page', nextPage);
-
-            fetch(currentUrl.toString(), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('ledger-container');
-                container.insertAdjacentHTML('beforeend', data.html);
-                
-                nextPage = data.next_page;
-                isLoading = false;
-                document.getElementById('loading-spinner').style.display = 'none';
-                
-                if (nextPage === null) {
-                    observer.unobserve(trigger);
-                }
-            })
-            .catch(error => {
-                console.error('Error loading more items:', error);
-                isLoading = false;
-                document.getElementById('loading-spinner').style.display = 'none';
-            });
-        }
+        // Load more: appends the next parties (the totals above already cover every party of the filter)
+        var total = {{ (int) $parties->total() }};
+        $('#party-more').on('click', function () {
+            var $btn = $(this), next = $btn.data('next');
+            if (!next) { return; }
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading');
+            var url = new URL(window.location.href);
+            url.searchParams.set('page', next);
+            $.ajax({ url: url.toString(), headers: { 'X-Requested-With': 'XMLHttpRequest' }, dataType: 'json' })
+                .done(function (res) {
+                    $('#party-rows').append(res.html);
+                    $('#party-shown').text('Showing ' + $('#party-rows tr').length.toLocaleString('en-IN') + ' of ' + total.toLocaleString('en-IN') + ' parties');
+                    if (res.next_page) {
+                        $btn.data('next', res.next_page).prop('disabled', false).html('<i class="fas fa-chevron-down"></i> Load more');
+                    } else {
+                        $btn.parent().remove();
+                    }
+                })
+                .fail(function () {
+                    $btn.prop('disabled', false).html('<i class="fas fa-redo"></i> Try again');
+                });
+        });
     });
 </script>
-@endsection
+@endpush

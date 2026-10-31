@@ -65,7 +65,12 @@
                             <i class="fas fa-hand-holding-usd text-success fa-2x"></i>
                         </div>
                     </div>
-                    <a href="{{ route('admin.payment.pending.index', ['tab' => 'agent_orders']) }}"
+                    @php
+                        // "View Details" opens the Party Ledger, filtered like the figure above (customers in Dr, vendors in Cr)
+                        $customerMasterId = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\MasterCustomer')->where('status', 1)->value('id');
+                        $vendorMasterId = \App\Models\AdjustmentMaster::where('model_name', 'App\Models\Vendor')->where('status', 1)->value('id');
+                    @endphp
+                    <a href="{{ route('admin.ledger.party.index', ['type_id' => $customerMasterId, 'balance_type' => 'debit']) }}"
                         class="small text-success font-weight-bold mt-3 d-block">View Details <i
                             class="fas fa-arrow-right ml-1"></i></a>
                 </div>
@@ -81,7 +86,7 @@
                             <i class="fas fa-file-invoice-dollar text-danger fa-2x"></i>
                         </div>
                     </div>
-                    <a href="{{ route('admin.payment.pending.index', ['tab' => 'fabric_shipments']) }}"
+                    <a href="{{ route('admin.ledger.party.index', ['type_id' => $vendorMasterId, 'balance_type' => 'credit']) }}"
                         class="small text-danger font-weight-bold mt-3 d-block">View Details <i
                             class="fas fa-arrow-right ml-1"></i></a>
                 </div>

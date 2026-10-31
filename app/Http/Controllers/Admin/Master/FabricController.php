@@ -44,6 +44,9 @@ class FabricController extends Controller {
     
     public function edit(Request $request){
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.fabric.index')->with('error', 'Fabric not found.');
+        }
         $response['vender_data'] = $this->fabricReceiptService->vendors();
         // $response['fab_dye_data'] = $this->service->fab_dye_data();
         // $response['fab_width_data'] = $this->service->fab_width_data();

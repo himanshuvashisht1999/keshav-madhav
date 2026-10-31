@@ -1,252 +1,119 @@
 @extends('owner.layouts.app')
 
-@section('title', 'Ready Stock Inventory')
-
-@section('styles')
-<style>
-    :root {
-    }
-
-    body {
-        background: #f0f9ff;
-    }
-
-    .app-header {
-        background: var(--primary-gradient);
-        padding: 40px 20px 60px;
-        border-radius: 0 0 40px 40px;
-        color: white;
-        margin-bottom: -30px;
-        position: relative;
-    }
-
-    .app-header h1 {
-        font-size: 26px;
-        font-weight: 900;
-        letter-spacing: -0.5px;
-    }
-
-    .filter-section {
-        position: relative;
-        z-index: 10;
-        padding: 0 20px;
-    }
-
-    .filter-card {
-        background: white;
-        border-radius: 24px;
-        padding: 20px;
-        box-shadow: 0 12px 40px rgba(0,0,0,0.06);
-        border: 1px solid rgba(14, 165, 233, 0.1);
-    }
-
-    .form-label-custom {
-        font-size: 11px;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: var(--text-muted);
-        margin-bottom: 8px;
-        display: block;
-    }
-
-    .custom-input {
-        border-radius: 12px !important;
-        height: 48px !important;
-        border: 1px solid #e2e8f0 !important;
-        font-weight: 600;
-        padding: 0 15px !important;
-    }
-
-    .results-container {
-        padding: 40px 20px 100px;
-    }
-
-    .inventory-card {
-        background: white;
-        border-radius: 24px;
-        padding: 20px;
-        margin-bottom: 16px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.03);
-        border: 1px solid #f0f9ff;
-        display: block;
-        text-decoration: none !important;
-        color: inherit;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .inventory-card::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 5px;
-        background: var(--primary-gradient);
-        opacity: 0.5;
-    }
-
-    .product-name {
-        font-size: 16px;
-        font-weight: 800;
-        color: var(--text-main);
-        margin-bottom: 4px;
-    }
-
-    .design-badge {
-        font-size: 11px;
-        font-weight: 700;
-        background: #f1f5f9;
-        color: var(--text-main);
-        padding: 4px 10px;
-        border-radius: 8px;
-        margin-bottom: 12px;
-        display: inline-block;
-    }
-
-    .meta-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        margin-top: 15px;
-        padding-top: 15px;
-        border-top: 1px dashed #e2e8f0;
-    }
-
-    .meta-item label {
-        font-size: 10px;
-        color: var(--text-muted);
-        font-weight: 800;
-        text-transform: uppercase;
-        display: block;
-        margin-bottom: 2px;
-    }
-
-    .meta-item span {
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--text-main);
-    }
-
-    .stock-badge {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        text-align: right;
-    }
-
-    .boxes-val {
-        font-size: 20px;
-        font-weight: 900;
-        color: var(--text-main);
-        display: block;
-    }
-
-    .boxes-label {
-        font-size: 10px;
-        font-weight: 800;
-        color: var(--text-muted);
-        text-transform: uppercase;
-    }
-
-    .mrp-tag {
-        background: #f0fdf4;
-        color: #16a34a;
-        font-size: 11px;
-        font-weight: 800;
-        padding: 4px 10px;
-        border-radius: 10px;
-        margin-top: 10px;
-        display: inline-block;
-    }
-</style>
-@endsection
+@section('title', 'Ready Stock')
 
 @section('content')
-<div class="responsive-app-view">
-    <div class="app-header">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <a href="{{ route('owner.dashboard') }}" class="text-white opacity-75"><i class="fas fa-home"></i></a>
-            <span class="font-weight-bold opacity-50" style="font-size: 12px;">READY STOCK</span>
-        </div>
-        <h1>Inventory</h1>
-        <p class="mb-0 opacity-75">Live domestic finished goods stock</p>
-    </div>
+@php
+    $nFilters = (request()->filled('design_number') ? 1 : 0) + (request()->filled('product_id') ? 1 : 0)
+        + (request()->filled('size_set_id') ? 1 : 0) + (request()->filled('color_id') ? 1 : 0)
+        + (request()->filled('storeroom_id') ? 1 : 0) + (request()->boolean('in_stock') ? 1 : 0);
+@endphp
 
-    <div class="filter-section">
-        <div class="filter-card">
-            <form id="filterForm">
-                <div class="mb-3">
-                    <label class="form-label-custom">Design Number</label>
-                    <input type="text" name="design_number" class="form-control custom-input" placeholder="Search Design #">
-                </div>
-                <div class="row">
-                    <div class="col-12 mb-3">
-                        <label class="form-label-custom">Product</label>
-                        <select name="product_id" class="form-control custom-input select2">
-                            <option value="">All Products</option>
-                            @foreach($products as $p)
-                                <option value="{{ $p->product_id }}">{{ $p->product_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-12 mb-3">
-                        <label class="form-label-custom">Size Set</label>
-                        <select name="size_set_id" class="form-control custom-input select2">
-                            <option value="">All Size Sets</option>
-                            @foreach($size_sets as $s)
-                                <option value="{{ $s->size_set_id }}">{{ $s->size_set_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-info btn-block py-3 font-weight-bold text-white shadow-sm" style="border-radius: 14px; background: var(--primary-gradient); border: none;">
-                    Check Availability
-                </button>
-            </form>
-        </div>
-    </div>
+@include('owner.common.page_head', [
+    'title' => 'Ready Stock',
+    'sub' => 'Finished goods in stock, by design, size set and colour',
+    'back' => route('owner.stock'),
+    'actions' => null,
+])
+@include('owner.common.totals', ['totals' => [
+    ['label' => 'Rows', 'value' => number_format($totals->row_count)],
+    ['label' => 'Products', 'value' => number_format($totals->products), 'tone' => 'light'],
+    ['label' => 'Boxes', 'value' => number_format($totals->boxes), 'tone' => 'word'],
+    ['label' => 'Pieces', 'value' => number_format($totals->pieces), 'tone' => 'word'],
+    ['label' => 'Value at MRP (₹)', 'value' => number_format($totals->mrp_value, 2), 'tone' => 'yellow'],
+    ['label' => 'On open orders (boxes)', 'value' => number_format($totals->order_boxes), 'tone' => 'light'],
+]])
 
-    <div id="results" class="results-container">
-        <!-- Results will load here -->
-        <div class="text-center py-5 opacity-25">
-            <i class="fas fa-boxes fa-4x mb-3"></i>
-            <p class="h5 font-weight-bold">Search to see stock</p>
+<details class="ow-filters" {{ $nFilters ? 'open' : '' }}>
+    <summary><i class="fas fa-filter"></i> Filters @if($nFilters)<span class="ow-filter-count">{{ $nFilters }}</span>@endif</summary>
+    <form class="ow-filter-body" method="GET" action="{{ route('owner.ready-stock.index') }}">
+        <div>
+            <label>Design no</label>
+            <input type="text" class="form-control" name="design_number" value="{{ request('design_number') }}" placeholder="Part of design no">
         </div>
-    </div>
+        <div>
+            <label>Product</label>
+            <select class="form-control select2" name="product_id" data-allow-clear="1" data-placeholder="All">
+                <option value=""></option>
+                @foreach($products as $p)
+                    @php $pName = trim(($p->series_name ?? '') . ' ' . ($p->name_of_garment ?? '')); @endphp
+                    <option value="{{ $p->id }}" {{ (string) request('product_id') === (string) $p->id ? 'selected' : '' }}>{{ $p->design_number ?: '-' }}{{ $pName !== '' ? ' - ' . $pName : '' }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label>Size set</label>
+            <select class="form-control select2" name="size_set_id" data-allow-clear="1" data-placeholder="All">
+                <option value=""></option>
+                @foreach($sizeSets as $s)
+                    <option value="{{ $s->id }}" {{ (string) request('size_set_id') === (string) $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label>Colour</label>
+            <select class="form-control select2" name="color_id" data-allow-clear="1" data-placeholder="All">
+                <option value=""></option>
+                @foreach($colors as $c)
+                    <option value="{{ $c->id }}" {{ (string) request('color_id') === (string) $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label>Storeroom</label>
+            <select class="form-control select2" name="storeroom_id" data-allow-clear="1" data-placeholder="All">
+                <option value=""></option>
+                @foreach($storerooms as $sr)
+                    <option value="{{ $sr->id }}" {{ (string) request('storeroom_id') === (string) $sr->id ? 'selected' : '' }}>{{ $sr->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label>Show</label>
+            <select class="form-control" name="in_stock">
+                <option value="">All rows</option>
+                <option value="1" {{ request()->boolean('in_stock') ? 'selected' : '' }}>Only rows with boxes</option>
+            </select>
+        </div>
+        <div class="ow-filter-actions">
+            <button class="ow-btn"><i class="fas fa-search"></i> Apply</button>
+            <a class="ow-btn is-outline" href="{{ route('owner.ready-stock.index') }}">Reset</a>
+        </div>
+    </form>
+</details>
+
+<div class="ow-table-wrap">
+    <table class="erp-table sticky-first">
+        <thead>
+            <tr>
+                <th>Design no</th>
+                <th>Product</th>
+                <th>Size set</th>
+                <th>Colour</th>
+                <th>Fitting</th>
+                <th>Pattern</th>
+                <th class="num">MRP (₹)</th>
+                <th class="num">Boxes</th>
+                <th class="num">Pieces</th>
+                <th class="num">On order (boxes)</th>
+            </tr>
+        </thead>
+        <tbody id="stock-rows">
+            @include('owner.reports.inventory_list', ['rows' => $rows])
+            @if($rows->isEmpty())
+                <tr><td colspan="10" class="ow-empty">No stock found</td></tr>
+            @endif
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>Total ({{ number_format($totals->row_count) }})</td>
+                <td></td><td></td><td></td><td></td><td></td><td></td>
+                <td class="num">{{ number_format($totals->boxes) }}</td>
+                <td class="num">{{ number_format($totals->pieces) }}</td>
+                <td class="num">{{ number_format($totals->order_boxes) }}</td>
+            </tr>
+        </tfoot>
+    </table>
 </div>
+@include('owner.reports.partials.stock_load_more', ['paginator' => $rows, 'target' => 'stock-rows'])
 @endsection
-
-@push('scripts')
-<script>
-    $(document).ready(function() {
-        $('.select2').select2({
-            theme: 'bootstrap4',
-            width: '100%'
-        });
-
-        function loadResults(page = 1) {
-            let formData = $('#filterForm').serialize();
-            $('#results').html('<div class="text-center py-5"><div class="spinner-border text-info"></div></div>');
-            
-            $.get("{{ route('owner.ready-stock.list') }}?" + formData + "&page=" + page, function(html) {
-                $('#results').html(html);
-            });
-        }
-
-        $('#filterForm').on('submit', function(e) {
-            e.preventDefault();
-            loadResults();
-        });
-
-        // Load initial
-        loadResults();
-
-        $(document).on('click', '.pagination a', function(e) {
-            e.preventDefault();
-            let page = $(this).attr('href').split('page=')[1];
-            loadResults(page);
-        });
-    });
-</script>
-@endpush

@@ -89,9 +89,7 @@
                     @endphp
                     <div>
                         @if($is_paid)
-                            <a href="{{ route('admin.payment.history.index', ['paymentable_type' => 'App\Models\FabricReceipt', 'paymentable_id' => $data->id]) }}">
-                                <span class="badge badge-success px-2 py-1 font-weight-bold">{{ $paid > 0 ? 'PAID' : 'RETURNED' }}</span>
-                            </a>
+                            <span class="badge badge-success px-2 py-1 font-weight-bold">{{ $paid > 0 ? 'PAID' : 'RETURNED' }}</span>
                             @if($returned > 0)
                                 <span class="ml-1 font-weight-bold" style="font-size: var(--erp-font-xs); color: var(--erp-text-muted);">
                                     (Paid: Rs. {{ number_format($paid, 2) }}, Returned: Rs. {{ number_format($returned, 2) }}@if($data->balance_amount <= -1), vendor owes back Rs. {{ number_format(-$data->balance_amount, 2) }}@endif)

@@ -49,6 +49,18 @@ class ReportController extends Controller
     }
     public function stock(Request $request)
     {
+        // one value per filter: a list in the link (fabric_id[]=1) is ignored, and a type other than
+        // receipts / usages falls back to the fabrics level
+        foreach (['fabric_id', 'type', 'search', 'qty_from', 'qty_to'] as $key) {
+            if (is_array($request->query($key))) {
+                $request->query->remove($key);
+            }
+        }
+        if ($request->filled('type') && !in_array($request->query('type'), ['receipts', 'usages'], true)) {
+            $request->query->remove('type');
+            $request->query->remove('fabric_id');
+        }
+
         $reportData = $this->service->stock($request);
 
         $response = $reportData;
@@ -97,7 +109,8 @@ class ReportController extends Controller
         $fabricId = $request->fabric_id;
         $rollNo = $request->roll_no;
 
-        if (!$fabricId || !$rollNo) {
+        // one fabric and one roll number (a list in the link would break the page)
+        if (!$fabricId || !$rollNo || !is_scalar($fabricId) || !is_scalar($rollNo)) {
             return redirect()->route('admin.report.stock.rolls')->with('error', 'Roll Number and Fabric selection are required.');
         }
 
@@ -117,7 +130,7 @@ class ReportController extends Controller
         $agentUsages = \App\Models\AgentOrderFabricItem::whereHas('roll', function($q) use ($rollNo) {
             $q->where('roll_number', $rollNo);
         })->where('fabric_id', $fabricId)
-          ->whereNotNull('agent_order_dispatch_id')
+          // all agent lines: their metres leave the roll when the line is created, dispatched or not
           ->with(['order.party', 'roll'])
           ->orderBy('created_at', 'desc')
           ->get();
@@ -128,6 +141,27 @@ class ReportController extends Controller
           ->with(['fabric_return.receipt.vendor'])
           ->orderBy('created_at', 'desc')
           ->get();
+
+        // fabric disposals of this roll (item_id is the roll id only when the disposal item_type is 'fabric')
+        $disposals = \DB::table('stock_disposal_items')
+            ->join('stock_disposal_mains', 'stock_disposal_items.stock_disposal_main_id', '=', 'stock_disposal_mains.id')
+            ->where('stock_disposal_mains.item_type', 'fabric')
+            ->whereIn('stock_disposal_items.item_id', $receiptIds->isEmpty() ? [0] : $receiptIds)
+            ->select('stock_disposal_items.quantity', 'stock_disposal_items.created_at', 'stock_disposal_mains.disposal_no', 'stock_disposal_mains.reason', 'stock_disposal_mains.remarks')
+            ->get();
+
+        // fabric that customers sent back on a sales return goes back onto the roll of the sold fabric line
+        // (joined to agent_order_returns: lines of a deleted return have no return row and are left out)
+        $salesReturns = \DB::table('agent_order_return_items as ri')
+            ->join('agent_order_returns as r', 'r.id', '=', 'ri.agent_order_return_id')
+            ->join('agent_order_fabric_items as fi', 'fi.id', '=', 'ri.item_id')
+            ->leftJoin('agent_orders as o', 'o.id', '=', 'fi.agent_order_id')
+            ->leftJoin('master_customers as c', 'c.id', '=', 'o.master_customer_id')
+            ->leftJoin('vendors as v', 'v.id', '=', 'o.master_vendor_id')
+            ->where('ri.item_type', 'fabric')
+            ->whereIn('fi.fabric_receipt_detail_id', $receiptIds->isEmpty() ? [0] : $receiptIds)
+            ->select('ri.quantity', 'ri.created_at', 'r.id as return_id', 'r.return_date', 'fi.agent_order_id', 'o.party_type', 'c.name as customer_name', 'v.name as vendor_name')
+            ->get();
 
         $rollLedger = collect();
 
@@ -176,6 +210,29 @@ class ReportController extends Controller
                 'details' => 'Supplier: ' . $vendorName . ' | Return Remarks: ' . ($r->fabric_return?->remarks ?? 'N/A'),
                 'order_no' => $r->fabric_return?->return_number ?? '-',
                 'lot_no' => 'Return',
+            ]);
+        }
+
+        foreach ($disposals as $d) {
+            $rollLedger->push((object)[
+                'date' => \Carbon\Carbon::parse($d->created_at),
+                'type' => 'Disposal (' . ($d->reason ?: 'Disposed') . ')',
+                'qty' => -$d->quantity,
+                'details' => 'Reason: ' . ($d->reason ?: '-') . ' | Remarks: ' . ($d->remarks ?: '-'),
+                'order_no' => $d->disposal_no ?? '-',
+                'lot_no' => 'Disposal',
+            ]);
+        }
+
+        foreach ($salesReturns as $sr) {
+            $partyName = ($sr->party_type === 'vendor' ? $sr->vendor_name : $sr->customer_name) ?: '-';
+            $rollLedger->push((object)[
+                'date' => \Carbon\Carbon::parse($sr->created_at ?? $sr->return_date),
+                'type' => 'Sales Return',
+                'qty' => (float) $sr->quantity,
+                'details' => 'Party: ' . $partyName . ' | Agent order: PO-' . $sr->agent_order_id . ' | Return date: ' . \Carbon\Carbon::parse($sr->return_date)->format('d M Y'),
+                'order_no' => 'SR-' . $sr->return_id,
+                'lot_no' => 'Sales Return',
             ]);
         }
 
@@ -926,71 +983,45 @@ class ReportController extends Controller
 
     public function wipComplete(Request $request)
     {
-        $customers = \App\Models\MasterCustomer::where('status', 1)->get();
+        $customers = $this->service->customers(); // active customers, sorted by name
         $selectedCustomer = $request->customer_id;
-        
+
         $data = [];
         $master_stages = $this->service->master_stages();
 
         $availableOrders = [];
         $availableLots = [];
         $availableDesigns = [];
-        $selectedOrders = $request->order_ids ?? [];
-        $selectedLots = $request->lot_nos ?? [];
-        $selectedDesigns = $request->design_nos ?? [];
+        $selectedOrders = (array) ($request->order_ids ?? []);
+        $selectedLots = (array) ($request->lot_nos ?? []);
+        $selectedDesigns = (array) ($request->design_nos ?? []);
 
         if ($selectedCustomer) {
-            $baseOrders = \App\Models\OrderMain::where('master_customer_id', $selectedCustomer)
-                ->with([
-                    'OrderProductSets' => function($q) {
-                        $q->has('orderLots');
-                    },
-                    'OrderProductSets.orderLots'
-                ])
-                ->latest()
-                ->get();
-
-            // Build available options
-            foreach ($baseOrders as $order) {
-                if ($order->OrderProductSets->isEmpty()) continue;
-                $availableOrders[$order->id] = $order->sku;
-                foreach ($order->OrderProductSets as $set) {
-                    if (!empty($set->design_number)) {
-                        $availableDesigns[$set->design_number] = $set->design_number;
-                    }
-                    foreach ($set->orderLots as $lot) {
-                        $availableLots[$lot->lot_no] = $lot->lot_no;
-                    }
-                }
+            // orders -> order lines -> lots of the customer; choices of another customer are ignored
+            $wip = $this->service->wipCompleteLots($selectedCustomer, $selectedOrders, $selectedDesigns, $selectedLots);
+            $availableOrders = $wip['options']['orders'];
+            foreach (array_keys($wip['options']['designs']) as $designNo) {
+                $availableDesigns[$designNo] = $designNo;
             }
+            foreach (array_keys($wip['options']['lots']) as $lotNo) {
+                $availableLots[$lotNo] = $lotNo;
+            }
+            $selectedOrders = $wip['selected']['order_ids'];
+            $selectedDesigns = $wip['selected']['design_nos'];
+            $selectedLots = $wip['selected']['lot_nos'];
 
-            // Process data with filters
-            foreach ($baseOrders as $order) {
-                if (!empty($selectedOrders) && !in_array($order->id, $selectedOrders)) continue;
-
-                foreach ($order->OrderProductSets as $set) {
-                    if (!empty($selectedDesigns) && !in_array($set->design_number, $selectedDesigns)) continue;
-
-                    foreach ($set->orderLots as $lot) {
-                        if (!empty($selectedLots) && !in_array($lot->lot_no, $selectedLots)) continue;
-
-                        $quantity = \App\Models\FabricRollAssigning::where('lot_no', $lot->lot_no)
-                            ->withSum('fabricRollAssigningsDetail as total', 'quantity')
-                            ->get()
-                            ->sum('total');
-
-                        $details = $this->service->lotDetails($lot->lot_no);
-                        if ($details) {
-                            $data[] = [
-                                'order' => $order,
-                                'set' => $set,
-                                'lot' => $lot,
-                                'lot_quantity' => $quantity,
-                                'details' => $details
-                            ];
-                        }
-                    }
-                }
+            // pieces, packed / dispatched, stage and delay of every lot (lotFacts), and the In / WIP / done of
+            // every lot and stage, each in a few batched queries (was ~100 queries per lot)
+            $lotNos = array_map(fn($r) => $r['lot']->lot_no, $wip['rows']);
+            $facts = $this->service->lotProgress($lotNos);
+            $figures = $this->service->lotStageFigures($lotNos, $master_stages->pluck('id'));
+            foreach ($wip['rows'] as $row) {
+                $key = \App\Services\Admin\ReportService::lotKeyOf($row['lot']->lot_no);
+                $data[] = $row + [
+                    'lot_quantity' => $facts[$key]['pieces'] ?? 0,
+                    'facts' => $facts[$key] ?? null,
+                    'stages' => $figures[$key] ?? [],
+                ];
             }
         }
 

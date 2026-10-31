@@ -92,6 +92,10 @@
                                                             Bank Transfer</option>
                                                         <option value="cheque" {{ $payment->payment_mode == 'cheque' ? 'selected' : '' }}>Cheque</option>
                                                         <option value="upi" {{ $payment->payment_mode == 'upi' ? 'selected' : '' }}>UPI</option>
+                                                        @if(!in_array($payment->payment_mode, ['cash', 'bank_transfer', 'cheque', 'upi']))
+                                                            {{-- keep the saved mode (e.g. Journal), so saving does not quietly turn it into Cash --}}
+                                                            <option value="{{ $payment->payment_mode }}" selected>{{ ucwords(str_replace('_', ' ', $payment->payment_mode)) }}</option>
+                                                        @endif
                                                     </select>
                                                 </div>
                                             </div>
@@ -124,7 +128,7 @@
 
                                 </div>
                                 <div class="card-footer text-right">
-                                    <a href="{{ route('admin.payment.history.index') }}"
+                                    <a href="{{ route('admin.payment.history.show', $payment->id) }}"
                                         class="btn btn-secondary mr-2">Cancel</a>
                                     <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save mr-1"></i>
                                         Update Payment</button>

@@ -45,6 +45,9 @@ class ElectricityExpenseController extends Controller
     {
         $id = $request->id;
         $data = $this->service->find($id);
+        if (!$data) {
+            return redirect()->route('admin.payment.master.electricity_expense.index')->with('error', 'Electricity expense not found.');
+        }
         return view('admin.payment.master.electricity_expense.edit', compact('data'));
     }
 

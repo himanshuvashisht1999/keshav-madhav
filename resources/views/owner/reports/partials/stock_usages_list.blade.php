@@ -1,35 +1,27 @@
+{{-- Fabric stock, level 4 (usages of one fabric): one <tr> per movement out (also returned by ajax "Load more") --}}
+@php
+    $typeBadge = [
+        'Cutting (Production)' => ['Cutting', 'green'],
+        'Transfer Out' => ['Transfer out', 'grey'],
+        'Stock Disposal' => ['Disposal', 'red'],
+        'Vendor Return' => ['Vendor return', 'yellow'],
+        'Direct Sale' => ['Sale', 'yellow'],
+    ];
+@endphp
 @foreach($data as $row)
-    <div class="stock-card">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div>
-                <div class="font-weight-bold" style="font-size: 15px;">{{ $row->order_no }}</div>
-                <div class="text-muted" style="font-size: 11px;">{{ \Carbon\Carbon::parse($row->created_at)->format('d M Y, h:i A') }}</div>
-            </div>
-            <div class="text-right">
-                <div class="font-weight-black text-danger" style="font-size: 16px;">-{{ number_format($row->meter, 1) }}m</div>
-                <div class="stat-label">Consumed</div>
-            </div>
-        </div>
-
-        <div class="p-3 rounded-xl bg-light" style="font-size: 12px;">
-            <div class="row g-2">
-                <div class="col-6">
-                    <span class="text-muted">Lot No:</span> <strong>{{ $row->lot_no }}</strong>
-                </div>
-                <div class="col-6">
-                    <span class="text-muted">Roll No:</span> <strong>{{ $row->roll_no }}</strong>
-                </div>
-                <div class="col-6 mt-2">
-                    <span class="text-muted">Stage:</span> <strong>{{ $row->stageMasterUnit?->name ?: '-' }}</strong>
-                </div>
-                <div class="col-12 mt-2 border-top pt-2">
-                    <span class="text-muted">Details:</span> 
-                    <span class="font-weight-bold">
-                        {{ $row->orderProductSet?->design_number ?: '' }} 
-                        ({{ $row->orderProductSet?->colors?->name ?: '' }})
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
+    @php
+        [$label, $tone] = $typeBadge[$row->type_badge ?? ''] ?? [($row->type_badge ?? '-'), 'grey'];
+        $date = $row->created_at instanceof \Carbon\Carbon ? $row->created_at : ($row->created_at ? \Carbon\Carbon::parse($row->created_at) : null);
+    @endphp
+    <tr>
+        <td>{{ $date ? $date->format('d M Y') : '-' }}</td>
+        <td><span class="ow-badge {{ $tone }}">{{ $label }}</span></td>
+        <td>{{ $row->roll_no ?: '-' }}</td>
+        <td>{{ $row->lot_no ?: '-' }}</td>
+        <td>{{ $row->order_no ?: '-' }}</td>
+        <td class="wrap">{{ $row->orderProductSet?->design_number ?? '-' }}</td>
+        <td class="wrap">{{ $row->orderProductSet?->colors?->name ?? '-' }}</td>
+        <td>{{ $row->stageMasterUnit?->name ?? '-' }}</td>
+        <td class="num"><strong>{{ number_format($row->meter, 2) }}</strong></td>
+    </tr>
 @endforeach

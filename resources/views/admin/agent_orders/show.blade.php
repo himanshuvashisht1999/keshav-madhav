@@ -168,10 +168,7 @@
                                     <li class="list-group-item d-flex justify-content-between p-2">
                                         <span class="text-muted">Payment:</span>
                                         @if($order->total_paid >= $order->grand_total && $order->grand_total > 0)
-                                            <a
-                                                href="{{ route('admin.payment.history.index', ['paymentable_type' => 'App\Models\AgentOrder', 'paymentable_id' => $order->id]) }}">
-                                                <span class="badge badge-success">PAID</span>
-                                            </a>
+                                            <span class="badge badge-success">PAID</span>
                                         @else
                                             <span class="badge badge-danger">UNPAID</span>
                                         @endif
@@ -349,7 +346,7 @@
                                                                 <div class="text-muted"><i class="fas fa-layer-group text-secondary mr-1"></i>{{ $item->rack_name }} @if($item->rack_id) ({{ $item->rack_id }}) @endif</div>
                                                                 <span class="badge badge-success mt-1" style="font-size: 10px;"><i class="fas fa-truck mr-1"></i>Dispatched</span>
                                                             </div>
-                                                        @elseif(isset($item->available_locations) && count($item->available_locations) > 1)
+                                                        @elseif(!empty($item->can_change_rack) && isset($item->available_locations) && count($item->available_locations) > 1)
                                                             <select class="form-control form-control-sm location-select shadow-sm" data-item-id="{{ $item->id }}" style="min-width: 200px; display: inline-block;">
                                                                 @foreach($item->available_locations as $loc)
                                                                     @php $isDispatch = ($loc->order_dispatch ?? 'Yes') === 'Yes'; @endphp
@@ -453,6 +450,7 @@
 
         const selects = document.querySelectorAll('.location-select');
         selects.forEach(select => {
+            select.dataset.saved = select.value; // rack saved on the server, shown again if a change is refused
             select.addEventListener('change', function() {
                 const itemId = this.getAttribute('data-item-id');
                 const rackId = this.value;
@@ -473,9 +471,12 @@
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
+                        this.dataset.saved = rackId;
                         this.disabled = false;
                     } else {
-                        alert("Failed to update location.");
+                        // the server's reason (e.g. boxes already picked), and the select goes back to the saved rack
+                        alert(data.message || "Failed to update location.");
+                        this.value = this.dataset.saved;
                         this.disabled = false;
                     }
                 })

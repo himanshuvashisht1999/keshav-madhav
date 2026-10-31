@@ -58,6 +58,9 @@ class SalesAgentController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.sales-agent.index')->with('error', 'Sales agent not found.');
+        }
         $response['brands'] = Brand::where('status', 1)->get();
         return view('admin.master.sales_agent.edit', $response);
     }

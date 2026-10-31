@@ -34,6 +34,9 @@ class PurchaseOrderMaterialController extends Controller{
         }
         public function edit(Request $request){
           $response['data'] = $this->service->edit($request);
+          if (!$response['data']) {
+              return redirect()->route('admin.purchase_order_material.index')->with('error', 'Purchase order not found.');
+          }
           $response['vendors'] = $this->service->vendors();
           $response['items'] = $this->service->items();
           return view('admin.purchase_order_material.edit',$response);
@@ -44,6 +47,9 @@ class PurchaseOrderMaterialController extends Controller{
         }
         public function view(Request $request){
           $response['data'] = $this->service->view($request);
+          if (!$response['data']) {
+              return redirect()->route('admin.purchase_order_material.index')->with('error', 'Purchase order not found.');
+          }
           $response['vendors'] = $this->service->vendors();
           $response['items'] = $this->service->items();
           $response['general_setting'] = $this->service->general_setting();

@@ -198,6 +198,11 @@ function getLotDetails($lot_id, $master_stage)
         }
         return false;
     };
+    // a move inside one stage (5->5 Kaj, 7->7 Thread Cutting, 1->1 printing damage) is a unit-to-unit transfer:
+    // it is neither a receipt nor a send of the stage (it used to be counted twice in In, or zeroed the printing In)
+    $sameStage = function ($item) {
+        return $item->from_stage_id !== null && $item->to_stage_id !== null && (int) $item->from_stage_id === (int) $item->to_stage_id;
+    };
 
     if ($master_stage == 3) {
         $records = \App\Models\OrderProductSet::with('stage_master_unit')
@@ -212,14 +217,15 @@ function getLotDetails($lot_id, $master_stage)
             ->where('to_stage_id', $master_stage)
             ->get();
         $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
-        
+        $records = $records->reject($sameStage);
+
         $incomingType1 = $records->filter(function($item) use ($isReverse) { return !$isReverse($item); })->sum('quantity');
         $incomingAll = $records->sum('quantity');
-        
-        $out1 = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
-        $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
-        $out3 = \App\Models\OrderPrintingStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
-        $out4 = \App\Models\OrderStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
+
+        $out1 = \App\Models\OrderPrintingToStichingTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get()->reject($sameStage);
+        $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get()->reject($sameStage);
+        $out3 = \App\Models\OrderPrintingStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get()->reject($sameStage);
+        $out4 = \App\Models\OrderStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get()->reject($sameStage);
         
         $outflowType2 = $out1->filter($isReverse)->sum('quantity') + 
                         $out2->filter($isReverse)->sum('quantity') + 
@@ -236,12 +242,13 @@ function getLotDetails($lot_id, $master_stage)
             ->where('to_stage_id', $master_stage)
             ->get();
         $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
-        
+        $records = $records->reject($sameStage);
+
         $incomingType1 = $records->filter(function($item) use ($isReverse) { return !$isReverse($item); })->sum('quantity');
         $incomingAll = $records->sum('quantity');
-        
-        $out1 = \App\Models\OrderStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
-        $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
+
+        $out1 = \App\Models\OrderStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get()->reject($sameStage);
+        $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get()->reject($sameStage);
         
         $outflowType2 = $out1->filter($isReverse)->sum('quantity') + 
                         $out2->filter($isReverse)->sum('quantity');
@@ -256,18 +263,19 @@ function getLotDetails($lot_id, $master_stage)
             ->where('to_stage_id', $master_stage)
             ->get();
         $unitName = $records->first()?->getToUnitMaster?->name ?? '-';
-        
+        $records = $records->reject($sameStage);
+
         $incomingType1 = $records->filter(function($item) use ($isReverse) { return !$isReverse($item); })->sum('quantity');
         $incomingAll = $records->sum('quantity');
-        
-        $out1 = \App\Models\OrderStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
-        $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get();
-        
-        $outflowType2 = $out1->filter($isReverse)->sum('quantity') + 
+
+        $out1 = \App\Models\OrderStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get()->reject($sameStage);
+        $out2 = \App\Models\OrderGodamStageTransaction::where('lot_no', $lot_id)->where('from_stage_id', $master_stage)->get()->reject($sameStage);
+
+        $outflowType2 = $out1->filter($isReverse)->sum('quantity') +
                         $out2->filter($isReverse)->sum('quantity');
-                        
+
         $outflowAll = $out1->sum('quantity') + $out2->sum('quantity');
-        
+
         // Add packed quantity to outflow if stage is Packing (11)
         if ($master_stage == 11) {
             $packedQty = \App\Models\PackingItem::where('lot_no', $lot_id)->sum('quantity');
@@ -297,6 +305,8 @@ function getLotDetails($lot_id, $master_stage)
         'unit_name' => $unitName,
         'quantity' => $totalQuantity,
         'remaining_quantity' => $remainingQuantity,
+        // pieces the stage has finished (In - WIP); never negative: damage pieces received back count in WIP but not in In
+        'done' => max(0, $totalQuantity - $remainingQuantity),
         'time_allocation' => $timeAllocation,
         'completed_time' => $completedTime,
         'start_date' => $timing->start_date ?? null,

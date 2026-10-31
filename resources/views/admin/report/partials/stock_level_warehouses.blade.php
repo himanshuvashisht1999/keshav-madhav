@@ -6,6 +6,8 @@
                     <th style="width: 45px;" class="text-center">#</th>
                     <th>Warehouse</th>
                     <th class="text-right">Total received</th>
+                    <th class="text-right">Moved in</th>
+                    <th class="text-right">Moved out</th>
                     <th class="text-right">Total issued</th>
                     <th class="text-right">Remaining qty</th>
                     <th class="text-center" style="width: 180px;">Action</th>
@@ -21,6 +23,8 @@
                         <strong>{{ $row->master_fabric_warehouse?->cutting_master_name ?? 'Unknown warehouse' }}</strong>
                     </td>
                     <td class="text-right font-weight-bold text-success">{{ number_format($row->total_received, 2) }}</td>
+                    <td class="text-right text-muted">{{ number_format($row->total_moved_in, 2) }}</td>
+                    <td class="text-right text-muted">{{ number_format($row->total_moved_out, 2) }}</td>
                     <td class="text-right font-weight-bold text-danger">{{ number_format($row->total_issued, 2) }}</td>
                     <td class="text-right font-weight-bold text-dark">{{ number_format($row->total_remaining, 2) }}</td>
                     <td class="text-center text-nowrap">
@@ -34,7 +38,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">No warehouse data found for this fabric.</td>
+                    <td colspan="8" class="text-center text-muted py-4">No warehouse data found for this fabric.</td>
                 </tr>
                 @endforelse
             </tbody>

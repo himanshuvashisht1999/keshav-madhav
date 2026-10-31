@@ -19,6 +19,14 @@
             </div>
         </div>
 
+        @if(session('error'))
+            {{-- the reason a save was refused stays on the page until it is closed --}}
+            <div class="alert alert-danger alert-dismissible fade show mb-2 py-2 px-3" role="alert">
+                <i class="fas fa-exclamation-circle mr-1"></i> {{ session('error') }}
+                <button type="button" class="close py-2" data-dismiss="alert">&times;</button>
+            </div>
+        @endif
+
         <form action="{{ route('admin.payment.adjustment.update', $batchId) }}" method="POST">
             @csrf
 
@@ -39,16 +47,23 @@
                     <div class="col-md-3 mb-2">
                         <label class="erp-label">To mode <span class="text-danger">*</span></label>
                         <select name="payment_mode" id="bulk_payment_mode" class="form-control form-control-sm erp-input" required>
+                            @if($first->payment_mode == 'adjustment')
+                                {{-- a credit from Reports > Outflows (dispose): no money moved, so no bank / cash account --}}
+                                <option value="adjustment" selected>No bank / cash (Outflows dispose)</option>
+                            @else
                             <option value="">-- Mode --</option>
                             <option value="bank" {{ $first->payment_mode == 'bank' ? 'selected' : '' }}>Bank</option>
                             <option value="cash" {{ $first->payment_mode == 'cash' ? 'selected' : '' }}>Cash</option>
+                            @endif
                         </select>
                     </div>
                     <div class="col-md-3 mb-2">
                         <label class="erp-label">To account <span class="text-danger">*</span></label>
                         <select name="payment_account_id" id="bulk_account_id" class="form-control form-control-sm erp-input select2" required style="width: 100%;">
-                            <option value="{{ $first->payment_account_id }}" selected>
-                                @if($first->payment_mode == 'bank')
+                            <option value="{{ $first->payment_mode == 'adjustment' ? 0 : $first->payment_account_id }}" selected>
+                                @if($first->payment_mode == 'adjustment')
+                                    No bank / cash
+                                @elseif($first->payment_mode == 'bank')
                                     {{ $first->account->bank_name ?? 'Account' }} ({{ $first->account->account_number ?? '' }})
                                 @else
                                     {{ $first->account->name ?? 'Cash' }}
@@ -105,12 +120,12 @@
                                     
                                     <div class="mt-2">
                                         <select name="ref_id[]" class="form-control form-control-sm erp-input select2 master-item" required style="width: 100%;">
-                                            <option value="{{ $group->ref_id }}" selected>{{ $group->parent_name }}</option>
+                                            <option value="{{ $group->ref_id }}" data-master-id="{{ $group->adjustment_master_id }}" selected>{{ $group->parent_name }}</option>
                                         </select>
                                     </div>
                                 </td>
                                 <td>
-                                    <input type="number" step="0.01" name="amount[]" class="form-control form-control-sm erp-input row-amount font-weight-bold" value="{{ $group->amount }}" required style="height: 38px; font-size: 1.05rem;">
+                                    <input type="number" step="0.01" min="0" name="amount[]" class="form-control form-control-sm erp-input row-amount font-weight-bold" value="{{ $group->amount }}" required style="height: 38px; font-size: 1.05rem;">
                                 </td>
                                 <td>
                                     <textarea name="remarks[]" class="form-control form-control-sm erp-input" rows="2">{{ str_replace('[Dist] ', '', $group->remarks) }}</textarea>
@@ -161,7 +176,7 @@
             </div>
         </td>
         <td>
-            <input type="number" step="0.01" name="amount[]" class="form-control form-control-sm erp-input row-amount font-weight-bold" placeholder="Amount" required style="height: 38px; font-size: 1.05rem;">
+            <input type="number" step="0.01" min="0" name="amount[]" class="form-control form-control-sm erp-input row-amount font-weight-bold" placeholder="Amount" required style="height: 38px; font-size: 1.05rem;">
         </td>
         <td>
             <textarea name="remarks[]" class="form-control form-control-sm erp-input" rows="2" placeholder="Remarks"></textarea>
@@ -249,6 +264,7 @@
         // Bulk Payment Mode Change
         $('#bulk_payment_mode').on('change', function() {
             var mode = $(this).val();
+            if (mode === 'adjustment') return; // no bank / cash account for a dispose credit
             $('#bulk_account_balance').text('');
             if (mode) {
                 $.ajax({
@@ -294,6 +310,9 @@
             var $itemSelect = $row.find('.master-item');
             var masterId = $row.find('.master-type').val();
             var currentVal = $itemSelect.val();
+            // keep the chosen party only if it belongs to this master type: the same number under another
+            // type is a different party
+            var currentMaster = $itemSelect.find(':selected').data('master-id');
 
             if (masterId) {
                 var filtered = allMasterItems.filter(function(item) {
@@ -301,14 +320,14 @@
                 });
                 $itemSelect.empty().append('<option value="">-- Select Item --</option>');
                 $.each(filtered, function(key, value) {
-                    var selected = (value.id == currentVal) ? 'selected' : '';
+                    var selected = (value.id == currentVal && value.master_id == currentMaster) ? 'selected' : '';
                     $itemSelect.append('<option value="' + value.id + '" data-master-id="' + value.master_id + '" data-balance="' + value.balance + '" '+selected+'>' + value.name + '</option>');
                 });
                 $itemSelect.prop('disabled', false).trigger('change.select2');
             } else {
                 $itemSelect.empty().append('<option value="">-- Select Item --</option>');
                 $.each(allMasterItems, function(key, value) {
-                    var selected = (value.id == currentVal) ? 'selected' : '';
+                    var selected = (value.id == currentVal && value.master_id == currentMaster) ? 'selected' : '';
                     $itemSelect.append('<option value="' + value.id + '" data-master-id="' + value.master_id + '" data-balance="' + value.balance + '" '+selected+'>' + value.name + '</option>');
                 });
                 $itemSelect.prop('disabled', false).trigger('change.select2');
@@ -328,7 +347,8 @@
             var masterId = selectedOption.data('master-id');
             var refId = $(this).val();
 
-            if (masterId && (!$masterTypeSelect.val() || $masterTypeSelect.val() == "")) {
+            // the master type always follows the party picked
+            if (masterId && $masterTypeSelect.val() != masterId) {
                 $masterTypeSelect.val(masterId).trigger('change');
                 return;
             }

@@ -15,6 +15,24 @@ use DB;
 
 class PartyLedgerController extends Controller
 {
+    /** Most parties one list PDF may hold (912 rows used about 390 MB of the 512 MB memory limit). */
+    private const LIST_PDF_MAX_ROWS = 1000;
+
+    /** Most parties the detailed report takes with "All types" (it builds one full statement per party). */
+    private const DETAILED_MAX_PARTIES = 200;
+
+    /** Most rows one detailed-report PDF may hold (dompdf needs about 0.5 MB per row; all sales agents needed 660 MB of the 512 MB limit). */
+    private const DETAILED_PDF_MAX_ROWS = 500;
+
+    public function __construct()
+    {
+        // Every filter of these pages takes one value: a list in the link (?search[]=x) gave an error page, so it is dropped
+        $this->middleware(function ($request, $next) {
+            $request->query->replace(array_filter($request->query->all(), fn($value) => !is_array($value)));
+            return $next($request);
+        });
+    }
+
     public function index(Request $request)
     {
         $data = $this->getPartyListData($request);
@@ -24,16 +42,19 @@ class PartyLedgerController extends Controller
         $endDate = $data['endDate'];
 
         $totalPartiesCount = $parties->count();
-        $totalCreditBalance = (float)$parties->where('balance', '>', 0)->sum('balance');
-        $totalDebitBalance = (float)abs($parties->where('balance', '<', 0)->sum('balance'));
-        $totalNetBalance = (float)$parties->sum('balance');
-        $totalOpening = (float)$parties->sum('opening_balance');
-        $totalPeriodDebit = (float)$parties->sum('period_debit');
-        $totalPeriodCredit = (float)$parties->sum('period_credit');
+        $money = $this->totalsRows($parties, $request);
+        $totalCreditBalance = (float)$money->where('balance', '>', 0)->sum('balance');
+        $totalDebitBalance = (float)abs($money->where('balance', '<', 0)->sum('balance'));
+        $totalNetBalance = (float)$money->sum('balance');
+        $totalOpening = (float)$money->sum('opening_balance');
+        $totalPeriodDebit = (float)$money->sum('period_debit');
+        $totalPeriodCredit = (float)$money->sum('period_credit');
 
         $perPage = (int) $request->query('per_page', 25);
         if ($perPage < 1) $perPage = 25;
-        $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage('page');
+        // a page after the last one shows the last page (a huge page number gave an error page)
+        $lastPage = max(1, (int) ceil($totalPartiesCount / $perPage));
+        $currentPage = min(max(1, \Illuminate\Pagination\Paginator::resolveCurrentPage('page')), $lastPage);
         $currentItems = $parties->slice(($currentPage - 1) * $perPage, $perPage)->values();
         $paginatedParties = new \Illuminate\Pagination\LengthAwarePaginator(
             $currentItems,
@@ -56,6 +77,7 @@ class PartyLedgerController extends Controller
             'totalOpening' => $totalOpening,
             'totalPeriodDebit' => $totalPeriodDebit,
             'totalPeriodCredit' => $totalPeriodCredit,
+            'agentNote' => $this->agentNote($parties, $request),
             'startDate' => $startDate,
             'endDate' => $endDate,
             'customerType' => $data['customerType'] ?? null,
@@ -73,7 +95,8 @@ class PartyLedgerController extends Controller
     {
         $data = $this->getLedgerData($request, $type, $id);
         $pdf = \PDF::loadView('admin.ledger.party.download', $data);
-        $name = str_replace(' ', '_', $data['party']->name) . '_Ledger_' . date('Y-m-d') . '.pdf';
+        // no '/' or '\' in the file name: a name like 'TAX A/C' made the download fail (HTTP 500)
+        $name = (trim((string) preg_replace('/[^\pL\pN._-]+/u', '_', (string) $data['party']->name), '_.') ?: 'Party') . '_Ledger_' . date('Y-m-d') . '.pdf';
         return $pdf->download($name);
     }
 
@@ -192,7 +215,21 @@ class PartyLedgerController extends Controller
 
     public function detailedReportPdf(Request $request)
     {
-        $data = $this->getDetailedReportData($request);
+        $chosen = $this->detailedReportParties($request);
+        if ($chosen['partyNotice']) {
+            return redirect()->route('admin.ledger.party.detailedReport', $request->query())->with('error', $chosen['partyNotice']);
+        }
+        // party-wise: each party prints at least two rows, so a long list is refused before every statement is built
+        // (the 692 customers took about 20 s only to be refused)
+        $minRows = 2 * $chosen['filteredParties']->count();
+        if ($chosen['viewMode'] === 'party_wise' && $minRows > self::DETAILED_PDF_MAX_ROWS) {
+            return $this->detailedPdfTooBig($request, 'at least ' . number_format($minRows));
+        }
+        $data = $this->detailedReportFigures($request, $chosen);
+        $rows = $this->detailedPdfRows($data);
+        if ($rows > self::DETAILED_PDF_MAX_ROWS) {
+            return $this->detailedPdfTooBig($request, number_format($rows));
+        }
         $pdf = \PDF::loadView('admin.ledger.party.detailed_report_pdf', $data)->setPaper('a4', 'landscape');
         $name = 'Detailed_Party_Ledger_Report_' . date('Y-m-d_His') . '.pdf';
         return $pdf->download($name);
@@ -250,7 +287,13 @@ class PartyLedgerController extends Controller
         $sheet->getStyle($headerRange)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         $row = 6;
-        if ($viewMode === 'party_wise') {
+        if (!empty($data['partyNotice'])) {
+            // the chosen party is not in this list: the sheet says so instead of showing rows
+            $sheet->mergeCells("A{$row}:J{$row}");
+            $sheet->setCellValue("A{$row}", $data['partyNotice']);
+            $sheet->getStyle("A{$row}:J{$row}")->getFont()->setBold(true)->getColor()->setARGB('FFB45309');
+            $row++;
+        } elseif ($viewMode === 'party_wise') {
             foreach ($data['detailedParties'] as $dp) {
                 // Party Section Header
                 $sheet->mergeCells("A{$row}:J{$row}");
@@ -334,6 +377,10 @@ class PartyLedgerController extends Controller
         $sheet->setCellValue('J' . $row, $crdr($data['totalClosingBalance']));
         $sheet->getStyle("A{$row}:J{$row}")->getFont()->setBold(true);
         $sheet->getStyle("A{$row}:J{$row}")->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFDDE7D8');
+        if (!empty($data['agentNote'])) {
+            $sheet->mergeCells('A' . ($row + 1) . ':J' . ($row + 1)); // merged: the note does not widen the Date column
+            $sheet->setCellValue('A' . ($row + 1), $data['agentNote']);
+        }
 
         $sheet->getStyle('H6:I' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
 
@@ -351,14 +398,24 @@ class PartyLedgerController extends Controller
 
     public function getDetailedReportData(Request $request)
     {
+        return $this->detailedReportFigures($request, $this->detailedReportParties($request));
+    }
+
+    /**
+     * Parties of the detailed report: the list for the filters, or only the chosen party (selected_party).
+     * A chosen party that is not in the list gives no parties and a partyNotice (not every party, as before).
+     */
+    private function detailedReportParties(Request $request): array
+    {
+        // the statements read the dates from the request: only real dates, swapped if reversed (as the header shows them)
+        $this->cleanPeriod($request);
+        // the Shop filter of an agent statement is not a filter here: it would cut every agent down to one shop
+        $request->query->remove('customer_id');
         $data = $this->getPartyListData($request);
         $parties = $data['parties'];
-        $masters = $data['masters'];
-        $startDate = $data['startDate'];
-        $endDate = $data['endDate'];
 
         $selectedParty = $request->query('selected_party');
-        $viewMode = $request->query('view_mode', 'mix');
+        $partyNotice = null;
 
         $filteredParties = $parties;
         if (!empty($selectedParty)) {
@@ -368,9 +425,39 @@ class PartyLedgerController extends Controller
             if ($matched->isNotEmpty()) {
                 $filteredParties = $matched;
             } else {
+                $filteredParties = collect();
                 $selectedParty = null;
+                $partyNotice = 'The chosen party is not in this list for these filters (dates / balance filters). Clear the party or change the filters.';
             }
         }
+
+        // "All types" builds one full statement per party: 1,155 parties took 16-36 s (130 s with dates under load)
+        if ($this->allTypes($request) && !$selectedParty && $filteredParties->count() > self::DETAILED_MAX_PARTIES) {
+            throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                redirect()->route('admin.ledger.party.index', $request->query())->with('error',
+                    'Please pick a Master Type or a party for the detailed report (All types has '
+                    . number_format($filteredParties->count()) . ' parties, too many for one report).')
+            );
+        }
+
+        return $data + [
+            'filteredParties' => $filteredParties,
+            'selectedParty' => $selectedParty,
+            'partyNotice' => $partyNotice,
+            'viewMode' => $request->query('view_mode', 'mix'),
+        ];
+    }
+
+    /** One statement per party of detailedReportParties(), with the totals and the mixed list. */
+    private function detailedReportFigures(Request $request, array $chosen): array
+    {
+        $parties = $chosen['parties'];
+        $masters = $chosen['masters'];
+        $startDate = $chosen['startDate'];
+        $endDate = $chosen['endDate'];
+        $filteredParties = $chosen['filteredParties'];
+        $selectedParty = $chosen['selectedParty'];
+        $viewMode = $chosen['viewMode'];
 
         $allAvailableTypes = collect();
         $detailedParties = collect();
@@ -381,8 +468,11 @@ class PartyLedgerController extends Controller
         $totalPeriodCredit = 0;
         $totalClosingBalance = 0;
 
+        // each party's own statement, as its statement page shows it ('party_wise' made an agent's balance run per shop)
+        $statementRequest = $request->duplicate(array_merge($request->query->all(), ['view_mode' => 'mix']));
+
         foreach ($filteredParties as $p) {
-            $ledgerData = app(\App\Services\Ledger\PartyLedgerService::class)->build($request, $p->party_type, $p->id);
+            $ledgerData = app(\App\Services\Ledger\PartyLedgerService::class)->build($statementRequest, $p->party_type, $p->id);
 
             $pOpening = (float)($ledgerData['openingBalAmount'] ?? 0);
             $pClosing = (float)($ledgerData['party']->balance ?? 0);
@@ -391,21 +481,8 @@ class PartyLedgerController extends Controller
             $pDebit = (float)$txCollection->sum('debit');
             $pCredit = (float)$txCollection->sum('credit');
 
-            $totalOpeningBalance += $pOpening;
-            $totalPeriodDebit += $pDebit;
-            $totalPeriodCredit += $pCredit;
-            $totalClosingBalance += $pClosing;
-
             if (isset($ledgerData['availableTypes']) && is_array($ledgerData['availableTypes'])) {
                 $allAvailableTypes = $allAvailableTypes->merge($ledgerData['availableTypes']);
-            }
-
-            foreach ($txCollection as $tx) {
-                $tx->party_name = $p->name ?? '-';
-                $tx->party_type = $p->party_type;
-                $tx->party_id = $p->id;
-                $tx->party_key = $p->party_type . '_' . $p->id;
-                $allMixTransactions->push($tx);
             }
 
             $detailedParties->push((object)[
@@ -416,6 +493,42 @@ class PartyLedgerController extends Controller
                 'period_credit' => $pCredit,
                 'transactions' => $txCollection
             ]);
+        }
+
+        // Totals and the mixed list. "All types": a sales agent is the total of its shops, and a shop that is
+        // also one of these parties is counted once, in its own rows, so the agent adds only its other shops.
+        // One chosen party is counted whole, as its statement (the balance filters only pick the parties of a list).
+        $otherShops = $this->allTypes($request)
+            ? app(\App\Services\Ledger\PartyLedgerService::class)->agentOtherShops($filteredParties, $startDate, $endDate, $selectedParty ? null : $this->balanceFilter($request))
+            : [];
+        foreach ($detailedParties as $dp) {
+            $p = $dp->party;
+            $countedTx = $dp->transactions;
+            $opening = $dp->opening_balance;
+            $closing = $dp->closing_balance;
+            if ($this->allTypes($request) && $p->party_type === 'sales_agent') {
+                // each entry of an agent statement carries the shop it belongs to (customer_id)
+                $shops = collect($otherShops[$p->id] ?? []);
+                $shopIds = $shops->pluck('id')->map(fn($id) => (int) $id)->all();
+                $countedTx = $countedTx->filter(fn($tx) => in_array((int) ($tx->customer_id ?? 0), $shopIds, true))->values();
+                $opening = round((float) $shops->sum('opening_balance'), 2);
+                $closing = round((float) $shops->sum('balance'), 2);
+            }
+
+            $totalOpeningBalance += $opening;
+            $totalPeriodDebit += (float)$countedTx->sum('debit');
+            $totalPeriodCredit += (float)$countedTx->sum('credit');
+            $totalClosingBalance += $closing;
+
+            foreach ($countedTx as $tx) {
+                // a copy: the mixed list sets its own running balance, the party's section keeps its statement's
+                $tx = clone $tx;
+                $tx->party_name = $p->name ?? '-';
+                $tx->party_type = $p->party_type;
+                $tx->party_id = $p->id;
+                $tx->party_key = $p->party_type . '_' . $p->id;
+                $allMixTransactions->push($tx);
+            }
         }
 
         // Sort mix transactions chronologically
@@ -451,12 +564,15 @@ class PartyLedgerController extends Controller
             'startDate' => $startDate,
             'endDate' => $endDate,
             'selectedParty' => $selectedParty,
+            'partyNotice' => $chosen['partyNotice'],
             'typeId' => $request->query('type_id'),
-            'customerType' => $data['customerType'] ?? null,
-            'vendorType' => $data['vendorType'] ?? null,
+            'customerType' => $chosen['customerType'] ?? null,
+            'vendorType' => $chosen['vendorType'] ?? null,
             'purchaseAgents' => \App\Models\PurchaseAgent::where('status', 1)->orderBy('name', 'asc')->get(),
             'search' => $request->query('search'),
             'masters' => $masters,
+            // one chosen party is its own statement: nothing to explain about shops counted once
+            'agentNote' => $selectedParty ? null : $this->agentNote($filteredParties, $request, true),
         ];
     }
 
@@ -466,10 +582,23 @@ class PartyLedgerController extends Controller
         $typeId = $request->query('type_id');
         $data = $this->getPartyListData($request);
 
+        // dompdf needs about 0.45 MB per row: the 1,155 parties of "All types" passed the 512 MB memory limit (HTTP 500)
+        if ($data['parties']->count() > self::LIST_PDF_MAX_ROWS) {
+            return redirect()->route('admin.ledger.party.index', $request->query())->with('error',
+                'This list has ' . number_format($data['parties']->count()) . ' parties, too many for one PDF (up to '
+                . number_format(self::LIST_PDF_MAX_ROWS) . '). Please pick a Master Type or another filter, or use Export Excel, which has every party.');
+        }
+
+        $money = $this->totalsRows($data['parties'], $request);
         $pdf = \PDF::loadView('admin.ledger.party.list_pdf', [
             'parties' => $data['parties'],
             'search' => $search,
             'typeId' => $typeId,
+            'totalOpening' => (float) $money->sum('opening_balance'),
+            'totalDebit' => (float) $money->sum('period_debit'),
+            'totalCredit' => (float) $money->sum('period_credit'),
+            'totalBalance' => (float) $money->sum('balance'),
+            'agentNote' => $this->agentNote($data['parties'], $request),
             'customerType' => $data['customerType'] ?? null,
             'vendorType' => $data['vendorType'] ?? null,
             'startDate' => $data['startDate'],
@@ -521,19 +650,17 @@ class PartyLedgerController extends Controller
         $sheet->getStyle($headerRange)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         $row = 5;
-        $totalBalance = 0;
-        $totalOpening = 0;
-        $totalDebit = 0;
-        $totalCredit = 0;
+        $money = $this->totalsRows($parties, $request);
+        $totalBalance = (float) $money->sum('balance');
+        $totalOpening = (float) $money->sum('opening_balance');
+        $totalDebit = (float) $money->sum('period_debit');
+        $totalCredit = (float) $money->sum('period_credit');
         foreach ($parties->values() as $idx => $p) {
             $bal = (float)$p->balance;
-            $totalBalance += $bal;
-            $totalOpening += (float)$p->opening_balance;
-            $totalDebit += (float)$p->period_debit;
-            $totalCredit += (float)$p->period_credit;
 
             $sheet->setCellValue('A' . $row, $idx + 1);
-            $sheet->setCellValue('B' . $row, $p->name ?? '-');
+            $status = (int) ($p->status ?? 1) === 1 ? '' : ((int) ($p->status ?? 1) === 3 ? ' (Deleted)' : ' (Inactive)');
+            $sheet->setCellValue('B' . $row, ($p->name ?? '-') . $status);
             $sheet->setCellValue('C' . $row, ucfirst($p->party_type ?? '-'));
             $sheet->setCellValue('D' . $row, $p->phone ?? '-');
             $sheet->setCellValue('E' . $row, $crdr((float)$p->opening_balance));
@@ -551,6 +678,10 @@ class PartyLedgerController extends Controller
         $sheet->setCellValue('G' . $row, $totalCredit);
         $sheet->setCellValue('H' . $row, $crdr($totalBalance));
         $sheet->getStyle('A' . $row . ':H' . $row)->getFont()->setBold(true);
+        if ($note = $this->agentNote($parties, $request)) {
+            $sheet->mergeCells('A' . ($row + 1) . ':H' . ($row + 1)); // merged: the note does not widen the # column
+            $sheet->setCellValue('A' . ($row + 1), $note);
+        }
         $sheet->getStyle('A' . $row . ':H' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFF1F5F9');
         $sheet->getStyle('F5:G' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
 
@@ -567,9 +698,70 @@ class PartyLedgerController extends Controller
     }
 
     /**
+     * Rows the detailed PDF would print: the entries of the mixed list, or in party-wise view the entries of each
+     * party (at least one line) plus one for its heading and total (692 nearly empty parties used 376 MB).
+     */
+    private function detailedPdfRows(array $data): int
+    {
+        if ($data['viewMode'] !== 'party_wise') {
+            return $data['allMixTransactions']->count();
+        }
+        return (int) $data['detailedParties']->sum(fn($dp) => 1 + max(1, $dp->transactions->count()));
+    }
+
+    /** Back to the detailed report: too many rows for one PDF ($rows is the text of the count). */
+    private function detailedPdfTooBig(Request $request, string $rows)
+    {
+        return redirect()->route('admin.ledger.party.detailedReport', $request->query())->with('error',
+            'This report has ' . $rows . ' rows, too many for one PDF (up to ' . number_format(self::DETAILED_PDF_MAX_ROWS)
+            . '). Please choose From / To dates or one party, or use the Excel, which has every row.');
+    }
+
+    /** No Master Type picked: the list has every type, sales agents and their shops together. */
+    private function allTypes(Request $request): bool
+    {
+        return !$request->query('type_id');
+    }
+
+    /** Rows added up in the totals: each shop counted once (PartyLedgerService::totalsRows, same as the owner list). */
+    private function totalsRows($parties, Request $request)
+    {
+        [$startDate, $endDate] = $this->listPeriod($request);
+        return app(\App\Services\Ledger\PartyLedgerService::class)
+            ->totalsRows($parties, $this->allTypes($request), $startDate, $endDate, $this->balanceFilter($request));
+    }
+
+    /** Does one party row pass the list's closing / balance filters? */
+    private function balanceFilter(Request $request): callable
+    {
+        return fn($party) => $this->applyClosingFilters(collect([$party]), $request)->isNotEmpty();
+    }
+
+    /** Note under the totals, only with "All types" when a sales agent is listed (null = no note). */
+    private function agentNote($parties, Request $request, bool $detailed = false): ?string
+    {
+        if (!$this->allTypes($request) || !$parties->contains('party_type', 'sales_agent')) {
+            return null;
+        }
+        // one text for every page (PartyLedgerService), the owner list uses it too
+        return $detailed ? \App\Services\Ledger\PartyLedgerService::AGENT_NOTE_DETAILED : \App\Services\Ledger\PartyLedgerService::AGENT_NOTE;
+    }
+
+    /** Statements and the detailed report: only real dates reach PartyLedgerService, swapped if reversed (as listPeriod). */
+    private function cleanPeriod(Request $request): void
+    {
+        [$start, $end] = $this->listPeriod($request);
+        foreach (['start_date' => $start, 'end_date' => $end] as $key => $value) {
+            $value ? $request->query->set($key, $value) : $request->query->remove($key);
+        }
+    }
+
+    /**
      * Parties of the list with their ledger figures for the chosen period (From / To dates, both optional):
      * opening_balance (balance on the From date), period_debit, period_credit and balance (closing on the To date).
      * Without dates: opening = the opening balance entered for the party, closing = today's balance.
+     * Every active party is listed, and an inactive or deleted party too while its closing balance is not 0.
+     * The figures come from PartyLedgerService::listFigures (the same records as the statement, added up per type).
      */
     private function getPartyListData(Request $request)
     {
@@ -578,139 +770,53 @@ class PartyLedgerController extends Controller
         $customerType = $request->query('customer_type', $request->query('type'));
         $vendorType = $request->query('vendor_type', $request->query('purchase_agent_id'));
         [$startDate, $endDate] = $this->listPeriod($request);
-        $ledgerRequest = new Request(array_filter(['start_date' => $startDate, 'end_date' => $endDate]));
 
         $masters = \App\Models\AdjustmentMaster::whereNotIn('name', ['Bank Account', 'Cash Master'])->where('status', 1)->get();
         $parties = collect();
 
+        // Customer type / Vendor type only filter their own Master Type (the select stays in the form when hidden)
+        $picked = $typeId && $typeId !== 'sales_agent' ? \App\Models\AdjustmentMaster::find($typeId) : null;
+        if (!$picked || !($picked->model_name === 'App\Models\MasterCustomer' || strtolower($picked->name) === 'customer')) {
+            $customerType = null;
+        }
+        if (!$picked || !($picked->model_name === 'App\Models\Vendor' || strtolower($picked->name) === 'vendor')) {
+            $vendorType = null;
+        }
+
         if ($typeId) {
             if ($typeId === 'sales_agent') {
-                $items = \App\Models\SalesAgent::where('status', 1)
-                    ->when($search, function ($q) use ($search) {
-                        $q->where('name', 'LIKE', "%$search%");
-                    })
-                    ->get()
-                    ->map(function ($v) use ($ledgerRequest) {
-                        $v->party_type = 'sales_agent';
-                        $v->master_id_val = 'sales_agent';
-                        return $this->withLedgerFigures($v, $ledgerRequest);
-                    });
-                $parties = $parties->concat($items);
+                $parties = $this->agentParties($search);
             } else {
-                $master = \App\Models\AdjustmentMaster::find($typeId);
-                if ($master) {
-                    $modelName = $master->model_name;
-                    if (class_exists($modelName)) {
-                        $isCustomer = ($modelName === 'App\Models\MasterCustomer' || strtolower($master->name) === 'customer');
-                        $isVendor = ($modelName === 'App\Models\Vendor' || strtolower($master->name) === 'vendor');
-                        $items = $modelName::where('status', 1)
-                            ->when($search, function ($q) use ($search, $modelName) {
-                                if ($modelName == 'App\Models\BankAccount') {
-                                    $q->where('bank_name', 'LIKE', "%$search%");
-                                } else {
-                                    $q->where('name', 'LIKE', "%$search%");
-                                }
-                            })
-                            ->when($isCustomer && !empty($customerType), function ($q) use ($customerType) {
-                                if ($customerType == 'direct') {
-                                    $q->where('subtype', 'direct');
-                                } elseif ($customerType == 'agent') {
-                                    $q->where('subtype', 'agent');
-                                } else {
-                                    $q->where('type', $customerType);
-                                }
-                            })
-                            ->when($isVendor && !empty($vendorType), function ($q) use ($vendorType) {
-                                if ($vendorType === 'direct') {
-                                    $q->where(function ($sub) {
-                                        $sub->whereNull('purchase_agent_id')->orWhere('purchase_agent_id', 0);
-                                    });
-                                } elseif ($vendorType === 'agent') {
-                                    $q->whereNotNull('purchase_agent_id')->where('purchase_agent_id', '!=', 0);
-                                } elseif (str_starts_with($vendorType, 'pa_')) {
-                                    $agentId = (int) substr($vendorType, 3);
-                                    $q->where('purchase_agent_id', $agentId);
-                                } elseif (is_numeric($vendorType)) {
-                                    $q->where('purchase_agent_id', (int) $vendorType);
-                                }
-                            })
-                            ->get()
-                            ->map(function ($v) use ($master, $ledgerRequest) {
-                                $v->party_type = strtolower($master->name);
-                                $v->master_id_val = $master->id;
-                                if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
-                                return $this->withLedgerFigures($v, $ledgerRequest);
-                            });
-                        $parties = $parties->concat($items);
-                    }
+                if ($picked) {
+                    $parties = $this->masterParties($picked, $search, $customerType, $vendorType);
                 }
             }
         } else {
-            // Default to ALL masters items
+            // Default to ALL masters items (every party: the old limit of 100 per type left parties out of the totals)
             foreach ($masters as $master) {
-                $modelName = $master->model_name;
-                if (class_exists($modelName)) {
-                    $isCustomer = ($modelName === 'App\Models\MasterCustomer' || strtolower($master->name) === 'customer');
-                    $isVendor = ($modelName === 'App\Models\Vendor' || strtolower($master->name) === 'vendor');
-                    $items = $modelName::where('status', 1)
-                        ->when($search, function ($q) use ($search, $modelName) {
-                            if ($modelName == 'App\Models\BankAccount') {
-                                $q->where('bank_name', 'LIKE', "%$search%");
-                            } else {
-                                $q->where('name', 'LIKE', "%$search%");
-                            }
-                        })
-                        ->when($isCustomer && !empty($customerType), function ($q) use ($customerType) {
-                            if ($customerType == 'direct') {
-                                $q->where('subtype', 'direct');
-                            } elseif ($customerType == 'agent') {
-                                $q->where('subtype', 'agent');
-                            } else {
-                                $q->where('type', $customerType);
-                            }
-                        })
-                        ->when($isVendor && !empty($vendorType), function ($q) use ($vendorType) {
-                            if ($vendorType === 'direct') {
-                                $q->where(function ($sub) {
-                                    $sub->whereNull('purchase_agent_id')->orWhere('purchase_agent_id', 0);
-                                });
-                            } elseif ($vendorType === 'agent') {
-                                $q->whereNotNull('purchase_agent_id')->where('purchase_agent_id', '!=', 0);
-                            } elseif (str_starts_with($vendorType, 'pa_')) {
-                                $agentId = (int) substr($vendorType, 3);
-                                $q->where('purchase_agent_id', $agentId);
-                            } elseif (is_numeric($vendorType)) {
-                                $q->where('purchase_agent_id', (int) $vendorType);
-                            }
-                        })
-                        ->limit(100) // Safety limit for "All" view
-                        ->get()
-                        ->map(function ($v) use ($master, $ledgerRequest) {
-                            $v->party_type = strtolower($master->name);
-                            $v->master_id_val = $master->id;
-                            if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
-                            return $this->withLedgerFigures($v, $ledgerRequest);
-                        });
-                    $parties = $parties->concat($items);
-                }
+                $parties = $parties->concat($this->masterParties($master, $search, $customerType, $vendorType));
             }
 
             // Also load Sales Agents in ALL view
-            $agentItems = \App\Models\SalesAgent::where('status', 1)
-                ->when($search, function ($q) use ($search) {
-                    $q->where('name', 'LIKE', "%$search%");
-                })
-                ->limit(100)
-                ->get()
-                ->map(function ($v) use ($ledgerRequest) {
-                    $v->party_type = 'sales_agent';
-                    $v->master_id_val = 'sales_agent';
-                    return $this->withLedgerFigures($v, $ledgerRequest);
-                });
-            $parties = $parties->concat($agentItems);
+            $parties = $parties->concat($this->agentParties($search));
         }
 
-        // Filter by closing balance min / max and balance type if requested
+        app(\App\Services\Ledger\PartyLedgerService::class)->fillListFigures($parties, $startDate, $endDate);
+        $parties = $parties->filter(function ($p) {
+            return (int) ($p->status ?? 1) === 1 || abs((float) $p->balance) >= 0.005;
+        });
+
+        $parties = $this->applyClosingFilters($parties, $request);
+
+        // Sort by name
+        $parties = $parties->sortBy('name');
+
+        return compact('parties', 'masters', 'startDate', 'endDate', 'customerType', 'vendorType');
+    }
+
+    /** Closing balance min / max (absolute amount) and balance type (Dr / Cr only), as requested. */
+    private function applyClosingFilters($parties, Request $request)
+    {
         $minClosing = $request->query('min_closing', $request->query('min_amount'));
         $maxClosing = $request->query('max_closing', $request->query('max_amount'));
         $balanceType = strtolower(trim((string)$request->query('balance_type')));
@@ -739,10 +845,7 @@ class PartyLedgerController extends Controller
             });
         }
 
-        // Sort by name
-        $parties = $parties->sortBy('name');
-
-        return compact('parties', 'masters', 'startDate', 'endDate', 'customerType', 'vendorType');
+        return $parties;
     }
 
     private function vendorTypeText($vendorType, $purchaseAgents = null): string
@@ -758,15 +861,69 @@ class PartyLedgerController extends Controller
         return ucfirst($vendorType);
     }
 
-    /** Opening, debit, credit and closing of one party for the period, from the same ledger as its statement. */
-    private function withLedgerFigures($v, Request $ledgerRequest)
+    /** Parties of one master for the list, any status (getPartyListData keeps the active ones and those with a balance). */
+    private function masterParties($master, $search, $customerType, $vendorType)
     {
-        $ledgerData = $this->getLedgerData($ledgerRequest, $v->party_type, $v->id);
-        $v->opening_balance = (float) ($ledgerData['openingBalAmount'] ?? 0);
-        $v->period_debit = (float) collect($ledgerData['transactions'] ?? [])->sum('debit');
-        $v->period_credit = (float) collect($ledgerData['transactions'] ?? [])->sum('credit');
-        $v->balance = $ledgerData['party']->balance ?? 0;
-        return $v;
+        $modelName = $master->model_name;
+        if (!$modelName || !class_exists($modelName)) {
+            return collect();
+        }
+        $isCustomer = ($modelName === 'App\Models\MasterCustomer' || strtolower($master->name) === 'customer');
+        $isVendor = ($modelName === 'App\Models\Vendor' || strtolower($master->name) === 'vendor');
+
+        return $modelName::query()
+            ->when($search, function ($q) use ($search, $modelName) {
+                if ($modelName == 'App\Models\BankAccount') {
+                    $q->where('bank_name', 'LIKE', "%$search%");
+                } else {
+                    $q->where('name', 'LIKE', "%$search%");
+                }
+            })
+            ->when($isCustomer && !empty($customerType), function ($q) use ($customerType) {
+                if ($customerType == 'direct') {
+                    $q->where('subtype', 'direct');
+                } elseif ($customerType == 'agent') {
+                    $q->where('subtype', 'agent');
+                } else {
+                    $q->where('type', $customerType);
+                }
+            })
+            ->when($isVendor && !empty($vendorType), function ($q) use ($vendorType) {
+                if ($vendorType === 'direct') {
+                    $q->where(function ($sub) {
+                        $sub->whereNull('purchase_agent_id')->orWhere('purchase_agent_id', 0);
+                    });
+                } elseif ($vendorType === 'agent') {
+                    $q->whereNotNull('purchase_agent_id')->where('purchase_agent_id', '!=', 0);
+                } elseif (str_starts_with($vendorType, 'pa_')) {
+                    $agentId = (int) substr($vendorType, 3);
+                    $q->where('purchase_agent_id', $agentId);
+                } elseif (is_numeric($vendorType)) {
+                    $q->where('purchase_agent_id', (int) $vendorType);
+                }
+            })
+            ->get()
+            ->map(function ($v) use ($master) {
+                $v->party_type = strtolower($master->name);
+                $v->master_id_val = $master->id;
+                if (!isset($v->name) && isset($v->bank_name)) $v->name = $v->bank_name;
+                return $v;
+            });
+    }
+
+    /** Sales agents for the list, any status. */
+    private function agentParties($search)
+    {
+        return \App\Models\SalesAgent::query()
+            ->when($search, function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%$search%");
+            })
+            ->get()
+            ->map(function ($v) {
+                $v->party_type = 'sales_agent';
+                $v->master_id_val = 'sales_agent';
+                return $v;
+            });
     }
 
     /** From / To dates of the list (Y-m-d); a wrong date is ignored and the two are swapped if From is after To. */
@@ -798,6 +955,8 @@ class PartyLedgerController extends Controller
 
     private function getLedgerData(Request $request, $type, $id)
     {
+        // a date like 'abc' gave an error page, and reversed dates an empty statement
+        $this->cleanPeriod($request);
         return app(\App\Services\Ledger\PartyLedgerService::class)->build($request, $type, $id);
     }
 }

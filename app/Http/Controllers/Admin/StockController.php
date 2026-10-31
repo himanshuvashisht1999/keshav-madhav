@@ -29,6 +29,9 @@ class StockController extends Controller
     public function index(Request $request)
     {   
         $response['fabrics'] = $this->fabricService->getFabricById($request);
+        if (!$response['fabrics']) {
+            return redirect()->route('admin.stock.fabricIndex')->with('error', 'Fabric not found.');
+        }
         return view('admin.stock.index', $response);
     }
     public function indexList(Request $request){
@@ -37,6 +40,9 @@ class StockController extends Controller
     public function view(Request $request)
     {
         $response['data'] = $this->service->view($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.stock.fabricIndex')->with('error', 'Stock not found.');
+        }
         return view('admin.stock.view', $response);
     }
     public function detail(Request $request)

@@ -58,6 +58,8 @@
                     <th width="5%">Sr</th>
                     <th>Warehouse / Slot</th>
                     <th class="text-right">Total Received</th>
+                    <th class="text-right">Moved In</th>
+                    <th class="text-right">Moved Out</th>
                     <th class="text-right">Total Issued</th>
                     <th class="text-right">Remaining Qty</th>
                 </tr>
@@ -68,6 +70,8 @@
                     <td>{{ $index + 1 }}</td>
                     <td>{{ $row->master_fabric_warehouse->cutting_master_name ?? 'N/A' }}</td>
                     <td class="text-right">{{ number_format($row->total_received, 2) }}</td>
+                    <td class="text-right">{{ number_format($row->total_moved_in, 2) }}</td>
+                    <td class="text-right">{{ number_format($row->total_moved_out, 2) }}</td>
                     <td class="text-right">{{ number_format($row->total_issued, 2) }}</td>
                     <td class="text-right font-bold">{{ number_format($row->total_remaining, 2) }}</td>
                 </tr>

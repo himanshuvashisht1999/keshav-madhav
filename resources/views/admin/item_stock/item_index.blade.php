@@ -82,52 +82,12 @@
                 {data: 'total_quantity', name: 'total_quantity'},
                 {data: 'action', name: 'action', searchable: false}
             ],
-            dom: 'lBfrtip',
-            buttons: [
-               {
-                    text: `<i class="nav-icon fas fa-download"></i> Excel Reports`,
-                    attr: {
-                        id: 'generateExcel',
-                        name: 'generateExcel'
-                    },
-                    className: 'btn-datatable',
-                    action: function (e, dt, node, config) {
-                        e.preventDefault();
-                    }
-                }
-            ]
-           
+            dom: 'lfrtip'
         });
 
         $('#sku').on('change', function (e) {
             oTable.draw();
             e.preventDefault();
-        });
-
-        $(document).ready(function () {
-            $('#generateExcel').on('click', function (e) {
-                e.preventDefault(); // prevent default behavior
-
-                // Collect filter values
-                var data = {
-                    id: $('#id').val(),
-                    sku: $('#sku').val(),
-                    _token: '{{ csrf_token() }}'
-                };
-
-                // Create a hidden form for POST submission (so file download works)
-                var form = $('<form>', {
-                    action: '{{ route("admin.reports.fabricStockSkuExcel") }}',
-                    method: 'POST',
-                    target: '_blank'
-                }).append($.map(data, function(v, k) {
-                    return $('<input>', { type: 'hidden', name: k, value: v });
-                }));
-
-                $('body').append(form);
-                form.submit();
-                form.remove();
-            });
         });
     });
 

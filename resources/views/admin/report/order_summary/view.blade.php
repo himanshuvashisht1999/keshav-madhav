@@ -284,6 +284,8 @@
                                         <td class="text-center">
                                             @if($carton->status == 2)
                                                 <span class="badge badge-success" style="font-size: 11px; padding: 3px 6px;">Dispatched</span>
+                                            @elseif($carton->status == 3)
+                                                <span class="badge badge-secondary" style="font-size: 11px; padding: 3px 6px;">In stock (domestic)</span>
                                             @else
                                                 <span class="badge badge-warning" style="font-size: 11px; padding: 3px 6px;">Packed</span>
                                             @endif

@@ -41,6 +41,9 @@ class SkExpenseController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.master.sk_expense.index')->with('error', 'SK expense not found.');
+        }
         return view('admin.payment.master.sk_expense.edit', $response);
     }
 

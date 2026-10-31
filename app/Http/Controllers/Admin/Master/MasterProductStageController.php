@@ -46,6 +46,9 @@ class MasterProductStageController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.product_stage.index')->with('error', 'Stage not found.');
+        }
         return view('admin.master.product_stage.edit', $response);
     }
     public function update(MasterProductStageUpdateRequest $request)
@@ -66,6 +69,9 @@ class MasterProductStageController extends Controller
     public function subStageIndex(Request $request)
     {
         $response['stage_data'] = $this->orderStagesService->stage_data($request);
+        if (!$response['stage_data']) {
+            return redirect()->route('admin.master.product_stage.index')->with('error', 'Stage not found.');
+        }
         return view('admin.master.product_sub_stage.index', $response);
     }
 
@@ -76,6 +82,9 @@ class MasterProductStageController extends Controller
     public function editSubStage(Request $request)
     {
         $response['data'] = $this->service->editSubStage($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.master.product_stage.index')->with('error', 'Sub stage not found.');
+        }
         $sub_stage = $response['data'];
         $response['stage_data'] = MasterProductStage::find($sub_stage->master_product_stage_id);
         return view('admin.master.product_sub_stage.edit', $response);
@@ -89,6 +98,9 @@ class MasterProductStageController extends Controller
     {
         $stage_id = $request->stage_id ?? $request->query('stage_id');
         $response['stage_data'] = MasterProductStage::find($stage_id);
+        if (!$response['stage_data']) {
+            return redirect()->route('admin.master.product_stage.index')->with('error', 'Stage not found.');
+        }
         return view('admin.master.product_sub_stage.create', $response);
     }
     public function storeSubStage(MasterProductSubStageStoreRequest $request)

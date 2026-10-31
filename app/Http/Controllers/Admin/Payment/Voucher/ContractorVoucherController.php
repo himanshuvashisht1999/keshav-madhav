@@ -54,6 +54,9 @@ class ContractorVoucherController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.voucher.contractor.index')->with('error', 'Voucher not found.');
+        }
         $response['contractors'] = Contractor::where('status', 1)->get();
         $response['lots'] = FabricRollAssigning::select('id', 'lot_no')->groupBy('lot_no')->get();
         return view('admin.payment.voucher.contractor.edit', $response);

@@ -98,6 +98,9 @@ class FabricReceiptController extends Controller
     public function view(Request $request)
     {
         $response['data'] = $this->service->view($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.fabric_receipt.index')->with('error', 'Shipment not found.');
+        }
         return view('admin.fabric_receipt.view', $response);
     }
     public function downloadReport(Request $request)
@@ -170,6 +173,9 @@ class FabricReceiptController extends Controller
     public function returnPage(Request $request)
     {
         $response['data'] = $this->service->view($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.fabric_receipt.index')->with('error', 'Shipment not found.');
+        }
         return view('admin.fabric_receipt.return', $response);
     }
 

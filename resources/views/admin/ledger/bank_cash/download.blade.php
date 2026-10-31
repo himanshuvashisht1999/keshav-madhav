@@ -125,12 +125,12 @@
                 <tr>
                     <td style="border-right: 1px solid #ddd;">
                         <span class="label">Opening Balance</span>
-                        <span class="value">₹ {{ number_format(abs($ledger->opening_balance), 2) }} {{ $ledger->opening_balance >= 0 ? 'DR' : 'CR' }}</span>
+                        <span class="value">₹ {{ number_format(abs($ledger->opening_balance), 2) }} {{ $ledger->opening_balance >= 0 ? 'CR' : 'DR' }}</span>
                     </td>
                     <td>
                         <span class="label">Closing Balance</span>
                         <span class="value">₹ {{ number_format(abs($ledger->closing_balance), 2) }} 
-                            {{ $ledger->closing_balance >= 0 ? 'DR' : 'CR' }}
+                            {{ $ledger->closing_balance >= 0 ? 'CR' : 'DR' }}
                         </span>
                     </td>
                 </tr>
@@ -164,7 +164,7 @@
                                 {{ $tx->credit > 0 ? '₹ ' . number_format($tx->credit, 2) : '-' }}
                             </td>
                             <td class="text-right text-bold">
-                                ₹ {{ number_format(abs($currentBalance), 2) }} {{ $currentBalance >= 0 ? 'DR' : 'CR' }}
+                                ₹ {{ number_format(abs($currentBalance), 2) }} {{ $currentBalance >= 0 ? 'CR' : 'DR' }}
                             </td>
                         </tr>
                     @empty
@@ -180,7 +180,7 @@
                         <td class="text-right text-bold" style="padding: 10px;">₹ {{ number_format($ledger->transactions->sum('debit'), 2) }}</td>
                         <td class="text-right text-bold" style="padding: 10px;">₹ {{ number_format($ledger->transactions->sum('credit'), 2) }}</td>
                         <td class="text-right text-bold" style="padding: 10px; color: #05421c;">
-                            ₹ {{ number_format(abs($currentBalance), 2) }} {{ $currentBalance >= 0 ? 'DR' : 'CR' }}
+                            ₹ {{ number_format(abs($currentBalance), 2) }} {{ $currentBalance >= 0 ? 'CR' : 'DR' }}
                         </td>
                     </tr>
                 </tfoot>
@@ -194,16 +194,12 @@
         <tr>
             <td style="border-right: 1px solid #ddd;">
                 <span class="label">Opening Balance</span>
-                <span class="value">₹ {{ number_format(abs($openingBalAmount), 2) }} {{ $openingBalAmount >= 0 ? 'DR' : 'CR' }}</span>
+                <span class="value">₹ {{ number_format(abs($openingBalAmount), 2) }} {{ $openingBalAmount >= 0 ? 'CR' : 'DR' }}</span>
             </td>
             <td>
                 <span class="label">Closing Balance</span>
-                <span class="value">₹ {{ number_format(abs($party->balance), 2) }} 
-                    @if($type === 'customer')
-                        {{ $party->balance <= 0 ? 'DR' : 'CR' }}
-                    @else
-                        {{ $party->balance >= 0 ? 'CR' : 'DR' }}
-                    @endif
+                <span class="value">₹ {{ number_format(abs($party->balance), 2) }}
+                    {{ $party->balance >= 0 ? 'CR' : 'DR' }}
                 </span>
             </td>
         </tr>
@@ -237,7 +233,7 @@
                         {{ $tx->credit > 0 ? '₹ ' . number_format($tx->credit, 2) : '-' }}
                     </td>
                     <td class="text-right text-bold">
-                        ₹ {{ number_format(abs($currentBalance), 2) }} {{ $currentBalance >= 0 ? 'DR' : 'CR' }}
+                        ₹ {{ number_format(abs($currentBalance), 2) }} {{ $currentBalance >= 0 ? 'CR' : 'DR' }}
                     </td>
                 </tr>
             @empty
@@ -253,7 +249,7 @@
                 <td class="text-right text-bold" style="padding: 10px;">₹ {{ number_format($transactions->sum('debit'), 2) }}</td>
                 <td class="text-right text-bold" style="padding: 10px;">₹ {{ number_format($transactions->sum('credit'), 2) }}</td>
                 <td class="text-right text-bold" style="padding: 10px; color: #05421c;">
-                    ₹ {{ number_format(abs($currentBalance), 2) }} {{ $currentBalance >= 0 ? 'DR' : 'CR' }}
+                    ₹ {{ number_format(abs($currentBalance), 2) }} {{ $currentBalance >= 0 ? 'CR' : 'DR' }}
                 </td>
             </tr>
         </tfoot>

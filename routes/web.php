@@ -129,7 +129,7 @@ Route::prefix('unit')->name('unit.')->middleware(['unit.remember'])->group(funct
     Route::get('/my-work/lot', [\App\Http\Controllers\Unit\UnitAuthController::class, 'myWorkLot'])->name('work.lot');
     Route::get('/view/{type}/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'viewSlip'])->name('view.slip');
     Route::get('/assignments', [\App\Http\Controllers\Unit\UnitAuthController::class, 'assignments'])->name('assignments');
-    Route::get('/order-summary/{sku}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'orderSummary'])->name('order-summary');
+    Route::get('/order-summary/{sku}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'orderSummary'])->name('order-summary')->where('sku', '.*'); // order numbers contain '/' (STY/16/04/2026/56)
     Route::get('/assignment-details/{type}/{id}', [App\Http\Controllers\Unit\UnitAuthController::class, 'showAssignmentDetails'])->name('assignments.details');
     Route::get('/assignment-details/{type}/{id}/download', [App\Http\Controllers\Unit\UnitAuthController::class, 'downloadAssignmentDetailsPdf'])->name('assignments.download');
     Route::get('/assignment-slip-details/{slip_id}', [App\Http\Controllers\Unit\UnitAuthController::class, 'showSlipDetails'])->name('assignments.slip_details');
@@ -146,7 +146,7 @@ Route::prefix('unit')->name('unit.')->middleware(['unit.remember'])->group(funct
 // ================= OWNER AUTHENTICATION ROUTES =================
 Route::prefix('owner')->name('owner.')->group(function () {
     Route::get('/login', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'login'])->name('login.post');
+    Route::post('/login', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'login'])->name('login.post'); // at most 10 wrong tries a minute (OwnerAuthController::login)
 
     Route::middleware(['checkOwnerLogin'])->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'dashboard'])->name('dashboard');
@@ -165,9 +165,7 @@ Route::prefix('owner')->name('owner.')->group(function () {
         Route::get('/stock', [\App\Http\Controllers\Owner\ReportController::class, 'stock'])->name('stock');
         Route::get('/stock-rolls', [\App\Http\Controllers\Owner\ReportController::class, 'stockRolls'])->name('report.stock.rolls');
         Route::get('/stock-rolls/tracking', [\App\Http\Controllers\Owner\ReportController::class, 'stockRollTracking'])->name('report.stock.rolls.tracking');
-        Route::get('/stock/roll-details', [\App\Http\Controllers\Owner\ReportController::class, 'stockRollDetails'])->name('stock.roll.details');
         Route::get('/ready-stock', [\App\Http\Controllers\Owner\InventoryController::class, 'index'])->name('ready-stock.index');
-        Route::get('/ready-stock/list', [\App\Http\Controllers\Owner\InventoryController::class, 'indexList'])->name('ready-stock.list');
 
         Route::prefix('order-summary')->name('order-summary.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Owner\OwnerAuthController::class, 'orderSummary'])->name('index');
@@ -188,8 +186,11 @@ Route::prefix('owner')->name('owner.')->group(function () {
             Route::get('/download/{type}/{id}', [\App\Http\Controllers\Owner\Ledger\BankCashLedgerController::class, 'download'])->name('download');
         });
 
-        Route::get('/pending-payments', [\App\Http\Controllers\Admin\Payment\PendingPaymentController::class, 'index'])->name('payment.pending.index');
-        Route::get('/payment-history', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'index'])->name('payment.history.index');
+        // owner-only pages built from the ledgers (the admin versions read per-bill payments that are never written)
+        Route::get('/pending-payments', [\App\Http\Controllers\Owner\PendingPaymentsController::class, 'index'])->name('payment.pending.index');
+        Route::get('/payment-history', [\App\Http\Controllers\Owner\PaymentAdjustmentController::class, 'index'])->name('payment.history.index');
+        Route::get('/payment-history/{batchId}', [\App\Http\Controllers\Owner\PaymentAdjustmentController::class, 'show'])->name('payment-adjustment.show');
+        Route::get('/wip-complete', [\App\Http\Controllers\Owner\WipCompleteController::class, 'index'])->name('wip-complete');
     });
 });
 
@@ -267,6 +268,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         // Corporate orders / dispatch: one-time repair of old order data (preview + one button)
         Route::get('/corporate-fix', [\App\Http\Controllers\Admin\CorporateFixController::class, 'show'])->name('corporate-fix.show');
         Route::post('/corporate-fix', [\App\Http\Controllers\Admin\CorporateFixController::class, 'run'])->name('corporate-fix.run');
+
+        // Payment adjustments: move lines booked to RECHARGE (really rickshaw) to RIKSHA KHARCH (preview + one button)
+        Route::get('/recharge-fix', [\App\Http\Controllers\Admin\RechargeFixController::class, 'show'])->name('recharge-fix.show');
+        Route::post('/recharge-fix', [\App\Http\Controllers\Admin\RechargeFixController::class, 'run'])->name('recharge-fix.run');
 
         // Fabric POs / shipments: one-time repair of old PO links (preview + one button)
         Route::get('/fabric-fix', [\App\Http\Controllers\Admin\FabricFixController::class, 'show'])->name('fabric-fix.show');
@@ -681,11 +686,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         });
 
         Route::prefix('payment/history')->name('payment.history.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'index'])->name('index');
+            // Payment view / edit stay: the Party Ledger's "View Details" opens them
             Route::get('/{payment}', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'show'])->name('show');
             Route::get('/{payment}/edit', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'edit'])->name('edit');
             Route::put('/{payment}', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'update'])->name('update');
-            Route::delete('/{payment}', [\App\Http\Controllers\Admin\Payment\PaymentHistoryController::class, 'destroy'])->name('destroy');
         });
 
         Route::prefix('payment/dashboard')->name('payment.dashboard.')->group(function () {
@@ -1416,52 +1420,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         })->name('domestic_inventory_purchases.view');
 
         Route::prefix('/reports')->name('reports.')->group(function () {
-            Route::get('/fabric-receipt', [AdminReportController::class, 'fabricReceipt'])->name('fabricReceipt');
-            Route::get('/fabric-receipt-list', [AdminReportController::class, 'fabricReceiptList'])->name('fabricReceiptList');
-            Route::post('/fabric-receipt-excel', [AdminReportController::class, 'generateFabricReceiptExcel'])->name('fabricReceiptExcel');
-            Route::get('/excel-fabric-receipt-report', [AdminReportController::class, 'excelFabricReceiptSingle'])->name('excel-fabric-receipt-report');
-
-            Route::get('/item-receipt', [AdminReportController::class, 'itemReceipt'])->name('itemReceipt');
-            Route::get('/item-receipt-list', [AdminReportController::class, 'itemReceiptList'])->name('itemReceiptList');
-            Route::post('/item-receipt-excel', [AdminReportController::class, 'generateItemReceiptExcel'])->name('itemReceiptExcel');
-            Route::get('/excel-item-receipt-report', [AdminReportController::class, 'excelItemReceiptSingle'])->name('excel-item-receipt-report');
-
             Route::get('/purchase-order', [AdminReportController::class, 'purchaseOrder'])->name('purchaseOrder');
-            Route::get('/purchase-order-list', [AdminReportController::class, 'purchaseOrderList'])->name('purchaseOrderList');
-            Route::post('/purchase-order-excel', [AdminReportController::class, 'generatePurchaseOrderExcel'])->name('purchaseOrderExcel');
-            Route::get('/excel-purchase-order-report', [AdminReportController::class, 'excelPurchaseOrderSingle'])->name('excel-purchase-order-report');
-
-            Route::get('/item-purchase-order', [AdminReportController::class, 'itemPurchaseOrder'])->name('itemPurchaseOrder');
-            Route::get('/item-purchase-order-list', [AdminReportController::class, 'itemPurchaseOrderList'])->name('itemPurchaseOrderList');
-            Route::post('/item-purchase-order-excel', [AdminReportController::class, 'itemGeneratePurchaseOrderExcel'])->name('itemPurchaseOrderExcel');
-            Route::get('/item-excel-purchase-order-report', [AdminReportController::class, 'itemExcelPurchaseOrderSingle'])->name('item-excel-purchase-order-report');
-
-            Route::get('/item-stock-sku', [AdminReportController::class, 'itemStockSku'])->name('itemStockSku');
-            Route::get('/item-stock', [AdminReportController::class, 'itemStock'])->name('itemStock');
-            Route::get('/item-stock-details', [AdminReportController::class, 'itemStockDetails'])->name('itemStockDetails');
-            Route::get('/item-stock-list', [AdminReportController::class, 'itemStockList'])->name('itemStockList');
-
-            Route::get('/item-stock-sku-list', [AdminReportController::class, 'itemStockSkuList'])->name('itemStockSkuList');
-            Route::post('/item-stock-excel', [AdminReportController::class, 'generateItemStockExcel'])->name('itemStockExcel');
-            Route::post('/item-stock-sku-excel', [AdminReportController::class, 'generateItemStockSkuExcel'])->name('itemStockSkuExcel');
-
-            Route::get('/fabric-stock-sku', [AdminReportController::class, 'fabricStockSku'])->name('fabricStockSku');
-            Route::get('/fabric-stock', [AdminReportController::class, 'fabricStock'])->name('fabricStock');
-            Route::get('/fabric-stock-details', [AdminReportController::class, 'fabricStockDetails'])->name('fabricStockDetails');
-            Route::get('/fabric-stock-list', [AdminReportController::class, 'fabricStockList'])->name('fabricStockList');
-            Route::get('/fabric-stock-sku-list', [AdminReportController::class, 'fabricStockSkuList'])->name('fabricStockSkuList');
-            Route::post('/fabric-stock-excel', [AdminReportController::class, 'generateFabricStockExcel'])->name('fabricStockExcel');
-            Route::post('/fabric-stock-sku-excel', [AdminReportController::class, 'generateFabricStockSkuExcel'])->name('fabricStockSkuExcel');
-
-            Route::get('/production', [AdminReportController::class, 'production'])->name('production');
-            Route::get('production-list', [AdminReportController::class, 'productionList'])->name('productionList');
-            Route::post('/production-excel', [AdminReportController::class, 'generateProductionExcel'])->name('productionExcel');
-            Route::get('/production-excel-single', [AdminReportController::class, 'generateProductionExcelSingle'])->name('generateProductionExcelSingle');
-            Route::get('/production-detail', [AdminReportController::class, 'productionDetail'])->name('productionDetail');
-
-            Route::get('/stages', [AdminReportController::class, 'stages'])->name('stages');
-            Route::get('stages-list', [AdminReportController::class, 'stagesList'])->name('stagesList');
-            Route::post('/stages-excel', [AdminReportController::class, 'generateStagesReportExcel'])->name('stagesExcel');
 
             Route::get('/unit-assignments', [AdminReportController::class, 'unitAssignments'])->name('unit-assignments');
             Route::get('/unit-assignments/export', [AdminReportController::class, 'unitAssignmentsExport'])->name('unit-assignments.export');
@@ -1515,8 +1474,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
                 Route::get('/get-orders', [\App\Http\Controllers\Admin\Payment\AgentOrderPaymentController::class, 'getOrders'])->name('get-orders');
                 Route::post('/store', [\App\Http\Controllers\Admin\Payment\AgentOrderPaymentController::class, 'store'])->name('store');
             });
-
-            Route::get('/pending', [\App\Http\Controllers\Admin\Payment\PendingPaymentController::class, 'index'])->name('pending.index');
 
             Route::prefix('corporate-order')->name('corporate-order.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Admin\Payment\CorporateOrderPaymentController::class, 'index'])->name('index');

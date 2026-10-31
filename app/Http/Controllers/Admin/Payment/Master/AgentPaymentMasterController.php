@@ -41,6 +41,9 @@ class AgentPaymentMasterController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.master.agent_payment.index')->with('error', 'Agent payment not found.');
+        }
         return view('admin.payment.master.agent_payment.edit', $response);
     }
 

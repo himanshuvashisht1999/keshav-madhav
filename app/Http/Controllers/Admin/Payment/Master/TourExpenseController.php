@@ -42,6 +42,9 @@ class TourExpenseController extends Controller
     public function edit(Request $request)
     {
         $response['data'] = $this->service->edit($request);
+        if (!$response['data']) {
+            return redirect()->route('admin.payment.master.tour_expense.index')->with('error', 'Tour expense not found.');
+        }
         return view('admin.payment.master.tour_expense.edit', $response);
     }
 

@@ -403,7 +403,7 @@
                             </td>
                             <td class="text-center font-weight-bold">{{ $carton->items->sum('quantity') }}</td>
                             <td class="text-center">
-                                {{ $carton->status == 2 ? 'Dispatched' : 'Packed' }}
+                                {{ $carton->status == 2 ? 'Dispatched' : ($carton->status == 3 ? 'In stock (domestic)' : 'Packed') }}
                             </td>
                         </tr>
                     @endforeach
