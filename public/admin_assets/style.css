@@ -207,6 +207,12 @@ body.km-admin.layout-fixed .main-sidebar .sidebar {
     scrollbar-width: none; /* Firefox: hide scrollbar but allow scroll */
 }
 
+/* The sidebar box itself never scrolls sideways: with overflow-y hidden the browser made its overflow-x "auto",
+   and the logo link, 1px wider than the space inside the right border, showed a useless scrollbar at its bottom */
+body.km-admin .main-sidebar.km-sidebar {
+    overflow-x: hidden;
+}
+
 /* WebKit: hide sidebar scrollbar but keep scrolling */
 .km-sidebar .sidebar::-webkit-scrollbar {
     width: 0;
@@ -4109,3 +4115,28 @@ body.km-admin .erp-page .quantity-control .btn { font-weight: 800; line-height: 
 .order-docs-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 8px 12px; }
 .order-docs-strip .order-docs-title { font-weight: 700; color: #05421c; white-space: nowrap; }
 .order-docs-strip .order-docs-list li { padding-right: 10px; }
+
+/* Floating sideways scrollbar of wide tables (admin_assets/erp-table-scroll.js): pinned to the bottom of the
+   window while the table's own scrollbar is below the screen; left / width follow the table box. */
+.erp-float-scroll {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    height: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    z-index: 1030; /* above page content, below the header (1034), sidebar (1038) and popups */
+    background: #eef5ea;
+    border-top: 1px solid #c9dfc0;
+    box-shadow: 0 -2px 6px rgba(5, 66, 28, 0.12);
+    scrollbar-width: auto;
+    scrollbar-color: #7fb069 #eef5ea;
+}
+.erp-float-scroll-inner { height: 1px; }
+.erp-float-scroll::-webkit-scrollbar { height: 14px; }
+.erp-float-scroll::-webkit-scrollbar-track { background: #eef5ea; }
+.erp-float-scroll::-webkit-scrollbar-thumb { background: #7fb069; border-radius: 7px; border: 3px solid #eef5ea; }
+.erp-float-scroll::-webkit-scrollbar-thumb:hover { background: var(--brand-dark-green, #05421c); }
+@media (pointer: coarse), print {
+    .erp-float-scroll { display: none !important; } /* touch screens swipe the table itself; never printed */
+}
