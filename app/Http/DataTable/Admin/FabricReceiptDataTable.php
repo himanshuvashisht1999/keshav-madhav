@@ -73,6 +73,22 @@ class FabricReceiptDataTable
             ->make(true);
     }
 
+    /** Same shipments as the list (same filters, newest first), for the PDF / Excel download. */
+    public function exportRows($request)
+    {
+        $query = FabricReceipt::with('vendor');
+        $this->applyFilters($query, $request);
+        $rows = $query->orderBy('id', 'desc')->get();
+
+        $warehouses = MasterFabricWarehouse::whereIn('id', $rows->pluck('master_fabric_warehouse_id')->filter()->unique())
+            ->pluck('cutting_master_name', 'id');
+        foreach ($rows as $row) {
+            $row->warehouse_name = $warehouses[$row->master_fabric_warehouse_id] ?? 'N/A';
+        }
+
+        return $rows;
+    }
+
     private function applyFilters($query, $request)
     {
         $query->where('status', 1);

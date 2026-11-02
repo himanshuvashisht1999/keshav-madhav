@@ -7,6 +7,12 @@
             <i class="fas fa-truck-loading text-primary"></i> Fabric Shipments
         </div>
         <div class="erp-header-actions">
+            <a href="javascript:void(0)" id="download-pdf-btn" class="btn-erp btn-erp-outline" title="Download PDF">
+                <i class="fas fa-file-pdf text-danger"></i> PDF
+            </a>
+            <a href="javascript:void(0)" id="download-excel-btn" class="btn-erp btn-erp-outline" title="Download Excel">
+                <i class="fas fa-file-excel text-success"></i> Excel
+            </a>
             <a href="{{ route('admin.fabric_receipt.create') }}" class="btn-erp btn-erp-primary">
                 <i class="fas fa-plus"></i> Add Fabric Shipment
             </a>
@@ -208,6 +214,28 @@
             $('#from_date').val('');
             $('#to_date').val('');
             oTable.draw();
+        });
+
+        // PDF / Excel download with the filters currently filled in
+        function exportUrl(base) {
+            return base + '?' + $.param({
+                shipment_id: $('#shipment_id').val() || '',
+                bill_no: $('#bill_no').val() || '',
+                vendor_id: $('#vendor_id').val() || '',
+                master_fabric_warehouse_id: $('#master_fabric_warehouse_id').val() || '',
+                from_date: $('#from_date').val() || '',
+                to_date: $('#to_date').val() || ''
+            });
+        }
+
+        $('#download-pdf-btn').on('click', function (e) {
+            e.preventDefault();
+            window.location.href = exportUrl("{{ route('admin.fabric_receipt.export_pdf') }}");
+        });
+
+        $('#download-excel-btn').on('click', function (e) {
+            e.preventDefault();
+            window.location.href = exportUrl("{{ route('admin.fabric_receipt.export_excel') }}");
         });
     });
 

@@ -318,6 +318,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
         Route::prefix('/fabric-receipt')->name('fabric_receipt.')->group(function () {
             Route::get('/index', [AdminFabricReceiptController::class, 'index'])->name('index');
             Route::get('/indexList', [AdminFabricReceiptController::class, 'indexList'])->name('indexList');
+            Route::get('/export-pdf', [AdminFabricReceiptController::class, 'exportListPdf'])->name('export_pdf');
+            Route::get('/export-excel', [AdminFabricReceiptController::class, 'exportListExcel'])->name('export_excel');
             Route::get('/create', [AdminFabricReceiptController::class, 'create'])->name('create');
             Route::post('/store', [AdminFabricReceiptController::class, 'store'])->name('store');
             Route::get('/edit', [AdminFabricReceiptController::class, 'edit'])->name('edit');

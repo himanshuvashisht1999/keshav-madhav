@@ -48,6 +48,109 @@ class FabricReceiptService
         return $this->datatable->indexList($request);
     }
 
+    /** Shipment list as PDF: same rows and totals as the list page with its filters. */
+    public function exportListPdf(Request $request)
+    {
+        $rows = $this->datatable->exportRows($request);
+        $filters = $this->exportFilterText($request);
+
+        $pdf = PDF::loadView('admin.fabric_receipt.list_pdf', compact('rows', 'filters'))->setPaper('a4', 'portrait');
+        return $pdf->download('Fabric_Shipments_' . date('Y-m-d_His') . '.pdf');
+    }
+
+    /** Shipment list as Excel: same rows and totals as the list page with its filters. */
+    public function exportListExcel(Request $request)
+    {
+        $rows = $this->datatable->exportRows($request);
+        $filters = $this->exportFilterText($request);
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Fabric Shipments');
+
+        $sheet->mergeCells('A1:H1');
+        $sheet->setCellValue('A1', 'SNAPKID - Fabric Shipments');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setARGB('FF05421C');
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $sheet->mergeCells('A2:H2');
+        $sheet->setCellValue('A2', 'Generated on: ' . date('d M Y, h:i A') . ($filters ? '   |   ' . $filters : ''));
+        $sheet->getStyle('A2')->getFont()->setSize(10)->getColor()->setARGB('FF666666');
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $headers = ['#', 'Shipment No.', 'Bill No.', 'Vendor', 'Warehouse', 'Date', 'Rolls', 'Total Amount (Rs.)'];
+        foreach ($headers as $idx => $h) {
+            $sheet->setCellValue(chr(65 + $idx) . '4', $h);
+        }
+        $sheet->getStyle('A4:H4')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+        $sheet->getStyle('A4:H4')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FF05421C');
+        $sheet->getStyle('A4:H4')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $string = \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING;
+        $row = 5;
+        $totRolls = 0;
+        $totAmount = 0;
+        foreach ($rows as $idx => $r) {
+            $totRolls += (int) $r->roll;
+            $totAmount += (float) $r->total_amount;
+
+            $sheet->setCellValue('A' . $row, $idx + 1);
+            // shipment / bill numbers kept as text so leading zeros stay
+            $sheet->setCellValueExplicit('B' . $row, (string) $r->shipment_id, $string);
+            $sheet->setCellValueExplicit('C' . $row, (string) $r->bill_no, $string);
+            $sheet->setCellValue('D' . $row, $r->vendor->name ?? 'N/A');
+            $sheet->setCellValue('E' . $row, $r->warehouse_name);
+            $sheet->setCellValue('F' . $row, $r->time ? getformatDate($r->time) : '');
+            $sheet->setCellValue('G' . $row, (int) $r->roll);
+            $sheet->setCellValue('H' . $row, (float) $r->total_amount);
+            $row++;
+        }
+
+        $sheet->setCellValue('A' . $row, 'TOTAL');
+        $sheet->setCellValue('G' . $row, $totRolls);
+        $sheet->setCellValue('H' . $row, $totAmount);
+        $sheet->getStyle('A' . $row . ':H' . $row)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $row . ':H' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFF0F8E7');
+
+        $sheet->getStyle('G5:G' . $row)->getNumberFormat()->setFormatCode('#,##0');
+        $sheet->getStyle('H5:H' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->getStyle('A4:H' . $row)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = 'Fabric_Shipments_' . date('Y-m-d_His') . '.xlsx';
+        return response()->streamDownload(function () use ($spreadsheet) {
+            (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet))->save('php://output');
+        }, $fileName, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
+    }
+
+    /** One line saying which list filters were used, printed on the PDF / Excel. */
+    private function exportFilterText(Request $request)
+    {
+        $parts = [];
+        if ($request->filled('shipment_id')) {
+            $parts[] = 'Shipment: ' . $request->shipment_id;
+        }
+        if ($request->filled('bill_no')) {
+            $parts[] = 'Bill: ' . $request->bill_no;
+        }
+        if ($request->filled('vendor_id')) {
+            $parts[] = 'Vendor: ' . (Vendor::where('id', $request->vendor_id)->value('name') ?? '-');
+        }
+        if ($request->filled('master_fabric_warehouse_id')) {
+            $parts[] = 'Warehouse: ' . (MasterFabricWarehouse::where('id', $request->master_fabric_warehouse_id)->value('cutting_master_name') ?? '-');
+        }
+        if ($request->filled('from_date')) {
+            $parts[] = 'From: ' . getformatDate($request->from_date);
+        }
+        if ($request->filled('to_date')) {
+            $parts[] = 'To: ' . getformatDate($request->to_date);
+        }
+        return implode('  |  ', $parts);
+    }
+
     /** Challan / shipment photo / other images: pictures or PDF only (never a file the server could run). */
     const UPLOAD_RULE = 'file|mimes:jpg,jpeg,png,gif,webp,bmp,heic,heif,pdf|max:20480';
     const UPLOAD_TYPES = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'heic', 'heif', 'pdf'];

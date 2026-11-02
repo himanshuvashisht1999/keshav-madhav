@@ -26,6 +26,14 @@ class FabricReceiptController extends Controller
     {
         return $this->service->indexList($request);
     }
+    public function exportListPdf(Request $request)
+    {
+        return $this->service->exportListPdf($request);
+    }
+    public function exportListExcel(Request $request)
+    {
+        return $this->service->exportListExcel($request);
+    }
     public function create()
     {
         $response['vendors'] = $this->service->vendors();
