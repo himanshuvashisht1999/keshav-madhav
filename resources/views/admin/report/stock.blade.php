@@ -176,6 +176,32 @@
                 </div>
             </div>
             @endif
+            @if(isset($totals->sum_returned))
+            <div class="col-md col-12 mb-1">
+                <div class="erp-card p-2 mb-0 d-flex align-items-center justify-content-between" style="border-left: 4px solid #ef4444;">
+                    <div>
+                        <span class="small text-muted font-weight-bold text-uppercase" style="font-size: 11px;">Total returned</span>
+                        <h4 class="m-0 font-weight-bold text-danger" style="font-size: 18px;">{{ number_format($totals->sum_returned, 2) }} <span class="small font-weight-normal text-muted">m</span></h4>
+                    </div>
+                    <div class="rounded-circle p-2 bg-light text-danger">
+                        <i class="fas fa-undo-alt fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+            @endif
+            @if(isset($totals->sum_amount))
+            <div class="col-md col-12 mb-1">
+                <div class="erp-card p-2 mb-0 d-flex align-items-center justify-content-between" style="border-left: 4px solid var(--brand-light-green, #8bc63e);">
+                    <div>
+                        <span class="small text-muted font-weight-bold text-uppercase" style="font-size: 11px;">Total amount</span>
+                        <h4 class="m-0 font-weight-bold text-dark" style="font-size: 18px;">₹ {{ number_format($totals->sum_amount, 2) }}</h4>
+                    </div>
+                    <div class="rounded-circle p-2 bg-light text-success">
+                        <i class="fas fa-rupee-sign fa-lg"></i>
+                    </div>
+                </div>
+            </div>
+            @endif
             @if(!empty($totals->sum_moved_in) || !empty($totals->sum_moved_out))
             @php
                 $movedIn = round((float) ($totals->sum_moved_in ?? 0), 2);

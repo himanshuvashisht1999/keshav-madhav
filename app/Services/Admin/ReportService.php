@@ -907,6 +907,13 @@ class ReportService
                 ];
             }
 
+            // value of the listed rolls and metres sent back to the supplier, over all rows of the list (every page)
+            $rowsQuery = (clone $query)->toBase()->reorder();
+            $totals->sum_amount = (float) (clone $rowsQuery)->sum(\DB::raw('price_per_meter * meter'));
+            $totals->sum_returned = (float) \DB::table('fabric_return_details')
+                ->whereIn('fabric_receipt_detail_id', (clone $rowsQuery)->select('fabric_receipt_details.id'))
+                ->sum('return_meter');
+
             if ($request->has('is_export')) {
                 return [
                     'level' => 'receipts',
