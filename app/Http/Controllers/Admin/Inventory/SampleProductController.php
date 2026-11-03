@@ -51,8 +51,11 @@ class SampleProductController extends Controller
         $series = \App\Models\MasterSeries::where('status', 1)->get();
         $sizeSets = MasterSizeMeasurement::where('status', 1)->get();
         $designNumbers = ProductionGoods::select('design_number')->distinct()->pluck('design_number');
-        
-        return view('admin.inventory.sample_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets'));
+        $storerooms = \App\Models\Storeroom::where('status', 1)->orderBy('name')->get();
+        $productNatures = \App\Models\ProductNature::where('status', 1)->get();
+        $fabricTypes = \App\Models\FabricType::where('status', 1)->get();
+
+        return view('admin.inventory.sample_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'storerooms', 'productNatures', 'fabricTypes'));
     }
 
     public function edit($id)
@@ -64,6 +67,9 @@ class SampleProductController extends Controller
         $series = \App\Models\MasterSeries::where('status', 1)->get();
         $sizeSets = MasterSizeMeasurement::where('status', 1)->get();
         $designNumbers = ProductionGoods::select('design_number')->distinct()->pluck('design_number');
+        $storerooms = \App\Models\Storeroom::where('status', 1)->orderBy('name')->get();
+        $productNatures = \App\Models\ProductNature::where('status', 1)->get();
+        $fabricTypes = \App\Models\FabricType::where('status', 1)->get();
 
         // Prepare existing items for JS
         $existingItems = $batch->products->map(function($p) {
@@ -86,7 +92,7 @@ class SampleProductController extends Controller
             ];
         });
 
-        return view('admin.inventory.sample_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'batch', 'existingItems'));
+        return view('admin.inventory.sample_product.create', compact('brands', 'fittings', 'patterns', 'series', 'designNumbers', 'sizeSets', 'batch', 'existingItems', 'storerooms', 'productNatures', 'fabricTypes'));
     }
 
     public function getProducts(Request $request)
@@ -98,11 +104,20 @@ class SampleProductController extends Controller
         if ($request->pattern_id) $query->where('master_pattern_id', $request->pattern_id);
         if ($request->series_id) $query->where('master_series_id', $request->series_id);
         if ($request->design_number) $query->where('design_number', $request->design_number);
+        if ($request->product_nature_id) $query->where('product_nature_id', $request->product_nature_id);
+        if ($request->fabric_type_id) $query->where('fabric_type_id', $request->fabric_type_id);
+
+        // Warehouse: only boxes lying on racks of this storeroom count as stock
+        $inWarehouse = fn($q) => $q->when($request->storeroom_id, fn($q) => $q->whereHas('rack', fn($r) => $r->where('storeroom_id', $request->storeroom_id)));
 
         if ($request->size_set_id) {
             $query->whereHas('inventory', function($q) use ($request) {
                 $q->where('size_set_id', $request->size_set_id)->where('quantity', '>', 0);
             });
+        }
+
+        if ($request->storeroom_id) {
+            $query->whereHas('inventory', fn($q) => $inWarehouse($q->where('quantity', '>', 0)));
         }
 
         if ($request->mrp_from || $request->mrp_to) {
@@ -128,12 +143,15 @@ class SampleProductController extends Controller
                 ->where('agent_orders.status', 'pending')
                 ->whereNull('agent_order_items.dispatched_at')
                 ->whereIn('product_id', $productIds)
+                // with a warehouse picked, only orders taking boxes from that warehouse reduce its stock
+                ->when($request->storeroom_id, fn($q) => $q->whereIn('agent_order_items.rack_id', \App\Models\Rack::where('storeroom_id', $request->storeroom_id)->select('id')))
                 ->select('product_id', 'color_id', 'size_set_id', \DB::raw('SUM(GREATEST(box_qty - scanned_box_qty, 0)) as total_allocated'))
                 ->groupBy('product_id', 'color_id', 'size_set_id')
                 ->get();
 
             $colorStockByProduct = DomesticInventory::whereIn('product_id', $productIds)->where('quantity', '>', 0)
                 ->when($request->size_set_id, fn($q) => $q->where('size_set_id', $request->size_set_id))
+                ->where($inWarehouse)
                 ->select('product_id', 'color_id', \DB::raw('SUM(total_boxes) as total_boxes'))
                 ->with('color')
                 ->groupBy('product_id', 'color_id')
@@ -143,6 +161,7 @@ class SampleProductController extends Controller
 
             $sizeRowsByProduct = DomesticInventory::whereIn('product_id', $productIds)->where('quantity', '>', 0)
                 ->when($request->size_set_id, fn($q) => $q->where('size_set_id', $request->size_set_id))
+                ->where($inWarehouse)
                 ->select('id', 'product_id', 'size_set_id')
                 ->with('sizeSet')
                 ->orderBy('id')
@@ -150,6 +169,7 @@ class SampleProductController extends Controller
                 ->groupBy('product_id');
 
             $sizeColorStock = DomesticInventory::whereIn('product_id', $productIds)->where('quantity', '>', 0)
+                ->where($inWarehouse)
                 ->select('product_id', 'size_set_id', 'color_id', DB::raw('SUM(total_boxes) as total_boxes'))
                 ->with('color')
                 ->groupBy('product_id', 'size_set_id', 'color_id')

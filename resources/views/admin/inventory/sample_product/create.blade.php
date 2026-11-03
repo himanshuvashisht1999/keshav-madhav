@@ -81,6 +81,35 @@
                         </div>
                     </div>
                     <div class="row g-2">
+                        <div class="col-md-4 mb-2">
+                            <label class="erp-label mb-1">Warehouse</label>
+                            <select id="storeroom_id" class="form-control form-control-sm select2">
+                                <option value="">Warehouse</option>
+                                @foreach($storerooms as $storeroom)
+                                    <option value="{{ $storeroom->id }}">{{ $storeroom->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="erp-label mb-1">Product nature</label>
+                            <select id="product_nature_id" class="form-control form-control-sm select2">
+                                <option value="">Product nature</option>
+                                @foreach($productNatures as $nature)
+                                    <option value="{{ $nature->id }}">{{ $nature->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="erp-label mb-1">Fabric type</label>
+                            <select id="fabric_type_id" class="form-control form-control-sm select2">
+                                <option value="">Fabric type</option>
+                                @foreach($fabricTypes as $fabricType)
+                                    <option value="{{ $fabricType->id }}">{{ $fabricType->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2">
                         <div class="col-md-3 mb-2">
                             <label class="erp-label mb-1">MRP from</label>
                             <input type="number" id="mrp_from" class="form-control form-control-sm" placeholder="Min MRP">
@@ -198,6 +227,9 @@
             $('#series_id').val('').trigger('change');
             $('#design_number').val('').trigger('change');
             $('#size_set_id').val('').trigger('change');
+            $('#storeroom_id').val('').trigger('change');
+            $('#product_nature_id').val('').trigger('change');
+            $('#fabric_type_id').val('').trigger('change');
             $('#mrp_from').val('');
             $('#mrp_to').val('');
             $('#qty_from').val('');
@@ -212,12 +244,15 @@
             let series_id = $('#series_id').val();
             let design_number = $('#design_number').val();
             let size_set_id = $('#size_set_id').val();
+            let storeroom_id = $('#storeroom_id').val();
+            let product_nature_id = $('#product_nature_id').val();
+            let fabric_type_id = $('#fabric_type_id').val();
             let mrp_from = $('#mrp_from').val();
             let mrp_to = $('#mrp_to').val();
             let qty_from = $('#qty_from').val();
             let qty_to = $('#qty_to').val();
 
-            if (!brand_id && !fitting_id && !pattern_id && !series_id && !design_number && !size_set_id && !mrp_from && !mrp_to && !qty_from && !qty_to) {
+            if (!brand_id && !fitting_id && !pattern_id && !series_id && !design_number && !size_set_id && !storeroom_id && !product_nature_id && !fabric_type_id && !mrp_from && !mrp_to && !qty_from && !qty_to) {
                 toastr.error('Please select at least one filter');
                 return;
             }
@@ -234,6 +269,9 @@
                     series_id: series_id,
                     design_number: design_number,
                     size_set_id: size_set_id,
+                    storeroom_id: storeroom_id,
+                    product_nature_id: product_nature_id,
+                    fabric_type_id: fabric_type_id,
                     mrp_from: mrp_from,
                     mrp_to: mrp_to,
                     qty_from: qty_from,
