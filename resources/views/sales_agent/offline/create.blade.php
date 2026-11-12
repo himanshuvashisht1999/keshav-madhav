@@ -116,6 +116,7 @@
 </style>
 @endpush
 
+
 @section('content')
 <div class="container-fluid px-2 py-2" style="max-width: 800px; padding-bottom: 140px;">
 
@@ -133,8 +134,8 @@
             <button type="button" class="btn btn-sm btn-light border rounded-circle mr-1 shadow-sm" id="btnToggleFilters" style="width: 32px; height: 32px;" title="Filters">
                 <i class="fas fa-filter text-primary"></i>
             </button>
-            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2 mr-1 shadow-sm text-nowrap" id="btnSyncCatalogInline" title="Sync / Download Latest Data">
-                <i class="fas fa-sync-alt mr-1" id="inlineSyncIcon"></i><span class="small font-weight-bold">Sync</span>
+            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2 mr-1 shadow-sm text-nowrap" id="btnSyncCatalogInline" title="Send orders and download the latest data">
+                <i class="fas fa-sync-alt mr-1"></i><span class="small font-weight-bold">Sync</span>
             </button>
             <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm text-nowrap" id="btnOpenScanner">
                 <i class="fas fa-qrcode mr-1"></i> Scan Tag
@@ -142,68 +143,57 @@
         </div>
     </div>
 
-    <!-- INLINE SYNC PROGRESS BAR (HIDDEN BY DEFAULT) -->
-    <div id="inlineSyncProgressContainer" class="card border-0 shadow-sm p-2 mb-2 bg-light" style="display: none; border-radius: 12px;">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="small font-weight-bold text-dark" id="inlineSyncStatusText">Downloading catalog data...</span>
-            <span class="small font-weight-bold text-success" id="inlineSyncPercentText">0%</span>
-        </div>
-        <div class="progress" style="height: 6px; border-radius: 4px;">
-            <div id="inlineSyncProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
-        </div>
-    </div>
+    <!-- EDITING A SAVED ORDER -->
+    <div id="editBanner" class="alert alert-warning small mb-2 px-3 py-2" style="display: none; border-radius: 12px;"></div>
 
     <!-- SHOP SELECTION CARD -->
     <div class="card border-0 shadow-sm p-3 mb-2 bg-white" style="border-radius: 14px;">
-        <label class="font-weight-bold text-dark small mb-1">Select Shop <span class="text-danger">*</span></label>
+        <label class="font-weight-bold text-dark small mb-1" id="shopSelectLabel">Select Shop <span class="text-danger">*</span></label>
         <select id="offlineShopSelect" class="form-control select2" style="width: 100%;">
             <option value="">-- Choose Shop --</option>
         </select>
         <div id="shopDetailsBox" class="mt-2 p-2 bg-light rounded small" style="display: none;">
             <div class="d-flex justify-content-between">
                 <span class="text-muted"><i class="fas fa-phone mr-1"></i> <span id="shopPhoneText">-</span></span>
+                <span class="badge badge-light border" id="shopTypeText"></span>
             </div>
             <div class="text-muted mt-1 text-truncate"><i class="fas fa-map-marker-alt mr-1"></i> <span id="shopAddressText">-</span></div>
+        </div>
+        <div class="custom-control custom-switch mt-2">
+            <input type="checkbox" class="custom-control-input" id="offlineSampleSet">
+            <label class="custom-control-label small font-weight-bold" for="offlineSampleSet">Sample set order <span class="text-muted font-weight-normal">(sample-set prices, as the online sample set order)</span></label>
         </div>
     </div>
 
     <!-- COLLAPSIBLE FILTERS CARD -->
-    <div id="filterContainer" class="card border-0 shadow-sm p-3 mb-2 bg-white animate__animated animate__fadeInDown" style="display: none; border-radius: 14px;">
+    <div id="filterContainer" class="card border-0 shadow-sm p-3 mb-2 bg-white" style="display: none; border-radius: 14px;">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="font-weight-bold text-dark mb-0 small uppercase tracking-wider"><i class="fas fa-sliders-h mr-1 text-primary"></i> Catalog Filters</h6>
+            <h6 class="font-weight-bold text-dark mb-0 small"><i class="fas fa-sliders-h mr-1 text-primary"></i> Catalog Filters</h6>
             <button type="button" class="btn btn-xs btn-link text-danger p-0 font-weight-bold" id="btnResetFilters" style="font-size: 11px;">
                 <i class="fas fa-undo mr-1"></i> Reset
             </button>
         </div>
         <div class="row">
             <div class="col-6 mb-2">
-                <label class="small text-muted font-weight-bold uppercase mb-1">Color</label>
-                <select id="filterColorSelect" class="form-control form-control-sm">
-                    <option value="">All Colors</option>
-                </select>
+                <label class="small text-muted font-weight-bold mb-1">Color</label>
+                <select id="filterColorSelect" class="form-control form-control-sm"><option value="">All Colors</option></select>
             </div>
             <div class="col-6 mb-2">
-                <label class="small text-muted font-weight-bold uppercase mb-1">Size Set</label>
-                <select id="filterSizeSelect" class="form-control form-control-sm">
-                    <option value="">All Size Sets</option>
-                </select>
+                <label class="small text-muted font-weight-bold mb-1">Size Set</label>
+                <select id="filterSizeSelect" class="form-control form-control-sm"><option value="">All Size Sets</option></select>
             </div>
             <div class="col-6 mb-1">
-                <label class="small text-muted font-weight-bold uppercase mb-1">Brand</label>
-                <select id="filterBrandSelect" class="form-control form-control-sm">
-                    <option value="">All Brands</option>
-                </select>
+                <label class="small text-muted font-weight-bold mb-1">Brand</label>
+                <select id="filterBrandSelect" class="form-control form-control-sm"><option value="">All Brands</option></select>
             </div>
             <div class="col-6 mb-1">
-                <label class="small text-muted font-weight-bold uppercase mb-1">Fitting</label>
-                <select id="filterFittingSelect" class="form-control form-control-sm">
-                    <option value="">All Fittings</option>
-                </select>
+                <label class="small text-muted font-weight-bold mb-1">Fitting</label>
+                <select id="filterFittingSelect" class="form-control form-control-sm"><option value="">All Fittings</option></select>
             </div>
         </div>
     </div>
 
-    <!-- SEARCH & FILTER BAR -->
+    <!-- SEARCH BAR -->
     <div class="mb-3 px-1">
         <div class="input-group bg-white rounded-pill shadow-sm p-1 border">
             <div class="input-group-prepend pl-2">
@@ -211,9 +201,7 @@
             </div>
             <input type="text" id="offlineSearchInput" class="form-control border-0 bg-transparent px-2" placeholder="Search design, series, color, size...">
             <div class="input-group-append">
-                <button type="button" class="btn btn-sm btn-light rounded-pill px-3 mr-1" id="btnClearSearch" style="display: none;">
-                    <i class="fas fa-times"></i>
-                </button>
+                <button type="button" class="btn btn-sm btn-light rounded-pill px-3 mr-1" id="btnClearSearch" style="display: none;"><i class="fas fa-times"></i></button>
             </div>
         </div>
     </div>
@@ -222,17 +210,13 @@
     <div id="productsGrid" class="row">
         <div class="col-12 text-center py-5 text-muted" id="catalogLoadingMsg">
             <i class="fas fa-spinner fa-spin fa-2x mb-2 text-primary"></i>
-            <p class="mb-0">Loading offline products...</p>
+            <p class="mb-0">Loading products on this phone...</p>
         </div>
     </div>
 
-    <!-- PAGINATION / LOAD MORE -->
     <div class="text-center my-3" id="loadMoreContainer" style="display: none;">
-        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-4" id="btnLoadMore">
-            Load More Products
-        </button>
+        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-4" id="btnLoadMore">Load More Products</button>
     </div>
-
 </div>
 
 <!-- FLOATING BOTTOM SUMMARY BAR -->
@@ -241,7 +225,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <span class="badge badge-primary px-2 py-1 font-weight-bold" id="totalBoxesCount">0 Boxes</span>
-                <h5 class="mb-0 font-weight-bold text-success mt-1" id="grandTotalContainer" style="{{ (isset($agent) && !$agent->see_price) ? 'display: none;' : '' }}">₹<span id="grandTotalText">0</span></h5>
+                <h5 class="mb-0 font-weight-bold text-success mt-1" id="grandTotalContainer" style="display: none;">₹<span id="grandTotalText">0</span> <small class="text-muted" style="font-size: 10px;">incl. GST</small></h5>
             </div>
             <div class="d-flex align-items-center">
                 <button type="button" class="btn btn-outline-secondary btn-sm mr-2 rounded-pill px-3" id="btnOpenCartModal">
@@ -264,16 +248,12 @@
                     <span class="badge badge-dark px-2 py-1 mr-2" id="modalProdDesignBadge" style="font-size: 13px;"></span>
                     <h6 class="modal-title font-weight-bold text-dark mb-0 text-truncate" id="modalProdTitle" style="max-width: 300px;"></h6>
                 </div>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
-            <div class="modal-body p-3" id="modalProdBody">
-                <!-- Dynamically populated -->
-            </div>
+            <div class="modal-body p-3" id="modalProdBody"></div>
             <div class="modal-footer border-top bg-light p-2 d-flex justify-content-between align-items-center" style="border-radius: 0 0 20px 20px;">
                 <div class="d-flex align-items-center">
-                    <span class="small font-weight-bold text-muted mr-2">Quantity:</span>
+                    <span class="small font-weight-bold text-muted mr-2">Boxes:</span>
                     <div class="quantity-control-app d-inline-flex align-items-center p-0 bg-white border shadow-xs" style="border-radius: 8px; height: 32px;">
                         <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-modal-minus" style="border:0; height: 30px;"><i class="fas fa-minus"></i></button>
                         <input type="number" id="modalQtyInput" class="form-control form-control-sm text-center font-weight-bold p-0 border-0" style="width: 45px; height: 30px; background: transparent;" value="0" min="0">
@@ -294,7 +274,7 @@
                 <span aria-hidden="true">&times;</span>
             </button>
             <div class="modal-body p-0" style="overflow: hidden; position: relative; height: 100vh; display: flex; align-items: center; justify-content: center;">
-                <img src="" id="zoomedImage" style="max-height: 92vh; max-width: 95vw; width: auto; height: auto; object-fit: contain; box-shadow: 0 0 25px rgba(0,0,0,0.6); border-radius: 8px;">
+                <img src="" id="zoomedImage" alt="" style="max-height: 92vh; max-width: 95vw; width: auto; height: auto; object-fit: contain; box-shadow: 0 0 25px rgba(0,0,0,0.6); border-radius: 8px;">
             </div>
         </div>
     </div>
@@ -310,11 +290,11 @@
             </div>
             <div class="modal-body p-2 text-center bg-black">
                 <div id="offlineReader" style="width: 100%; min-height: 250px;"></div>
-                <div class="mt-2 text-white small">Point camera at sample tag or box barcode</div>
+                <div class="mt-2 text-white small">Point the camera at a sample-set tag, sample tag or box barcode</div>
             </div>
             <div class="modal-footer p-2 bg-light border-0">
                 <div class="input-group input-group-sm">
-                    <input type="text" id="manualBarcodeInput" class="form-control" placeholder="Type barcode (e.g. D116S4C2)">
+                    <input type="text" id="manualBarcodeInput" class="form-control" placeholder="Or type the code (e.g. F3LP, D116S4C2, design no.)">
                     <div class="input-group-append">
                         <button type="button" class="btn btn-primary" id="btnManualBarcodeSubmit">Enter</button>
                     </div>
@@ -332,34 +312,37 @@
                 <h6 class="modal-title font-weight-bold"><i class="fas fa-shopping-cart text-primary mr-1"></i> Order Items</h6>
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
             </div>
-            <div class="modal-body p-2" id="cartItemsList">
-                <!-- Dynamically populated -->
-            </div>
+            <div class="modal-body p-2" id="cartItemsList"></div>
             <div class="modal-footer p-2 bg-light border-0 flex-column align-items-stretch">
-                <div class="row no-gutters mb-2" id="offlinePricingInputs" style="{{ (isset($agent) && !$agent->see_price) ? 'display: none;' : '' }}">
-                    <div class="col-6 pr-1">
-                        <input type="number" id="offlineDiscount" class="form-control form-control-sm" placeholder="Discount ₹" min="0">
+                <div id="offlinePricingInputs" style="display: none;">
+                    <div class="row no-gutters mb-1">
+                        <div class="col-6 pr-1">
+                            <input type="number" id="offlineDiscount" class="form-control form-control-sm" placeholder="Discount ₹" min="0" step="1">
+                        </div>
+                        <div class="col-6 pl-1">
+                            <input type="number" id="offlineOtherCharges" class="form-control form-control-sm" placeholder="Other Charges ₹" min="0" step="1">
+                        </div>
                     </div>
-                    <div class="col-6 pl-1">
-                        <input type="number" id="offlineOtherCharges" class="form-control form-control-sm" placeholder="Other Charges ₹" min="0">
-                    </div>
+                    <div class="small text-muted mb-1" id="totalsBreakdown"></div>
+                    <div class="small text-danger font-weight-bold mb-1" id="totalsError" style="display: none;"></div>
                 </div>
                 <select id="offlineSalesMan" class="form-control form-control-sm mb-2">
                     <option value="">Select Sales Man (Optional)</option>
                 </select>
-                <input type="date" id="offlineDispatchDate" class="form-control form-control-sm mb-2" title="Expected Dispatch Date" value="{{ date('Y-m-d', strtotime('+3 days')) }}">
-                <input type="text" id="offlineBookingStation" class="form-control form-control-sm mb-2" placeholder="Booking Station">
-                <input type="text" id="offlineTransport" class="form-control form-control-sm mb-2" placeholder="Transport Name">
-                <input type="text" id="offlineRemark" class="form-control form-control-sm mb-2" placeholder="Order Remark (Optional)">
+                <label class="small text-muted mb-0" for="offlineDispatchDate">Expected dispatch date</label>
+                <input type="date" id="offlineDispatchDate" class="form-control form-control-sm mb-2">
+                <input type="text" id="offlineBookingStation" class="form-control form-control-sm mb-2" placeholder="Booking Station" maxlength="255">
+                <input type="text" id="offlineTransport" class="form-control form-control-sm mb-2" placeholder="Transport Name" maxlength="255">
+                <input type="text" id="offlineRemark" class="form-control form-control-sm mb-2" placeholder="Order Remark (Optional)" maxlength="1000">
                 <button type="button" class="btn btn-success btn-block rounded-pill font-weight-bold" id="btnModalSaveOrder">
-                    <i class="fas fa-save mr-1"></i> Confirm & Save Offline
+                    <i class="fas fa-save mr-1"></i> Confirm & Save on Phone
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- OFFLINE SCAN SELECTION / COLOR MATRIX MODAL -->
+<!-- SCAN RESULT: SIZE SET x COLOUR MATRIX -->
 <div class="modal fade bottom-drawer" id="offlineScanSelectionModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document" style="max-width: 980px; width: 96%;">
         <div class="modal-content border-0 position-relative shadow" style="border-radius: 20px 20px 0 0;">
@@ -367,9 +350,7 @@
                 <span aria-hidden="true">&times;</span>
             </button>
             <div class="modal-body bg-white pt-2 px-3" style="overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; max-height: calc(100vh - 120px);">
-                <div id="offlineColorSelectionList" class="pb-2">
-                    <!-- Excel Matrix Content dynamically injected here -->
-                </div>
+                <div id="offlineColorSelectionList" class="pb-2"></div>
             </div>
             <div class="modal-footer border-0 bg-white shadow-lg pt-1 pb-3">
                 <button type="button" class="btn btn-primary btn-block btn-lg rounded-xl font-weight-bold" data-dismiss="modal">Apply Selections</button>
@@ -382,695 +363,552 @@
 @push('scripts')
 <script src="{{ asset('assets/js/html5-qrcode.min.js') }}"></script>
 <script>
-// Global helper to resolve offline image errors via IndexedDB blob cache or Cache API
+// A photo that is not reachable (no internet): show the copy saved on the phone, else a placeholder
 window.handleOfflineImageError = function (imgEl, filename) {
     if (!imgEl) return;
-    const key = filename || (imgEl.getAttribute('data-src') || imgEl.src || '').split('/').pop().split('?')[0];
-    if (!key) {
+    const placeholder = () => {
         imgEl.style.display = 'none';
-        if (imgEl.nextElementSibling && imgEl.nextElementSibling.classList.contains('placeholder-box')) {
-            imgEl.nextElementSibling.style.display = 'flex';
-        }
-        if (imgEl.id === 'scanHeroImage') {
-            const ph = document.getElementById('scanHeroPlaceholder');
-            if (ph) ph.style.display = 'flex';
-        }
-        return;
-    }
-    if (window.SnapKidOfflineDB && SnapKidOfflineDB.getImageBlobUrl) {
-        SnapKidOfflineDB.getImageBlobUrl(key).then(blobUrl => {
-            if (blobUrl) {
-                imgEl.onerror = null;
-                imgEl.src = blobUrl;
-                imgEl.dataset.src = blobUrl;
-                imgEl.style.display = '';
-                if (imgEl.nextElementSibling && imgEl.nextElementSibling.classList.contains('placeholder-box')) {
-                    imgEl.nextElementSibling.style.display = 'none';
-                }
-                if (imgEl.id === 'scanHeroImage') {
-                    const ph = document.getElementById('scanHeroPlaceholder');
-                    if (ph) ph.style.display = 'none';
-                }
-            } else {
-                imgEl.style.display = 'none';
-                if (imgEl.nextElementSibling && imgEl.nextElementSibling.classList.contains('placeholder-box')) {
-                    imgEl.nextElementSibling.style.display = 'flex';
-                }
-                if (imgEl.id === 'scanHeroImage') {
-                    const ph = document.getElementById('scanHeroPlaceholder');
-                    if (ph) ph.style.display = 'flex';
-                }
-            }
-        }).catch(() => {
-            imgEl.style.display = 'none';
-            if (imgEl.nextElementSibling && imgEl.nextElementSibling.classList.contains('placeholder-box')) {
-                imgEl.nextElementSibling.style.display = 'flex';
-            }
-            if (imgEl.id === 'scanHeroImage') {
-                const ph = document.getElementById('scanHeroPlaceholder');
-                if (ph) ph.style.display = 'flex';
-            }
-        });
-    }
+        if (imgEl.nextElementSibling && imgEl.nextElementSibling.classList.contains('placeholder-box')) imgEl.nextElementSibling.style.display = 'flex';
+        if (imgEl.id === 'scanHeroImage') { const ph = document.getElementById('scanHeroPlaceholder'); if (ph) ph.style.display = 'flex'; }
+    };
+    imgEl.onerror = null;
+    const key = filename || (imgEl.getAttribute('data-src') || imgEl.src || '');
+    if (!key || !window.SnapKidOfflineDB) return placeholder();
+    SnapKidOfflineDB.getImageBlobUrl(key).then(url => {
+        if (!url) return placeholder();
+        imgEl.src = url;
+        imgEl.dataset.src = url;
+        imgEl.style.display = '';
+    }).catch(placeholder);
 };
 
 $(document).ready(function () {
+    if (SK_AGENT.otherAgentCopy) return; // a saved copy of another agent login's page (the layout says so)
+    const DB = SnapKidOfflineDB;
+    const tz = SK_AGENT.timezone;
+    const editId = new URLSearchParams(location.search).get('edit');
+    const presetShopId = new URLSearchParams(location.search).get('shop_id');
+    const lastShopKey = 'sk_offline_shop_' + SK_AGENT.id;
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const idKey = it => it.product_id + '_' + it.color_id + '_' + it.size_set_id;
+    const itemLabel = it => [it.design_number, it.color_name, it.size_set_name].filter(Boolean).join(' ');
+
     let allProducts = [];
+    const productsByKey = new Map();
     let displayedProducts = [];
-    let cart = new Map();
+    const cart = new Map();       // "product_colour_size" -> {item, qty}: one line per item, as the office saves it
+    const scanItems = new Map();  // item key -> item from sample-set / sample tags (fixed or own price)
     let currentPage = 1;
     const pageSize = 24;
     let scanner = null;
     let metaInfo = null;
     let activeModalKey = null;
-    const scanItems = new Map(); // cart items that come from fair/sample scan payloads
+    let shops = [];
+    let shop = null;
+    let sampleSet = false;
+    let fairDiscounts = {};
+    let reserved = {};            // boxes this agent's other orders on the phone already take
+    let editing = null;
 
-    // Check sales agent rate viewing permission
     // "Show pricing info" from admin: the page's value, or the last catalogue download when that is newer
-    const agentSeePrice = {{ (isset($agent) && $agent->see_price) ? 'true' : 'false' }};
+    const agentSeePrice = {{ $agent->see_price ? 'true' : 'false' }};
     const pageRenderedAt = {{ (int) round(microtime(true) * 1000) }};
     let seePriceAllowed = agentSeePrice;
-    function canSeePrice() {
-        return seePriceAllowed;
-    }
+    const canSeePrice = () => seePriceAllowed;
 
-    if ($.fn.select2) {
-        $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
-    }
+    if ($.fn.select2) $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
+    $('#offlineDispatchDate').val(DB.addDays(DB.dayIn(new Date(), tz), 3));
 
+    const settings = () => (metaInfo && metaInfo.settings) || {};
     function gstRate() {
-        const g = metaInfo && metaInfo.settings ? parseFloat(metaInfo.settings.gst_order) : NaN;
+        const g = parseFloat(settings().gst_order);
         return isNaN(g) ? 5 : g;
     }
-
+    // same switches as the online screens: all orders, or sample-set orders only
     function allowOverStock() {
-        return !!(metaInfo && metaInfo.settings && parseInt(metaInfo.settings.agent_app_allow_over_stock) === 1);
+        const s = settings();
+        return parseInt(s.agent_app_allow_over_stock) === 1 || (sampleSet && parseInt(s.agent_app_allow_over_stock_sample) === 1);
     }
-
-    // Setting "show stock in the agent app" (stock is hidden everywhere when it is off)
     function stockVisible() {
-        return !metaInfo || !metaInfo.settings || parseInt(metaInfo.settings.agent_app_show_stock) !== 0;
+        return parseInt(settings().agent_app_show_stock) !== 0;
+    }
+    function toast(msg, icon) {
+        Swal.fire({ toast: true, position: 'top', timer: 2600, showConfirmButton: false, icon: icon || 'info', title: msg });
     }
 
-    function populateSalesMen() {
-        const sel = $('#offlineSalesMan');
-        ((metaInfo && metaInfo.sales_men) || []).forEach(sm => {
-            sel.append($('<option>').val(sm.id).text(sm.name));
-        });
-    }
-
-    // 1. Initialize Offline Catalog & Shops
-    async function initOfflineCatalog() {
-        try {
-            seePriceAllowed = await SnapKidOfflineDB.resolveSeePrice(agentSeePrice, pageRenderedAt);
-            metaInfo = await SnapKidOfflineDB.getMeta();
-            populateSalesMen();
-            const shops = await SnapKidOfflineDB.getShops();
-            const shopSelect = $('#offlineShopSelect');
-
-            shopSelect.empty().append('<option value="">-- Choose Shop --</option>');
-            shops.forEach(s => {
-                const opt = $(`<option value="${s.id}">${s.name} (${s.city || 'Local'})</option>`);
-                opt.data('shop', s);
-                shopSelect.append(opt);
-            });
-
-            const savedShopId = localStorage.getItem('last_offline_shop_id');
-            if (savedShopId && shops.some(s => s.id == savedShopId)) {
-                shopSelect.val(savedShopId);
-                shopSelect.trigger('change');
-            }
-
-            allProducts = await SnapKidOfflineDB.getCatalog(); // already priced for the selected shop
-            $('#catalogLoadingMsg').hide();
-
-            if (allProducts.length === 0) {
-                $('#productsGrid').html(`
-                    <div class="col-12 text-center py-5">
-                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-2"></i>
-                        <h6 class="font-weight-bold">No Offline Products Found</h6>
-                        <p class="text-muted small">Please go back to Offline Hub and click <strong>"Sync Catalog"</strong> when you have internet.</p>
-                        <a href="{{ route('agent.offline.index') }}" class="btn btn-primary btn-sm rounded-pill px-4">Go to Offline Hub</a>
-                    </div>
-                `);
-                return;
-            }
-
-            populateFilterDropdowns();
-            filterAndRenderProducts();
-        } catch (e) {
-            console.error('Failed to load offline data:', e);
-            $('#catalogLoadingMsg').html('<p class="text-danger">Failed to load offline data.</p>');
+    // Price of one piece: sample-set tags keep their own price; else MRP less the shop's brand discount
+    // (vendors: no discount); in a sample set order the sample-set discount replaces it where there is one.
+    function priceFor(item) {
+        if (item.fixed_price) return Number(item.unit_price) || 0;
+        let pct = 0;
+        if (shop && shop.party_type !== 'vendor') pct = parseFloat((shop.brand_discounts || {})[item.brand_id]) || 0;
+        if (sampleSet) {
+            const f = fairDiscounts[item.product_id + '_' + item.size_set_id];
+            if (f !== undefined && f !== null) pct = parseFloat(f) || 0;
         }
+        return DB.priceAfter(item.mrp, pct);
     }
 
-    // Populate Filters
-    function populateFilterDropdowns() {
-        const colors = [...new Set(allProducts.map(p => p.color_name).filter(Boolean))].sort();
-        const sizes = [...new Set(allProducts.map(p => p.size_set_name).filter(Boolean))].sort();
-        const brands = [...new Set(allProducts.map(p => p.brand_name).filter(Boolean))].sort();
-        const fittings = [...new Set(allProducts.map(p => p.fitting_name).filter(Boolean))].sort();
-
-        const colorSel = $('#filterColorSelect').empty().append('<option value="">All Colors</option>');
-        colors.forEach(c => colorSel.append(`<option value="${c}">${c}</option>`));
-
-        const sizeSel = $('#filterSizeSelect').empty().append('<option value="">All Size Sets</option>');
-        sizes.forEach(s => sizeSel.append(`<option value="${s}">${s}</option>`));
-
-        const brandSel = $('#filterBrandSelect').empty().append('<option value="">All Brands</option>');
-        brands.forEach(b => brandSel.append(`<option value="${b}">${b}</option>`));
-
-        const fittingSel = $('#filterFittingSelect').empty().append('<option value="">All Fittings</option>');
-        fittings.forEach(f => fittingSel.append(`<option value="${f}">${f}</option>`));
+    // Boxes still free for an item: downloaded free stock less this agent's other orders on the phone
+    function freeFor(item) {
+        if (item.is_advance_sample) return Infinity;
+        return Math.max(0, (parseInt(item.available_boxes) || 0) - (reserved[idKey(item)] || 0));
     }
+    const capFor = item => (allowOverStock() || item.is_advance_sample) ? Infinity : freeFor(item);
+    const cartQty = item => (cart.get(idKey(item)) || {}).qty || 0;
+    const findItem = key => productsByKey.get(key) || scanItems.get(key) || ((cart.get(key) || {}).item);
 
-    initOfflineCatalog();
-
-    // Toggle Filter Drawer
-    $('#btnToggleFilters').click(function () {
-        $('#filterContainer').slideToggle(200);
-    });
-
-    $('#filterColorSelect, #filterSizeSelect, #filterBrandSelect, #filterFittingSelect').on('change', function () {
-        filterAndRenderProducts(true);
-    });
-
-    $('#btnResetFilters').click(function () {
-        $('#filterColorSelect').val('');
-        $('#filterSizeSelect').val('');
-        $('#filterBrandSelect').val('');
-        $('#filterFittingSelect').val('');
-        $('#offlineSearchInput').val('');
-        $('#btnClearSearch').hide();
-        filterAndRenderProducts(true);
-    });
-
-    // Shop change handler
-    $('#offlineShopSelect').on('change', function () {
-        const selected = $(this).find('option:selected').data('shop');
-        if (selected) {
-            localStorage.setItem('last_offline_shop_id', selected.id);
-            $('#shopPhoneText').text(selected.phone || 'N/A');
-            $('#shopAddressText').text(selected.address || 'N/A');
-            $('#shopDetailsBox').slideDown();
-        } else {
-            localStorage.removeItem('last_offline_shop_id');
-            $('#shopDetailsBox').slideUp();
-        }
-        repriceForShop();
-    });
-
-    // Prices = MRP less the selected shop's own brand discount (fair/sample-batch items keep their fixed price)
-    async function repriceForShop() {
-        if (!allProducts.length) return;
-        const discounts = await SnapKidOfflineDB.getActiveBrandDiscounts();
-        allProducts.forEach(p => { p.unit_price = SnapKidOfflineDB.priceItem(p, discounts); });
-        scanItems.forEach(it => { if (!it.fixed_price) it.unit_price = SnapKidOfflineDB.priceItem(it, discounts); });
+    function repriceAll() {
+        allProducts.forEach(p => { p.unit_price = priceFor(p); });
+        scanItems.forEach(it => { if (!it.fixed_price) it.unit_price = priceFor(it); });
+        cart.forEach(v => { if (!v.item.fixed_price) v.item.unit_price = priceFor(v.item); });
         filterAndRenderProducts(false);
         updateSummaryUI();
     }
 
-    // 2. Filter & Render Product Cards
-    function filterAndRenderProducts(resetPage = true) {
-        if (resetPage) {
-            currentPage = 1;
-        }
+    // ---------- loading ----------
 
-        const query = $('#offlineSearchInput').val().trim().toLowerCase();
-        const filterColor = $('#filterColorSelect').val();
-        const filterSize = $('#filterSizeSelect').val();
-        const filterBrand = $('#filterBrandSelect').val();
-        const filterFitting = $('#filterFittingSelect').val();
-
-        displayedProducts = allProducts.filter(p => {
-            if (filterColor && p.color_name !== filterColor) return false;
-            if (filterSize && p.size_set_name !== filterSize) return false;
-            if (filterBrand && p.brand_name !== filterBrand) return false;
-            if (filterFitting && p.fitting_name !== filterFitting) return false;
-
-            if (query) {
-                const matchDesign = p.design_number && p.design_number.toLowerCase().includes(query);
-                const matchSeries = p.series_name && p.series_name.toLowerCase().includes(query);
-                const matchBrand = p.brand_name && p.brand_name.toLowerCase().includes(query);
-                const matchColor = p.color_name && p.color_name.toLowerCase().includes(query);
-                const matchSize = p.size_set_name && p.size_set_name.toLowerCase().includes(query);
-                const matchGarment = p.name_of_garment && String(p.name_of_garment).toLowerCase().includes(query);
-                const matchFitting = p.fitting_name && p.fitting_name.toLowerCase().includes(query);
-                const matchPattern = p.pattern_name && p.pattern_name.toLowerCase().includes(query);
-                const matchBarcode = p.barcode && p.barcode.toLowerCase().includes(query);
-
-                return matchDesign || matchSeries || matchBrand || matchColor || matchSize || matchGarment || matchFitting || matchPattern || matchBarcode;
+    async function initOfflineCatalog() {
+        try {
+            seePriceAllowed = await DB.resolveSeePrice(agentSeePrice, pageRenderedAt);
+            metaInfo = await DB.getMeta();
+            if (!metaInfo) {
+                $('#productsGrid').html('<div class="col-12 text-center py-5"><i class="fas fa-exclamation-triangle fa-3x text-warning mb-2"></i>' +
+                    '<h6 class="font-weight-bold">No products on this phone for your login</h6><p class="text-muted small">Go to the Offline Hub and tap <strong>Sync</strong> when you have internet.</p>' +
+                    '<a href="' + SK_AGENT.urls.hub + '" class="btn btn-primary btn-sm rounded-pill px-4">Go to Offline Hub</a></div>');
+                return;
             }
+            ((metaInfo.sales_men) || []).forEach(sm => $('#offlineSalesMan').append($('<option>').val(sm.id).text(sm.name)));
+            shops = (await DB.getShops()).sort((a, b) => (a.party_type === b.party_type ? 0 : a.party_type === 'vendor' ? 1 : -1) || String(a.name).localeCompare(String(b.name)));
+            if (shops.some(s => s.party_type === 'vendor')) $('#shopSelectLabel').html('Select Shop / Vendor <span class="text-danger">*</span>');
+            const sel = $('#offlineShopSelect').empty().append($('<option value="">').text('-- Choose Shop --'));
+            shops.forEach(s => sel.append($('<option>').val(s.uid).text(s.name + (s.party_type === 'vendor' ? ' (Vendor)' : '') + (s.phone ? ' · ' + s.phone : ''))));
 
-            return true;
-        });
+            fairDiscounts = await DB.getFairDiscounts();
+            allProducts = await DB.getCatalog();
+            allProducts.forEach(p => productsByKey.set(p.key, p));
+            reserved = await DB.reservedBoxes(editId || null);
+            $('#catalogLoadingMsg').hide();
 
-        const limit = currentPage * pageSize;
-        const toRender = displayedProducts.slice(0, limit);
-
-        if (toRender.length === 0) {
-            $('#productsGrid').html(`
-                <div class="col-12 text-center py-4 text-muted">
-                    <i class="fas fa-search fa-2x mb-2 text-muted opacity-50"></i>
-                    <p class="mb-0 font-weight-bold">No matching products found.</p>
-                    <small>Try clearing your search query or reset filters.</small>
-                </div>
-            `);
-            $('#loadMoreContainer').hide();
-            return;
-        }
-
-        const showStock = stockVisible();
-        const seePrice = canSeePrice();
-
-        let html = '';
-        toRender.forEach(prod => {
-            const inCartQty = cart.has(prod.key) ? cart.get(prod.key).qty : 0;
-            const imgSrc = prod.image_url || '';
-            const imgFile = prod.image || (prod.image_url ? prod.image_url.split('/').pop().split('?')[0] : '');
-
-            // Clean title logic
-            const seriesName = prod.series_name || '';
-            const garmentName = prod.name_of_garment ? String(prod.name_of_garment).trim() : '';
-            let title = '';
-            if (seriesName && garmentName && seriesName !== garmentName) {
-                title = `${seriesName} ${garmentName}`;
-            } else if (seriesName) {
-                title = seriesName;
-            } else if (garmentName) {
-                title = `Garment ${garmentName}`;
+            if (editId) {
+                if (!(await loadEditOrder())) return;
             } else {
-                title = `Design #${prod.design_number}`;
+                let uid = presetShopId ? 'customer_' + presetShopId : null;
+                try { uid = uid || localStorage.getItem(lastShopKey); } catch (_) {}
+                if (uid && shops.some(s => s.uid === uid)) selectShop(uid);
             }
-
-            html += `
-                <div class="col-6 col-md-4 col-lg-3 mb-2 px-1">
-                    <div class="card h-100 border-0 shadow-sm overflow-hidden variation-card ${inCartQty > 0 ? 'border-success' : ''}" data-key="${prod.key}" style="border-radius: 12px; font-size: 13px;">
-                        
-                        <!-- Image Container with Badges -->
-                        <div style="height: 140px; background: #f8fafc;" class="d-flex align-items-center justify-content-center position-relative">
-                            ${imgSrc ? `
-                                <img src="${imgSrc}" class="w-100 h-100 zoom-image-trigger" data-src="${imgSrc}" style="object-fit: contain; cursor: pointer;" onerror="handleOfflineImageError(this, '${imgFile}')">
-                                <div class="w-100 h-100 align-items-center justify-content-center text-muted placeholder-box" style="display:none;">
-                                    <i class="fas fa-tshirt fa-2x opacity-25"></i>
-                                </div>
-                            ` : `
-                                <i class="fas fa-tshirt fa-2x text-muted opacity-25"></i>
-                            `}
-                            
-                            <!-- Design Number Badge -->
-                            <span class="badge badge-dark position-absolute" style="top: 6px; left: 6px; font-size: 10.5px; font-weight: 700; border-radius: 6px; opacity: 0.9; letter-spacing: 0.5px;">
-                                #${prod.design_number}
-                            </span>
-
-                            <!-- Zoom Button on image -->
-                            ${imgSrc ? `
-                                <span class="badge badge-light position-absolute zoom-image-trigger" data-src="${imgSrc}" style="top: 6px; right: 6px; cursor: pointer; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.15);" title="Zoom Photo">
-                                    <i class="fas fa-search-plus text-secondary" style="font-size: 10px;"></i>
-                                </span>
-                            ` : ''}
-                        </div>
-
-                        <!-- Card Body -->
-                        <div class="card-body p-2 d-flex flex-column justify-content-between">
-                            <div>
-                                <!-- Product / Series Title -->
-                                <h6 class="font-weight-bold text-dark mb-1 text-truncate" style="font-size: 12.5px;" title="${title}">
-                                    ${title}
-                                </h6>
-                                
-                                <!-- Color & Size Set -->
-                                <div class="d-flex justify-content-between align-items-center mb-1 text-muted" style="font-size: 11px;">
-                                    <span class="text-truncate mr-1" title="${prod.color_name}"><i class="fas fa-palette mr-1 text-primary"></i>${prod.color_name}</span>
-                                    <span class="font-weight-bold text-dark text-nowrap"><i class="fas fa-ruler-combined mr-1 text-muted"></i>${prod.size_set_name}</span>
-                                </div>
-
-                                <!-- Fitting & Pattern tags -->
-                                <div class="d-flex align-items-center text-truncate mb-2" style="font-size: 10px;">
-                                    ${prod.fitting_name ? `<span class="badge badge-light border text-muted mr-1 px-1 py-0 text-truncate" style="max-width: 65px;" title="${prod.fitting_name}">${prod.fitting_name}</span>` : ''}
-                                    ${prod.pattern_name ? `<span class="badge badge-light border text-muted mr-1 px-1 py-0 text-truncate" style="max-width: 65px;" title="${prod.pattern_name}">${prod.pattern_name}</span>` : ''}
-                                    <span class="text-muted ml-auto">${prod.pcs_per_box} pcs</span>
-                                </div>
-
-                                <!-- Price & Stock -->
-                                ${(seePrice || showStock) ? `
-                                <div class="sk-pricebar sk-pricebar-sm">
-                                    ${seePrice ? `<div class="sk-price sk-price-sm">${skPriceHtml(prod.unit_price, prod.mrp)}</div>` : ''}
-                                    ${showStock ? `<span class="sk-stock"><i class="fas fa-box"></i> ${prod.is_advance_sample ? 'No limit' : prod.available_boxes + (Number(prod.available_boxes) === 1 ? ' Box' : ' Boxes')}</span>` : ''}
-                                </div>
-                                ` : ''}
-                            </div>
-
-                            <!-- Bottom Row: Specs & Stepper -->
-                            <div class="d-flex align-items-center justify-content-between pt-1 border-top">
-                                <button type="button" class="btn btn-link btn-sm p-0 text-muted btn-open-details" data-key="${prod.key}" style="font-size: 11px; text-decoration: none;" title="View Complete Product Details">
-                                    <i class="fas fa-info-circle mr-1 text-primary"></i>Specs
-                                </button>
-                                <div class="quantity-control-app d-inline-flex align-items-center p-0 bg-white border shadow-xs" style="border-radius: 8px; height: 28px;">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-minus" data-key="${prod.key}" style="border:0; height: 26px;">
-                                        <i class="fas fa-minus" style="font-size: 9px;"></i>
-                                    </button>
-                                    <input type="number" class="form-control form-control-sm text-center font-weight-bold p-0 border-0 qty-input" 
-                                        style="height: 26px; width: 36px; background: transparent;" 
-                                        data-key="${prod.key}" 
-                                        value="${inCartQty}" min="0" ${prod.is_advance_sample ? '' : `max="${prod.available_boxes}"`}>
-                                    <button type="button" class="btn btn-sm btn-primary py-0 px-2 btn-plus" data-key="${prod.key}" style="border:0; height: 26px; background: #05421c;">
-                                        <i class="fas fa-plus" style="font-size: 9px;"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-
-        $('#productsGrid').html(html);
-
-        if (displayedProducts.length > limit) {
-            $('#loadMoreContainer').show();
-        } else {
-            $('#loadMoreContainer').hide();
+            populateFilterDropdowns();
+            repriceAll();
+        } catch (e) {
+            console.error('Failed to load offline data:', e);
+            $('#catalogLoadingMsg').html('<p class="text-danger">Could not read the data on this phone: ' + esc(e.message) + '</p>');
         }
     }
 
-    // Search events
-    $('#offlineSearchInput').on('input', function () {
-        const val = $(this).val();
-        if (val) $('#btnClearSearch').show();
-        else $('#btnClearSearch').hide();
+    async function loadEditOrder() {
+        const back = msg => Swal.fire('Cannot edit', msg, 'warning').then(() => { location.href = SK_AGENT.urls.hub; });
+        const o = await DB.getOrder(editId);
+        if (!o) { back('This order is not on this phone (it may have been uploaded already).'); return false; }
+        if (!DB.isEditable(o)) { back('This order was sent and the office has not answered yet. Tap Sync first; it is never saved twice.'); return false; }
+        editing = o;
+
+        // current versions of the lines (prices / stock from the latest download); lines no longer in it keep the saved copy
+        const payloadItems = new Map();
+        Object.values(await DB.getScanPayloads()).forEach(p => (p.size_sets || []).forEach(ss => (ss.colors || []).forEach(c => { if (c.item) payloadItems.set(c.key, c.item); })));
+        const gone = [];
+        (o.variations || []).forEach(v => {
+            let item = (v.key && (productsByKey.get(v.key) || payloadItems.get(v.key))) || productsByKey.get(idKey(v));
+            if (!item) {
+                item = Object.assign({}, v, { key: v.key || idKey(v), available_boxes: 0 });
+                delete item.qty;
+                gone.push(itemLabel(v));
+            }
+            if (!productsByKey.has(item.key)) scanItems.set(item.key, item);
+            cart.set(idKey(item), { item, qty: parseInt(v.qty) || 0 });
+        });
+
+        sampleSet = !!o.is_sample_set;
+        $('#offlineSampleSet').prop('checked', sampleSet);
+        const uid = o.shop_uid || ((o.party_type || 'customer') + '_' + o.shop_id);
+        if (shops.some(s => s.uid === uid)) selectShop(uid);
+        $('#offlineDiscount').val(o.discount_amount || '');
+        $('#offlineOtherCharges').val(o.other_charges || '');
+        $('#offlineSalesMan').val(o.sales_man_id || '');
+        $('#offlineDispatchDate').val(o.expected_dispatch_date || '');
+        $('#offlineBookingStation').val(o.booking_station || '');
+        $('#offlineTransport').val(o.transport || '');
+        $('#offlineRemark').val(o.remark || '');
+
+        let html = '<i class="fas fa-edit mr-1"></i><strong>Editing the order for ' + esc(o.shop_name) + '</strong> (booked ' + esc(new Date(o.booked_at || o.created_at).toLocaleString('en-IN')) + ').';
+        if (o.last_error) html += '<br><span class="text-danger">Office said: ' + esc(o.last_error) + '</span>';
+        if (!shop) html += '<br><span class="text-danger">This shop is no longer in your list (inactive or given to another agent). This order cannot be sent: discard it in the Hub.</span>';
+        if (gone.length) html += '<br>No longer in stock on the latest download: ' + esc(gone.join(', ')) + '. Remove or reduce them.';
+        html += '<br>Save to keep the changes; it uploads at the next Sync.';
+        $('#editBanner').html(html).show();
+        $('#btnSaveOrderOffline').html('<i class="fas fa-check-circle mr-1"></i> Save changes');
+        $('#btnModalSaveOrder').html('<i class="fas fa-save mr-1"></i> Save changes on Phone');
+        return true;
+    }
+
+    function selectShop(uid) {
+        $('#offlineShopSelect').val(uid).trigger('change.select2');
+        applyShop(uid);
+    }
+
+    function applyShop(uid) {
+        shop = shops.find(s => s.uid === uid) || null;
+        if (shop) {
+            if (!editing) { try { localStorage.setItem(lastShopKey, shop.uid); } catch (_) {} }
+            $('#shopPhoneText').text(shop.phone || 'N/A');
+            $('#shopAddressText').text(shop.address || 'N/A');
+            $('#shopTypeText').text(shop.party_type === 'vendor' ? 'Vendor (MRP, no discount)' : 'Shop');
+            $('#shopDetailsBox').slideDown();
+        } else {
+            $('#shopDetailsBox').slideUp();
+        }
+    }
+
+    function populateFilterDropdowns() {
+        const fill = (id, label, values) => {
+            const sel = $(id).empty().append($('<option value="">').text(label));
+            [...new Set(values.filter(Boolean))].sort().forEach(v => sel.append($('<option>').val(v).text(v)));
+        };
+        fill('#filterColorSelect', 'All Colors', allProducts.map(p => p.color_name));
+        fill('#filterSizeSelect', 'All Size Sets', allProducts.map(p => p.size_set_name));
+        fill('#filterBrandSelect', 'All Brands', allProducts.map(p => p.brand_name));
+        fill('#filterFittingSelect', 'All Fittings', allProducts.map(p => p.fitting_name));
+    }
+
+    initOfflineCatalog();
+
+    $('#btnToggleFilters').click(() => $('#filterContainer').slideToggle(200));
+    $('#filterColorSelect, #filterSizeSelect, #filterBrandSelect, #filterFittingSelect').on('change', () => filterAndRenderProducts(true));
+    $('#btnResetFilters').click(function () {
+        $('#filterColorSelect, #filterSizeSelect, #filterBrandSelect, #filterFittingSelect, #offlineSearchInput').val('');
+        $('#btnClearSearch').hide();
         filterAndRenderProducts(true);
     });
 
+    $('#offlineShopSelect').on('change', function () {
+        applyShop($(this).val());
+        repriceAll();
+    });
+
+    $('#offlineSampleSet').on('change', function () {
+        sampleSet = $(this).is(':checked');
+        repriceAll();
+        toast(sampleSet ? 'Sample set order: sample-set prices where the item is in your sample sets.' : 'Normal order prices.');
+    });
+
+    // ---------- product cards ----------
+
+    function productTitle(p) {
+        const series = p.series_name || '';
+        const garment = p.name_of_garment ? String(p.name_of_garment).trim() : '';
+        if (series && garment && series !== garment) return series + ' ' + garment;
+        return series || (garment ? 'Garment ' + garment : 'Design #' + p.design_number);
+    }
+
+    function filterAndRenderProducts(resetPage = true) {
+        if (resetPage) currentPage = 1;
+        if (!metaInfo) return;
+        const query = $('#offlineSearchInput').val().trim().toLowerCase();
+        const fc = $('#filterColorSelect').val(), fs = $('#filterSizeSelect').val(), fb = $('#filterBrandSelect').val(), ff = $('#filterFittingSelect').val();
+
+        displayedProducts = allProducts.filter(p => {
+            if (fc && p.color_name !== fc) return false;
+            if (fs && p.size_set_name !== fs) return false;
+            if (fb && p.brand_name !== fb) return false;
+            if (ff && p.fitting_name !== ff) return false;
+            if (!query) return true;
+            return [p.design_number, p.series_name, p.brand_name, p.color_name, p.size_set_name, p.name_of_garment, p.fitting_name, p.pattern_name, p.barcode]
+                .some(v => v && String(v).toLowerCase().includes(query));
+        });
+
+        const toRender = displayedProducts.slice(0, currentPage * pageSize);
+        if (!toRender.length) {
+            $('#productsGrid').html('<div class="col-12 text-center py-4 text-muted"><i class="fas fa-search fa-2x mb-2 opacity-50"></i><p class="mb-0 font-weight-bold">No matching products found.</p><small>Clear the search or reset the filters.</small></div>');
+            $('#loadMoreContainer').hide();
+            return;
+        }
+        const showStock = stockVisible();
+        const seePrice = canSeePrice();
+        let html = '';
+        toRender.forEach(prod => {
+            const qty = cartQty(prod);
+            const img = prod.image_url || '';
+            const imgFile = prod.image || (img ? img.split('/').pop().split('?')[0] : '');
+            const title = productTitle(prod);
+            const free = freeFor(prod);
+            const cap = capFor(prod);
+            html += `
+                <div class="col-6 col-md-4 col-lg-3 mb-2 px-1">
+                    <div class="card h-100 border-0 shadow-sm overflow-hidden variation-card ${qty > 0 ? 'border-success' : ''}" data-key="${esc(prod.key)}" style="border-radius: 12px; font-size: 13px;">
+                        <div style="height: 140px; background: #f8fafc;" class="d-flex align-items-center justify-content-center position-relative">
+                            ${img ? `
+                                <img src="${esc(img)}" alt="" class="w-100 h-100 zoom-image-trigger" data-src="${esc(img)}" style="object-fit: contain; cursor: pointer;" onerror="handleOfflineImageError(this, '${esc(imgFile)}')">
+                                <div class="w-100 h-100 align-items-center justify-content-center text-muted placeholder-box" style="display:none;"><i class="fas fa-tshirt fa-2x opacity-25"></i></div>
+                            ` : `<i class="fas fa-tshirt fa-2x text-muted opacity-25"></i>`}
+                            <span class="badge badge-dark position-absolute" style="top: 6px; left: 6px; font-size: 10.5px; font-weight: 700; border-radius: 6px; opacity: 0.9;">#${esc(prod.design_number)}</span>
+                        </div>
+                        <div class="card-body p-2 d-flex flex-column justify-content-between">
+                            <div>
+                                <h6 class="font-weight-bold text-dark mb-1 text-truncate" style="font-size: 12.5px;" title="${esc(title)}">${esc(title)}</h6>
+                                <div class="d-flex justify-content-between align-items-center mb-1 text-muted" style="font-size: 11px;">
+                                    <span class="text-truncate mr-1" title="${esc(prod.color_name)}"><i class="fas fa-palette mr-1 text-primary"></i>${esc(prod.color_name)}</span>
+                                    <span class="font-weight-bold text-dark text-nowrap"><i class="fas fa-ruler-combined mr-1 text-muted"></i>${esc(prod.size_set_name)}</span>
+                                </div>
+                                <div class="d-flex align-items-center text-truncate mb-2" style="font-size: 10px;">
+                                    ${prod.fitting_name ? `<span class="badge badge-light border text-muted mr-1 px-1 py-0 text-truncate" style="max-width: 65px;">${esc(prod.fitting_name)}</span>` : ''}
+                                    ${prod.pattern_name ? `<span class="badge badge-light border text-muted mr-1 px-1 py-0 text-truncate" style="max-width: 65px;">${esc(prod.pattern_name)}</span>` : ''}
+                                    <span class="text-muted ml-auto">${esc(prod.pcs_per_box)} pcs</span>
+                                </div>
+                                ${(seePrice || showStock) ? `
+                                <div class="sk-pricebar sk-pricebar-sm">
+                                    ${seePrice ? `<div class="sk-price sk-price-sm">${skPriceHtml(prod.unit_price, prod.mrp)}</div>` : ''}
+                                    ${showStock ? `<span class="sk-stock"><i class="fas fa-box"></i> ${prod.is_advance_sample ? 'No limit' : free + (free === 1 ? ' Box' : ' Boxes')}</span>` : ''}
+                                </div>` : ''}
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between pt-1 border-top">
+                                <button type="button" class="btn btn-link btn-sm p-0 text-muted btn-open-details" data-key="${esc(prod.key)}" style="font-size: 11px; text-decoration: none;">
+                                    <i class="fas fa-info-circle mr-1 text-primary"></i>Specs
+                                </button>
+                                <div class="quantity-control-app d-inline-flex align-items-center p-0 bg-white border shadow-xs" style="border-radius: 8px; height: 28px;">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-minus" data-key="${esc(prod.key)}" style="border:0; height: 26px;"><i class="fas fa-minus" style="font-size: 9px;"></i></button>
+                                    <input type="number" class="form-control form-control-sm text-center font-weight-bold p-0 border-0 qty-input" style="height: 26px; width: 36px; background: transparent;"
+                                        data-key="${esc(prod.key)}" value="${qty}" min="0" ${cap === Infinity ? '' : `max="${cap}"`}>
+                                    <button type="button" class="btn btn-sm btn-primary py-0 px-2 btn-plus" data-key="${esc(prod.key)}" style="border:0; height: 26px; background: #05421c;"><i class="fas fa-plus" style="font-size: 9px;"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        $('#productsGrid').html(html);
+        $('#loadMoreContainer').toggle(displayedProducts.length > toRender.length);
+    }
+
+    $('#offlineSearchInput').on('input', function () {
+        $('#btnClearSearch').toggle(!!$(this).val());
+        filterAndRenderProducts(true);
+    });
     $('#btnClearSearch').click(function () {
         $('#offlineSearchInput').val('');
         $(this).hide();
         filterAndRenderProducts(true);
     });
-
     $('#btnLoadMore').click(function () {
         currentPage++;
         filterAndRenderProducts(false);
     });
 
-    // 3. Cart & Quantity Handlers
-    function updateCartItem(key, qty) {
+    // ---------- cart ----------
+
+    /** Set the boxes of an item (by any of its keys); returns the boxes actually set. */
+    function updateCartItem(itemKey, qty, quiet) {
         qty = Math.max(0, parseInt(qty) || 0);
-        const prod = allProducts.find(p => p.key === key) || scanItems.get(key);
-        if (!prod) return;
-
-        if (!allowOverStock() && !prod.is_advance_sample && qty > (prod.available_boxes || 0)) {
-            qty = prod.available_boxes || 0;
+        const item = findItem(itemKey);
+        if (!item) return 0;
+        if (!shop && qty > 0 && !quiet) toast('Choose the shop first, so the prices are right.', 'warning');
+        const k = idKey(item);
+        const cap = capFor(item);
+        if (qty > cap) {
+            qty = cap;
+            if (!quiet) {
+                toast(stockVisible()
+                    ? 'Only ' + cap + ' box(es) free for ' + itemLabel(item) + (reserved[k] ? ' (your other orders on this phone take ' + reserved[k] + ')' : '') + '.'
+                    : 'No more stock free for ' + itemLabel(item) + '.', 'warning');
+            }
         }
-
+        const cur = cart.get(k);
         if (qty > 0) {
-            cart.set(key, { item: prod, qty: qty });
+            // a sample-set tag price stays when the same item is changed from the catalogue
+            const keep = (cur && cur.item.fixed_price && !item.fixed_price) ? cur.item : item;
+            cart.set(k, { item: keep, qty });
         } else {
-            cart.delete(key);
+            cart.delete(k);
         }
-
-        $(`.qty-input[data-key="${key}"]`).val(qty);
-        if (activeModalKey === key) {
-            $('#modalQtyInput').val(qty);
-        }
-
-        // Highlight card if in cart
-        const card = $(`.variation-card[data-key="${key}"]`);
-        if (qty > 0) card.addClass('border-success');
-        else card.removeClass('border-success');
-
+        showQty(k, qty);
         updateSummaryUI();
+        return qty;
     }
 
-    $(document).on('click', '.btn-plus', function () {
-        const key = $(this).data('key');
-        const current = cart.has(key) ? cart.get(key).qty : 0;
-        updateCartItem(key, current + 1);
-    });
-
-    $(document).on('click', '.btn-minus', function () {
-        const key = $(this).data('key');
-        const current = cart.has(key) ? cart.get(key).qty : 0;
-        if (current > 0) {
-            updateCartItem(key, current - 1);
+    function showQty(k, qty) {
+        $('.qty-input, .box-qty-scan-input').each(function () {
+            const it = findItem(String($(this).data('key')));
+            if (it && idKey(it) === k) $(this).val(qty);
+        });
+        $('.variation-card').each(function () {
+            const it = findItem(String($(this).data('key')));
+            if (it && idKey(it) === k) $(this).toggleClass('border-success', qty > 0);
+        });
+        if (activeModalKey) {
+            const it = findItem(activeModalKey);
+            if (it && idKey(it) === k) $('#modalQtyInput').val(qty);
         }
-    });
+    }
 
-    $(document).on('change', '.qty-input', function () {
-        const key = $(this).data('key');
-        updateCartItem(key, $(this).val());
-    });
+    const keyOf = el => String($(el).data('key'));
+    $(document).on('click', '.btn-plus', function () { const it = findItem(keyOf(this)); if (it) updateCartItem(keyOf(this), cartQty(it) + 1); });
+    $(document).on('click', '.btn-minus', function () { const it = findItem(keyOf(this)); if (it && cartQty(it) > 0) updateCartItem(keyOf(this), cartQty(it) - 1); });
+    $(document).on('change', '.qty-input', function () { $(this).val(updateCartItem(keyOf(this), $(this).val())); });
 
-    // Modal quantity controls
-    $('.btn-modal-plus').click(function () {
-        if (!activeModalKey) return;
-        const current = cart.has(activeModalKey) ? cart.get(activeModalKey).qty : 0;
-        updateCartItem(activeModalKey, current + 1);
-    });
+    $('.btn-modal-plus').click(function () { const it = activeModalKey && findItem(activeModalKey); if (it) updateCartItem(activeModalKey, cartQty(it) + 1); });
+    $('.btn-modal-minus').click(function () { const it = activeModalKey && findItem(activeModalKey); if (it && cartQty(it) > 0) updateCartItem(activeModalKey, cartQty(it) - 1); });
+    $('#modalQtyInput').on('change', function () { if (activeModalKey) $(this).val(updateCartItem(activeModalKey, $(this).val())); });
+    $('#productDetailsModal').on('hidden.bs.modal', () => { activeModalKey = null; });
 
-    $('.btn-modal-minus').click(function () {
-        if (!activeModalKey) return;
-        const current = cart.has(activeModalKey) ? cart.get(activeModalKey).qty : 0;
-        if (current > 0) {
-            updateCartItem(activeModalKey, current - 1);
-        }
-    });
-
-    $('#modalQtyInput').on('change', function () {
-        if (!activeModalKey) return;
-        updateCartItem(activeModalKey, $(this).val());
-    });
-
-    // 4. Product Details Modal
     $(document).on('click', '.btn-open-details', function () {
-        const key = $(this).data('key');
-        const prod = allProducts.find(p => p.key === key);
+        const prod = findItem(keyOf(this));
         if (!prod) return;
-
-        activeModalKey = key;
-        const currentQty = cart.has(key) ? cart.get(key).qty : 0;
-        $('#modalQtyInput').val(currentQty);
-
+        activeModalKey = prod.key;
+        $('#modalQtyInput').val(cartQty(prod));
         $('#modalProdDesignBadge').text('#' + prod.design_number);
-        const title = (prod.series_name ? prod.series_name + ' ' : '') + (prod.name_of_garment ? prod.name_of_garment : '');
+        const title = ((prod.series_name ? prod.series_name + ' ' : '') + (prod.name_of_garment || '')).trim();
         $('#modalProdTitle').text(title || prod.design_number);
-
-        const imgSrc = prod.image_url || '';
-        const imgFile = prod.image || (prod.image_url ? prod.image_url.split('/').pop().split('?')[0] : '');
-        let bodyHtml = `
+        const img = prod.image_url || '';
+        const imgFile = prod.image || (img ? img.split('/').pop().split('?')[0] : '');
+        const row = (label, value) => `<tr><td class="bg-light font-weight-bold text-muted" style="width: 35%;">${label}</td><td class="font-weight-bold text-dark">${value}</td></tr>`;
+        $('#modalProdBody').html(`
             <div class="row align-items-center mb-3">
                 <div class="col-4 text-center">
                     <div style="height: 120px; background: #f8fafc; border-radius: 12px; overflow: hidden;" class="d-flex align-items-center justify-content-center border">
-                        ${imgSrc ? `
-                            <img src="${imgSrc}" class="w-100 h-100 zoom-image-trigger" data-src="${imgSrc}" style="object-fit: contain; cursor: pointer;" onerror="handleOfflineImageError(this, '${imgFile}')">
-                        ` : `
-                            <i class="fas fa-tshirt fa-3x text-muted opacity-25"></i>
-                        `}
+                        ${img ? `<img src="${esc(img)}" alt="" class="w-100 h-100 zoom-image-trigger" data-src="${esc(img)}" style="object-fit: contain; cursor: pointer;" onerror="handleOfflineImageError(this, '${esc(imgFile)}')">` : `<i class="fas fa-tshirt fa-3x text-muted opacity-25"></i>`}
                     </div>
-                    ${imgSrc ? `<small class="text-primary font-weight-bold d-block mt-1 zoom-image-trigger" data-src="${imgSrc}" style="cursor: pointer;"><i class="fas fa-search-plus mr-1"></i>Zoom</small>` : ''}
                 </div>
                 <div class="col-8">
-                    <h6 class="font-weight-bold text-dark mb-1">${title || ('Design #' + prod.design_number)}</h6>
-                    <div class="small text-muted mb-1"><i class="fas fa-tag mr-1 text-secondary"></i> Brand: <strong class="text-dark">${prod.brand_name || 'SNAPKID'}</strong></div>
-                    <div class="small text-muted mb-1"><i class="fas fa-layer-group mr-1 text-secondary"></i> Series: <strong class="text-dark">${prod.series_name || '-'}</strong></div>
-                    <div class="small text-muted"><i class="fas fa-barcode mr-1 text-secondary"></i> Barcode: <code class="text-dark font-weight-bold">${prod.barcode}</code></div>
+                    <h6 class="font-weight-bold text-dark mb-1">${esc(title || ('Design #' + prod.design_number))}</h6>
+                    <div class="small text-muted mb-1">Brand: <strong class="text-dark">${esc(prod.brand_name || '-')}</strong></div>
+                    <div class="small text-muted mb-1">Series: <strong class="text-dark">${esc(prod.series_name || '-')}</strong></div>
+                    <div class="small text-muted">Barcode: <code class="text-dark font-weight-bold">${esc(prod.barcode || '-')}</code></div>
                 </div>
             </div>
-
-            <div class="table-responsive">
-                <table class="table table-sm table-bordered mb-0" style="font-size: 12.5px;">
-                    <tbody>
-                        <tr>
-                            <td class="bg-light font-weight-bold text-muted" style="width: 35%;">Color</td>
-                            <td class="font-weight-bold text-dark"><i class="fas fa-palette mr-1 text-primary"></i> ${prod.color_name}</td>
-                        </tr>
-                        <tr>
-                            <td class="bg-light font-weight-bold text-muted">Size Set</td>
-                            <td class="font-weight-bold text-dark"><i class="fas fa-ruler-combined mr-1 text-primary"></i> ${prod.size_set_name} ${prod.size_group ? '(' + prod.size_group + ')' : ''}</td>
-                        </tr>
-                        <tr>
-                            <td class="bg-light font-weight-bold text-muted">Pieces / Box</td>
-                            <td class="font-weight-bold text-dark">${prod.pcs_per_box} Pieces</td>
-                        </tr>
-                        <tr>
-                            <td class="bg-light font-weight-bold text-muted">Fitting</td>
-                            <td>${prod.fitting_name || '-'}</td>
-                        </tr>
-                        <tr>
-                            <td class="bg-light font-weight-bold text-muted">Pattern</td>
-                            <td>${prod.pattern_name || '-'}</td>
-                        </tr>
-                        ${stockVisible() ? `<tr>
-                            <td class="bg-light font-weight-bold text-muted">Available Stock</td>
-                            <td class="font-weight-bold text-success">${prod.is_advance_sample ? 'No limit' : prod.available_boxes + ' Boxes'}</td>
-                        </tr>` : ''}
-                        ${canSeePrice() ? `
-                        <tr>
-                            <td class="bg-light font-weight-bold text-muted">Unit Price</td>
-                            <td class="font-weight-bold text-primary">₹${Number(prod.unit_price).toLocaleString()}</td>
-                        </tr>
-                        ${prod.mrp > 0 ? `
-                            <tr>
-                                <td class="bg-light font-weight-bold text-muted">MRP</td>
-                                <td class="text-muted">₹${Number(prod.mrp).toLocaleString()}</td>
-                            </tr>
-                        ` : ''}
-                        ` : ''}
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-        $('#modalProdBody').html(bodyHtml);
+            <div class="table-responsive"><table class="table table-sm table-bordered mb-0" style="font-size: 12.5px;"><tbody>
+                ${row('Color', esc(prod.color_name))}
+                ${row('Size Set', esc(prod.size_set_name) + (prod.size_group ? ' (' + esc(prod.size_group) + ')' : ''))}
+                ${row('Pieces / Box', esc(prod.pcs_per_box))}
+                ${row('Fitting', esc(prod.fitting_name || '-'))}
+                ${row('Pattern', esc(prod.pattern_name || '-'))}
+                ${stockVisible() ? row('Free Stock', prod.is_advance_sample ? 'No limit' : freeFor(prod) + ' Boxes' + (reserved[idKey(prod)] ? ' <small class="text-muted">(after ' + reserved[idKey(prod)] + ' in your other orders on this phone)</small>' : '')) : ''}
+                ${canSeePrice() ? row('Price / piece', skMoney(prod.unit_price)) + (prod.mrp > 0 ? row('MRP', skMoney(prod.mrp)) : '') : ''}
+            </tbody></table></div>`);
         $('#productDetailsModal').modal('show');
     });
 
-    // 5. Image Zoom Handler (with IndexedDB blob support)
     $(document).on('click', '.zoom-image-trigger', async function (e) {
         e.stopPropagation();
         let src = $(this).data('src') || $(this).attr('src');
         if (!src) return;
-        if (!src.startsWith('blob:') && !src.startsWith('data:') && window.SnapKidOfflineDB) {
-            try {
-                const blobUrl = await SnapKidOfflineDB.getImageBlobUrl(src);
-                if (blobUrl) src = blobUrl;
-            } catch (_) {}
+        if (!/^(blob|data):/.test(src)) {
+            try { const blobUrl = await DB.getImageBlobUrl(src); if (blobUrl) src = blobUrl; } catch (_) {}
         }
         $('#zoomedImage').attr('src', src);
         $('#imageZoomModal').modal('show');
     });
 
-    // 6. Update Bottom Summary Bar
-    function updateSummaryUI() {
-        const seePrice = canSeePrice();
-        let totalBoxes = 0;
-        let subtotal = 0;
-        let itemsCount = cart.size;
+    // ---------- totals (same rounding and checks as the office) ----------
 
-        cart.forEach((val) => {
-            totalBoxes += val.qty;
-            const pcs = val.qty * (val.item.pcs_per_box || 1);
-            subtotal += (pcs * val.item.unit_price);
+    function currentTotals() {
+        let value = 0, boxes = 0;
+        cart.forEach(v => {
+            value += v.qty * (parseFloat(v.item.pcs_per_box) || 1) * (Number(v.item.unit_price) || 0);
+            boxes += v.qty;
         });
+        const t = DB.orderTotals(value, canSeePrice() ? $('#offlineDiscount').val() : 0, canSeePrice() ? $('#offlineOtherCharges').val() : 0, gstRate());
+        t.boxes = boxes;
+        return t;
+    }
 
-        const discount = parseFloat($('#offlineDiscount').val()) || 0;
-        const otherCharges = parseFloat($('#offlineOtherCharges').val()) || 0;
-        const taxable = Math.max(0, subtotal - discount);
-        const gst = Math.ceil(taxable * gstRate() / 100);
-        const grandTotal = Math.ceil(taxable + gst + otherCharges);
-
-        $('#totalBoxesCount').text(totalBoxes + (totalBoxes === 1 ? ' Box' : ' Boxes'));
-        $('#cartItemsCount').text(itemsCount);
-
-        if (seePrice) {
-            $('#grandTotalContainer').show();
-            $('#grandTotalText').text(grandTotal.toLocaleString());
-            $('#offlinePricingInputs').show();
+    function updateSummaryUI() {
+        const t = currentTotals();
+        $('#totalBoxesCount').text(t.boxes + (t.boxes === 1 ? ' Box' : ' Boxes'));
+        $('#cartItemsCount').text(cart.size);
+        if (canSeePrice()) {
+            $('#grandTotalContainer, #offlinePricingInputs').show();
+            $('#grandTotalText').text(t.grand.toLocaleString('en-IN'));
+            $('#totalsBreakdown').text('Items ₹' + t.total.toLocaleString('en-IN') + (t.discount ? ' − discount ₹' + t.discount.toLocaleString('en-IN') : '') +
+                ' + GST ' + t.gst_percentage + '% ₹' + t.gst.toLocaleString('en-IN') + (t.other ? ' + other ₹' + t.other.toLocaleString('en-IN') : '') + ' = ₹' + t.grand.toLocaleString('en-IN'));
+            $('#totalsError').toggle(!!t.error).text(t.error || '');
         } else {
-            $('#grandTotalContainer').hide();
-            $('#offlinePricingInputs').hide();
+            $('#grandTotalContainer, #offlinePricingInputs').hide();
         }
-
-        if (totalBoxes > 0) {
-            $('#offlineSummaryBar').slideDown();
-        } else {
-            $('#offlineSummaryBar').slideUp();
-        }
+        if (t.boxes > 0) $('#offlineSummaryBar').slideDown(); else $('#offlineSummaryBar').slideUp();
     }
 
     $('#offlineDiscount, #offlineOtherCharges').on('input', updateSummaryUI);
 
-    // 7. Cart Details Modal Rendering
-    $('#btnOpenCartModal').click(function () {
-        const seePrice = canSeePrice();
+    function renderCartList() {
         const list = $('#cartItemsList');
-        if (cart.size === 0) {
-            list.html('<p class="text-center text-muted py-3">Cart is empty</p>');
-            $('#cartDetailsModal').modal('show');
-            return;
-        }
-
+        if (!cart.size) { list.html('<p class="text-center text-muted py-3">Cart is empty</p>'); return; }
         let html = '';
-        cart.forEach((val, key) => {
-            const p = val.item;
-            const itemTotal = val.qty * (p.pcs_per_box || 1) * p.unit_price;
-            const title = (p.series_name ? p.series_name + ' ' : '') + (p.name_of_garment ? p.name_of_garment : '');
+        cart.forEach((v, k) => {
+            const p = v.item;
+            const lineTotal = v.qty * (parseFloat(p.pcs_per_box) || 1) * (Number(p.unit_price) || 0);
+            const over = !allowOverStock() && v.qty > freeFor(p);
             html += `
-                <div class="d-flex justify-content-between align-items-center p-2 mb-1 bg-light rounded">
-                    <div style="max-width: 65%;">
-                        <div class="font-weight-bold text-dark text-truncate">#${p.design_number} ${title ? ' - ' + title : ''}</div>
-                        <small class="text-muted"><i class="fas fa-palette mr-1 text-primary"></i>${p.color_name} | <i class="fas fa-ruler-combined mr-1 text-muted"></i>${p.size_set_name} (${val.qty} Boxes)</small>
+                <div class="d-flex justify-content-between align-items-center p-2 mb-1 rounded ${over ? 'border border-danger' : 'bg-light'}" style="${over ? 'background:#fdecec;' : ''}">
+                    <div style="max-width: 70%;">
+                        <div class="font-weight-bold text-dark text-truncate">#${esc(p.design_number)} ${esc(productTitle(p))}</div>
+                        <small class="text-muted">${esc(p.color_name)} | ${esc(p.size_set_name)} | ${v.qty} box(es) × ${esc(p.pcs_per_box)} pcs${p.fixed_price ? ' | <span class="text-success">sample-set price</span>' : ''}</small>
+                        ${over ? `<div class="small text-danger font-weight-bold">Only ${freeFor(p)} box(es) free</div>` : ''}
                     </div>
                     <div class="text-right">
-                        ${seePrice ? `<div class="font-weight-bold text-primary">₹${Math.round(itemTotal).toLocaleString()}</div>` : ''}
-                        <button type="button" class="btn btn-xs text-danger btn-remove-cart" data-key="${key}">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
+                        ${canSeePrice() ? `<div class="font-weight-bold text-primary">${skMoney(lineTotal)}</div>` : ''}
+                        <button type="button" class="btn btn-xs text-danger btn-remove-cart" data-cart-key="${esc(k)}" title="Remove"><i class="fas fa-trash-alt"></i></button>
                     </div>
-                </div>
-            `;
+                </div>`;
         });
-
         list.html(html);
-        if (seePrice) {
-            $('#offlinePricingInputs').show();
-        } else {
-            $('#offlinePricingInputs').hide();
-        }
+    }
+
+    $('#btnOpenCartModal').click(function () {
+        renderCartList();
+        updateSummaryUI();
         $('#cartDetailsModal').modal('show');
     });
 
     $(document).on('click', '.btn-remove-cart', function () {
-        const key = $(this).data('key');
-        updateCartItem(key, 0);
-        $(this).closest('div.d-flex').remove();
+        const k = String($(this).data('cart-key'));
+        cart.delete(k);
+        showQty(k, 0);
+        updateSummaryUI();
+        renderCartList();
     });
 
-    // 8. Camera Scanner (Html5Qrcode)
-    $('#btnOpenScanner').click(function () {
-        $('#offlineScannerModal').modal('show');
-    });
+    // ---------- scanning ----------
 
-    $('#offlineScannerModal').on('shown.bs.modal', function () {
-        startOfflineScanner();
-    });
-
-    $('#offlineScannerModal').on('hidden.bs.modal', function () {
-        stopOfflineScanner();
-    });
+    $('#btnOpenScanner').click(() => $('#offlineScannerModal').modal('show'));
+    $('#offlineScannerModal').on('shown.bs.modal', startOfflineScanner);
+    $('#offlineScannerModal').on('hidden.bs.modal', stopOfflineScanner);
 
     function startOfflineScanner() {
-        if (scanner) return;
+        if (scanner || typeof Html5Qrcode === 'undefined') return;
         try {
-            scanner = new Html5Qrcode("offlineReader");
-            const config = {
+            scanner = new Html5Qrcode('offlineReader');
+            scanner.start({ facingMode: 'environment' }, {
                 fps: 15,
-                qrbox: function (viewfinderWidth, viewfinderHeight) {
-                    const width = Math.min(Math.floor(viewfinderWidth * 0.88), 320);
-                    const height = Math.min(Math.floor(viewfinderHeight * 0.65), 220);
-                    return { width, height };
-                },
+                qrbox: (w, h) => ({ width: Math.min(Math.floor(w * 0.88), 320), height: Math.min(Math.floor(h * 0.65), 220) }),
                 aspectRatio: 1.0
-            };
-            scanner.start({ facingMode: "environment" }, config, onBarcodeScanned)
-                .catch(err => {
-                    console.error('Camera error:', err);
-                    Swal.fire('Camera Error', 'Could not access camera. Please allow camera permissions in browser settings.', 'error');
-                });
+            }, onBarcodeScanned).catch(err => {
+                console.error('Camera error:', err);
+                scanner = null;
+                toast('Camera not available. Type the code below instead.', 'warning');
+            });
         } catch (e) {
-            console.error(e);
-            Swal.fire('Camera Error', 'Could not initialize camera scanner: ' + e.message, 'error');
+            scanner = null;
+            toast('Camera not available. Type the code below instead.', 'warning');
         }
     }
 
     function stopOfflineScanner() {
         if (scanner) {
-            scanner.stop().then(() => { scanner = null; }).catch(() => { scanner = null; });
+            const s = scanner;
+            scanner = null;
+            s.stop().catch(() => {});
         }
     }
 
-    async function onBarcodeScanned(decodedText) {
+    function onBarcodeScanned(decodedText) {
         stopOfflineScanner();
         $('#offlineScannerModal').modal('hide');
         processBarcodeMatch(decodedText);
@@ -1078,216 +916,71 @@ $(document).ready(function () {
 
     $('#btnManualBarcodeSubmit').click(function () {
         const code = $('#manualBarcodeInput').val().trim();
-        if (code) {
-            $('#offlineScannerModal').modal('hide');
-            processBarcodeMatch(code);
-        }
+        if (!code) return;
+        $('#manualBarcodeInput').val('');
+        $('#offlineScannerModal').modal('hide');
+        processBarcodeMatch(code);
     });
-
     $('#manualBarcodeInput').on('keypress', function (e) {
-        if (e.which === 13) {
-            $('#btnManualBarcodeSubmit').click();
-        }
-    });
-
-
-
-    // Inline Catalog Sync
-    $('#btnSyncCatalogInline').click(async function () {
-        if (!navigator.onLine) {
-            Swal.fire('No Internet', 'Please connect to internet to sync catalog data.', 'warning');
-            return;
-        }
-
-        const waiting = await SnapKidOfflineDB.getUnsyncedOrders();
-        if (waiting.length > 0) {
-            const r = await Swal.fire({
-                icon: 'warning',
-                title: 'Offline orders waiting',
-                text: 'You have ' + waiting.length + ' offline order(s) not uploaded. Upload or discard them in the Offline Hub first, then sync.',
-                showCancelButton: true,
-                confirmButtonText: 'Go to Offline Hub',
-                cancelButtonText: 'Close'
-            });
-            if (r.isConfirmed) window.location.href = "{{ route('agent.offline.index') }}";
-            return;
-        }
-
-        const btn = $(this);
-        const icon = $('#inlineSyncIcon');
-        btn.prop('disabled', true);
-        icon.addClass('fa-spin');
-        $('#inlineSyncProgressContainer').slideDown();
-        $('#inlineSyncStatusText').text('Downloading latest catalog...');
-        $('#inlineSyncProgressBar').css('width', '25%');
-        $('#inlineSyncPercentText').text('25%');
-
-        try {
-            const res = await $.ajax({
-                url: "{{ route('agent.offline.catalog-data') }}",
-                method: "GET"
-            });
-
-            if (res.success) {
-                $('#inlineSyncStatusText').text('Updating offline database...');
-                $('#inlineSyncProgressBar').css('width', '60%');
-                $('#inlineSyncPercentText').text('60%');
-
-                await SnapKidOfflineDB.saveCatalogData(res, function (cached, total) {
-                    const pct = Math.round(60 + ((cached / total) * 40));
-                    $('#inlineSyncProgressBar').css('width', pct + '%');
-                    $('#inlineSyncPercentText').text(pct + '%');
-                    $('#inlineSyncStatusText').text('Caching photos (' + cached + '/' + total + ')...');
-                });
-
-                $('#inlineSyncProgressBar').css('width', '100%');
-                $('#inlineSyncPercentText').text('100%');
-                $('#inlineSyncStatusText').text('Synced!');
-
-                setTimeout(() => {
-                    $('#inlineSyncProgressContainer').slideUp();
-                    btn.prop('disabled', false);
-                    icon.removeClass('fa-spin');
-                    initOfflineCatalog();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Catalog Synced!',
-                        text: res.shops.length + ' shops and ' + res.products.length + ' products ready offline.',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                }, 600);
-            } else {
-                throw new Error(res.message || 'Sync failed');
-            }
-        } catch (err) {
-            $('#inlineSyncProgressContainer').slideUp();
-            btn.prop('disabled', false);
-            icon.removeClass('fa-spin');
-            Swal.fire('Sync Error', 'Could not sync catalog: ' + (err.message || 'Network error'), 'error');
-        }
+        if (e.which === 13) $('#btnManualBarcodeSubmit').click();
     });
 
     async function processBarcodeMatch(rawCode) {
         if (!rawCode) return;
-        let code = String(rawCode).trim();
-
-        // If scanned text is a URL, extract barcode segment
-        if (code.includes('/fc/')) {
-            const parts = code.split('/fc/')[1];
-            code = parts.split('/')[0].split('?')[0].split('#')[0].trim();
-        } else if (code.includes('/sc/')) {
-            const parts = code.split('/sc/')[1];
-            code = parts.split('/')[0].split('?')[0].split('#')[0].trim();
-        } else if (code.startsWith('http://') || code.startsWith('https://')) {
-            const cleanUrl = code.split('?')[0].split('#')[0];
-            const parts = cleanUrl.split('/');
-            code = parts[parts.length - 1].trim();
-        }
-
-        const res = await SnapKidOfflineDB.findVariationByBarcode(code);
-        if (res && res.success && res.size_sets && res.size_sets.length > 0) {
+        const res = await DB.findVariationByBarcode(rawCode);
+        if (res && res.success && res.size_sets && res.size_sets.length) {
             showOfflineColorSelection(res);
-        } else if (!window.SnapKidOfflineDB.getScanPayloads || Object.keys(await SnapKidOfflineDB.getScanPayloads()).length === 0) {
-            Swal.fire({
-                icon: 'info',
-                title: 'Sync Required',
-                text: 'Your offline data is outdated and has no sample-set/fair products. Connect to internet and tap Sync once, then scan again.',
-                confirmButtonText: 'OK'
-            });
         } else {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Barcode Not Found',
-                text: `No matching product found for code "${code}" in offline catalog. If newly added, please tap "Sync" to update.`,
-                confirmButtonText: 'OK'
-            });
+            const msg = (res && res.message) || 'No matching product on this phone.';
+            Swal.fire({ icon: 'warning', title: /not assigned|inactive/.test(msg) ? 'Cannot use this tag' : 'Code not found', text: msg });
         }
     }
 
     function showOfflineColorSelection(data) {
-        const list = $('#offlineColorSelectionList');
-        list.empty();
-
-        (data.size_sets || []).forEach(ss => (ss.colors || []).forEach(c => {
-            if (c.item) scanItems.set(c.key, c.item);
+        const list = $('#offlineColorSelectionList').empty();
+        // the catalogue's own copy of an item when there is one (same price / cart line); tag items otherwise
+        data.size_sets.forEach(ss => (ss.colors || []).forEach(c => {
+            let item = productsByKey.get(c.key);
+            if (!item) {
+                item = scanItems.get(c.key) || c.item || Object.assign({}, c, { key: c.key, product_id: data.product.id, color_id: c.id, size_set_id: ss.size_set_id, mrp: ss.mrp, brand_id: ss.brand_id });
+                if (!item.fixed_price) item.unit_price = priceFor(item);
+                scanItems.set(c.key, item);
+            }
+            c._item = item;
         }));
 
-        if (!data.size_sets || data.size_sets.length === 0) {
-            list.append('<div class="alert alert-warning">No variations found for this product.</div>');
-            $('#offlineScanSelectionModal').modal('show');
-            return;
-        }
-
-        // Hero Image resolution
-        let initialHeroImage = data.product.image || '';
-        if (!initialHeroImage) {
-            for (let ss of data.size_sets) {
-                if (ss.image) { initialHeroImage = ss.image; break; }
-                if (ss.colors) {
-                    for (let c of ss.colors) {
-                        if (c.image) { initialHeroImage = c.image; break; }
-                    }
-                }
-                if (initialHeroImage) break;
+        // one column per colour (by colour, so a column is the same colour in every size set)
+        const colours = [];
+        data.size_sets.forEach(ss => (ss.colors || []).forEach(c => { if (!colours.some(x => x.id == c.id)) colours.push({ id: c.id, name: c.name }); }));
+        let heroImage = data.product.image || '';
+        if (!heroImage) {
+            for (const ss of data.size_sets) {
+                heroImage = ss.image || ((ss.colors || []).find(c => c.image) || {}).image || '';
+                if (heroImage) break;
             }
         }
+        const heroFile = (heroImage || '').split('/').pop().split('?')[0];
+        const showStock = stockVisible();
 
-        const heroFilename = (initialHeroImage || (data.product && (data.product.image || data.product.image_url)) || '').split('/').pop().split('?')[0];
-
-        let maxColors = 0;
-        data.size_sets.forEach(ss => {
-            const count = (ss.colors || []).length;
-            if (count > maxColors) maxColors = count;
-        });
-        if (maxColors === 0) maxColors = 1;
-
-        let html = '';
-
-        // 1. Header with Design Number & Series / Garment
-        html += `
+        let html = `
             <div class="text-center mb-1">
-                <span class="badge badge-primary px-3 py-1 font-weight-bold shadow-sm d-inline-block" style="font-size: 15px; border-radius: 8px; letter-spacing: 0.5px;">
-                    DESIGN NO: ${data.product.design_number || 'N/A'}
-                </span>
-                ${(data.product.name && data.product.name !== data.product.design_number) ? `
-                    <div class="font-weight-bold text-dark mt-1" style="font-size: 14px;">${data.product.name}</div>
-                ` : ''}
-                ${data.product.series_name ? `
-                    <div class="small text-muted font-weight-bold"><i class="fas fa-layer-group mr-1"></i> ${data.product.series_name}</div>
-                ` : ''}
+                <span class="badge badge-primary px-3 py-1 font-weight-bold shadow-sm d-inline-block" style="font-size: 15px; border-radius: 8px;">DESIGN NO: ${esc(data.product.design_number || 'N/A')}</span>
+                ${(data.product.name && data.product.name !== data.product.design_number) ? `<div class="font-weight-bold text-dark mt-1" style="font-size: 14px;">${esc(data.product.name)}</div>` : ''}
+                ${data.size_sets.some(ss => ss.fixed_price) ? '<div class="small text-success font-weight-bold"><i class="fas fa-tag mr-1"></i>Sample-set tag: sample-set price</div>' : ''}
             </div>
-        `;
-
-        // 2. Centered Large Preview Hero Image
-        html += `
             <div class="text-center mb-2">
-                <div class="d-inline-block position-relative rounded-xl shadow-sm border overflow-hidden bg-white" style="max-width: 100%;">
-                    <img id="scanHeroImage" 
-                         src="${initialHeroImage || ''}" 
-                         class="img-fluid zoom-image-trigger" 
-                         style="max-height: 380px; min-height: 200px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer; ${!initialHeroImage ? 'display:none;' : ''}" 
-                         data-src="${initialHeroImage || ''}"
-                         onerror="handleOfflineImageError(this, '${heroFilename}')"
-                         alt="Product Preview">
-                    <div id="scanHeroPlaceholder" style="width: 260px; height: 180px; display: ${initialHeroImage ? 'none' : 'flex'}; align-items: center; justify-content: center; background: #f8f9fa;">
+                <div class="d-inline-block position-relative shadow-sm border overflow-hidden bg-white" style="max-width: 100%; border-radius: 14px;">
+                    <img id="scanHeroImage" alt="" src="${esc(heroImage)}" class="img-fluid zoom-image-trigger" data-src="${esc(heroImage)}"
+                         style="max-height: 380px; min-height: 200px; width: auto; max-width: 100%; object-fit: contain; cursor: pointer; ${heroImage ? '' : 'display:none;'}"
+                         onerror="handleOfflineImageError(this, '${esc(heroFile)}')">
+                    <div id="scanHeroPlaceholder" style="width: 260px; height: 180px; display: ${heroImage ? 'none' : 'flex'}; align-items: center; justify-content: center; background: #f8f9fa;">
                         <div class="text-muted text-center"><i class="fas fa-image fa-3x opacity-50 mb-1"></i><div class="small font-weight-bold">No Image</div></div>
                     </div>
-                    <span class="badge badge-dark position-absolute" style="bottom: 8px; right: 8px; opacity: 0.85; pointer-events: none; font-size: 11px; padding: 4px 8px; border-radius: 6px;">
-                        <i class="fas fa-search-plus mr-1"></i>Tap to Zoom
-                    </span>
                 </div>
             </div>
-        `;
-
-        // 3. Master Global Apply Bar
-        html += `
             <div class="card border-0 mb-3 shadow-sm" style="background: linear-gradient(90deg, #fffde0 0%, #f0f8e7 100%); border: 1.5px solid #e2d514 !important; border-radius: 12px;">
                 <div class="card-body p-2 d-flex justify-content-between align-items-center flex-wrap" style="gap: 8px;">
-                    <div>
-                        <span class="font-weight-bold" style="color: #05421c;"><i class="fas fa-bolt mr-1" style="color: #05421c;"></i> Apply Quantity to All</span>
-                        <div class="small text-muted">Set quantity for all size sets and colors</div>
-                    </div>
+                    <div><span class="font-weight-bold" style="color: #05421c;"><i class="fas fa-bolt mr-1"></i> Apply Quantity to All</span><div class="small text-muted">Boxes for every size set and colour</div></div>
                     <div class="quantity-control-app d-flex align-items-center p-1 bg-white shadow-xs" style="border-radius: 8px; border: 1.5px solid #e2d514;">
                         <button type="button" class="btn-q btn-minus-master font-weight-bold" style="color: #05421c;">-</button>
                         <input type="number" id="masterQtyInput" class="font-weight-bold" min="0" value="0" style="color: #05421c; width: 45px; text-align: center; border: 0; background: transparent;">
@@ -1295,412 +988,260 @@ $(document).ready(function () {
                     </div>
                 </div>
             </div>
-        `;
-
-        // 4. Matrix Structure Table
-        html += `
             <div class="table-responsive border rounded-lg mb-3 shadow-sm bg-white" style="max-height: 440px; overflow-y: auto;">
                 <table class="table table-bordered table-sm mb-0 matrix-table text-center align-middle" style="font-size: 13px;">
-                    <thead>
-                        <tr>
-                            <th class="align-middle text-center font-weight-bold px-2 py-2" style="min-width: 140px; width: 140px; background: linear-gradient(135deg, #fcee21 0%, #e2d514 100%); background-color: #fcee21; color: #05421c !important; text-shadow: 0 1px 0 rgba(255,255,255,0.3);">
-                                SIZE SET
-                            </th>
-                            ${Array.from({ length: maxColors }).map((_, idx) => {
-                                let colColorObj = null;
-                                for (let ss of data.size_sets) {
-                                    if (ss.colors && ss.colors[idx]) {
-                                        colColorObj = ss.colors[idx];
-                                        break;
-                                    }
-                                }
-                                const colName = colColorObj ? (colColorObj.name ? `${colColorObj.name}` : `COLOR ${colColorObj.id}`) : `COL ${idx + 1}`;
-
-                                return `
-                                    <th class="align-middle text-center font-weight-bold text-white p-2 matrix-col-header matrix-col-${idx}" data-col-index="${idx}" style="min-width: 145px; background: linear-gradient(135deg, #36b54a 0%, #05421c 100%); background-color: #05421c; color: #fff;">
-                                        <div class="custom-control custom-checkbox d-inline-block text-left" style="max-width: 100%;">
-                                            <input type="checkbox" class="custom-control-input toggle-col-checkbox" id="toggle_col_${idx}" data-col-index="${idx}" checked>
-                                            <label class="custom-control-label font-weight-bold text-white" for="toggle_col_${idx}" style="font-size: 13px; cursor: pointer; user-select: none; line-height: 1.5;" title="${colName}">
-                                                <span class="d-inline-block text-truncate" style="max-width: 105px; vertical-align: middle;">${colName}</span>
-                                            </label>
-                                        </div>
-                                        <div class="mt-1">
-                                            <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px;">
-                                                <button type="button" class="btn-q btn-minus-col px-2 py-0 text-success font-weight-bold" data-col-index="${idx}" style="line-height: 1;">-</button>
-                                                <input type="number" class="col-batch-qty-input font-weight-bold text-center text-success" data-col-index="${idx}" min="0" value="0" style="width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
-                                                <button type="button" class="btn-q btn-plus-col px-2 py-0 text-success font-weight-bold" data-col-index="${idx}" style="line-height: 1;">+</button>
-                                            </div>
-                                        </div>
-                                    </th>
-                                `;
-                            }).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
+                    <thead><tr>
+                        <th class="align-middle text-center font-weight-bold px-2 py-2" style="min-width: 140px; width: 140px;">SIZE SET</th>
+                        ${colours.map((col, idx) => `
+                            <th class="align-middle text-center font-weight-bold text-white p-2 matrix-col-header matrix-col-${idx}" data-col-index="${idx}" style="min-width: 145px; background: linear-gradient(135deg, #36b54a 0%, #05421c 100%); background-color: #05421c; color: #fff;">
+                                <div class="custom-control custom-checkbox d-inline-block text-left" style="max-width: 100%;">
+                                    <input type="checkbox" class="custom-control-input toggle-col-checkbox" id="toggle_col_${idx}" data-col-index="${idx}" checked>
+                                    <label class="custom-control-label font-weight-bold text-white" for="toggle_col_${idx}" style="font-size: 13px; cursor: pointer; line-height: 1.5;" title="${esc(col.name)}">
+                                        <span class="d-inline-block text-truncate" style="max-width: 105px; vertical-align: middle;">${esc(col.name)}</span>
+                                    </label>
+                                </div>
+                                <div class="mt-1">
+                                    <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px;">
+                                        <button type="button" class="btn-q btn-minus-col px-2 py-0 text-success font-weight-bold" data-col-index="${idx}">-</button>
+                                        <input type="number" class="col-batch-qty-input font-weight-bold text-center text-success" data-col-index="${idx}" min="0" value="0" style="width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
+                                        <button type="button" class="btn-q btn-plus-col px-2 py-0 text-success font-weight-bold" data-col-index="${idx}">+</button>
+                                    </div>
+                                </div>
+                            </th>`).join('')}
+                    </tr></thead><tbody>`;
 
         data.size_sets.forEach(ss => {
+            const firstItem = ((ss.colors || [])[0] || {})._item;
+            const ssPrice = firstItem ? firstItem.unit_price : (ss.fixed_price ? ss.unit_price : priceFor(Object.assign({ product_id: data.product.id }, ss)));
             html += `
                 <tr class="matrix-row-${ss.size_set_id}">
-                    <td class="align-middle p-2 text-center matrix-ss-header-cell" style="min-width: 140px; width: 140px; background-color: #fffde0; border-right: 2px solid #fff59d;">
+                    <td class="align-middle p-2 text-center matrix-ss-header-cell" style="min-width: 140px; width: 140px; background-color: #fffde0;">
                         <div class="custom-control custom-checkbox d-inline-block mb-1">
                             <input type="checkbox" class="custom-control-input toggle-ss-checkbox" id="toggle_ss_${ss.size_set_id}" data-size-set="${ss.size_set_id}" checked>
-                            <label class="custom-control-label font-weight-bold" for="toggle_ss_${ss.size_set_id}" style="color: #05421c; font-size: 14px; cursor: pointer; user-select: none;">
-                                ${ss.size_set_name}
-                            </label>
+                            <label class="custom-control-label font-weight-bold" for="toggle_ss_${ss.size_set_id}" style="color: #05421c; font-size: 14px; cursor: pointer;">${esc(ss.size_set_name)}</label>
                         </div>
-                        ${canSeePrice() ? `<div class="sk-price sk-price-xs mb-1">${skPriceHtml(ss.unit_price, ss.mrp)}</div>` : ''}
+                        ${canSeePrice() ? `<div class="sk-price sk-price-xs mb-1">${skPriceHtml(ssPrice, ss.mrp)}</div>` : ''}
                         <div>
-                            <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px; border-color: #e2d514 !important;">
-                                <button type="button" class="btn-q btn-minus-ss px-2 py-0 font-weight-bold" data-size-set="${ss.size_set_id}" style="color: #05421c; line-height: 1;">-</button>
+                            <div class="quantity-control-app d-inline-flex align-items-center p-0 border bg-white shadow-xs" style="border-radius: 6px; height: 26px;">
+                                <button type="button" class="btn-q btn-minus-ss px-2 py-0 font-weight-bold" data-size-set="${ss.size_set_id}" style="color: #05421c;">-</button>
                                 <input type="number" class="ss-batch-qty-input font-weight-bold text-center" data-size-set="${ss.size_set_id}" min="0" value="0" style="color: #05421c; width: 32px; border: 0; background: transparent; font-size: 12px; padding: 0;">
-                                <button type="button" class="btn-q btn-plus-ss px-2 py-0 font-weight-bold" data-size-set="${ss.size_set_id}" style="color: #05421c; line-height: 1;">+</button>
+                                <button type="button" class="btn-q btn-plus-ss px-2 py-0 font-weight-bold" data-size-set="${ss.size_set_id}" style="color: #05421c;">+</button>
                             </div>
                         </div>
-                    </td>
-            `;
-
-            for (let c = 0; c < maxColors; c++) {
-                const colorObj = (ss.colors && ss.colors[c]) ? ss.colors[c] : null;
+                    </td>`;
+            colours.forEach((col, c) => {
+                const colorObj = (ss.colors || []).find(x => x.id == col.id);
                 if (!colorObj) {
                     html += `<td class="matrix-cell align-middle text-muted bg-light p-2" data-size-set="${ss.size_set_id}" data-col-index="${c}">-</td>`;
-                } else {
-                    const vKey = colorObj.key || (data.product.id + '_' + colorObj.id + '_' + ss.size_set_id);
-                    const currentQty = cart.has(vKey) ? cart.get(vKey).qty : 0;
-                    const cImg = colorObj.image || ss.image || '';
-
-                    html += `
-                        <td class="matrix-cell matrix-cell-ss-${ss.size_set_id} matrix-cell-col-${c} align-middle p-2" data-size-set="${ss.size_set_id}" data-col-index="${c}" style="background: #fff; min-width: 145px;">
-                            <div class="d-flex align-items-center justify-content-between mb-1">
-                                <span class="font-weight-bold text-dark text-truncate text-left flex-grow-1" style="font-size: 13px;" title="${colorObj.name}">
-                                    ${colorObj.name}
-                                </span>
-                                ${cImg ? `
-                                    <button type="button" class="btn btn-outline-info btn-xs rounded-circle p-0 ml-1 d-inline-flex align-items-center justify-content-center zoom-image-trigger" data-src="${cImg}" title="View Photo" style="width: 22px; height: 22px; flex-shrink: 0;">
-                                        <i class="fas fa-camera" style="font-size: 10px;"></i>
-                                    </button>
-                                ` : ''}
-                            </div>
-                            <div class="d-flex justify-content-center align-items-center">
-                                <div class="quantity-control-app d-inline-flex align-items-center p-0 border shadow-xs" style="border-radius: 8px;">
-                                    <button type="button" class="btn-q btn-minus-scan px-2 py-1" data-key="${vKey}">-</button>
-                                    <input type="number" 
-                                        class="box-qty-scan-input font-weight-bold" 
-                                        data-key="${vKey}"
-                                        data-size-set="${ss.size_set_id}"
-                                        data-col-index="${c}"
-                                        min="0"
-                                        ${colorObj.is_advance_sample ? '' : `max="${colorObj.available_boxes}"`}
-                                        value="${currentQty}"
-                                        style="width: 38px; border: 0; background: transparent; text-align: center; font-size: 13px;">
-                                    <button type="button" class="btn-q btn-plus-scan px-2 py-1" data-key="${vKey}">+</button>
-                                </div>
-                            </div>
-                            ${stockVisible() && !colorObj.is_advance_sample ? `<div class="text-muted text-center mt-1" style="font-size: 10px; line-height: 1;">${colorObj.available_boxes} avl</div>` : ''}
-                        </td>
-                    `;
+                    return;
                 }
-            }
-
-            html += `</tr>`;
+                const item = colorObj._item;
+                const cap = capFor(item);
+                const free = freeFor(item);
+                const cImg = colorObj.image || ss.image || '';
+                html += `
+                    <td class="matrix-cell matrix-cell-ss-${ss.size_set_id} matrix-cell-col-${c} align-middle p-2" data-size-set="${ss.size_set_id}" data-col-index="${c}" style="background: #fff; min-width: 145px;">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="font-weight-bold text-dark text-truncate text-left flex-grow-1" style="font-size: 13px;">${esc(colorObj.name)}</span>
+                            ${cImg ? `<button type="button" class="btn btn-outline-info btn-xs rounded-circle p-0 ml-1 d-inline-flex align-items-center justify-content-center zoom-image-trigger" data-src="${esc(cImg)}" title="View Photo" style="width: 22px; height: 22px;"><i class="fas fa-camera" style="font-size: 10px;"></i></button>` : ''}
+                        </div>
+                        <div class="d-flex justify-content-center align-items-center">
+                            <div class="quantity-control-app d-inline-flex align-items-center p-0 border shadow-xs" style="border-radius: 8px;">
+                                <button type="button" class="btn-q btn-minus-scan px-2 py-1" data-key="${esc(item.key)}">-</button>
+                                <input type="number" class="box-qty-scan-input font-weight-bold" data-key="${esc(item.key)}" data-size-set="${ss.size_set_id}" data-col-index="${c}" min="0"
+                                    ${cap === Infinity ? '' : `max="${cap}"`} value="${cartQty(item)}" style="width: 38px; border: 0; background: transparent; text-align: center; font-size: 13px;">
+                                <button type="button" class="btn-q btn-plus-scan px-2 py-1" data-key="${esc(item.key)}">+</button>
+                            </div>
+                        </div>
+                        ${showStock ? `<div class="text-muted text-center mt-1" style="font-size: 10px; line-height: 1;">${item.is_advance_sample ? 'no limit' : free + ' free'}</div>` : (free === 0 && !item.is_advance_sample && !allowOverStock() ? '<div class="text-danger text-center mt-1" style="font-size: 10px;">no stock</div>' : '')}
+                    </td>`;
+            });
+            html += '</tr>';
         });
-
-        html += `
-                    </tbody>
-                </table>
-            </div>
-        `;
-
+        html += '</tbody></table></div>';
         list.append(html);
-        if (heroFilename && window.SnapKidOfflineDB) {
-            SnapKidOfflineDB.getImageBlobUrl(heroFilename).then(blob => {
-                if (blob) {
-                    const heroImg = document.getElementById('scanHeroImage');
-                    const heroPh = document.getElementById('scanHeroPlaceholder');
-                    if (heroImg) {
-                        heroImg.src = blob;
-                        heroImg.dataset.src = blob;
-                        heroImg.style.display = '';
-                        if (heroPh) heroPh.style.display = 'none';
-                    }
-                }
+
+        if (heroFile) {
+            DB.getImageBlobUrl(heroImage).then(url => {
+                const img = document.getElementById('scanHeroImage');
+                if (url && img) { img.src = url; img.dataset.src = url; img.style.display = ''; $('#scanHeroPlaceholder').hide(); }
             }).catch(() => {});
         }
         $('#offlineScanSelectionModal').modal('show');
     }
 
-    // Modal Stepper Listeners
-    $(document).on('click', '.btn-plus-master', function () {
-        let input = $('#masterQtyInput');
-        let val = parseInt(input.val()) || 0;
-        input.val(val + 1).trigger('change');
-    });
+    // Matrix: every change goes through updateCartItem (stock limit, one line per item)
+    const setCell = (input, qty) => $(input).val(updateCartItem(keyOf(input), qty, true));
+    const stepInput = (input, d) => { const v = Math.max(0, (parseInt($(input).val()) || 0) + d); $(input).val(v).trigger('change'); };
 
-    $(document).on('click', '.btn-minus-master', function () {
-        let input = $('#masterQtyInput');
-        let val = parseInt(input.val()) || 0;
-        if (val > 0) input.val(val - 1).trigger('change');
-    });
-
+    $(document).on('click', '.btn-plus-master', () => stepInput('#masterQtyInput', 1));
+    $(document).on('click', '.btn-minus-master', () => stepInput('#masterQtyInput', -1));
     $(document).on('change', '#masterQtyInput', function () {
-        let masterQty = parseInt($(this).val()) || 0;
-        if (masterQty < 0) { masterQty = 0; $(this).val(0); }
-
-        $('.matrix-table .ss-batch-qty-input:not(:disabled)').val(masterQty);
-        $('.matrix-table .col-batch-qty-input:not(:disabled)').val(masterQty);
-
-        $('.matrix-table .box-qty-scan-input:not(:disabled)').each(function () {
-            const max = parseInt($(this).attr('max'));
-            let targetQty = masterQty;
-            if (!isNaN(max) && targetQty > max) targetQty = max;
-            const key = $(this).data('key');
-            $(this).val(targetQty);
-            updateCartItem(key, targetQty);
-        });
+        const q = Math.max(0, parseInt($(this).val()) || 0);
+        $(this).val(q);
+        $('.matrix-table .ss-batch-qty-input:not(:disabled), .matrix-table .col-batch-qty-input:not(:disabled)').val(q);
+        $('.matrix-table .box-qty-scan-input:not(:disabled)').each(function () { setCell(this, q); });
     });
 
-    $(document).on('click', '.btn-plus-ss', function () {
-        let input = $(this).siblings('.ss-batch-qty-input');
-        if (input.prop('disabled')) return;
-        let val = parseInt(input.val()) || 0;
-        input.val(val + 1).trigger('change');
-    });
-
-    $(document).on('click', '.btn-minus-ss', function () {
-        let input = $(this).siblings('.ss-batch-qty-input');
-        if (input.prop('disabled')) return;
-        let val = parseInt(input.val()) || 0;
-        if (val > 0) input.val(val - 1).trigger('change');
-    });
-
+    $(document).on('click', '.btn-plus-ss', function () { const i = $(this).siblings('.ss-batch-qty-input'); if (!i.prop('disabled')) stepInput(i, 1); });
+    $(document).on('click', '.btn-minus-ss', function () { const i = $(this).siblings('.ss-batch-qty-input'); if (!i.prop('disabled')) stepInput(i, -1); });
     $(document).on('change', '.ss-batch-qty-input', function () {
-        const ssId = $(this).data('size-set');
-        let rowQty = parseInt($(this).val()) || 0;
-        if (rowQty < 0) { rowQty = 0; $(this).val(0); }
-
-        $(`.matrix-row-${ssId} .box-qty-scan-input:not(:disabled)`).each(function () {
-            const max = parseInt($(this).attr('max'));
-            let targetQty = rowQty;
-            if (!isNaN(max) && targetQty > max) targetQty = max;
-            const key = $(this).data('key');
-            $(this).val(targetQty);
-            updateCartItem(key, targetQty);
-        });
+        const q = Math.max(0, parseInt($(this).val()) || 0);
+        $(this).val(q);
+        $(`.matrix-row-${$(this).data('size-set')} .box-qty-scan-input:not(:disabled)`).each(function () { setCell(this, q); });
     });
 
-    $(document).on('click', '.btn-plus-col', function () {
-        let input = $(this).siblings('.col-batch-qty-input');
-        if (input.prop('disabled')) return;
-        let val = parseInt(input.val()) || 0;
-        input.val(val + 1).trigger('change');
-    });
-
-    $(document).on('click', '.btn-minus-col', function () {
-        let input = $(this).siblings('.col-batch-qty-input');
-        if (input.prop('disabled')) return;
-        let val = parseInt(input.val()) || 0;
-        if (val > 0) input.val(val - 1).trigger('change');
-    });
-
+    $(document).on('click', '.btn-plus-col', function () { const i = $(this).siblings('.col-batch-qty-input'); if (!i.prop('disabled')) stepInput(i, 1); });
+    $(document).on('click', '.btn-minus-col', function () { const i = $(this).siblings('.col-batch-qty-input'); if (!i.prop('disabled')) stepInput(i, -1); });
     $(document).on('change', '.col-batch-qty-input', function () {
-        const colIndex = $(this).data('col-index');
-        let colQty = parseInt($(this).val()) || 0;
-        if (colQty < 0) { colQty = 0; $(this).val(0); }
-
-        $(`.matrix-cell-col-${colIndex} .box-qty-scan-input:not(:disabled)`).each(function () {
-            const max = parseInt($(this).attr('max'));
-            let targetQty = colQty;
-            if (!isNaN(max) && targetQty > max) targetQty = max;
-            const key = $(this).data('key');
-            $(this).val(targetQty);
-            updateCartItem(key, targetQty);
-        });
+        const q = Math.max(0, parseInt($(this).val()) || 0);
+        $(this).val(q);
+        $(`.matrix-cell-col-${$(this).data('col-index')} .box-qty-scan-input:not(:disabled)`).each(function () { setCell(this, q); });
     });
 
-    // Cell +/- Handlers
     $(document).on('click', '.btn-plus-scan', function () {
         const input = $(this).siblings('.box-qty-scan-input');
-        if (input.prop('disabled')) return;
-        const key = $(this).data('key');
-        let val = parseInt(input.val()) || 0;
-        const max = parseInt(input.attr('max'));
-        if (!allowOverStock() && !isNaN(max) && val >= max) return;
-        input.val(val + 1);
-        updateCartItem(key, val + 1);
+        if (!input.prop('disabled')) input.val(updateCartItem(keyOf(input), (parseInt(input.val()) || 0) + 1));
     });
-
     $(document).on('click', '.btn-minus-scan', function () {
         const input = $(this).siblings('.box-qty-scan-input');
-        if (input.prop('disabled')) return;
-        const key = $(this).data('key');
-        let val = parseInt(input.val()) || 0;
-        if (val > 0) {
-            input.val(val - 1);
-            updateCartItem(key, val - 1);
-        }
+        const v = parseInt(input.val()) || 0;
+        if (!input.prop('disabled') && v > 0) input.val(updateCartItem(keyOf(input), v - 1));
     });
+    $(document).on('change', '.box-qty-scan-input', function () { $(this).val(updateCartItem(keyOf(this), $(this).val())); });
 
-    $(document).on('change', '.box-qty-scan-input', function () {
-        const key = $(this).data('key');
-        let val = parseInt($(this).val()) || 0;
-        const max = parseInt($(this).attr('max'));
-        if (val < 0) val = 0;
-        if (!isNaN(max) && val > max) val = max;
-        $(this).val(val);
-        updateCartItem(key, val);
-    });
-
-    // Toggle Size Set Row Selection
     $(document).on('change', '.toggle-ss-checkbox', function () {
-        const ssId = $(this).data('size-set');
-        const isChecked = $(this).is(':checked');
         const row = $(this).closest('tr');
-
-        if (!isChecked) {
-            row.addClass('matrix-row-deselected');
-            row.find('.ss-batch-qty-input').prop('disabled', true).val(0);
-            row.find('.btn-minus-ss, .btn-plus-ss').prop('disabled', true);
-            row.find('.box-qty-scan-input').each(function () {
-                $(this).prop('disabled', true);
-                const key = $(this).data('key');
-                $(this).val(0);
-                updateCartItem(key, 0);
-            });
-            row.find('.btn-minus-scan, .btn-plus-scan').prop('disabled', true);
-        } else {
-            row.removeClass('matrix-row-deselected');
-            row.find('.ss-batch-qty-input').prop('disabled', false);
-            row.find('.btn-minus-ss, .btn-plus-ss').prop('disabled', false);
-            row.find('.matrix-cell').each(function () {
-                const colIndex = $(this).data('col-index');
-                const isColChecked = $(`.toggle-col-checkbox[data-col-index="${colIndex}"]`).is(':checked');
-                if (isColChecked) {
-                    $(this).find('.box-qty-scan-input').prop('disabled', false);
-                    $(this).find('.btn-minus-scan, .btn-plus-scan').prop('disabled', false);
-                }
-            });
-        }
-    });
-
-    // Toggle Color Column Selection
-    $(document).on('change', '.toggle-col-checkbox', function () {
-        const colIndex = $(this).data('col-index');
-        const isChecked = $(this).is(':checked');
-        const th = $(`.matrix-col-${colIndex}`);
-
-        if (!isChecked) {
-            th.addClass('matrix-col-deselected');
-            th.find('.col-batch-qty-input').prop('disabled', true).val(0);
-            th.find('.btn-minus-col, .btn-plus-col').prop('disabled', true);
-            $(`.matrix-cell-col-${colIndex}`).each(function () {
-                $(this).addClass('cell-disabled');
-                const input = $(this).find('.box-qty-scan-input');
-                input.prop('disabled', true);
-                const key = input.data('key');
-                input.val(0);
-                updateCartItem(key, 0);
-                $(this).find('.btn-minus-scan, .btn-plus-scan').prop('disabled', true);
-            });
-        } else {
-            th.removeClass('matrix-col-deselected');
-            th.find('.col-batch-qty-input').prop('disabled', false);
-            th.find('.btn-minus-col, .btn-plus-col').prop('disabled', false);
-            $(`.matrix-cell-col-${colIndex}`).each(function () {
-                const ssId = $(this).data('size-set');
-                const isRowChecked = $(`#toggle_ss_${ssId}`).is(':checked');
-                if (isRowChecked) {
-                    $(this).removeClass('cell-disabled');
-                    $(this).find('.box-qty-scan-input').prop('disabled', false);
-                    $(this).find('.btn-minus-scan, .btn-plus-scan').prop('disabled', false);
-                }
-            });
-        }
-    });
-
-    // 9. Save Offline Order
-    async function saveCurrentOrder() {
-        const shopId = $('#offlineShopSelect').val();
-        if (!shopId) {
-            Swal.fire('Shop Required', 'Please select a shop before saving order.', 'warning');
-            return;
-        }
-
-        if (cart.size === 0) {
-            Swal.fire('Empty Cart', 'Please add at least one product box.', 'warning');
-            return;
-        }
-
-        const shopObj = $('#offlineShopSelect').find('option:selected').data('shop');
-        let variations = [];
-        let subtotal = 0;
-        let totalBoxes = 0;
-
-        cart.forEach((val) => {
-            const p = val.item;
-            const pcs = val.qty * (p.pcs_per_box || 1);
-            const lineTotal = pcs * p.unit_price;
-            subtotal += lineTotal;
-            totalBoxes += val.qty;
-
-            variations.push({
-                product_id: p.product_id,
-                color_id: p.color_id,
-                size_set_id: p.size_set_id,
-                qty: val.qty,
-                pcs_per_box: p.pcs_per_box,
-                unit_price: p.unit_price,
-                design_number: p.design_number,
-                color_name: p.color_name,
-                size_set_name: p.size_set_name
-            });
+        const on = $(this).is(':checked');
+        row.toggleClass('matrix-row-deselected', !on);
+        row.find('.ss-batch-qty-input').prop('disabled', !on).val(on ? row.find('.ss-batch-qty-input').val() : 0);
+        row.find('.btn-minus-ss, .btn-plus-ss').prop('disabled', !on);
+        row.find('.matrix-cell').each(function () {
+            const colOn = $(`.toggle-col-checkbox[data-col-index="${$(this).data('col-index')}"]`).is(':checked');
+            const enable = on && colOn;
+            $(this).find('.box-qty-scan-input').each(function () { if (!enable) setCell(this, 0); $(this).prop('disabled', !enable); });
+            $(this).find('.btn-minus-scan, .btn-plus-scan').prop('disabled', !enable);
         });
+    });
 
-        const discount = parseFloat($('#offlineDiscount').val()) || 0;
-        const otherCharges = parseFloat($('#offlineOtherCharges').val()) || 0;
-        const taxable = Math.max(0, subtotal - discount);
-        const gst = Math.ceil(taxable * gstRate() / 100);
-        const grandTotal = Math.ceil(taxable + gst + otherCharges);
+    $(document).on('change', '.toggle-col-checkbox', function () {
+        const idx = $(this).data('col-index');
+        const on = $(this).is(':checked');
+        const th = $(`.matrix-col-${idx}`);
+        th.toggleClass('matrix-col-deselected', !on);
+        th.find('.col-batch-qty-input').prop('disabled', !on).val(on ? th.find('.col-batch-qty-input').val() : 0);
+        th.find('.btn-minus-col, .btn-plus-col').prop('disabled', !on);
+        $(`.matrix-cell-col-${idx}`).each(function () {
+            const rowOn = $(`#toggle_ss_${$(this).data('size-set')}`).is(':checked');
+            const enable = on && rowOn;
+            $(this).toggleClass('cell-disabled', !enable);
+            $(this).find('.box-qty-scan-input').each(function () { if (!enable) setCell(this, 0); $(this).prop('disabled', !enable); });
+            $(this).find('.btn-minus-scan, .btn-plus-scan').prop('disabled', !enable);
+        });
+    });
 
-        const orderData = {
+    // ---------- sync from this screen ----------
+
+    $('#btnSyncCatalogInline').click(function () {
+        if (cart.size) {
+            Swal.fire('Save first', 'Save this order (or empty the cart) before you Sync, so nothing is lost.', 'info');
+            return;
+        }
+        location.href = SK_AGENT.urls.hub + '?autosync=1';
+    });
+
+    // ---------- save ----------
+
+    // one save at a time: a double tap must not save the same order twice
+    let saving = false;
+    async function saveCurrentOrder() {
+        if (saving) return;
+        saving = true;
+        const buttons = $('#btnSaveOrderOffline, #btnModalSaveOrder').prop('disabled', true);
+        let saved = false;
+        try {
+            saved = await saveOrderNow();
+        } finally {
+            if (!saved) {
+                saving = false;
+                buttons.prop('disabled', false);
+            }
+        }
+    }
+
+    /** True when the order is on the phone (the page then goes to the hub; the buttons stay locked). */
+    async function saveOrderNow() {
+        if (!shop) {
+            Swal.fire('Shop required', 'Please choose the shop before saving the order.', 'warning');
+            return false;
+        }
+        const lines = [...cart.values()].filter(v => v.qty > 0);
+        if (!lines.length) {
+            Swal.fire('Empty order', 'Please add at least one box.', 'warning');
+            return false;
+        }
+        if (!allowOverStock()) {
+            const short = lines.filter(v => v.qty > freeFor(v.item)).map(v => itemLabel(v.item) + ': only ' + freeFor(v.item) + ' box(es) free, ' + v.qty + ' in the order');
+            if (short.length) {
+                Swal.fire({ icon: 'warning', title: 'Not enough stock', html: esc(short.join('\n')).replace(/\n/g, '<br>') + '<br><small>Reduce these lines (open the Cart).</small>' });
+                return false;
+            }
+        }
+        const t = currentTotals();
+        if (t.error) {
+            Swal.fire('Check the amounts', t.error, 'warning');
+            return false;
+        }
+        const now = new Date();
+        const order = {
+            local_id: editing ? editing.local_id : undefined,
+            created_at: editing ? editing.created_at : undefined,
+            booked_at: editing ? (editing.booked_at || editing.created_at) : now.toISOString(),
+            order_date: editing ? (editing.order_date || DB.dayIn(new Date(editing.created_at), tz)) : DB.dayIn(now, tz),
+            attempts: editing ? (editing.attempts || 0) : 0,
+            party_type: shop.party_type || 'customer',
+            shop_id: shop.id,
+            shop_uid: shop.uid,
+            shop_name: shop.name,
+            is_sample_set: sampleSet ? 1 : 0,
+            variations: lines.map(v => {
+                const it = v.item;
+                return {
+                    key: it.key, product_id: it.product_id, color_id: it.color_id, size_set_id: it.size_set_id, qty: v.qty,
+                    pcs_per_box: it.pcs_per_box, unit_price: it.unit_price, mrp: it.mrp, brand_id: it.brand_id, fixed_price: !!it.fixed_price,
+                    design_number: it.design_number, name_of_garment: it.name_of_garment || '', series_name: it.series_name || '', brand_name: it.brand_name || '',
+                    color_name: it.color_name, size_set_name: it.size_set_name, image_url: it.image_url || null, is_advance_sample: !!it.is_advance_sample
+                };
+            }),
+            total_boxes: t.boxes,
+            items_value: t.total,
+            discount_amount: t.discount,
+            other_charges: t.other,
+            gst_percentage: t.gst_percentage,
+            gst_amount: t.gst,
+            grand_total: t.grand,
             sales_man_id: $('#offlineSalesMan').val() || null,
             expected_dispatch_date: $('#offlineDispatchDate').val() || null,
-            booking_station: $('#offlineBookingStation').val() || '',
-            transport: $('#offlineTransport').val() || '',
-            shop_id: shopId,
-            shop_name: shopObj ? shopObj.name : 'Shop #' + shopId,
-            variations: variations,
-            total_boxes: totalBoxes,
-            subtotal: subtotal,
-            discount_amount: discount,
-            other_charges: otherCharges,
-            gst_amount: gst,
-            gst_percentage: gstRate(),
-            grand_total: grandTotal,
-            remark: $('#offlineRemark').val() || '',
-            order_date: new Date().toISOString().split('T')[0]
+            booking_station: $('#offlineBookingStation').val().trim(),
+            transport: $('#offlineTransport').val().trim(),
+            remark: $('#offlineRemark').val().trim()
         };
-
         try {
-            await SnapKidOfflineDB.saveOfflineOrder(orderData);
-            $('#cartDetailsModal').modal('hide');
-
-            const seePrice = canSeePrice();
-            const orderDesc = seePrice 
-                ? `Order for ${orderData.shop_name} (${totalBoxes} boxes, ₹${grandTotal.toLocaleString()}) is recorded on your phone.`
-                : `Order for ${orderData.shop_name} (${totalBoxes} boxes) is recorded on your phone.`;
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Order Saved Offline!',
-                text: orderDesc,
-                confirmButtonText: 'Go to Offline Hub',
-                confirmButtonColor: '#05421c'
-            }).then(() => {
-                window.location.href = "{{ route('agent.offline.index') }}";
-            });
+            await DB.saveOrder(order);
         } catch (e) {
-            Swal.fire('Error', 'Failed to save order: ' + e.message, 'error');
+            Swal.fire('Not saved', 'The order could not be saved on this phone: ' + e.message, 'error');
+            return false;
         }
+        $('#cartDetailsModal').modal('hide');
+        const priced = canSeePrice() ? ', ' + skMoney(t.grand) + ' incl. GST' : '';
+        Swal.fire({
+            icon: 'success',
+            title: editing ? 'Changes saved' : 'Order saved on phone',
+            text: 'Order for ' + shop.name + ' (' + t.boxes + ' boxes' + priced + ') is on this phone. It goes to the office at the next Sync.',
+            confirmButtonText: 'Go to Offline Hub',
+            confirmButtonColor: '#05421c'
+        }).then(() => { location.href = SK_AGENT.urls.hub; });
+        return true;
     }
 
     $('#btnSaveOrderOffline, #btnModalSaveOrder').click(saveCurrentOrder);

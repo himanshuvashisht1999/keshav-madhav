@@ -237,6 +237,7 @@ Route::prefix('agent')->group(function () {
             Route::get('/', [App\Http\Controllers\SalesAgent\OfflineOrderController::class, 'index'])->name('index');
             Route::get('/create', [App\Http\Controllers\SalesAgent\OfflineOrderController::class, 'create'])->name('create');
             Route::get('/catalog-data', [App\Http\Controllers\SalesAgent\OfflineOrderController::class, 'catalogData'])->name('catalog-data');
+            Route::get('/session', [App\Http\Controllers\SalesAgent\OfflineOrderController::class, 'session'])->name('session');
             Route::post('/sync', [App\Http\Controllers\SalesAgent\OfflineOrderController::class, 'sync'])->name('sync');
         });
     });

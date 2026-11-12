@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Sales Agent Portal' }}</title>
     <!-- Font: Roboto (same as the admin panel) -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -395,14 +396,87 @@
     
     <script src="{{ asset('assets/js/offline-db.js') }}?v={{ @filemtime(public_path('assets/js/offline-db.js')) }}"></script>
     <script>
-        // Register Service Worker for offline capability
+        // Service worker for the offline pages: only for /agent/ pages (an older copy registered for the whole site,
+        // incl. /admin and /owner, is removed here and removes itself elsewhere)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('{{ asset("agent-sw.js") }}').catch(function(err) {
+                var swUrl = @json(asset('agent-sw.js'));
+                var scope = @json(url('/agent') . '/');
+                navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    return Promise.all(regs.map(function (r) {
+                        var w = r.active || r.waiting || r.installing;
+                        if (w && /\/agent-sw\.js(\?|$)/.test(w.scriptURL) && r.scope !== scope) return r.unregister();
+                    }));
+                }).catch(function () {}).then(function () {
+                    return navigator.serviceWorker.register(swUrl, { scope: scope });
+                }).catch(function(err) {
                     console.log('ServiceWorker note:', err);
                 });
             });
         }
+
+        @auth('sales_agent')
+        // Offline data on this phone belongs to the logged-in agent only
+        window.SK_AGENT = {
+            id: {{ (int) Auth::guard('sales_agent')->id() }},
+            isMaster: {{ Auth::guard('sales_agent')->user()->is_master_agent ? 'true' : 'false' }},
+            base: @json(rtrim(url('/'), '/') . '/'),
+            timezone: @json(config('app.timezone')),
+            urls: {
+                session: @json(route('agent.offline.session')),
+                catalog: @json(route('agent.offline.catalog-data')),
+                sync: @json(route('agent.offline.sync')),
+                hub: @json(route('agent.offline.index')),
+                create: @json(route('agent.offline.create')),
+                orderShow: @json(route('agent.orders.show', ['id' => '__ID__']))
+            }
+        };
+        SnapKidOfflineDB.configure({ agentId: SK_AGENT.id, base: SK_AGENT.base, timezone: SK_AGENT.timezone, urls: SK_AGENT.urls });
+
+        // A saved page copy (shown without internet) is only used by the agent it was made for: the newest page the
+        // server sent says who is logged in on this phone now (an agent whose login ended without Logout leaves copies)
+        SK_AGENT.renderedAt = {{ (int) round(microtime(true) * 1000) }};
+        (function () {
+            try {
+                var key = 'sk_current_agent';
+                var cur = JSON.parse(localStorage.getItem(key) || 'null');
+                if (!cur || cur.at <= SK_AGENT.renderedAt) {
+                    localStorage.setItem(key, JSON.stringify({ id: SK_AGENT.id, at: SK_AGENT.renderedAt }));
+                } else if (String(cur.id) !== String(SK_AGENT.id)) {
+                    SK_AGENT.otherAgentCopy = true;
+                }
+            } catch (_) {}
+        })();
+        if (SK_AGENT.otherAgentCopy) {
+            $(function () {
+                $('body').html('<div style="padding:48px 20px;text-align:center;font-family:sans-serif;color:#05421c;">' +
+                    '<h4 style="font-weight:700;">Another agent login</h4>' +
+                    '<p>This saved page belongs to another agent login on this phone, so it cannot be used.<br>' +
+                    'Connect to the internet and open the app again (log in if asked).</p></div>');
+            });
+        }
+
+        // Logout: say if orders are still on the phone, then remove this agent's shops/products/page copies from it
+        $(document).on('submit', '#logout-form', function (e) {
+            var form = this;
+            if (form.dataset.skReady === '1') return;
+            e.preventDefault();
+            (async function () {
+                var waiting = 0;
+                try { waiting = await SnapKidOfflineDB.waitingCount(); } catch (_) {}
+                if (waiting > 0) {
+                    var text = 'You have ' + waiting + ' offline order(s) not uploaded yet. They stay safely on this phone and only you can see them. Log in again and tap Sync to upload them.';
+                    var ok = window.Swal
+                        ? (await Swal.fire({ icon: 'warning', title: 'Orders not uploaded', text: text, showCancelButton: true, confirmButtonText: 'Log out anyway', cancelButtonText: 'Stay logged in' })).isConfirmed
+                        : window.confirm(text + '\n\nLog out anyway?');
+                    if (!ok) { $(form).data('submitted', false).find('button').prop('disabled', false).css('pointer-events', 'auto'); return; }
+                }
+                try { await SnapKidOfflineDB.clearForLogout(); } catch (_) {}
+                form.dataset.skReady = '1';
+                form.submit();
+            })();
+        });
+        @endauth
 
         // Price of one piece in the app's price style (same as sales_agent/partials/price.blade.php)
         window.skMoney = function (v) {
@@ -423,15 +497,13 @@
             return html;
         };
 
-        // Global offline badge update
+        // Offline orders of this agent not uploaded yet (badge on the Offline menu); keep the offline pages saved for this agent
         $(function() {
-            if (window.SnapKidOfflineDB) {
-                SnapKidOfflineDB.getPendingOrders().then(function(orders) {
-                    const pending = (orders || []).filter(o => o.status === 'pending_sync');
-                    if (pending.length > 0) {
-                        $('#navOfflineBadge').text(pending.length).show();
-                    }
+            if (window.SnapKidOfflineDB && window.SK_AGENT && !SK_AGENT.otherAgentCopy) {
+                SnapKidOfflineDB.waitingCount().then(function (n) {
+                    if (n > 0) $('#navOfflineBadge').text(n).show();
                 }).catch(function() {});
+                SnapKidOfflineDB.keepOfflinePages(false).catch(function () {});
             }
         });
     </script>
