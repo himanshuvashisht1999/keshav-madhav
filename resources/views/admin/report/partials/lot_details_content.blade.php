@@ -402,9 +402,14 @@
                 </div>
 
                 {{-- ================= STITCHING PHOTOS (sent from the worker app > Lot Photo) ================= --}}
-                @if(!empty($lot_photos) && $lot_photos->count() > 0)
+                @if(isset($lot_photos))
                     <div class="section mt-4">
                         <div class="section-title">Stitching photos ({{ $lot_photos->count() }})</div>
+                        @if($lot_photos->count() === 0)
+                            <div class="text-muted" style="background: #fff; border: 1px dashed #d1d5db; border-radius: 8px; padding: 18px; text-align: center; font-size: 13px;">
+                                <i class="fas fa-image mr-1"></i> No image
+                            </div>
+                        @endif
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
                             @foreach($lot_photos as $photo)
                                 <div style="position: relative; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; text-align: center;">

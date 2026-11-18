@@ -129,28 +129,28 @@
         </table>
     </div>
 
-    {{-- Photos Stitching sent for this lot. The controller passes none to Cutting and Printing logins. --}}
-    @include('unit.partials.lot_photos', ['lotPhotos' => $lotPhotos ?? collect(), 'myUnitId' => $myUnitId ?? null])
+    {{-- Photos Stitching sent for this lot. Every stage except Cutting and Printing ($showLotPhotos); "No image" when there are none. --}}
+    @include('unit.partials.lot_photos', ['lotPhotos' => $lotPhotos ?? collect(), 'myUnitId' => $myUnitId ?? null, 'lotPhotoVisible' => $showLotPhotos ?? false])
 
-    {{-- $showCuttingSlip: Cutting, Printing, Stitching and Kaj logins (set in UnitAuthController::lotDetails) --}}
-    @if($slip && $slip->slip_file && !empty($showCuttingSlip))
+    {{-- $showCuttingSlip: Cutting, Printing, Stitching and Kaj logins (set in UnitAuthController::lotDetails); "No image" when there is none --}}
+    @if(!empty($showCuttingSlip))
         @php
-            $ext = pathinfo($slip->slip_file, PATHINFO_EXTENSION);
-            $isImage = in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-            $slipUrl = asset('assets/production_slips/' . $slip->slip_file);
+            $hasSlipFile = $slip && $slip->slip_file;
+            $isImage = $hasSlipFile && in_array(strtolower(pathinfo($slip->slip_file, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+            $slipUrl = $hasSlipFile ? asset('assets/production_slips/' . $slip->slip_file) : null;
         @endphp
         <div class="xl-head">
             <h3><i class="fas fa-image"></i> Cutting Slip</h3>
         </div>
         <div class="xl-panel ld-slip">
             @if($isImage)
-                <a href="{{ $slipUrl }}" target="_blank">
-                    <img src="{{ $slipUrl }}" alt="Cutting Slip"
-                         onerror="this.parentNode.style.display='none'; this.closest('.ld-slip').querySelector('.ld-missing').style.display='block';">
-                </a>
-                <div class="ld-missing xl-sub" style="display: none; padding: 20px;"><i class="fas fa-image"></i> Slip image file not found.</div>
-            @else
+                <img src="{{ $slipUrl }}" alt="Cutting Slip - Lot {{ $lot->lot_no ?? '' }}" data-photo-view
+                     onerror="this.style.display='none'; this.closest('.ld-slip').querySelector('.ld-missing').style.display='block';">
+                <div class="ld-missing xl-noimg" style="display: none;"><i class="fas fa-image"></i> No image</div>
+            @elseif($hasSlipFile)
                 <a href="{{ $slipUrl }}" target="_blank" class="xl-btn"><i class="fas fa-file-pdf"></i> View Uploaded Document</a>
+            @else
+                <div class="xl-noimg"><i class="fas fa-image"></i> No image</div>
             @endif
         </div>
     @endif

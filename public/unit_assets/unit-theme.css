@@ -316,3 +316,22 @@ body.unit-app .app-content table td.xl-empty { padding: 28px 16px !important; te
 /* 5 footer buttons (Stitching has "Lot Photo"): a little tighter so the labels fit small phones */
 body.unit-app .bottom-nav.nav-5 { gap: 2px; padding-left: 4px; padding-right: 4px; }
 body.unit-app .bottom-nav.nav-5 .nav-item { font-size: 11px; }
+
+/* ---------- photo popup (any <img data-photo-view>): dark screen, cross button, tap photo to zoom ---------- */
+.pv-overlay { position: fixed; inset: 0; z-index: 3000; background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column; }
+.pv-overlay.pv-open { display: flex; }
+.pv-bar { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; padding-top: max(10px, env(safe-area-inset-top)); }
+.pv-title { color: #fff; font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv-close { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; border: none; background: var(--u-yellow); color: var(--u-green); font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.pv-stage { flex: 1 1 auto; min-height: 0; overflow: auto; display: flex; align-items: center; justify-content: center; -webkit-overflow-scrolling: touch; }
+.pv-stage img { max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-in; }
+.pv-overlay.pv-zoomed .pv-stage { display: block; }
+.pv-overlay.pv-zoomed .pv-stage img { max-width: none; max-height: none; cursor: zoom-out; }
+.pv-hint { flex: 0 0 auto; text-align: center; color: #cbd5e1; font-size: 12px; font-weight: 600; padding: 8px 10px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+body.pv-lock { overflow: hidden; }
+img[data-photo-view] { cursor: pointer; }
+.pv-overlay.pv-zoomed .pv-stage img { display: block; margin: 0 auto; }
+
+/* empty photo section: the heading stays and the box says "No image" */
+.xl-noimg { text-align: center; color: var(--u-muted); font-size: 14px; font-weight: 700; padding: 16px 8px; }
+.xl-noimg i { display: block; font-size: 28px; color: #c3cfc0; margin-bottom: 4px; }

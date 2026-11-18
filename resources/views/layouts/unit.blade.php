@@ -407,6 +407,18 @@
         </div>
     </div>
 
+    {{-- Photo popup: any <img data-photo-view> on a worker page opens here instead of a new tab (styles: unit-theme.css .pv-*) --}}
+    <div id="photoView" class="pv-overlay" aria-hidden="true">
+        <div class="pv-bar">
+            <span class="pv-title" id="photoViewTitle"></span>
+            <button type="button" class="pv-close" id="photoViewClose" aria-label="Close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="pv-stage" id="photoViewStage">
+            <img id="photoViewImg" alt="">
+        </div>
+        <div class="pv-hint" id="photoViewHint">Tap photo to zoom</div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{{asset('admin_assets/plugins/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
@@ -624,6 +636,83 @@
                 }, 10);
             });
         });
+    </script>
+    <script>
+        // Photo popup. Open: tap any <img data-photo-view>. Close: the cross, the dark area, Esc or the phone's Back button.
+        // Tap the photo to zoom in on that spot (the page itself cannot be pinch-zoomed), tap again to make it small.
+        (function () {
+            var overlay = document.getElementById('photoView');
+            if (!overlay) return;
+            var stage = document.getElementById('photoViewStage');
+            var img = document.getElementById('photoViewImg');
+            var title = document.getElementById('photoViewTitle');
+            var hint = document.getElementById('photoViewHint');
+            var ZOOM = 2.5;
+            var isOpen = false;
+            var pushed = false;        // a history step was added, so Back closes the photo and not the page
+            var skipNextPop = false;   // our own history.back() after the cross
+
+            function setZoom(on, x, y) {
+                if (on) {
+                    var r = img.getBoundingClientRect();
+                    var rx = x === undefined ? 0.5 : (x - r.left) / r.width;
+                    var ry = y === undefined ? 0.5 : (y - r.top) / r.height;
+                    var w = r.width * ZOOM, h = r.height * ZOOM;
+                    overlay.classList.add('pv-zoomed');
+                    img.style.width = w + 'px';
+                    img.style.height = h + 'px';
+                    stage.scrollLeft = rx * w - stage.clientWidth / 2;
+                    stage.scrollTop = ry * h - stage.clientHeight / 2;
+                    hint.textContent = 'Tap photo to make it small again';
+                } else {
+                    overlay.classList.remove('pv-zoomed');
+                    img.style.width = '';
+                    img.style.height = '';
+                    hint.textContent = 'Tap photo to zoom';
+                }
+            }
+
+            function openPhoto(src, text) {
+                if (!src || isOpen) return;
+                setZoom(false);
+                img.src = src;
+                title.textContent = text || '';
+                overlay.classList.add('pv-open');
+                overlay.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('pv-lock');
+                isOpen = true;
+                try { history.pushState({ photoView: true }, ''); pushed = true; } catch (e) { pushed = false; }
+            }
+
+            function closePhoto(fromBack) {
+                if (!isOpen) return;
+                isOpen = false;
+                overlay.classList.remove('pv-open');
+                overlay.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('pv-lock');
+                setZoom(false);
+                img.removeAttribute('src');
+                if (pushed && !fromBack) { skipNextPop = true; history.back(); }
+                pushed = false;
+            }
+
+            document.addEventListener('click', function (e) {
+                var t = e.target && e.target.closest ? e.target.closest('img[data-photo-view]') : null;
+                if (!t) return;
+                e.preventDefault();
+                openPhoto(t.getAttribute('data-photo-view') || t.currentSrc || t.src, t.getAttribute('data-photo-title') || t.alt);
+            });
+            img.addEventListener('click', function (e) {
+                setZoom(!overlay.classList.contains('pv-zoomed'), e.clientX, e.clientY);
+            });
+            document.getElementById('photoViewClose').addEventListener('click', function () { closePhoto(false); });
+            stage.addEventListener('click', function (e) { if (e.target === stage) closePhoto(false); });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePhoto(false); });
+            window.addEventListener('popstate', function () {
+                if (skipNextPop) { skipNextPop = false; return; }
+                closePhoto(true);
+            });
+        })();
     </script>
     @stack('scripts')
 </body>

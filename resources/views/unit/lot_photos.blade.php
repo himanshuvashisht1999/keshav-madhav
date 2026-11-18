@@ -116,10 +116,7 @@
         </div>
 
         {{-- 3. what has been sent for this lot (this login can delete its own photos) --}}
-        @include('unit.partials.lot_photos', ['lotPhotos' => $photos, 'myUnitId' => $unit->id, 'lotPhotoTitle' => 'Photos of This Lot'])
-        @if($photos->isEmpty())
-            <div class="lpp-none">No photo sent for this lot yet.</div>
-        @endif
+        @include('unit.partials.lot_photos', ['lotPhotos' => $photos, 'myUnitId' => $unit->id, 'lotPhotoTitle' => 'Photos of This Lot', 'lotPhotoVisible' => true])
     @elseif($lots->isNotEmpty())
         <div class="lpp-none"><i class="fas fa-arrow-up"></i> Select a lot, then take its photo.</div>
     @endif

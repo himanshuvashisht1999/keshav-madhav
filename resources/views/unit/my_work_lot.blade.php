@@ -90,11 +90,11 @@
         </a>
     </div>
 
-    {{-- The cutting slip that made this lot. The controller fills this for Printing, Stitching and Kaj logins only. --}}
-    @if(!empty($cuttingSlip))
+    {{-- The cutting slip that made this lot. Printing, Stitching and Kaj logins only ($showCuttingSlip); "No image" when there is none. --}}
+    @if(!empty($showCuttingSlip))
         @php
-            $cutSlipUrl = asset('assets/production_slips/' . $cuttingSlip->slip_file);
-            $cutSlipIsImage = in_array(strtolower(pathinfo($cuttingSlip->slip_file, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+            $cutSlipUrl = !empty($cuttingSlip) ? asset('assets/production_slips/' . $cuttingSlip->slip_file) : null;
+            $cutSlipIsImage = $cutSlipUrl && in_array(strtolower(pathinfo($cuttingSlip->slip_file, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
         @endphp
         <div class="xl-head">
             <h3><i class="fas fa-image"></i> Cutting Slip</h3>
@@ -104,15 +104,17 @@
         </div>
         <div class="xl-panel wl-cutslip">
             @if($cutSlipIsImage)
-                <img src="{{ $cutSlipUrl }}" alt="Cutting slip" onclick="window.open(this.src, '_blank')">
-            @else
+                <img src="{{ $cutSlipUrl }}" alt="Cutting Slip - Lot {{ $lot['lot_no'] }}" data-photo-view>
+            @elseif($cutSlipUrl)
                 <a href="{{ $cutSlipUrl }}" target="_blank" class="xl-btn"><i class="fas fa-file-pdf"></i> View Cutting Slip</a>
+            @else
+                <div class="xl-noimg"><i class="fas fa-image"></i> No image</div>
             @endif
         </div>
     @endif
 
-    {{-- Photos Stitching sent for this lot. The controller passes none to Cutting and Printing logins. --}}
-    @include('unit.partials.lot_photos', ['lotPhotos' => $lotPhotos ?? collect(), 'myUnitId' => $unit->id])
+    {{-- Photos Stitching sent for this lot. Every stage except Cutting and Printing ($showLotPhotos); "No image" when there are none. --}}
+    @include('unit.partials.lot_photos', ['lotPhotos' => $lotPhotos ?? collect(), 'myUnitId' => $unit->id, 'lotPhotoVisible' => $showLotPhotos ?? false])
 
     <!-- What came in -->
     <div class="xl-head">

@@ -1504,7 +1504,7 @@ class UnitAuthController extends Controller
                 ->values();
         }
 
-        return view('unit.assignment_details', [ 'header' => $header, 'sizeData' => $sizeData, 'transaction' => $transaction, 'type' => $type, 'unit' => $unit, 'nextStages' => $nextStages, 'isRework' => $isRework, 'productPhotos' => $productPhotos, 'encrypted_unit_id' => \Illuminate\Support\Facades\Crypt::encryptString($unitId) ]);
+        return view('unit.assignment_details', [ 'header' => $header, 'sizeData' => $sizeData, 'transaction' => $transaction, 'type' => $type, 'unit' => $unit, 'nextStages' => $nextStages, 'isRework' => $isRework, 'productPhotos' => $productPhotos, 'showProductPhotos' => (int) $unit->master_stage_id === self::STAGE_CUTTING, 'encrypted_unit_id' => \Illuminate\Support\Facades\Crypt::encryptString($unitId) ]);
     }
     
     public function downloadAssignmentDetailsPdf($type, $id)
@@ -1699,7 +1699,8 @@ class UnitAuthController extends Controller
         $response['showCuttingSlip'] = $stageId === self::STAGE_CUTTING || in_array($stageId, self::CUTTING_SLIP_STAGES, true);
 
         // Photos Stitching sent for this lot: every stage except Cutting and Printing. A worker deletes only its own.
-        $response['lotPhotos'] = \App\Services\LotPhotoService::canView($stageId)
+        $response['showLotPhotos'] = \App\Services\LotPhotoService::canView($stageId); // the section shows "No image" when empty
+        $response['lotPhotos'] = $response['showLotPhotos']
             ? app(\App\Services\LotPhotoService::class)->forLot($response['data']['lot_no'] ?? $request->lot_no)
             : collect();
         $response['myUnitId'] = session('unit_auth')['id'];
@@ -1760,16 +1761,15 @@ class UnitAuthController extends Controller
         }
 
         // The cutting slip that made this lot - for Printing, Stitching and Kaj logins only.
-        $cuttingSlip = in_array((int) $unit->master_stage_id, self::CUTTING_SLIP_STAGES, true)
-            ? $this->lotCuttingSlip($lot['lot_no'])
-            : null;
+        // $show... = this login may see the section; when there is nothing to show the page says "No image".
+        $showCuttingSlip = in_array((int) $unit->master_stage_id, self::CUTTING_SLIP_STAGES, true);
+        $cuttingSlip = $showCuttingSlip ? $this->lotCuttingSlip($lot['lot_no']) : null;
 
         // Photos Stitching sent for this lot (worker app > Lot Photo): every stage except Cutting and Printing.
-        $lotPhotos = \App\Services\LotPhotoService::canView($unit->master_stage_id)
-            ? app(\App\Services\LotPhotoService::class)->forLot($lot['lot_no'])
-            : collect();
+        $showLotPhotos = \App\Services\LotPhotoService::canView($unit->master_stage_id);
+        $lotPhotos = $showLotPhotos ? app(\App\Services\LotPhotoService::class)->forLot($lot['lot_no']) : collect();
 
-        return view('unit.my_work_lot', compact('lot', 'unit', 'cuttingSlip', 'lotPhotos'));
+        return view('unit.my_work_lot', compact('lot', 'unit', 'cuttingSlip', 'lotPhotos', 'showCuttingSlip', 'showLotPhotos'));
     }
 
     /**

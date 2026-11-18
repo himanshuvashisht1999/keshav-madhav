@@ -245,7 +245,7 @@
             <h3><i class="fas fa-image"></i> Previous Stage Slip</h3>
         </div>
         <div class="xl-panel sd-prev text-center">
-            <img src="{{ asset('assets/production_slips/' . $previousSlip->slip_file) }}" alt="Previous stage slip" onclick="window.open(this.src, '_blank')"
+            <img src="{{ asset('assets/production_slips/' . $previousSlip->slip_file) }}" alt="Previous stage slip" data-photo-view
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='none'; this.parentNode.querySelector('.sd-img-missing').style.display='block';">
             <div class="xl-sub" style="margin-top: 6px;">Tap image to view full screen</div>
             <div class="sd-img-missing"><i class="fas fa-image"></i> Slip image file not found.</div>

@@ -108,23 +108,30 @@
         <div class="ad-note"><strong>Note:</strong> {{ $header['remark'] }}</div>
     @endif
 
-    {{-- Product master > "3. Product Gallery & Photos". The controller fills this for cutting logins only. --}}
-    @if(!empty($productPhotos) && $productPhotos->count() > 0)
+    {{-- Product master > "3. Product Gallery & Photos". Cutting logins only ($showProductPhotos); "No image" when the product has none. --}}
+    @if(!empty($showProductPhotos))
+        @php $hasProductPhotos = !empty($productPhotos) && $productPhotos->count() > 0; @endphp
         <div class="xl-head">
             <h3><i class="fas fa-images"></i> Product Photos</h3>
-            <span class="xl-sub">Tap photo to view full screen</span>
+            @if($hasProductPhotos)
+                <span class="xl-sub">Tap photo to view full screen</span>
+            @endif
         </div>
         <div class="xl-panel">
-            <div class="ad-photos {{ $productPhotos->count() === 1 ? 'ad-photos-one' : '' }}">
-                @foreach($productPhotos as $photo)
-                    <figure class="ad-photo">
-                        <img src="{{ $photo->image }}" alt="{{ $photo->title ?: 'Product photo' }}" loading="lazy" onclick="window.open(this.src, '_blank')">
-                        @if($photo->title)
-                            <figcaption>{{ $photo->title }}</figcaption>
-                        @endif
-                    </figure>
-                @endforeach
-            </div>
+            @if($hasProductPhotos)
+                <div class="ad-photos {{ $productPhotos->count() === 1 ? 'ad-photos-one' : '' }}">
+                    @foreach($productPhotos as $photo)
+                        <figure class="ad-photo">
+                            <img src="{{ $photo->image }}" alt="{{ $photo->title ?: 'Product photo' }}" loading="lazy" data-photo-view>
+                            @if($photo->title)
+                                <figcaption>{{ $photo->title }}</figcaption>
+                            @endif
+                        </figure>
+                    @endforeach
+                </div>
+            @else
+                <div class="xl-noimg"><i class="fas fa-image"></i> No image</div>
+            @endif
         </div>
     @endif
 
@@ -193,7 +200,7 @@
             <h3><i class="fas fa-image"></i> Previous Stage Slip</h3>
         </div>
         <div class="xl-panel ad-prev">
-            <img src="{{ asset('assets/production_slips/' . $transaction->productionSlipDigitization->slip_file) }}" alt="Previous stage slip" onclick="window.open(this.src, '_blank')"
+            <img src="{{ asset('assets/production_slips/' . $transaction->productionSlipDigitization->slip_file) }}" alt="Previous stage slip" data-photo-view
                  onerror="this.style.display='none'; this.nextElementSibling.textContent='Slip image file not found.';">
             <div class="xl-sub" style="margin-top: 6px;">Tap image to view full screen</div>
         </div>
