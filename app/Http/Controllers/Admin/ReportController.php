@@ -591,8 +591,24 @@ class ReportController extends Controller
         }
 
         $response['master_stages'] = $this->service->master_stages();
+        // photos sent by Stitching from the worker app (Lot Photo); the admin can delete any of them
+        $response['lot_photos'] = app(\App\Services\LotPhotoService::class)->forLot($response['data']['lot_no'] ?? $request->lot_no);
         // dd($response['data']);
         return view('admin.report.lot_details', $response);
+    }
+
+    /** Lot details report: the admin deletes a photo sent by Stitching. It is hidden everywhere; the row and file are kept. */
+    public function deleteLotPhoto($id)
+    {
+        \App\Services\LotPhotoService::ensureTable();
+        $photo = \App\Models\LotPhoto::where('status', 1)->find($id);
+        if (!$photo) {
+            return redirect()->back()->with('error', 'Photo not found or already deleted.');
+        }
+
+        app(\App\Services\LotPhotoService::class)->remove($photo, 'admin:' . (\Illuminate\Support\Facades\Auth::guard('admin')->id() ?? 0));
+
+        return redirect()->back()->with('success', 'Photo deleted.');
     }
 
     public function lotDetailsPdf(Request $request)

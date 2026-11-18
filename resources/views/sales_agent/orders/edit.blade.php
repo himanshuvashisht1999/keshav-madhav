@@ -523,7 +523,8 @@
 @endsection
 
 @push('scripts')
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="{{ asset('assets/js/html5-qrcode.min.js') }}"></script>
+    <script src="{{ asset('agent_assets/agent-scanner.js') }}?v={{ @filemtime(public_path('agent_assets/agent-scanner.js')) }}"></script>
     <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
     <script>
         let isSampleSet = {{ isset($isSampleSet) && $isSampleSet ? 'true' : 'false' }};
@@ -592,47 +593,32 @@
                 });
             });
 
-            // --- SCANNER LOGIC ---
-            let html5QrcodeScanner = null;
+            // --- SCANNER LOGIC (camera settings: public/agent_assets/agent-scanner.js) ---
+            const camScanner = window.AgentScanner ? AgentScanner.create('reader', {
+                onScan: onScanSuccess,
+                onError: function (err) {
+                    console.error("Scanner error:", err);
+                    Swal.fire('Camera Error', 'Could not start camera scanner. Please ensure you have given camera permissions.', 'error');
+                }
+            }) : null;
 
             $('#btnScanQR').click(function() {
                 $('#scannerModal').modal('show');
             });
 
             $('#scannerModal').on('shown.bs.modal', function () {
-                startScanner();
+                if (camScanner) {
+                    camScanner.start();
+                } else {
+                    Swal.fire('Camera Error', 'Could not start camera scanner. Type the barcode instead.', 'error');
+                }
             });
 
             $('#scannerModal').on('hidden.bs.modal', function () {
-                stopScanner();
+                if (camScanner) camScanner.stop();
             });
 
-            function startScanner() {
-                if (html5QrcodeScanner) return;
-                
-                html5QrcodeScanner = new Html5Qrcode("reader");
-                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-                html5QrcodeScanner.start(
-                    { facingMode: "environment" }, 
-                    config, 
-                    onScanSuccess
-                ).catch(err => {
-                    console.error("Scanner error:", err);
-                    Swal.fire('Camera Error', 'Could not start camera scanner. Please ensure you have given camera permissions.', 'error');
-                });
-            }
-
-            function stopScanner() {
-                if (html5QrcodeScanner) {
-                    html5QrcodeScanner.stop().then(() => {
-                        html5QrcodeScanner = null;
-                    }).catch(err => console.error(err));
-                }
-            }
-
             function onScanSuccess(decodedText) {
-                stopScanner();
                 $('#scannerModal').modal('hide');
                 handleBarcode(decodedText);
             }
@@ -640,8 +626,16 @@
             $('#btnManualSubmit').click(function() {
                 const bc = $('#manual_barcode').val().trim();
                 if (bc) {
+                    $('#manual_barcode').val('');
                     $('#scannerModal').modal('hide');
                     handleBarcode(bc);
+                }
+            });
+
+            $('#manual_barcode').on('keypress', function (e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    $('#btnManualSubmit').click();
                 }
             });
 

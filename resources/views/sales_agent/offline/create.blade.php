@@ -362,6 +362,7 @@
 
 @push('scripts')
 <script src="{{ asset('assets/js/html5-qrcode.min.js') }}"></script>
+<script src="{{ asset('agent_assets/agent-scanner.js') }}?v={{ @filemtime(public_path('agent_assets/agent-scanner.js')) }}"></script>
 <script>
 // A photo that is not reachable (no internet): show the copy saved on the phone, else a placeholder
 window.handleOfflineImageError = function (imgEl, filename) {
@@ -400,7 +401,6 @@ $(document).ready(function () {
     const scanItems = new Map();  // item key -> item from sample-set / sample tags (fixed or own price)
     let currentPage = 1;
     const pageSize = 24;
-    let scanner = null;
     let metaInfo = null;
     let activeModalKey = null;
     let shops = [];
@@ -881,35 +881,25 @@ $(document).ready(function () {
     $('#offlineScannerModal').on('shown.bs.modal', startOfflineScanner);
     $('#offlineScannerModal').on('hidden.bs.modal', stopOfflineScanner);
 
-    function startOfflineScanner() {
-        if (scanner || typeof Html5Qrcode === 'undefined') return;
-        try {
-            scanner = new Html5Qrcode('offlineReader');
-            scanner.start({ facingMode: 'environment' }, {
-                fps: 15,
-                qrbox: (w, h) => ({ width: Math.min(Math.floor(w * 0.88), 320), height: Math.min(Math.floor(h * 0.65), 220) }),
-                aspectRatio: 1.0
-            }, onBarcodeScanned).catch(err => {
-                console.error('Camera error:', err);
-                scanner = null;
-                toast('Camera not available. Type the code below instead.', 'warning');
-            });
-        } catch (e) {
-            scanner = null;
+    // camera settings: public/agent_assets/agent-scanner.js (saved on the phone by the service worker)
+    const offlineCam = window.AgentScanner ? AgentScanner.create('offlineReader', {
+        onScan: onBarcodeScanned,
+        onError: err => {
+            console.error('Camera error:', err);
             toast('Camera not available. Type the code below instead.', 'warning');
         }
+    }) : null;
+
+    function startOfflineScanner() {
+        if (offlineCam) offlineCam.start();
+        else toast('Camera not available. Type the code below instead.', 'warning');
     }
 
     function stopOfflineScanner() {
-        if (scanner) {
-            const s = scanner;
-            scanner = null;
-            s.stop().catch(() => {});
-        }
+        if (offlineCam) offlineCam.stop();
     }
 
     function onBarcodeScanned(decodedText) {
-        stopOfflineScanner();
         $('#offlineScannerModal').modal('hide');
         processBarcodeMatch(decodedText);
     }

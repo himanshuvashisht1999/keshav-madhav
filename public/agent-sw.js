@@ -21,6 +21,7 @@ const HUB = OFFLINE_PAGES[0];
 
 const STATIC_ASSETS = [
     BASE + 'assets/js/html5-qrcode.min.js',
+    BASE + 'agent_assets/agent-scanner.js',
     BASE + 'assets/js/offline-db.js',
     BASE + 'agent_assets/agent-theme.css',
     'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap',

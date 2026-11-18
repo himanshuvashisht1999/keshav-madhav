@@ -302,3 +302,17 @@ body.unit-app .app-content table td.xl-empty { padding: 28px 16px !important; te
     background: #fff;
     color: var(--u-text);
 }
+
+/* ---------- lot photos (sent by Stitching; shown on the lot) ---------- */
+.lp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lp-grid.lp-one { grid-template-columns: 1fr; }
+.lp-item { margin: 0; text-align: center; min-width: 0; }
+.lp-item img { display: block; width: 100%; height: 200px; object-fit: contain; background: #f8fafc; border: 1px solid var(--u-line); border-radius: 4px; cursor: pointer; }
+.lp-one .lp-item img { height: auto; max-height: 420px; }
+.lp-meta { font-size: 11px; font-weight: 600; color: var(--u-muted); margin-top: 4px; line-height: 1.3; overflow-wrap: anywhere; }
+.lp-meta b { color: var(--u-text); }
+.lp-item form { margin: 5px 0 0; }
+
+/* 5 footer buttons (Stitching has "Lot Photo"): a little tighter so the labels fit small phones */
+body.unit-app .bottom-nav.nav-5 { gap: 2px; padding-left: 4px; padding-right: 4px; }
+body.unit-app .bottom-nav.nav-5 .nav-item { font-size: 11px; }

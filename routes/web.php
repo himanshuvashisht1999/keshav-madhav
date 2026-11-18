@@ -140,6 +140,10 @@ Route::prefix('unit')->name('unit.')->middleware(['unit.remember'])->group(funct
     Route::post('/delete-slip/{type}/{id}', [\App\Http\Controllers\Unit\UnitAuthController::class, 'deleteSlip'])->name('delete.slip');
     Route::get('/lot-search', [\App\Http\Controllers\Unit\UnitAuthController::class, 'lotSearch'])->name('lot.search');
     Route::get('/lot-details', [\App\Http\Controllers\Unit\UnitAuthController::class, 'lotDetails'])->name('lot.details');
+    // Lot Photo: a Stitching unit sends photos for its own lots; a worker deletes only the photos that login sent
+    Route::get('/lot-photos', [\App\Http\Controllers\Unit\LotPhotoController::class, 'index'])->name('lot-photos');
+    Route::post('/lot-photos', [\App\Http\Controllers\Unit\LotPhotoController::class, 'store'])->name('lot-photos.store');
+    Route::post('/lot-photos/{id}/delete', [\App\Http\Controllers\Unit\LotPhotoController::class, 'destroy'])->name('lot-photos.delete')->whereNumber('id');
     Route::get('/logout', [\App\Http\Controllers\Unit\UnitAuthController::class, 'logout'])->name('logout');
 });
 
@@ -1310,6 +1314,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['web']], f
             Route::post('/lots/delete-multiple', [AdminReportController::class, 'deleteMultipleLots'])->name('lots.delete-multiple');
             Route::get('/lots/lot-details/{lot_no}', [AdminReportController::class, 'lotDetails'])->name('lots.lot-details');
             Route::delete('/lots/delete-session/{type}/{id}', [AdminReportController::class, 'deleteLotSession'])->name('lots.delete-session');
+            Route::delete('/lots/lot-photo/{id}', [AdminReportController::class, 'deleteLotPhoto'])->name('lots.lot-photo.delete')->whereNumber('id'); // photos sent by Stitching (worker app > Lot Photo)
             Route::get('/lots/lot-details-pdf/{lot_no}', [AdminReportController::class, 'lotDetailsPdf'])->name('lots.lot-details.pdf');
             Route::get('/stock', [AdminReportController::class, 'stock'])->name('stock');
             Route::get('/stock/verify-fix', [AdminReportController::class, 'verifyStockFix'])->name('stock.verify-fix');

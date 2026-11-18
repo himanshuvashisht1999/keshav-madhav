@@ -20,6 +20,8 @@
     body.unit-app .app-content .wl-recv th, body.unit-app .app-content .wl-recv td { padding-left: 7px !important; padding-right: 7px !important; }
     .wl-slip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 6px; background: var(--u-green); color: #fff !important; text-decoration: none !important; font-weight: 700; white-space: nowrap; }
     .wl-slip i { color: var(--u-yellow); font-size: 10px; }
+    .wl-cutslip { text-align: center; }
+    .wl-cutslip img { max-width: 100%; max-height: 420px; border: 1px solid var(--u-line); border-radius: 4px; cursor: pointer; }
 </style>
 @endpush
 
@@ -87,6 +89,30 @@
             <i class="fas fa-search"></i> Full Lot Info
         </a>
     </div>
+
+    {{-- The cutting slip that made this lot. The controller fills this for Printing, Stitching and Kaj logins only. --}}
+    @if(!empty($cuttingSlip))
+        @php
+            $cutSlipUrl = asset('assets/production_slips/' . $cuttingSlip->slip_file);
+            $cutSlipIsImage = in_array(strtolower(pathinfo($cuttingSlip->slip_file, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+        @endphp
+        <div class="xl-head">
+            <h3><i class="fas fa-image"></i> Cutting Slip</h3>
+            @if($cutSlipIsImage)
+                <span class="xl-sub">Tap photo to view full screen</span>
+            @endif
+        </div>
+        <div class="xl-panel wl-cutslip">
+            @if($cutSlipIsImage)
+                <img src="{{ $cutSlipUrl }}" alt="Cutting slip" onclick="window.open(this.src, '_blank')">
+            @else
+                <a href="{{ $cutSlipUrl }}" target="_blank" class="xl-btn"><i class="fas fa-file-pdf"></i> View Cutting Slip</a>
+            @endif
+        </div>
+    @endif
+
+    {{-- Photos Stitching sent for this lot. The controller passes none to Cutting and Printing logins. --}}
+    @include('unit.partials.lot_photos', ['lotPhotos' => $lotPhotos ?? collect(), 'myUnitId' => $unit->id])
 
     <!-- What came in -->
     <div class="xl-head">

@@ -23,6 +23,14 @@
         .ad-prev { text-align: center; }
         .ad-prev img { max-width: 100%; max-height: 420px; border: 1px solid var(--u-line); border-radius: 4px; cursor: pointer; }
 
+        /* product photos (cutting logins): 2 per row, a single photo uses the full width */
+        .ad-photos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .ad-photos.ad-photos-one { grid-template-columns: 1fr; }
+        .ad-photo { margin: 0; text-align: center; min-width: 0; }
+        .ad-photo img { display: block; width: 100%; height: 200px; object-fit: contain; background: #f8fafc; border: 1px solid var(--u-line); border-radius: 4px; cursor: pointer; }
+        .ad-photos-one .ad-photo img { height: auto; max-height: 420px; }
+        .ad-photo figcaption { font-size: 12px; font-weight: 700; color: #1f2937; margin-top: 4px; overflow-wrap: anywhere; }
+
         /* hidden upload form + desktop camera popup (kept for the existing camera code) */
         .btn-action {
             display: inline-flex;
@@ -98,6 +106,26 @@
 
     @if($header['remark'] && $header['remark'] != '-')
         <div class="ad-note"><strong>Note:</strong> {{ $header['remark'] }}</div>
+    @endif
+
+    {{-- Product master > "3. Product Gallery & Photos". The controller fills this for cutting logins only. --}}
+    @if(!empty($productPhotos) && $productPhotos->count() > 0)
+        <div class="xl-head">
+            <h3><i class="fas fa-images"></i> Product Photos</h3>
+            <span class="xl-sub">Tap photo to view full screen</span>
+        </div>
+        <div class="xl-panel">
+            <div class="ad-photos {{ $productPhotos->count() === 1 ? 'ad-photos-one' : '' }}">
+                @foreach($productPhotos as $photo)
+                    <figure class="ad-photo">
+                        <img src="{{ $photo->image }}" alt="{{ $photo->title ?: 'Product photo' }}" loading="lazy" onclick="window.open(this.src, '_blank')">
+                        @if($photo->title)
+                            <figcaption>{{ $photo->title }}</figcaption>
+                        @endif
+                    </figure>
+                @endforeach
+            </div>
+        </div>
     @endif
 
     @if(isset($header['start_date']) || isset($header['end_date']))

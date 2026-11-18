@@ -400,5 +400,34 @@
 
                     </div>
                 </div>
+
+                {{-- ================= STITCHING PHOTOS (sent from the worker app > Lot Photo) ================= --}}
+                @if(!empty($lot_photos) && $lot_photos->count() > 0)
+                    <div class="section mt-4">
+                        <div class="section-title">Stitching photos ({{ $lot_photos->count() }})</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
+                            @foreach($lot_photos as $photo)
+                                <div style="position: relative; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; text-align: center;">
+                                    <a href="{{ $photo->url }}" target="_blank" title="View full photo">
+                                        <img src="{{ $photo->url }}" alt="Lot photo" loading="lazy"
+                                            style="width: 100%; height: 180px; object-fit: contain; background: #f8fafc; border-radius: 4px;">
+                                    </a>
+                                    <div class="text-muted" style="font-size: 11px; margin-top: 6px;">
+                                        <strong class="text-dark">{{ $photo->unit->name ?? '-' }}</strong><br>
+                                        {{ $photo->created_at ? $photo->created_at->format('d M Y, h:i A') : '' }}
+                                    </div>
+                                    <form action="{{ route('admin.report.lots.lot-photo.delete', ['id' => $photo->id]) }}" method="POST" style="position: absolute; top: 12px; right: 12px;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-light text-danger" style="padding: 2px 7px; border: 1px solid #fecaca;"
+                                            onclick="return confirm('Delete this photo? It will be removed for every stage.');" title="Delete photo">
+                                            <i class="fas fa-trash-alt" style="font-size: 13px;"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </div>
         </section>

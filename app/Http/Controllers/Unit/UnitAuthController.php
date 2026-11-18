@@ -24,7 +24,11 @@ class UnitAuthController extends Controller
     const STAGE_PRINTING = 1;
     const STAGE_CUTTING = 3;
     const STAGE_STITCHING = 4;
+    const STAGE_KAJ = 5;
     const STAGE_PACKING = 11;
+
+    // Stages that are shown the cutting slip which made a lot (the slip the admin digitised to create the lot number)
+    const CUTTING_SLIP_STAGES = [self::STAGE_PRINTING, self::STAGE_STITCHING, self::STAGE_KAJ];
 
 
     public function showLogin()
@@ -1483,7 +1487,24 @@ class UnitAuthController extends Controller
             elseif ($header['total_pcs'] == 0 && isset($transaction->quantity)) $header['total_pcs'] = $transaction->quantity;
         }
         $nextStages = ($unit->master_stage_id == self::STAGE_CUTTING) ? \App\Models\MasterProductStage::whereIn('id', [self::STAGE_PRINTING, self::STAGE_STITCHING])->get() : [];
-        return view('unit.assignment_details', [ 'header' => $header, 'sizeData' => $sizeData, 'transaction' => $transaction, 'type' => $type, 'unit' => $unit, 'nextStages' => $nextStages, 'isRework' => $isRework, 'encrypted_unit_id' => \Illuminate\Support\Facades\Crypt::encryptString($unitId) ]);
+
+        // Photos from Product master > "3. Product Gallery & Photos" of this task's product.
+        // Shown to cutting logins only; other stages get an empty list and see no change.
+        $productPhotos = collect();
+        if ((int) $unit->master_stage_id === self::STAGE_CUTTING && $orderProductSet && $orderProductSet->production_goods_id) {
+            $productPhotos = \App\Models\ProductImage::where('product_id', $orderProductSet->production_goods_id)
+                ->where('status', 1)
+                ->orderBy('id')
+                ->get()
+                // skip rows whose file is missing on disk (same two folders the ProductImage model looks in)
+                ->filter(function ($img) {
+                    $file = $img->getRawOriginal('image');
+                    return $file && (file_exists(public_path('product/' . $file)) || file_exists(public_path('assets/products/' . $file)));
+                })
+                ->values();
+        }
+
+        return view('unit.assignment_details', [ 'header' => $header, 'sizeData' => $sizeData, 'transaction' => $transaction, 'type' => $type, 'unit' => $unit, 'nextStages' => $nextStages, 'isRework' => $isRework, 'productPhotos' => $productPhotos, 'encrypted_unit_id' => \Illuminate\Support\Facades\Crypt::encryptString($unitId) ]);
     }
     
     public function downloadAssignmentDetailsPdf($type, $id)
@@ -1672,6 +1693,17 @@ class UnitAuthController extends Controller
         }
 
         $response['master_stages'] = $service->master_stages();
+
+        // Cutting slip photo: Printing, Stitching and Kaj see it, and Cutting keeps seeing its own slip; other stages do not.
+        $stageId = (int) (StageMasterUnit::find(session('unit_auth')['id'])->master_stage_id ?? 0);
+        $response['showCuttingSlip'] = $stageId === self::STAGE_CUTTING || in_array($stageId, self::CUTTING_SLIP_STAGES, true);
+
+        // Photos Stitching sent for this lot: every stage except Cutting and Printing. A worker deletes only its own.
+        $response['lotPhotos'] = \App\Services\LotPhotoService::canView($stageId)
+            ? app(\App\Services\LotPhotoService::class)->forLot($response['data']['lot_no'] ?? $request->lot_no)
+            : collect();
+        $response['myUnitId'] = session('unit_auth')['id'];
+
         return view('unit.lot_details', $response);
     }
 
@@ -1727,7 +1759,33 @@ class UnitAuthController extends Controller
             $item->size_rows = $item->source === 'godam' ? $item->godamDetails : $item->details;
         }
 
-        return view('unit.my_work_lot', compact('lot', 'unit'));
+        // The cutting slip that made this lot - for Printing, Stitching and Kaj logins only.
+        $cuttingSlip = in_array((int) $unit->master_stage_id, self::CUTTING_SLIP_STAGES, true)
+            ? $this->lotCuttingSlip($lot['lot_no'])
+            : null;
+
+        // Photos Stitching sent for this lot (worker app > Lot Photo): every stage except Cutting and Printing.
+        $lotPhotos = \App\Services\LotPhotoService::canView($unit->master_stage_id)
+            ? app(\App\Services\LotPhotoService::class)->forLot($lot['lot_no'])
+            : collect();
+
+        return view('unit.my_work_lot', compact('lot', 'unit', 'cuttingSlip', 'lotPhotos'));
+    }
+
+    /**
+     * The cutting slip that made a lot (order_lots.production_slip_digitization_id, set when the admin
+     * digitises the cutting slip and gives the lot number). Null when the lot, the slip or its file is missing.
+     */
+    private function lotCuttingSlip($lotNo)
+    {
+        // (string): a number here would make MySQL compare as numbers, and lot "2011-2" would match lot 2011
+        $slipId = \App\Models\OrderLot::where('lot_no', (string) $lotNo)->orderBy('id')->value('production_slip_digitization_id');
+        $slip = $slipId ? ProductionSlipDigitization::find($slipId) : null;
+
+        if (!$slip || !$slip->slip_file || !file_exists(public_path('assets/production_slips/' . $slip->slip_file))) {
+            return null;
+        }
+        return $slip;
     }
 
     /**

@@ -290,14 +290,15 @@
     </div>
 
     <!-- Bottom Navigation -->
-    {{-- 4 buttons for every stage: My Work · Late · Send Slip · History --}}
+    {{-- 4 buttons for every stage: My Work · Late · Send Slip · History. Stitching has a 5th: Lot Photo. --}}
     @php
         $navIsCutting = $stageId == 3;
+        $navLotPhoto = \App\Services\LotPhotoService::canSend($stageId);
         $navLate = (request()->routeIs('unit.pending-tasks') && request('is_delayed'))
             || (request()->routeIs('unit.assignments') && request()->boolean('delayed'));
         $navWork = !$navLate && request()->routeIs('unit.pending-tasks', 'unit.assignments', 'unit.work.lot', 'unit.assignments.details', 'unit.assignments.slip_details');
     @endphp
-    <div class="bottom-nav">
+    <div class="bottom-nav {{ $navLotPhoto ? 'nav-5' : '' }}">
         <a href="{{ $navIsCutting ? route('unit.assignments') : route('unit.pending-tasks') }}"
             class="nav-item {{ $navWork ? 'active' : '' }}">
             <i class="fas fa-clipboard-list"></i>
@@ -314,6 +315,12 @@
             <i class="fas fa-camera"></i>
             <span>Send Slip</span>
         </a>
+        @if($navLotPhoto)
+            <a href="{{ route('unit.lot-photos') }}" class="nav-item {{ request()->routeIs('unit.lot-photos') ? 'active' : '' }}">
+                <i class="fas fa-images"></i>
+                <span>Lot Photo</span>
+            </a>
+        @endif
         <a href="{{ route('unit.history') }}" class="nav-item {{ request()->routeIs('unit.history', 'unit.view.slip') ? 'active' : '' }}">
             <i class="fas fa-clock"></i>
             <span>History</span>

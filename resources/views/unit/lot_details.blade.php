@@ -129,7 +129,11 @@
         </table>
     </div>
 
-    @if($slip && $slip->slip_file)
+    {{-- Photos Stitching sent for this lot. The controller passes none to Cutting and Printing logins. --}}
+    @include('unit.partials.lot_photos', ['lotPhotos' => $lotPhotos ?? collect(), 'myUnitId' => $myUnitId ?? null])
+
+    {{-- $showCuttingSlip: Cutting, Printing, Stitching and Kaj logins (set in UnitAuthController::lotDetails) --}}
+    @if($slip && $slip->slip_file && !empty($showCuttingSlip))
         @php
             $ext = pathinfo($slip->slip_file, PATHINFO_EXTENSION);
             $isImage = in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
