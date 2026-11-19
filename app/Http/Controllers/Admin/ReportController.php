@@ -686,7 +686,10 @@ class ReportController extends Controller
         if ($request->ajax()) {
             return view('admin.report.partials.stock_pending_rows', $response);
         }
-        
+
+        // choices of the Season filter (the service keeps only the rows of the chosen product_season_id)
+        $response['seasons'] = \App\Models\ProductSeason::where('status', '!=', 3)->orderBy('name')->get();
+
         return view('admin.report.stock_pending', $response);
     }
 

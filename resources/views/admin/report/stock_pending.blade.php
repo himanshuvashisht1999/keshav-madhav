@@ -62,6 +62,17 @@
                                 placeholder="Search Lot Number">
                         </div>
 
+                        <div class="col-md-3">
+                            <label class="erp-form-label">Season</label>
+                            <select name="product_season_id" id="product_season_id" class="form-control select2">
+                                <option value="">All Seasons</option>
+                                @foreach($seasons as $season)
+                                    <option value="{{ $season->id }}" {{ (string) request('product_season_id') === (string) $season->id ? 'selected' : '' }}>{{ $season->name }}</option>
+                                @endforeach
+                                <option value="none" {{ request('product_season_id') === 'none' ? 'selected' : '' }}>No Season</option>
+                            </select>
+                        </div>
+
                         <div class="col-md-12 mt-3 d-flex justify-content-between align-items-center">
                             <div class="d-flex" style="gap: 8px;">
                                 <button type="submit" class="btn-erp btn-erp-primary">
@@ -109,6 +120,7 @@
                                     <th>Lot Number</th>
                                     <th>Design Number</th>
                                     <th>Size Set</th>
+                                    <th class="text-center">Season</th>
                                     <th class="text-right">Pending Quantity</th>
                                 </tr>
                             </thead>

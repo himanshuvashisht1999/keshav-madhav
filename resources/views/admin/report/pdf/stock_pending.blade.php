@@ -64,6 +64,7 @@
                 <th>Lot No</th>
                 <th>Design No</th>
                 <th>Size Set</th>
+                <th>Season</th>
                 <th>Pending Quantity</th>
             </tr>
         </thead>
@@ -90,13 +91,14 @@
                     <td>{{ $lotNo }}</td>
                     <td>{{ $item->design_number ?? '-' }}</td>
                     <td>{{ $item->size_set_name ?? '-' }}</td>
+                    <td>{{ $item->season_name ?? '-' }}</td>
                     <td>{{ number_format($qty) }} Pcs</td>
                 </tr>
             @endforeach
         </tbody>
         <tfoot>
             <tr class="footer-total">
-                <td colspan="6" style="text-align: right;">Grand Total:</td>
+                <td colspan="7" style="text-align: right;">Grand Total:</td>
                 <td>{{ number_format($totalPending) }} Pcs</td>
             </tr>
         </tfoot>

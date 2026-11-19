@@ -18,6 +18,7 @@
         </td>
         <td>{{ $item->design_number ?? '-' }}</td>
         <td>{{ $item->size_set_name ?? '-' }}</td>
+        <td class="text-center">{!! seasonBadges(array_filter([$item->season_name ?? null])) !!}</td>
         <td class="text-right font-weight-bold">{{ number_format($qty) }} Pcs</td>
     </tr>
 @endforeach
